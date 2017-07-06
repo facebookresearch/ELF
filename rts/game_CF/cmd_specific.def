@@ -1,0 +1,22 @@
+CMD_START(2000);
+
+# Set handicap level for Captrue the flag.
+CMD_IMMEDIATE(FlagSetHandicap, int, level);
+
+# Set up map for capture the flag.
+CMD_IMMEDIATE(CaptureFlagGameStart, int, num_obstacles);
+
+# Ask the current unit to pick up the flag.
+CMD_IMMEDIATE(PickUpFlag, UnitId, flag);
+
+# If flag is carried back to base, score a point.
+CMD_IMMEDIATE(ScoreFlag);
+
+# Athelete is revived near base after certain ticks, if killed.
+CMD_IMMEDIATE(ReviveAthlete, PlayerId, player_id);
+
+# Durative action to get the flag. Will move towards the flag until it can be picked up.
+CMD_DURATIVE(GetFlag, UnitId, flag);
+
+# Durative action to score the flag. Will carry the flag back to base and score the flag.
+CMD_DURATIVE(EscortFlagToBase);

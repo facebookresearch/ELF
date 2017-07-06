@@ -1,0 +1,16 @@
+CMD_START(3000);
+
+# Set up map for tower defense.
+CMD_IMMEDIATE(TowerDefenseGameStart);
+
+# Wave of enemies appear in bottom right of map and move through the maze to attack your base in the top left.
+CMD_IMMEDIATE(TowerDefenseWaveStart, int, wave);
+
+# Upgrade tower's range.
+CMD_IMMEDIATE(UpgradeTowerRange, UnitId, target_id, int, price, PlayerId, player_id);
+
+# Upgrade tower's attack.
+CMD_IMMEDIATE(UpgradeTowerAttack, UnitId, target_id, int, price, PlayerId, player_id);
+
+# Build a tower at current location.
+CMD_DURATIVE(BuildTower, PointF, p, int, price, PlayerId, player_id);

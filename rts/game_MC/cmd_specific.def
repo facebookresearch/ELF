@@ -1,0 +1,14 @@
+CMD_START(1000);
+
+# Generate a game map, with base and resource location, resource amount, and number of obstacles.
+CMD_IMMEDIATE(GenerateMap, int, num_obstacles, int, init_resource);
+
+# Generate some units randomly on the map.
+CMD_IMMEDIATE(GenerateUnit);
+
+# Generate some units randomly on the map.
+CMD_IMMEDIATE(GameStart);
+
+# Start the game from a predefined setup. Should be called after GenerateMap and GenerateUnit
+CMD_IMMEDIATE(GameStartSpecific);
+
