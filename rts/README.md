@@ -9,7 +9,7 @@ The engine also comes with a web-based platform-independent visualization interf
 
 1. Install zeromq 4.0.4 from source and its C++ binding (https://github.com/zeromq/cppzmq), and copy them to /usr/local/include (or other places accessible from gcc).
 
-2. Install libczmq 2.0.2 from source.
+2. Install libczmq 3.0.2 from source.
 
 Due to the issues of `CZMQ-ZWSStock`, only a specific version of zeromq and czmq can be used. We welcome any better solutions.
 
