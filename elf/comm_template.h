@@ -30,7 +30,7 @@
 #include "python_options_utils_cpp.h"
 
 // Action/State communications between game simulators and game clients.
-// SendData() add Key-Data paris to the queue and WaitDataUntil() returns batched Key-Data pairs.
+// SendData() add Key-Data pairs to the queue and WaitDataUntil() returns batched Key-Data pairs.
 // Game clients write replies to some shared data structure,
 // and call ReplyComplete() to indicate that the game simulators (who's waiting on WaitReply()) can continue.
 
