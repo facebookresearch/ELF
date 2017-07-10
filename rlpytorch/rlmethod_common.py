@@ -142,6 +142,5 @@ class ActorCritic(LearningMethod):
             #print("[%d]: reward=%.4f, sum_reward=%.2f, acc_reward=%.4f, value_err=%.4f, policy_err=%.4f" % (i, r.mean(), r.sum(), R.mean(), value_err.data[0], policy_err.data[0]))
 
 CommonMethods = {
-    "actor_critic": ActorCritic,
-    "Q_learning" : Q_learning
+    "actor_critic": ActorCritic
 }
