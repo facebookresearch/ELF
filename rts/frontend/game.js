@@ -193,12 +193,6 @@ var onMap = function(m) {
 
 };
 
-    // def onPlayerStats(self, stats):
-    //     x1 = 10
-    //     y1 = (stats.player_id + 1) * 20
-    //     label = "PlayerId: %d. Resource: %d" % (stats.player_id, stats.resource)
-    //     self.canvas_status.create_text(x1, y1, fill='black', anchor='nw', text=label)
-
 var draw_hp = function(bbox, states, font_color, player_color){
     var x1 = bbox[0];
     var y1 = bbox[1];
@@ -279,6 +273,9 @@ var onBullet = function(bullet) {
 }
 
 var onPlayerStats = function(player) {
+    if (player.player_id == 2) {
+        unit_names_minirts = unit_names_flag;
+    }
     var x1 = left_frame_width + 10;
     var y1 = (player.player_id + 1) * 50;
     var label = ["PlayerId", player.player_id, "Resource", player.resource].join(" ");
@@ -299,15 +296,15 @@ var draw_state = function(u) {
     y1 += 20;
     var ratio = u.hp / u.max_hp;
     var label = "HP: " + u.hp + " / " + u.max_hp;
-    draw_hp([x1, y1, x1 + 30, y1 + 15], [ratio, label], 'black', '');
+    draw_hp([x1, y1, x1 + 100, y1 + 15], [ratio, label], 'black', '');
     for (var i in u.cds) {
         var cd = u.cds[i];
         if (cd.cd > 0) {
             var curr = Math.min(tick - cd.last, cd.cd);
             ratio = curr / cd.cd;
             var label = cd.name + ": " + curr + " / " + cd.cd;
-            draw_hp([x1, y1, x1 + 100, y1 + 15], [ratio, label], 'black', '');
             y1 += 20;
+            draw_hp([x1, y1, x1 + 100, y1 + 15], [ratio, label], 'black', '');
         }
     }
 }
@@ -352,8 +349,8 @@ var draw_sprites = function(spec, px, py, ori) {
         var nh = Math.floor(height/ sh);
         var xidx = spec[ori][0];
         var yidx = spec[ori][1];
-        var cx = xidx[tick % xidx.length] * sw;
-        var cy = yidx[tick % yidx.length] * sh;
+        var cx = xidx[Math.floor(tick / 3) % xidx.length] * sw;
+        var cy = yidx[Math.floor(tick / 3) % yidx.length] * sh;
         ctx.drawImage(image, cx, cy, sw, sh, px - sw / 2, py - sh / 2, sw, sh);
     }
 };
@@ -451,6 +448,9 @@ var render = function (game) {
     onMap(game.rts_map);
     var all_units = {};
     var selected = {};
+    for (var i in game.players) {
+        onPlayerStats(game.players[i]);
+    }
     for (var i in game.units) {
         var unit = game.units[i];
         all_units[unit.id] = unit;
@@ -463,9 +463,6 @@ var render = function (game) {
             }
         }
         onUnit(unit, isSelected);
-    }
-    for (var i in game.players) {
-        onPlayerStats(game.players[i]);
     }
     if (dragging && x_down && y_down) {
         ctx.lineWidth = 2;
@@ -513,7 +510,7 @@ var main = function () {
     };
 
     dealer.onMessage = function (message) {
-        var s = message.popString()
+        var s = message.popString();
         var len = s.length;
         var game = JSON.parse(s.substring(1, len));
         ctx.clearRect(0, 0, canvas.width, canvas.height);
