@@ -20,7 +20,7 @@ static AI *get_ai(int game_idx, int frame_skip, int ai_type, int backup_ai_type,
     AIComm *ai_comm = use_ai_comm ? input_ai_comm : nullptr;
 
     switch (ai_type) {
-       case AI_TD_BULIT_IN:
+       case AI_TD_BUILT_IN:
            return new TDBuiltInAI(INVALID, frame_skip, nullptr, ai_comm);
        case AI_TD_NN:
            return new TDTrainedAI(INVALID, frame_skip, nullptr, ai_comm, get_ai(game_idx, frame_skip, backup_ai_type, AI_INVALID, options, input_ai_comm));

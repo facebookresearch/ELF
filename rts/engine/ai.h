@@ -51,7 +51,7 @@ public:
     void SetId(PlayerId id) {
         on_set_id(id);
         _player_id = id;
-        if (rule_actor() != nullptr) rule_actor()->SetPlayerId(id); 
+        if (rule_actor() != nullptr) rule_actor()->SetPlayerId(id);
     }
 
     void SetCmdReceiver(CmdReceiver *receiver) {
@@ -63,25 +63,25 @@ public:
     void SendComment(const string&);
 
     // Get called when the bot is allowed to act.
-    virtual bool Act(const GameEnv &env, bool must_act = false) { 
+    virtual bool Act(const GameEnv &env, bool must_act = false) {
         (void)env;
         (void)must_act;
-        return true; 
+        return true;
     }
 
     // Get called when we start a new game.
     virtual void Reset() { }
 
     // Used to plot the feature extracted by the AI.
-    virtual string PlotStructuredState(const GameEnv &env) const { 
+    virtual string PlotStructuredState(const GameEnv &env) const {
         (void)env;
-        return ""; 
+        return "";
     }
 
     virtual bool NeedAct(Tick tick) const { return tick % _frame_skip == 0; }
     virtual void SetFactory(std::function<AI* (int)> factory) { (void)factory; }
 
-    // Get internal state. 
+    // Get internal state.
     // [TODO]: Not a good interface..
     virtual vector<int> GetState() const { return vector<int>(); }
 
@@ -95,7 +95,7 @@ public:
 };
 
 // A simple AI with AIComm
-template <typename AIComm, typename ExtGame> 
+template <typename AIComm, typename ExtGame>
 class AIWithComm : public AI {
 protected:
     std::unique_ptr<AIComm> _ai_comm;
@@ -105,14 +105,14 @@ protected:
 
     // This function is called by Act.
     // In specific situations (e.g., MCTS), it is used separately to get the value of the current situation.
-    bool send_data_wait_reply(const GameEnv& env) const;
+    bool send_data_wait_reply(const GameEnv& env);
 
     string plot_structured_state(const ExtGame &game) const;
 
-    virtual void on_save_data(ExtGame *game) const { (void)game; }
+    virtual void on_save_data(ExtGame *game) { (void)game; }
 
     virtual bool need_structured_state(Tick) const { return _ai_comm != nullptr; }
-    virtual void save_structured_state(const GameEnv &env, ExtGame *game) const { 
+    virtual void save_structured_state(const GameEnv &env, ExtGame *game) const {
         (void)env;
         (void)game;
     }
@@ -148,7 +148,6 @@ bool AIWithComm<AIComm, ExtGame>::Act(const GameEnv &env, bool must_act) {
         // For trainable bot, compute_structured_state sends the state to the model,
         // and the model makes a decision, which drives Act(). We call GetAction to wait until
         // an action (or information relevant to the action) is returned.
-        // cout << "Construct the structured state" << endl;
         // Save structure in the bot.
         perform_action = send_data_wait_reply(env);
     }
@@ -159,12 +158,11 @@ bool AIWithComm<AIComm, ExtGame>::Act(const GameEnv &env, bool must_act) {
 }
 
 template <typename AIComm, typename ExtGame>
-bool AIWithComm<AIComm, ExtGame>::send_data_wait_reply(const GameEnv& env) const {
+bool AIWithComm<AIComm, ExtGame>::send_data_wait_reply(const GameEnv& env) {
     _ai_comm->Prepare();
     ExtGame *data = _ai_comm->GetData();
     save_structured_state(env, data);
     on_save_data(data);
-
     // cout << PlotStructuredState(*_ai_comm->GetData()) << endl;
     return _ai_comm->SendDataWaitReply();
 }
@@ -186,4 +184,3 @@ string AIWithComm<AIComm, ExtGame>::PlotStructuredState(const GameEnv &env) cons
     // Then we plot it.
     return plot_structured_state(game);
 }
-

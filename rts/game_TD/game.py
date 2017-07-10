@@ -1,10 +1,3 @@
-# Copyright (c) 2017-present, Facebook, Inc.
-# All rights reserved.
-#
-# This source code is licensed under the BSD-style license found in the
-# LICENSE file in the root directory of this source tree. An additional grant
-# of patent rights can be found in the PATENTS file in the same directory.
-
 import minirts
 from datetime import datetime
 
@@ -85,7 +78,7 @@ class Loader:
         # sampled action and and value will be filled from the reply.
         name2idx["actor"] = len(desc)
         desc.append((
-            dict(id="", s=str(num_unittype+8), r0="", r1="", last_r="", last_terminal="", _batchsize=str(args.batchsize), _T="1"),
+            dict(id="", s=str(2), r0="", r1="", last_r="", last_terminal="", _batchsize=str(args.batchsize), _T="1"),
             dict(rv="", pi=str(num_action), V="1", a="1", _batchsize=str(args.batchsize), _T="1")
         ))
 
@@ -95,7 +88,7 @@ class Loader:
             # models) and reward.
             name2idx["train"] = len(desc)
             desc.append((
-                dict(rv="", id="", pi=str(num_action), s=str(num_unittype+8),
+                dict(rv="", id="", pi=str(num_action), s=str(2),
                      r0="", r1="", a="1", r="1", V="1", seq="", terminal="",
                      _batchsize=str(args.batchsize), _T=str(args.T)),
                 None

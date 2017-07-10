@@ -22,7 +22,7 @@
 #define AI_MCTS_VALUE 4
 #define AI_FLAG_NN 5
 #define AI_FLAG_SIMPLE 6
-#define AI_TD_BULIT_IN 7
+#define AI_TD_BUILT_IN 7
 #define AI_TD_NN 8
 
 #define ACTION_GLOBAL 0
@@ -122,6 +122,9 @@ struct ExtGame {
     std::vector<std::vector<float>> resources;
 
     float last_reward;
+    int r0;
+    int r1;
+    int flag_x;
 };
 
 struct Reply {
