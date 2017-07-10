@@ -15,7 +15,7 @@ If you have both python2 and python3 installed, `PYTHON_CONFIG=[your python conf
 
 Performance     
 ===============
-You should be able to get 650 mean/864 max, after 12 hours training with 16 CPU and 1 GPU.
+You should be able to get ~630 mean/864 max, after 12 hours training with 16 CPU and 1 GPU.
 
 
 Training  
@@ -31,8 +31,12 @@ python3 run.py
     —-num_games 1024        # Num of concurrent games.
     --tqdm                  # If you want to show nice progress bar. 
 ```
+Here is an example pretrained model [link](http://yuandong-tian.com/atari_breakout.bin).
 
+Evaluation  
+==============
 To evaluate, try the following command:
+
 ```bash
 eval_only=1 game=../atari/game model=actor_critic model_file=../atari/model \ 
 python3 run.py
@@ -44,3 +48,33 @@ python3 run.py
     --num_eval 500          # Number of episodes to be evaluated. 
 ```
 
+Here is a sample output using the example pre-trained model:
+
+```
+$ eval_only=1 game=../atari/game model_file=../atari/model model=actor_critic taskset -c 0-11 python3 run.py --num_games 128 --batchsize 32 --tqdm --load model_breakout.bin --rom_file breakout.bin --reward_clip -1 --num_eval 500
+
+Namespace(T=6, actor_only=False, batchsize=32, discount=0.99, entropy_ratio=0.01, epsilon=0.0, eval=False, eval_freq=10, eval_gpu=1, frame_skip=4, freq_update=1, game_multi=None, gpu=None, grad_clip_norm=None, greedy=False, hist_len=4, load='/mnt/vol/gfsai-oregon/ai-group/users/yuandong/cmd/devgpu194.prn2.facebook.com/t1496800963_20170606_190243/save-101623.bin', min_prob=1e-06, num_episode=10000, num_eval=500, num_games=128, num_minibatch=5000, record_dir='./record', reward_clip=-1, rom_dir='../atari', rom_file='breakout.bin', sample_node='pi', sample_policy='epsilon-greedy', save_dir=None, save_prefix='save', stats='rewards', tqdm=True, verbose_collector=False, verbose_comm=False, wait_per_group=False)
+A.L.E: Arcade Learning Environment (version 0.5.1)
+[Powered by Stella]
+Use -help for help screen.
+Warning: couldn't load settings file: ./ale.cfg
+Game console created:
+  ROM file:  ../atari/breakout.bin
+  Cart Name: Breakout - Breakaway IV (1978) (Atari)
+  Cart MD5:  f34f08e5eb96e500e851a80be3277a56
+  Display Format:  AUTO-DETECT ==> NTSC
+  ROM Size:        2048
+  Bankswitch Type: AUTO-DETECT ==> 2K
+
+Running ROM file...
+Random seed is 55070671
+Action set: 0 1 3 4
+Version:  319c862befeac120903907474c6be205877f1ff1_
+Num Actions:  4
+Load from model_breakout.bin
+Action set: 0 1 3 4
+Version:  319c862befeac120903907474c6be205877f1ff1_
+Num Actions:  4
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 500/500 [15:45<00:00,  1.93s/it]
+str_reward: [0] Reward: 643.85/500
+```

@@ -107,9 +107,6 @@ struct ExtGame {
     int tick;
     int winner;
     bool terminated;
-
-    // How many round of games have been played
-    int game_counter;
     int player_id;
 
     // Extra data.

@@ -192,7 +192,6 @@ public:
     void FillHeader(const CmdReceiver& receiver, T *game) const {
         save_class::SetTick(receiver.GetTick(), game);
         save_class::SetWinner(_winner_id, game);
-        save_class::SetGameCounter(_game_counter, game);
         save_class::SetTermination(_terminated, game);
     }
 

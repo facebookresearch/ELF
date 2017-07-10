@@ -77,9 +77,10 @@ context.Stop()
 Dependency    
 ===============
 
-C++ compiler with C++11 support (e.g., gcc 4.9) is required. The following libraries are required:
+C++ compiler with C++11 support (e.g., gcc >= 4.9) is required. The following libraries are required:
 ```
 tbb
+tqdm
 ```
 
 Reference  

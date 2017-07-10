@@ -38,9 +38,11 @@
 template <typename Data, typename Reply>
 struct InfoT {
     // Meta info for this game.
-    // Always
     // Current sequence number.
     int seq = 0;    // seq * frame_skip == tick
+
+    // How many games have been played.
+    int game_counter = 0;
 
     // Hash code for current data.
     unsigned long hash_code = 0;
@@ -54,7 +56,7 @@ struct InfoT {
     // Reply (action, etc)
     Reply reply;
 
-    REGISTER_PYBIND_FIELDS(seq, hash_code, data, reply_version, reply);
+    REGISTER_PYBIND_FIELDS(seq, game_counter, hash_code, data, reply_version, reply);
 };
 
 class CommStats {
@@ -329,6 +331,7 @@ public:
         // we move the history forward.
         if (_history.full()) _history.Pop();
         curr().seq = _seq ++;
+        curr().game_counter = _game_counter;
     }
 
     const MetaInfo &GetMeta() const { return _meta; }

@@ -1,0 +1,6 @@
+*.so
+*.o
+*.d
+*.bin
+*__pycache__*
+tags

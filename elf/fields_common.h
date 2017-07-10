@@ -55,7 +55,8 @@ public: \
 class FieldLastTerminal : public FieldT<AIComm, type> { \
 public: \
     void ToPtr(int batch_idx, const AIComm& ai_comm) override { \
-        *this->addr(batch_idx) = ai_comm.newest(this->_hist_loc).seq == 0 ? 1 : 0; \
+        const auto &record = ai_comm.newest(this->_hist_loc); \
+        *this->addr(batch_idx) = (record.seq == 0 && record.game_counter > 0) ? 1 : 0; \
     } \
 }
 
@@ -65,7 +66,10 @@ public: \
     void ToPtr(int batch_idx, const AIComm& ai_comm) override { \
       auto *target = this->addr(batch_idx); \
       if (this->_hist_loc == 0) *target = 0; \
-      else *target = ai_comm.newest(this->_hist_loc - 1).seq == 0 ? 1: 0; \
+      else { \
+        const auto &record = ai_comm.newest(this->_hist_loc - 1); \
+        *target = (record.seq == 0 && record.game_counter > 0) ? 1: 0; \
+      } \
     } \
 }
 
