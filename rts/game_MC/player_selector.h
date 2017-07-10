@@ -11,7 +11,7 @@
 
 class PlayerSelector {
 public:
-    static OmniAI* GetPlayer(std::string player, int frame_skip) {
+    static AI* GetPlayer(std::string player, int frame_skip) {
         if (player == "simple") return new SimpleAI(INVALID, frame_skip, nullptr);
         else if (player == "hit_and_run") return new HitAndRunAI(INVALID, frame_skip, nullptr);
         else {

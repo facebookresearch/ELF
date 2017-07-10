@@ -12,10 +12,10 @@
 #include <czmq.h>
 #include "../../vendor/CZMQ-ZWSSock/zwssock.h"
 
-#include "../engine/omni_ai.h"
+#include "../engine/ai.h"
 #include "raw2cmd.h"
 
-class TCPAI : public OmniAI {
+class TCPAI : public AI {
 private:
     RawToCmd _raw_converter;
     int _vis_after;
@@ -29,13 +29,13 @@ private:
 
 protected:
     void on_set_id(PlayerId id) override { 
-        this->OmniAI::on_set_id(id);
+        this->AI::on_set_id(id);
         _raw_converter.SetId(id); 
     }
 
     bool send_cmd_anyway() const override { 
         if (_player_id == INVALID) return true; 
-        else return this->OmniAI::send_cmd_anyway();
+        else return this->AI::send_cmd_anyway();
     }
 
 public:
@@ -43,7 +43,7 @@ public:
     
     // If player_id == INVALID, then it will send the full information.
     TCPAI(PlayerId id, int vis_after, char *address, CmdReceiver *receiver)
-        : OmniAI(id, 1, receiver), _raw_converter(id), _vis_after(vis_after) {
+        : AI(id, 1, receiver), _raw_converter(id), _vis_after(vis_after) {
 
         _ctx = zctx_new();
         _sock = zwssock_new_router(_ctx);

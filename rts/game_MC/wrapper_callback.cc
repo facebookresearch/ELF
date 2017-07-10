@@ -15,7 +15,7 @@
 #include "ai.h"
 
 typedef TrainedAI2 TrainAIType;
-static OmniAI *get_ai(int game_idx, int frame_skip, int ai_type, int backup_ai_type,
+static AI *get_ai(int game_idx, int frame_skip, int ai_type, int backup_ai_type,
     const PythonOptions &options, GC::AIComm *input_ai_comm, bool use_ai_comm = false /*, int *opponent_ai_type = INVALID*/) {
     AIComm *ai_comm = use_ai_comm ? input_ai_comm : nullptr;
 
@@ -28,13 +28,13 @@ static OmniAI *get_ai(int game_idx, int frame_skip, int ai_type, int backup_ai_t
            return new TrainAIType(INVALID, frame_skip, nullptr, ai_comm, get_ai(game_idx, frame_skip, backup_ai_type, AI_INVALID, options, input_ai_comm));
        /*case AI_MCTS_VALUE:
        {
-           OmniAI *ai = new MCTS_VALUE_AI(INVALID, frame_skip, nullptr, ai_comm, options.mcts_threads, options.mcts_rollout_per_thread);
+           AI *ai = new MCTS_VALUE_AI(INVALID, frame_skip, nullptr, ai_comm, options.mcts_threads, options.mcts_rollout_per_thread);
            switch (opponent_ai_type) {
                case AI_SIMPLE:
-                   ai->SetFactory([&](int r) -> OmniAI* { return new SimpleAI(INVALID, r, nullptr, nullptr);});
+                   ai->SetFactory([&](int r) -> AI* { return new SimpleAI(INVALID, r, nullptr, nullptr);});
                    break;
                case AI_HIT_AND_RUN:
-                   ai->SetFactory([&](int r) -> OmniAI* { return new HitAndRunAI(INVALID, r, nullptr, nullptr);});
+                   ai->SetFactory([&](int r) -> AI* { return new HitAndRunAI(INVALID, r, nullptr, nullptr);});
                    break;
            }
            return ai;

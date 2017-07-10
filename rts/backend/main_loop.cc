@@ -14,7 +14,7 @@
 #include "../engine/unit.h"
 #include "../engine/game.h"
 #include "../engine/cmd_util.h"
-#include "../engine/omni_ai.h"
+#include "../engine/ai.h"
 #include "ai.h"
 #include "comm_ai.h"
 #include "player_selector.h"
@@ -36,7 +36,7 @@
 using Parser = CmdLineUtils::CmdLineParser;
 
 bool add_players(const string &args, int frame_skip, RTSGame *game) {
-    vector<OmniAI*> bots;
+    vector<AI*> bots;
     //bool mcts = false;
     for (const auto& player : split(args, ',')) {
         cout << "Dealing with player = " << player << endl;
@@ -58,11 +58,11 @@ bool add_players(const string &args, int frame_skip, RTSGame *game) {
         }*/
         /*
         else if (player == "simple") {
-            //if (mcts) bots[0]->SetFactory([&](int r) -> OmniAI* { return new SimpleAI(INVALID, r, nullptr, nullptr);});
+            //if (mcts) bots[0]->SetFactory([&](int r) -> AI* { return new SimpleAI(INVALID, r, nullptr, nullptr);});
             bots.push_back(new SimpleAI(INVALID, frame_skip, nullptr));
         }
         else if (player == "hit_and_run") {
-            //if (mcts) bots[0]->SetFactory([&](int r) -> OmniAI* { return new HitAndRunAI(INVALID, r, nullptr, nullptr);});
+            //if (mcts) bots[0]->SetFactory([&](int r) -> AI* { return new HitAndRunAI(INVALID, r, nullptr, nullptr);});
             bots.push_back(new HitAndRunAI(INVALID, frame_skip, nullptr));
         }*/
         else if (player.find("spectator") == 0) {
@@ -70,11 +70,11 @@ bool add_players(const string &args, int frame_skip, RTSGame *game) {
             int tick_start = (params.size() == 1 ? 0 : std::stoi(params[1]));
             game->AddSpectator(new TCPAI(INVALID, tick_start, (char *)"tcp://127.0.0.1:8000", game->GetCmdReceiver()));
         }
-        else if (player == "dummy") bots.push_back(new OmniAI(INVALID, frame_skip, nullptr));
+        else if (player == "dummy") bots.push_back(new AI(INVALID, frame_skip, nullptr));
 
         /*
         else if (player == "flag_simple") {
-            //if (mcts) bots[0]->SetFactory([&](int r) -> OmniAI* { return new FlagSimpleAI(INVALID, r, nullptr, nullptr);});
+            //if (mcts) bots[0]->SetFactory([&](int r) -> AI* { return new FlagSimpleAI(INVALID, r, nullptr, nullptr);});
             bots.push_back(new FlagSimpleAI(INVALID, frame_skip, nullptr));
         }*/
         //else if (player == "td_simple") bots.push_back(new TDSimpleAI(INVALID, frame_skip, nullptr));

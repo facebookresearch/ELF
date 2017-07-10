@@ -7,13 +7,13 @@
 * of patent rights can be found in the PATENTS file in the same directory.
 */
 
-#include "omni_ai.h"
+#include "ai.h"
 #include "float.h"
 #include "cmd.gen.h"
 //#include "minirts2_state.h"
 //#include "minirts3_state.h"
 
-bool OmniAI::gather_decide(const GameEnv &env, std::function<bool (const GameEnv&, string *, AssignedCmds *)> func) {
+bool AI::gather_decide(const GameEnv &env, std::function<bool (const GameEnv&, string *, AssignedCmds *)> func) {
     string state_string;
     AssignedCmds assigned_cmds;
 
@@ -32,7 +32,7 @@ bool OmniAI::gather_decide(const GameEnv &env, std::function<bool (const GameEnv
     return act_success;
 }
 
-void OmniAI::actual_send_cmds(const GameEnv &env, AssignedCmds &assigned_cmds) {
+void AI::actual_send_cmds(const GameEnv &env, AssignedCmds &assigned_cmds) {
     // Finally send these commands.
     for (auto it = assigned_cmds.begin(); it != assigned_cmds.end(); ++it) {
         const Unit *u = env.GetUnit(it->first);
@@ -45,7 +45,7 @@ void OmniAI::actual_send_cmds(const GameEnv &env, AssignedCmds &assigned_cmds) {
     }
 }
 
-void OmniAI::SendComment(const string& s) {
+void AI::SendComment(const string& s) {
     // Finally send these commands.
     if (_receiver != nullptr) {
         auto cmt = "[" + std::to_string(_player_id) + "] " + s;

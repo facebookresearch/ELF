@@ -45,10 +45,10 @@ RTSGame::~RTSGame() {
     }
 }
 
-void RTSGame::AddBot(OmniAI *bot) {
+void RTSGame::AddBot(AI *bot) {
     bot->SetId(_bots.size());
     bot->SetCmdReceiver(&_cmd_receiver);
-    _bots.push_back(unique_ptr<OmniAI>(bot));
+    _bots.push_back(unique_ptr<AI>(bot));
     _env.AddPlayer(PV_KNOW_ALL);
 }
 
@@ -57,7 +57,7 @@ void RTSGame::RemoveBot() {
     _env.RemovePlayer();
 }
 
-void RTSGame::AddSpectator(OmniAI *spectator) {
+void RTSGame::AddSpectator(AI *spectator) {
     if (_spectator.get() == nullptr) {
         _spectator.reset(spectator);
     }

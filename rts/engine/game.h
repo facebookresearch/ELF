@@ -23,7 +23,7 @@
 #include <queue>
 #include <set>
 #include "game_env.h"
-#include "omni_ai.h"
+#include "ai.h"
 
 struct RTSGameOptions {
     // A map file that specifies the map, the terrain
@@ -120,10 +120,10 @@ struct RTSGameOptions {
 class RTSGame {
 private:
     // Spectator
-    unique_ptr<OmniAI> _spectator;
+    unique_ptr<AI> _spectator;
 
     // AIs
-    vector<unique_ptr<OmniAI> > _bots;
+    vector<unique_ptr<AI> > _bots;
 
     // Game Env.
     GameEnv _env;
@@ -175,9 +175,9 @@ public:
     void Reset();
 
     // Add and remove bot.
-    void AddBot(OmniAI *bot);
+    void AddBot(AI *bot);
     void RemoveBot();
-    void AddSpectator(OmniAI *spectator);
+    void AddSpectator(AI *spectator);
     // Start the game.
     bool PrepareGame();
     PlayerId MainLoop(const std::atomic_bool *done = nullptr);

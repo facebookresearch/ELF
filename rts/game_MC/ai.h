@@ -9,14 +9,14 @@
 
 #pragma once
 
-#include "../engine/omni_ai.h"
+#include "../engine/ai.h"
 #include "python_options.h"
 #include "mc_rule_actor.h"
 
 using Context = ContextT<PythonOptions, ExtGame, Reply>;
 using AIComm = AICommT<Context>;
 
-class AIBase : public OmniAIWithComm<AIComm, ExtGame> {
+class AIBase : public AIWithComm<AIComm, ExtGame> {
 protected:
     // Feature extraction.
     void save_structured_state(const GameEnv &env, ExtGame *game) const override;
@@ -24,7 +24,7 @@ protected:
 public:
     AIBase() { }
     AIBase(PlayerId id, int frameskip, CmdReceiver *receiver, AIComm *ai_comm = nullptr) 
-        : OmniAIWithComm<AIComm, ExtGame>(id, frameskip, receiver, ai_comm) {
+        : AIWithComm<AIComm, ExtGame>(id, frameskip, receiver, ai_comm) {
     }
 };
 
@@ -34,7 +34,7 @@ private:
     // Backup AI.
     // Used when we want the default ai to play for a while and then TrainedAI can take over.
     Tick _backup_ai_tick_thres;
-    std::unique_ptr<OmniAI> _backup_ai;
+    std::unique_ptr<AI> _backup_ai;
     MCRuleActor _mc_rule_actor;
 
 protected:
@@ -67,7 +67,7 @@ protected:
     RuleActor *rule_actor() override { return &_mc_rule_actor; }
 
 public:
-    TrainedAI2(PlayerId id, int frame_skip, CmdReceiver *receiver, AIComm *ai_comm, OmniAI *backup_ai = nullptr)
+    TrainedAI2(PlayerId id, int frame_skip, CmdReceiver *receiver, AIComm *ai_comm, AI *backup_ai = nullptr)
       : AIBase(id, frame_skip, receiver, ai_comm), _backup_ai_tick_thres(0) {
           if (ai_comm == nullptr) {
               throw std::range_error("TrainedAI2: ai_comm cannot be nullptr!");

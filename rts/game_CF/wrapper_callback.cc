@@ -15,7 +15,7 @@
 #include "ai.h"
 
 typedef FlagTrainedAI TrainAIType;
-static OmniAI *get_ai(int game_idx, int frame_skip, int ai_type, int backup_ai_type,
+static AI *get_ai(int game_idx, int frame_skip, int ai_type, int backup_ai_type,
     const PythonOptions &options, GC::AIComm *input_ai_comm, bool use_ai_comm = false) {
     AIComm *ai_comm = use_ai_comm ? input_ai_comm : nullptr;
 

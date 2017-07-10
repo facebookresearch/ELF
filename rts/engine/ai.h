@@ -6,9 +6,7 @@
 * LICENSE file in the root directory of this source tree. An additional grant
 * of patent rights can be found in the PATENTS file in the same directory.
 */
-
-#ifndef _OMNI_AI_H_
-#define _OMNI_AI_H_
+#pragma once
 
 #include "../elf/comm_template.h"
 
@@ -18,7 +16,7 @@
 #include <chrono>
 #include <algorithm>
 
-class OmniAI {
+class AI {
 protected:
     PlayerId _player_id;
     CmdReceiver *_receiver;
@@ -46,8 +44,8 @@ protected:
     bool gather_decide(const GameEnv &env, std::function<bool (const GameEnv&, string *, AssignedCmds *)> func);
 
 public:
-    OmniAI() : _player_id(INVALID), _receiver(nullptr), _frame_skip(1) { }
-    OmniAI(PlayerId player_id, int frameskip, CmdReceiver *receiver) : _player_id(player_id), _receiver(receiver), _frame_skip(frameskip) { }
+    AI() : _player_id(INVALID), _receiver(nullptr), _frame_skip(1) { }
+    AI(PlayerId player_id, int frameskip, CmdReceiver *receiver) : _player_id(player_id), _receiver(receiver), _frame_skip(frameskip) { }
     PlayerId GetId() const { return _player_id; }
 
     void SetId(PlayerId id) {
@@ -81,7 +79,7 @@ public:
     }
 
     virtual bool NeedAct(Tick tick) const { return tick % _frame_skip == 0; }
-    virtual void SetFactory(std::function<OmniAI* (int)> factory) { (void)factory; }
+    virtual void SetFactory(std::function<AI* (int)> factory) { (void)factory; }
 
     // Get internal state. 
     // [TODO]: Not a good interface..
@@ -92,16 +90,16 @@ public:
     virtual bool IsUnitSelected(UnitId) const { return false; }
     virtual vector<int> GetAllSelectedUnits() const { return vector<int>(); }
 
-    SERIALIZER_BASE(OmniAI, _player_id);
-    SERIALIZER_ANCHOR(OmniAI);
+    SERIALIZER_BASE(AI, _player_id);
+    SERIALIZER_ANCHOR(AI);
 };
 
 // A simple AI with AIComm
 template <typename AIComm, typename ExtGame> 
-class OmniAIWithComm : public OmniAI {
+class AIWithComm : public AI {
 protected:
     std::unique_ptr<AIComm> _ai_comm;
-    std::function<OmniAI* (int)> _factory;
+    std::function<AI* (int)> _factory;
 
     vector<int> _state;
 
@@ -120,9 +118,9 @@ protected:
     }
 
 public:
-    OmniAIWithComm() { }
-    OmniAIWithComm(PlayerId id, int frame_skip, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
-        : OmniAI(id, frame_skip, receiver), _ai_comm(ai_comm) {
+    AIWithComm() { }
+    AIWithComm(PlayerId id, int frame_skip, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
+        : AI(id, frame_skip, receiver), _ai_comm(ai_comm) {
     }
     bool Act(const GameEnv &env, bool must_act = false) override;
 
@@ -131,15 +129,15 @@ public:
 
     // Save game state to communicate with python wrapper.
     string PlotStructuredState(const GameEnv &env) const override;
-    void SetFactory(std::function<OmniAI* (int)> factory) override { _factory = factory; }
+    void SetFactory(std::function<AI* (int)> factory) override { _factory = factory; }
 
     void SetState(vector<int> state) { _state = state; }
     vector<int> GetState() const override { return _state; }
 };
 
-///////////////////////// OmniAIWithComm //////////////////////
+///////////////////////// AIWithComm //////////////////////
 template <typename AIComm, typename ExtGame>
-bool OmniAIWithComm<AIComm, ExtGame>::Act(const GameEnv &env, bool must_act) {
+bool AIWithComm<AIComm, ExtGame>::Act(const GameEnv &env, bool must_act) {
     Tick t = _receiver->GetTick();
     if (! must_act && ! NeedAct(t)) return false;
 
@@ -161,7 +159,7 @@ bool OmniAIWithComm<AIComm, ExtGame>::Act(const GameEnv &env, bool must_act) {
 }
 
 template <typename AIComm, typename ExtGame>
-bool OmniAIWithComm<AIComm, ExtGame>::send_data_wait_reply(const GameEnv& env) const {
+bool AIWithComm<AIComm, ExtGame>::send_data_wait_reply(const GameEnv& env) const {
     _ai_comm->Prepare();
     ExtGame *data = _ai_comm->GetData();
     save_structured_state(env, data);
@@ -172,7 +170,7 @@ bool OmniAIWithComm<AIComm, ExtGame>::send_data_wait_reply(const GameEnv& env) c
 }
 
 template <typename AIComm, typename ExtGame>
-string OmniAIWithComm<AIComm, ExtGame>::plot_structured_state(const ExtGame &game) const {
+string AIWithComm<AIComm, ExtGame>::plot_structured_state(const ExtGame &game) const {
     std::stringstream ss;
     ss << "BotId: " << _player_id << endl;
     // TODO: Need to implement.
@@ -182,11 +180,10 @@ string OmniAIWithComm<AIComm, ExtGame>::plot_structured_state(const ExtGame &gam
 }
 
 template <typename AIComm, typename ExtGame>
-string OmniAIWithComm<AIComm, ExtGame>::PlotStructuredState(const GameEnv &env) const {
+string AIWithComm<AIComm, ExtGame>::PlotStructuredState(const GameEnv &env) const {
     ExtGame game;
     save_structured_state(env, &game);
     // Then we plot it.
     return plot_structured_state(game);
 }
 
-#endif

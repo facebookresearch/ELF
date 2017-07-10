@@ -23,8 +23,8 @@ private:
     const PythonOptions &_options;
     GC::AIComm *_ai_comm;
 
-    OmniAI *_opponent;
-    OmniAI *_ai;
+    AI *_opponent;
+    AI *_ai;
 
     float _latest_start;
     int _simple_ratio;

@@ -9,16 +9,16 @@
 
 #pragma once
 
-#include "../engine/omni_ai.h"
+#include "../engine/ai.h"
 #include "cf_rule_actor.h"
 
 // FlagTrainedAI for Capture the Flag,  connected with a python wrapper / ELF.
-class FlagTrainedAI : public OmniAI {
+class FlagTrainedAI : public AI {
 private:
     // Backup AI.
     // Used when we want the default ai to play for a while and then TrainedAI can take over.
     Tick _backup_ai_tick_thres;
-    std::unique_ptr<OmniAI> _backup_ai;
+    std::unique_ptr<AI> _backup_ai;
     CFRuleActor _cf_rule_actor;
     void set_rule_actor() override { _rule_actor = &_cf_rule_actor; }
     bool on_act(const GameEnv &env) override;
@@ -27,8 +27,8 @@ private:
     void on_save_data(ExtGame *game) const override { game->ai_start_tick = _backup_ai_tick_thres; }
 
 public:
-    FlagTrainedAI(PlayerId id, int frame_skip, CmdReceiver *receiver, AIComm *ai_comm, OmniAI *backup_ai = nullptr)
-      : OmniAI(id, frame_skip, receiver, ai_comm), _backup_ai_tick_thres(0) {
+    FlagTrainedAI(PlayerId id, int frame_skip, CmdReceiver *receiver, AIComm *ai_comm, AI *backup_ai = nullptr)
+      : AI(id, frame_skip, receiver, ai_comm), _backup_ai_tick_thres(0) {
           if (ai_comm == nullptr) {
               throw std::range_error("FlagTrainedAI: ai_comm cannot be nullptr!");
           }
@@ -58,7 +58,7 @@ public:
 };
 
 // FlagSimple AI, rule-based AI for Capture the Flag
-class FlagSimpleAI : public OmniAI {
+class FlagSimpleAI : public AI {
 private:
     bool on_act(const GameEnv &env) override;
     CFRuleActor _cf_rule_actor;
@@ -68,11 +68,11 @@ public:
     FlagSimpleAI() {
     }
     FlagSimpleAI(PlayerId id, int frame_skip, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
-        : OmniAI(id, frame_skip, receiver, ai_comm) {
+        : AI(id, frame_skip, receiver, ai_comm) {
           set_rule_actor();
           _rule_actor->SetReceiver(receiver);
           _rule_actor->SetPlayerId(id);
     }
 
-    SERIALIZER_DERIVED(FlagSimpleAI, OmniAI, _state);
+    SERIALIZER_DERIVED(FlagSimpleAI, AI, _state);
 };

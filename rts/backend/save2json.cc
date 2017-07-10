@@ -9,7 +9,7 @@
 
 #include "save2json.h"
 #include "../engine/game_env.h"
-#include "../engine/omni_ai.h"
+#include "../engine/ai.h"
 #include "../engine/cmd.h"
 
 static inline void set_p(const PointF &p, json *location) {
@@ -102,7 +102,7 @@ void save2json::SaveStats(const Player& player, json *game) {
     (*game)["players"].push_back(pp);
 }
 
-void save2json::Save(const OmniAI &bot, json *game) {
+void save2json::Save(const AI &bot, json *game) {
     json mbot;
     vector<int> selected = bot.GetAllSelectedUnits();
     for (int id : selected) {
