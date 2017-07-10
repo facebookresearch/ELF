@@ -129,7 +129,7 @@ namespace ctpl {
 
         // empty the queue
         void clear_queue() {
-            std::function<void(int id)> * _f;
+            std::function<void(int id)> * _f = nullptr;
             while (this->q.pop(_f))
                 delete _f; // empty the queue
         }

@@ -40,19 +40,19 @@ private:
 protected:
     bool on_act(const GameEnv &env) override;
 
-    void on_set_id(PlayerId id) override { 
-        this->AIBase::on_set_id(id); 
-        if (_backup_ai != nullptr) _backup_ai->SetId(id); 
+    void on_set_id(PlayerId id) override {
+        this->AIBase::on_set_id(id);
+        if (_backup_ai != nullptr) _backup_ai->SetId(id);
     }
 
-    void on_set_cmd_receiver(CmdReceiver *receiver) override { 
-        this->AIBase::on_set_cmd_receiver(receiver);  
-        if (_backup_ai != nullptr) _backup_ai->SetCmdReceiver(receiver); 
+    void on_set_cmd_receiver(CmdReceiver *receiver) override {
+        this->AIBase::on_set_cmd_receiver(receiver);
+        if (_backup_ai != nullptr) _backup_ai->SetCmdReceiver(receiver);
     }
 
-    void on_save_data(ExtGame *game) const override { 
-        this->AIBase::on_save_data(game);  
-        game->ai_start_tick = _backup_ai_tick_thres; 
+    void on_save_data(ExtGame *game) override {
+        this->AIBase::on_save_data(game);
+        game->ai_start_tick = _backup_ai_tick_thres;
     }
 
     bool need_structured_state(Tick tick) const override {

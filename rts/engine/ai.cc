@@ -52,4 +52,3 @@ void AI::SendComment(const string& s) {
         _receiver->SendCmd(CmdBPtr(new CmdComment(INVALID, cmt)));
     }
 }
-
