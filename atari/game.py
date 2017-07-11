@@ -66,6 +66,13 @@ class Loader:
         # No reward needed, we only want to get input and return distribution of actions.
         # sampled action and and value will be filled from the reply.
         name2idx["actor"] = len(desc)
+
+        # Descriptor of each group.
+        #     desc = [(input_group0, reply_group0), (input_group1, reply_group1), ...]
+        # GC.Wait(0) will return a batch of game states in the same group.
+        # For example, if you register group 0 as the actor group, which has the history length of 1, and group 1 as the optimizer group which has the history length of T
+        # Then you can check the group id to decide which Python procedure to use to deal with the group, by checking their group_id.
+        # For self-play, we can register one group each player.
         desc.append((
             dict(id="", s=str(args.hist_len), last_r="", last_terminal="", _batchsize=str(args.batchsize), _T="1"),
             dict(rv="", pi=str(num_action), V="1", a="1", _batchsize=str(args.batchsize), _T="1")
@@ -81,6 +88,7 @@ class Loader:
                 None
             ))
 
+        # Initialize shared memory (between Python and C++) based on the specification defined by desc.
         inputs, replies = utils_elf.init_collectors(GC, co, desc, use_numpy=False)
 
         params = dict()

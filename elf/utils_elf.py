@@ -188,12 +188,14 @@ class GCWrapper:
             return self._cb[infos.gid](sel, sel_gpu, reply)
 
     def RunGroup(self, key):
+        # Wait group of a specific id
         self.infos = self.GC.WaitGroup(self.name2idx[key], 0)
         res = self._call(self.infos)
         self.GC.Steps(self.infos)
         return res
 
     def Run(self):
+        # Wait group of an arbitrary id. The returned batch are always from the same group, but the group id of the batch may be arbitrary. 
         self.infos = self.GC.Wait(0)
         res = self._call(self.infos)
         self.GC.Steps(self.infos)

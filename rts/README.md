@@ -43,7 +43,15 @@ Simply run `minirts` to see switches.
 
 Self-play
 -------------
-Run `./minirts selfplay` for a simple self-play between two rule-based AIs. Use switch `--seed [num]` to change the initial game seed, which affects the initial quantities and locations of buildings and units for each player.
+For game_MC:
+Run `./minirts selfplay` for a simple self-play between two identical rule-based AIs (SimpleAI). Use switch `--seed [num]` to change the initial game seed, which affects the initial quantities and locations of buildings and units for each player.
+Run `./minirts selfplay2` for a self-play between different AIs. Player 1 utilizes hit-and-run strategy and is significantly stronger than player 0(SimpleAI).
+
+For game_CF:
+Run `./minirts flag_selfplay` for a simple selfplay of Capture the Flag game.
+
+For game_TD:
+Run `./minirts td_simple --max_tick 3000` for a simple Tower Defense game. 
 
 Visualization  
 -------------
@@ -62,7 +70,7 @@ and then open `./rts/frontend/minirts.html` in your browser. You should be able 
 Human versus AI  
 -----------------------
 
-Try `./minirts humanplay --vis_after 0` if you want to compete with the AI in the webpage.
+Try `./minirts humanplay --vis_after 0` if you want to compete with the AI in the webpage. This is only implemented for game_MC.
 
 Game play  
 ===================
