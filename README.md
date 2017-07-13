@@ -19,26 +19,15 @@ ELF has the following characteristics:
 
 * *Flexible*: Pairing between environments and actors is very flexible, e.g., one environment with one agent (e.g., Vanilla A3C), one environment with multiple agents (e.g., Self-play/MCTS), or multiple environment with one actor (e.g., BatchA3C, GA3C). Also, any game built on top of the RTS engine offers full access to its internal representation and dynamics. Besides efficient simulators, we also provide a lightweight yet powerful Reinforcement Learning framework. This framework can host most existing RL algorithms. In this open source release, we have provided state-of-the-art actor-critic algorithms, written in [PyTorch](https://github.com/pytorch/pytorch).
 
-Code Hierarchy  
+Documentation  
 =================
-
-ELF is organized as follows.
-![Hierarchy of ELF](hierarchy.png)
-
-* The folder `elf` contains the game-independent codebase to handle concurrent simulation.
-* The folder `atari` contains the wrapper and model for Atari games ([ALE](https://github.com/mgbellemare/Arcade-Learning-Environment) is required).  
-* The folder `rts/engine` contains the RTS engine. `rts/game_MC`, `rts/game_CF` and `rts/game_TD` are the three games built on top of the engine.  
-
 Check [here](http://yuandong-tian.com/html_elf) for detailed documentation.
 
 Basic Usage  
 ==============
-The pseudo code of ELF is the following.
-
-The initialization looks like the following:
+ELF is very easy to use. The initialization looks like the following:
 
 ```python
-
 # We run 1024 games concurrently.
 num_games = 1024
 
@@ -80,8 +69,7 @@ context.Stop()
 
 Dependency    
 ===============
-
-C++ compiler with C++11 support (e.g., gcc >= 4.9) is required. The following libraries are required:
+C++ compiler with C++11 support (e.g., gcc >= 4.9) is required. Python3.x is required. The following libraries are required:
 ```
 tbb
 tqdm
