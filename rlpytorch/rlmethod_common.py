@@ -5,7 +5,7 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-from rlmethod_base import *
+from .rlmethod_base import *
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
@@ -15,7 +15,7 @@ import math
 
 # Actor critic model.
 class ActorCritic(LearningMethod):
-    def _params(self):
+    def _args(self):
         return [
             ("entropy_ratio", dict(type=float, help="The entropy ratio we put on A3C", default=0.01)),
             ("grad_clip_norm", dict(type=float, help="Gradient norm clipping", default=None)),

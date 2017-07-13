@@ -20,10 +20,10 @@ You should be able to get ~630 mean/864 max, after 12 hours training with 16 CPU
 
 Training  
 =============
-To train a model in atari game, go to `[root]/rlpytorch` and run the following command:
+To train a model in atari game, go to `[root directory]` and run the following command:
 
 ```bash
-game=../atari/game model=actor_critic model_file=../atari/model \ 
+game=./atari/game model=actor_critic model_file=./atari/model \ 
 python3 run.py
     --rom_file [your rom]
     -—batchsize 128         # Batchsize
@@ -38,7 +38,7 @@ Evaluation
 To evaluate, try the following command:
 
 ```bash
-eval_only=1 game=../atari/game model=actor_critic model_file=../atari/model \ 
+eval_only=1 game=./atari/game model=actor_critic model_file=./atari/model \ 
 python3 run.py
     --num_games 128 --batchsize 32 --tqdm --eval_gpu [your gpu id]
     --rom_file [your rom]
@@ -51,9 +51,9 @@ python3 run.py
 Here is a sample output using the example pre-trained model:
 
 ```
-$ eval_only=1 game=../atari/game model_file=../atari/model model=actor_critic taskset -c 0-11 python3 run.py --num_games 128 --batchsize 32 --tqdm --load model_breakout.bin --rom_file breakout.bin --reward_clip -1 --num_eval 500
+$ eval_only=1 game=./atari/game model_file=./atari/model model=actor_critic taskset -c 0-11 python3 run.py --num_games 128 --batchsize 32 --tqdm --load model_breakout.bin --rom_file breakout.bin --reward_clip -1 --num_eval 500
 
-Namespace(T=6, actor_only=False, batchsize=32, discount=0.99, entropy_ratio=0.01, epsilon=0.0, eval=False, eval_freq=10, eval_gpu=1, frame_skip=4, freq_update=1, game_multi=None, gpu=None, grad_clip_norm=None, greedy=False, hist_len=4, load='model_breakout.bin', min_prob=1e-06, num_episode=10000, num_eval=500, num_games=128, num_minibatch=5000, record_dir='./record', reward_clip=-1, rom_dir='../atari', rom_file='breakout.bin', sample_node='pi', sample_policy='epsilon-greedy', save_dir=None, save_prefix='save', stats='rewards', tqdm=True, verbose_collector=False, verbose_comm=False, wait_per_group=False)
+Namespace(T=6, actor_only=False, batchsize=32, discount=0.99, entropy_ratio=0.01, epsilon=0.0, eval=False, eval_freq=10, eval_gpu=1, frame_skip=4, freq_update=1, game_multi=None, gpu=None, grad_clip_norm=None, greedy=False, hist_len=4, load='model_breakout.bin', min_prob=1e-06, num_episode=10000, num_eval=500, num_games=128, num_minibatch=5000, record_dir='./record', reward_clip=-1, rom_dir='./atari', rom_file='breakout.bin', sample_node='pi', sample_policy='epsilon-greedy', save_dir=None, save_prefix='save', stats='rewards', tqdm=True, verbose_collector=False, verbose_comm=False, wait_per_group=False)
 A.L.E: Arcade Learning Environment (version 0.5.1)
 [Powered by Stella]
 Use -help for help screen.

@@ -1,6 +1,12 @@
 *.so
+*.pyc
 *.o
 *.d
 *.bin
 *__pycache__*
 tags
+*.ropeproject*
+*.rep
+*.swp
+*.swo
+*.DS_Store

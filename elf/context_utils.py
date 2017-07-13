@@ -11,11 +11,11 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'rlpytorch'))
 from args_utils import ArgsProvider, args_loader
 
-class ContextParams:
+class ContextArgs:
     def __init__(self):
         self.args = ArgsProvider(
             call_from = self,
-            define_params = [
+            define_args = [
                 ("num_games", 1024),
                 ("batchsize", 128),
                 ("game_multi", dict(type=int, default=None)),
@@ -25,10 +25,10 @@ class ContextParams:
                 ("verbose_comm", dict(action="store_true")),
                 ("verbose_collector", dict(action="store_true"))
             ],
-            on_get_params = self._on_get_params
+            on_get_args = self._on_get_args
         )
 
-    def _on_get_params(self, args):
+    def _on_get_args(self, args):
         if args.eval:
             args.num_games = 1
             args.batchsize = 1

@@ -5,7 +5,7 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-from args_utils import ArgsProvider
+from .args_utils import ArgsProvider
 
 class ModelLoader:
     def __init__(self, model_class):

@@ -11,17 +11,17 @@ from datetime import datetime
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'elf'))
 import utils_elf
-from context_utils import ContextParams
+from context_utils import ContextArgs
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'rlpytorch'))
 from args_utils import ArgsProvider, args_loader
 
 class Loader:
     def __init__(self):
-        self.context_params = ContextParams()
+        self.context_args = ContextArgs()
 
         self.args = ArgsProvider(
-            define_params = [
+            define_args = [
                 ("handicap_level", 0),
                 ("latest_start", 1000),
                 ("latest_start_decay", 0.7),
@@ -36,15 +36,15 @@ class Loader:
                 ("ratio_change", 0),
                 ("actor_only", dict(action="store_true"))
             ],
-            more_params = ["batchsize", "T"],
-            child_providers = [ self.context_params.args ]
+            more_args = ["batchsize", "T"],
+            child_providers = [ self.context_args.args ]
         )
 
     def initialize(self):
         args = self.args
 
         co = minirts.ContextOptions()
-        self.context_params.initialize(co)
+        self.context_args.initialize(co)
 
         opt = minirts.Options()
         opt.seed = args.seed

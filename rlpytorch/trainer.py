@@ -5,15 +5,15 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-from rltimer import RLTimer
-from rlsampler import sample_multinomial, epsilon_greedy
+from .rltimer import RLTimer
+from .rlsampler import sample_multinomial, epsilon_greedy
 
 import os
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'elf'))
 import utils_elf
-from args_utils import ArgsProvider
-from parameter_server import SharedData, ParameterServer
+from .args_utils import ArgsProvider
+from .parameter_server import SharedData, ParameterServer
 
 import threading
 import tqdm
@@ -28,7 +28,7 @@ class Sampler:
     def __init__(self):
         self.args = ArgsProvider(
             call_from = self,
-            define_params = [
+            define_args = [
                 ("sample_policy", dict(type=str, choices=["epsilon-greedy", "multinomial", "uniform"], help="Sample policy", default="epsilon-greedy")),
                 ("sample_node", dict(type=str, default="pi")),
                 ("greedy", dict(action="store_true")),
@@ -51,17 +51,17 @@ class Trainer:
         self.last_time = None
         self.args = ArgsProvider(
             call_from = self,
-            define_params = [
+            define_args = [
                 ("freq_update", 1),
                 ("record_dir", "./record"),
                 ("save_prefix", "save"),
                 ("save_dir", dict(type=str, default=None)),
             ],
-            more_params = ["num_games", "batchsize", "num_minibatch"],
-            on_get_params = self._on_get_params
+            more_args = ["num_games", "batchsize", "num_minibatch"],
+            on_get_args = self._on_get_args
         )
 
-    def _on_get_params(self, _):
+    def _on_get_args(self, _):
         args = self.args
         args.save = (args.num_games == args.batchsize)
         if args.save and not os.path.exists(args.record_dir):
@@ -153,7 +153,7 @@ class SingleProcessRun:
     def __init__(self):
         self.args = ArgsProvider(
             call_from = self,
-            define_params = [
+            define_args = [
                 ("num_minibatch", 5000),
                 ("num_episode", 10000),
                 ("tqdm", dict(action="store_true")),
@@ -219,7 +219,7 @@ class EvaluationProcess(mp.Process):
         self.server = ParameterServer(2)
         self.args = ArgsProvider(
             call_from = self,
-            define_params = [
+            define_args = [
                 ("eval_freq", 10),
                 ("eval_gpu", 1),
             ]
@@ -262,7 +262,7 @@ class MultiProcessRun:
     def __init__(self):
         self.args = ArgsProvider(
             call_from = self,
-            define_params = [
+            define_args = [
                 ("num_minibatch", 5000),
                 ("num_episode", 10000),
                 ("num_process", 2),

@@ -14,12 +14,7 @@ from datetime import datetime
 import sys
 import os
 
-from trainer import Trainer, Sampler, MultiProcessRun, SingleProcessRun, EvaluationProcess
-from model_loader import ModelLoader
-from args_utils import ArgsProvider, args_loader
-
-from model_interface import ModelInterface
-from utils import load_module, WinRate, RewardCount
+from rlpytorch import *
 
 def remote_init(mi, gpu_id, args):
     rl_method = args.method_class(mi, args)

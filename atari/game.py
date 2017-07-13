@@ -19,18 +19,18 @@ import atari_game as atari
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'elf'))
 import utils_elf
-from context_utils import ContextParams
+from context_utils import ContextArgs
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'rlpytorch'))
 from args_utils import ArgsProvider, args_loader
 
 class Loader:
     def __init__(self):
-        self.context_params = ContextParams()
+        self.context_args = ContextArgs()
 
         self.args = ArgsProvider(
             call_from = self,
-            define_params = [
+            define_args = [
                 ("frame_skip", 4),
                 ("hist_len", 4),
                 ("rom_file", "pong.bin"),
@@ -38,14 +38,14 @@ class Loader:
                 ("reward_clip", 1),
                 ("rom_dir", os.path.dirname(__file__))
             ],
-            more_params = ["batchsize", "T"],
-            child_providers = [ self.context_params.args ]
+            more_args = ["batchsize", "T"],
+            child_providers = [ self.context_args.args ]
         )
 
     def initialize(self):
         args = self.args
         co = atari.ContextOptions()
-        self.context_params.initialize(co)
+        self.context_args.initialize(co)
 
         opt = atari.Options()
         opt.frame_skip = args.frame_skip

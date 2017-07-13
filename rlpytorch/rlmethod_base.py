@@ -7,16 +7,38 @@
 
 import abc
 from collections import defaultdict
-from utils import Stats
-from args_utils import ArgsProvider
+from .utils import Stats
+from .args_utils import ArgsProvider
 
 class LearningMethod:
     def __init__(self, mi=None, args=None):
+        '''Initialize a learning method. ``args`` encodes the hyperparameters that the learning method reads from the command line. For example
+        ::
+            args = [
+                ("T", 6),
+                ("use_gradient_clip", dict(action="store_true"))
+            ]
+
+        means that
+
+          * there is an argument ``T`` whose default value is ``6`` (int).
+          * there is a binary switch ``use_gradient_clip``.
+
+        When the second element of an entry in ``args`` is a dict, it will be used as the specification of ``ArgumentParser`` defined in :mod:`argparse`.
+        Once the arguments are loaded, they are accessible as attributes in ``self.args``. The class also call :func:`_init` so that the derived class
+        has a chance to initialize relevant variables.
+
+        Arguments:
+            mi (ModelInterface): The model to be updated using input batches.
+            args (list): The arguments used by the learning method.
+              If None (which is often the case), then :class:`LearningMethod`, as a base class, will automatically
+              call ``_args()`` of the derived class to get the arguments.
+        '''
         if args is None:
             self.args = ArgsProvider(
                 call_from = self,
-                define_params = self._params(),
-                on_get_params = self._init
+                define_args = self._args(),
+                on_get_args = self._init
             )
         else:
             self.args = args
@@ -30,24 +52,38 @@ class LearningMethod:
             self.model_interface = mi
 
     def set_model_interface(self, mi):
+        '''Set the model to be updated. '''
         self.model_interface = mi
 
-    def _params(self):
+    def _args(self):
+        '''Return the arguments that the learning method will read from the command line'''
         return []
 
     @abc.abstractmethod
     def _init(self, args):
+        '''The function is called when the learning method gets the arguments from the command line. Derived class overrides this function.
+        Arguments:
+            args(ArgsProvider): The arguments that have been read from the command line.
+        '''
         pass
 
     @abc.abstractmethod
     def update(self, batch):
-        ''' Return stats to show/accumulate, and variables to backprop '''
+        '''Compute the gradient of the model using ``batch``, and accumulate relevant statistics.
+        Note that all the arguments from command line are accessible as attributes in ``self.args``.
+        '''
         pass
 
     def add_cb(self, name, cb):
         self.cb[name] = cb
 
     def run(self, batch, update_params=True):
+        '''The method does the following
+
+          * Zero the gradient of the model.
+          * Compute the gradient with ``batch`` and accumulate statistics (call :func:`update`).
+          * If ``update_params == True``, update the parameters of the model.
+        '''
         self.model_interface.zero_grad()
         self.update(batch)
         # If update_params is False, we only compute the gradient, but not update the parameters.
