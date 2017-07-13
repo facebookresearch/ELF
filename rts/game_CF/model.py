@@ -8,9 +8,7 @@
 import torch
 import torch.nn as nn
 
-from model_base import *
-from rlmethod_forward import ForwardPrediction, ForwardPredictionSample
-from rlmethod_common import ActorCritic, Q_learning
+from rlpytorch import Model, ActorCritic
 
 class MiniRTSNet(Model):
     def __init__(self, args):

@@ -12,7 +12,7 @@ class ModelLoader:
         self.model_class = model_class
         self.args = ArgsProvider(
             call_from = self,
-            define_params = [
+            define_args = [
                 ("gpu", dict(type=str, help="gpu to use", default=None)),
                 ("load", dict(type=str, help="load model", default=None))
             ]

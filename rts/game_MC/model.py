@@ -8,8 +8,7 @@
 import torch
 import torch.nn as nn
 
-from model_base import *
-from rlmethod_common import ActorCritic
+from rlpytorch import Model, ActorCritic
 
 class MiniRTSNet(Model):
     def __init__(self, args):
