@@ -30,7 +30,7 @@ class ArgsProvider:
             on_get_args(lambda function that takes an argument of type :class:`ArgsProvider`): a callback function that will
               be invoked after the arguments are read from the command line.
             call_from(parent class instance): The parent class instance that calls :func:`__init__``. :class:`ArgsProvider` uses
-              the class name of ``call_from`` as the group name of the arguments specified by ``define_params``.
+              the class name of ``call_from`` as the group name of the arguments specified by ``define_args``.
             child_providers(list of :class:`ArgsProvider`): The current class instance also collects the arguments required by the instances from ``child_providers``.
         '''
 

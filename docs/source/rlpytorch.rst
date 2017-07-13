@@ -24,11 +24,6 @@ Architecture
 
     .. automethod:: __init__
 
-.. autoclass:: ArgsProvider
-    :members:
-
-    .. automethod:: __init__
-
 
 Example: Actor-Critic in 30 lines
 ---------------------------------
