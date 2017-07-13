@@ -29,7 +29,7 @@ ELF is organized as follows.
 * The folder `atari` contains the wrapper and model for Atari games ([ALE](https://github.com/mgbellemare/Arcade-Learning-Environment) is required).  
 * The folder `rts/engine` contains the RTS engine. `rts/game_MC`, `rts/game_CF` and `rts/game_TD` are the three games built on top of the engine.  
 
-Check (here)[http://yuandong-tian.com/html_elf] for detailed documentation.
+Check [here](http://yuandong-tian.com/html_elf) for detailed documentation.
 
 Basic Usage  
 ==============
