@@ -77,9 +77,30 @@ Besides, the batch contains the following infomation:
 
 And since the length of a batch is 2, ``batch[1]`` has the same structure, but is allocated in a separate memory region.
 
-Note that the types and dimensions of each tensor (except for the first one) is defined in the C++ wrapper. 
+Note that the meaning of each key and types and dimensions of each tensor (except for the first one) is defined in the C++ wrapper. 
 Depending on how the C++-wrapper is implemented, you can also send arguments in the description for each key. For example, 
 setting ``s="4"`` might mean you are using the last four frames as the input.  
+
+Here is a table of common keys and their meanings:
+
+=============  =========
+Key            Meaning
+=============  =========
+s              Game states
+a              Next action
+pi             Action probability
+V              Value function of the current state
+Q              Q function of the current state
+A              Advantage function of the current state
+r              The reward of leaving the current state with an action in this game environment
+last_r         The reward of leaving the last state with an action in this game environment
+terminal       Whether the current state is a terminal state
+last_terminal  Whether the last state is a terminal state
+id             Game environment id
+seq            Game environment sequence number. When a new episode starts, its sequence number is 0
+_batchsize     batchsize
+_T             History length
+=============  =========
 
 Register callback function
 --------------------------
