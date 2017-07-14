@@ -158,7 +158,7 @@ if __name__ == '__main__':
     else:
         eval_process = None
 
-    all_args = args_loader(parser, args_providers)
+    all_args = ArgsProvider.Load(parser, args_providers)
 
     GC = game.initialize()
     GC.setup_gpu(0)

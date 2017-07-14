@@ -17,12 +17,8 @@ import os
 import atari_game as atari
 
 import sys
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'elf'))
-import utils_elf
-from context_utils import ContextArgs
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'rlpytorch'))
-from args_utils import ArgsProvider, args_loader
+from elf import GCWrapper, ContextArgs
+from rlpytorch import ArgsProvider
 
 class Loader:
     def __init__(self):
@@ -60,47 +56,35 @@ class Loader:
         num_action = GC.get_num_actions()
         print("Num Actions: ", num_action)
 
-        desc = []
-        name2idx = {}
-        # For actor model: group 0
-        # No reward needed, we only want to get input and return distribution of actions.
+        desc = {}
+        # For actor model, No reward needed, we only want to get input and return distribution of actions.
         # sampled action and and value will be filled from the reply.
-        name2idx["actor"] = len(desc)
 
-        # Descriptor of each group.
-        #     desc = [(input_group0, reply_group0), (input_group1, reply_group1), ...]
-        # GC.Wait(0) will return a batch of game states in the same group.
-        # For example, if you register group 0 as the actor group, which has the history length of 1, and group 1 as the optimizer group which has the history length of T
-        # Then you can check the group id to decide which Python procedure to use to deal with the group, by checking their group_id.
-        # For self-play, we can register one group each player.
-        desc.append((
+        desc["actor"] = (
             dict(id="", s=str(args.hist_len), last_r="", last_terminal="", _batchsize=str(args.batchsize), _T="1"),
             dict(rv="", pi=str(num_action), V="1", a="1", _batchsize=str(args.batchsize), _T="1")
-        ))
+        )
 
         if not args.actor_only:
             # For training: group 1
             # We want input, action (filled by actor models), value (filled by actor
             # models) and reward.
-            name2idx["train"] = len(desc)
-            desc.append((
+            desc["train"] = (
                 dict(rv="", id="", pi=str(num_action), s=str(args.hist_len), a="1", r="1", V="1", seq="", terminal="", _batchsize=str(args.batchsize), _T=str(args.T)),
                 None
-            ))
+            )
 
         # Initialize shared memory (between Python and C++) based on the specification defined by desc.
-        inputs, replies = utils_elf.init_collectors(GC, co, desc, use_numpy=False)
-
         params = dict()
         params["num_action"] = GC.get_num_actions()
         params["num_group"] = 1 if args.actor_only else 2
-        params["action_batchsize"] = int(desc[name2idx["actor"]][0]["_batchsize"])
+        params["action_batchsize"] = int(desc["actor"][0]["_batchsize"])
         if not args.actor_only:
-            params["train_batchsize"] = int(desc[name2idx["train"]][0]["_batchsize"])
+            params["train_batchsize"] = int(desc["train"][0]["_batchsize"])
         params["hist_len"] = args.hist_len
         params["T"] = args.T
 
-        return utils_elf.GCWrapper(GC, inputs, replies, name2idx, params)
+        return GCWrapper(GC, co, desc, use_numpy=False, params=params)
 
 cmd_line = "--num_games 16 --batchsize 4 --hist_len 1 --frame_skip 4 --actor_only"
 
@@ -111,7 +95,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     loader = Loader()
-    args = args_loader(parser, [loader], cmd_line=cmd_line.split(" "))
+    args = ArgsProvider.Load(parser, [loader], cmd_line=cmd_line.split(" "))
 
     GC = loader.initialize()
 

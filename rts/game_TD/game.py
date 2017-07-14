@@ -2,12 +2,8 @@ import minirts
 from datetime import datetime
 
 import sys, os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'elf'))
-import utils_elf
-from context_utils import ContextArgs
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'rlpytorch'))
-from args_utils import ArgsProvider, args_loader
+from elf import GCWrapper, ContextArgs
+from rlpytorch import ArgsProvider
 
 class Loader:
     def __init__(self):
@@ -71,41 +67,36 @@ class Loader:
         num_unittype = GC.get_num_unittype()
         print("Num unittype: ", num_unittype)
 
-        desc = []
-        name2idx = {}
+        desc = {}
         # For actor model: group 0
         # No reward needed, we only want to get input and return distribution of actions.
         # sampled action and and value will be filled from the reply.
-        name2idx["actor"] = len(desc)
-        desc.append((
+        desc["actor"] = (
             dict(id="", s=str(2), r0="", r1="", last_r="", last_terminal="", _batchsize=str(args.batchsize), _T="1"),
             dict(rv="", pi=str(num_action), V="1", a="1", _batchsize=str(args.batchsize), _T="1")
-        ))
+        )
 
         if not args.actor_only:
             # For training: group 1
             # We want input, action (filled by actor models), value (filled by actor
             # models) and reward.
-            name2idx["train"] = len(desc)
-            desc.append((
+            desc["train"] = (
                 dict(rv="", id="", pi=str(num_action), s=str(2),
                      r0="", r1="", a="1", r="1", V="1", seq="", terminal="",
                      _batchsize=str(args.batchsize), _T=str(args.T)),
                 None
-            ))
-
-        inputs, replies = utils_elf.init_collectors(GC, co, desc, use_numpy=False)
+            )
 
         params = dict(
             num_action = num_action,
             num_unit_type = num_unittype,
             num_group = 1 if args.actor_only else 2,
-            action_batchsize = int(desc[name2idx["actor"]][0]["_batchsize"]),
-            train_batchsize = int(desc[name2idx["train"]][0]["_batchsize"]) if not args.actor_only else None,
+            action_batchsize = int(desc["actor"][0]["_batchsize"]),
+            train_batchsize = int(desc["train"][0]["_batchsize"]) if not args.actor_only else None,
             T = args.T
         )
 
-        return utils_elf.GCWrapper(GC, inputs, replies, name2idx, params)
+        return GCWrapper(GC, co, desc, use_numpy=False, params=params)
 
 nIter = 5000
 elapsed_wait_only = 0
@@ -117,7 +108,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     loader = Loader()
-    args = args_loader(parser, [loader])
+    args = ArgsProvider.Load(parser, [loader])
 
     def actor(sel, sel_gpu, reply):
         '''

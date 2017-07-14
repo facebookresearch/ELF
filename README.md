@@ -21,7 +21,7 @@ ELF has the following characteristics:
 
 Documentation  
 =================
-Check [here](http://yuandong-tian.com/html_elf) for detailed documentation.
+Check [here](http://yuandong-tian.com/html_elf) for detailed documentation. You can also compile your version in `./doc` using `sphinx`. 
 
 Basic Usage  
 ==============

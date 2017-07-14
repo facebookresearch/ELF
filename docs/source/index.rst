@@ -15,12 +15,16 @@ ELF is organized as follows.
 
 Components
 ----------
-There are a few components in ELF:
+Python APIs:
 
 * :doc:`rlpytorch`. The Reinforcement Learning backend built from PyTorch.
 * :doc:`utils`. The utilities.
+* :doc:`wrapper-python`. The Python interface of wrapper.
 
-Document not yet started:
+C++ APIs:
 
 * :doc:`wrapper`. The wrapper toolbox that make a single-threaded game environment into a library that supports multithreading. 
+
+RTS: 
+
 * :doc:`RTS-engine`. The miniature RTS engine. 

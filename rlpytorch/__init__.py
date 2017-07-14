@@ -5,7 +5,7 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-from .args_utils import ArgsProvider, args_loader
+from .args_utils import ArgsProvider
 from .rlmethod_common import ActorCritic
 from .rlmethod_base import LearningMethod
 from .model_base import Model

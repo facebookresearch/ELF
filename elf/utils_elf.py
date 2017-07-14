@@ -101,71 +101,70 @@ def to_numpy(batch):
     return [ to_numpy_t(bt) for bt in batch ]
 
 
-def init_collectors(GC, co, descriptions, use_numpy=False):
-    # batch_input, batch_reply, data_addrs = get_prealloc_data_n(desc_input, desc_reply)
-    #   desc_input = {"_batchsize" : str(args.batchsize), "_T" : str(history_len), "s" : "4" , "pi" : "6", "a": "1", "r": "1"})
-    #
-    # The output would be:
-    #     batch = [dict(s=, pi=, r=), dict(s=, pi=, r=), ... dict(s=, pi=, r=)]
-    # where len(batch) = history_len
-    #     batch[0]["s"] = FloatTensor(batchsize, value(s) * 3, 105, 80)
-    #         value(s) is the length of the history
-    #     batch[0]["pi"] = FloatTensor(batchsize, value(a))
-    #         value(a) is length of the action.
-    #     batch[0]["r"] = FloatTensor(batchsize) -> clip(raw_reward, value(r))
-    #     batch[0]["a"] = IntTensor(batchsize, value(a))
-    #         sampled action.
-
-    num_games = co.num_games
-
-    total_batchsize = 0
-    for input, _ in descriptions:
-        if "_batchsize" not in input or input["_batchsize"] is None:
-            print("Batchsize cannot be None!")
-            sys.exit(1)
-        total_batchsize += int(input["_batchsize"])
-    num_recv_thread = math.floor(num_games / total_batchsize)
-    num_recv_thread = max(num_recv_thread, 1)
-
-    inputs = []
-    replies = []
-    for input, reply in descriptions:
-        batchsize = int(input["_batchsize"])
-        T = int(input["_T"])
-        group_id = GC.AddCollectors(batchsize, T, num_recv_thread)
-        inputs.append(_setup_tensor(GC, "input", input, group_id, num_recv_thread, use_numpy=use_numpy))
-        if reply is not None:
-            replies.append(_setup_tensor(GC, "reply", reply, group_id, num_recv_thread, use_numpy=use_numpy))
-        else:
-            replies.append(None)
-
-    # Print pointers.
-    '''print("Ptrs for batches_train_input")
-    print_ptrs(batches_train_input)
-
-    print("Ptrs for batches_actor_input")
-    print_ptrs(batches_actor_input)
-    print("Ptrs for batches_actor_reply")
-    print_ptrs(batches_actor_reply)
-    '''
-
-    return inputs, replies
-
 class GCWrapper:
-    def __init__(self, GC, inputs, replies, name2idx, params, gpu=0):
+    def __init__(self, GC, co, descriptions, use_numpy=False, gpu=0, params=dict()):
+        '''Initialize GCWarpper
+
+        Parameters:
+            GC(C++ class): Game Context
+            co(C type): context parameters.
+            descriptions(list of tuple of dict): descriptions of input and reply entries.
+            use_numpy(boolean): whether we use numpy array (or PyTorch tensors)
+            gpu(int): gpu to use.
+            params(dict): additional parameters
+        '''
+
+        self._init_collectors(GC, co, descriptions, use_numpy=use_numpy)
+        self.gpu = gpu
+        self.inputs_gpu = None
+        self.params = params
+        self._cb = { }
+
+    def _init_collectors(self, GC, co, descriptions, use_numpy=False):
+        num_games = co.num_games
+
+        total_batchsize = 0
+        for key, (input, reply) in descriptions.items():
+            if "_batchsize" not in input or input["_batchsize"] is None:
+                print("Batchsize cannot be None!")
+                sys.exit(1)
+            total_batchsize += int(input["_batchsize"])
+        num_recv_thread = math.floor(num_games / total_batchsize)
+        num_recv_thread = max(num_recv_thread, 1)
+
+        inputs = []
+        replies = []
+        name2idx = {}
+        for key, (input, reply) in descriptions.items():
+            batchsize = int(input["_batchsize"])
+            T = int(input["_T"])
+            group_id = GC.AddCollectors(batchsize, T, num_recv_thread)
+            inputs.append(_setup_tensor(GC, "input", input, group_id, num_recv_thread, use_numpy=use_numpy))
+            if reply is not None:
+                replies.append(_setup_tensor(GC, "reply", reply, group_id, num_recv_thread, use_numpy=use_numpy))
+            else:
+                replies.append(None)
+            name2idx[key] = group_id
+
         self.GC = GC
         self.inputs = inputs
         self.replies = replies
         self.name2idx = name2idx
-        self.params = params
-        self.inputs_gpu = None
-        self._cb = { }
 
     def setup_gpu(self, gpu):
+        '''Setup the gpu used in the wrapper'''
         self.gpu = gpu
         self.inputs_gpu = [ cpu2gpu(batch[0], gpu=gpu) for batch in self.inputs ]
 
     def reg_callback(self, key, cb):
+        '''Set callback function for key
+
+        Parameters:
+            key(str): the key used to register the callback function.
+              If the key is not present in the descriptions, return ``False``.
+            cb(function): the callback function to be called.
+              The callback function has the signature ``cb(input_batch, input_batch_gpu, reply_batch)``.
+        '''
         if key not in self.name2idx:
             return False
         self._cb[self.name2idx[key]] = cb
@@ -188,24 +187,27 @@ class GCWrapper:
             return self._cb[infos.gid](sel, sel_gpu, reply)
 
     def RunGroup(self, key):
-        # Wait group of a specific id
+        '''Wait group of a specific collector key. '''
         self.infos = self.GC.WaitGroup(self.name2idx[key], 0)
         res = self._call(self.infos)
         self.GC.Steps(self.infos)
         return res
 
     def Run(self):
-        # Wait group of an arbitrary id. The returned batch are always from the same group, but the group id of the batch may be arbitrary. 
+        '''Wait group of an arbitrary collector key. Samples in a returned batch are always from the same group, but the group key of the batch may be arbitrary.'''
         self.infos = self.GC.Wait(0)
         res = self._call(self.infos)
         self.GC.Steps(self.infos)
         return res
 
     def Start(self):
+        '''Start all game environments'''
         self.GC.Start()
 
     def Stop(self):
+        '''Stop all game environments. :func:`Start()` cannot be called again after :func:`Stop()` has been called.'''
         self.GC.Stop()
 
     def PrintSummary(self):
+        '''Print summary'''
         self.GC.PrintSummary()
