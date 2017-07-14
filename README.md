@@ -82,7 +82,7 @@ To train a model for MiniRTS, run the following in the current directory:
 ```bash
 game=./rts/game_MC/game model=actor_critic model_file=./rts/game_MC/model \ 
 python3 run.py 
-    --num_games 1024 --batchsize 128              # Set number of games to be 1028 and batchsize to be 128.  
+    --num_games 1024 --batchsize 128              # Set number of games to be 1024 and batchsize to be 128.  
     --freq_update 50                              # Update behavior policy after 50 updates of the model.
     --fs_opponent 20                              # How often your opponent makes a decision (every 20 ticks)
     --latest_start 500  --latest_start_decay 0.99 # Use rule-based AI for the first 500 ticks, then trained AI takes over. latest_start decays with rate latest_start_decay. 
