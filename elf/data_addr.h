@@ -251,10 +251,19 @@ public:
             if (entry.addr->valid()) entry.addr->ToPtr(batch_idx, ai_comm);
         }
     }
+    void GetInputs(const std::vector<AIComm *> &batch) {
+        // Copy stuff to input
+        for (size_t i = 0; i < batch.size(); ++i) GetInput(i, *batch[i]);
+    }
 
     void PutReply(int batch_idx, AIComm &ai_comm) {
         for (const auto &entry : _reply_addrs.entries()) {
             if (entry.addr->valid()) entry.addr->FromPtr(batch_idx, ai_comm);
         }
+    }
+
+    void PutReplies(std::vector<AIComm *> &batch) {
+        // Copy stuff to input
+        for (size_t i = 0; i < batch.size(); ++i) PutReply(i, *batch[i]);
     }
 };

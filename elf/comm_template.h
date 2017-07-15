@@ -21,13 +21,12 @@
 #include <random>
 #include <algorithm>
 
-#include "state_collector.h"
-#include "ctpl_stl.h"
-#include "circular_queue.h"
-#include "data_addr.h"
-
 #include "pybind_helper.h"
 #include "python_options_utils_cpp.h"
+
+#include "state_collector.h"
+#include "circular_queue.h"
+#include "stats.h"
 
 // Action/State communications between game simulators and game clients.
 // SendData() add Key-Data pairs to the queue and WaitDataUntil() returns batched Key-Data pairs.
@@ -59,136 +58,63 @@ struct InfoT {
     REGISTER_PYBIND_FIELDS(seq, game_counter, hash_code, data, reply_version, reply);
 };
 
-class CommStats {
-private:
-    // std::mutex _mutex;
-    std::atomic<int64_t> _total, _last_total, _min, _max, _sum, _count;
-    std::uniform_real_distribution<> _dis;
-
-public:
-    CommStats() : _total(0), _last_total(0), _min(0), _max(0), _sum(0), _count(0), _dis(0.5, 1.0) { }
-
-    template <typename Generator>
-    void Feed(const int64_t &v, Generator &g) {
-        // std::unique_lock<std::mutex> lk{_mutex};
-        _total ++;
-
-        if (_last_total <= _total - 1000) {
-            // Restart the counting.
-            _min = v;
-            _max = v;
-            _sum = v;
-            _count = 1;
-            _last_total = _total.load();
-        } else {
-            // Get min and max.
-            if (_min > v) _min = v;
-            if (_max < v) _max = v;
-            _sum += v;
-            _count ++;
-        }
-
-        float avg_value = ((float)_sum) / _count;
-        float min_value = _min;
-        float max_value = _max;
-        // lk.release();
-
-        // If we have very large min_max distance, then do a speed control.
-        if (max_value - min_value > avg_value / 30) {
-            float ratio = (v - min_value) / (max_value  - min_value);
-            if (ratio > 0.5) {
-                if (_dis(g) <= ratio) {
-                   std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                }
-            }
-        }
-
-        /*
-        float ratio_diff = it->second.freq / even_freq - 1.0;
-        if (ratio_diff >= 0) {
-            ratio_diff = std::min(ratio_diff, 1.0f);
-            const bool deterministic = false;
-            if (deterministic) {
-                int wait = int(100 * ratio_diff * 10 + 0.5);  // if (dis(_g) < ratio_diff)
-                std::this_thread::sleep_for(std::chrono::microseconds(wait));
-            } else {
-                std::uniform_real_distribution<> dis(0.0, 1.0);
-                if (dis(_g) <= ratio_diff) {
-                   std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                }
-            }
-        }
-        */
-    }
-};
-
 // A CommT has N state collectors, each with a different gating function.
-template <typename DataAddr, typename Value>
+template <typename AIComm>
 class CommT {
 public:
     using Key = decltype(MetaInfo::query_id);
-    using StateCollector = StateCollectorT<DataAddr>;
-    using CollectorGroup = CollectorGroupT<DataAddr>;
-    using SyncSignal = typename StateCollector::SyncSignal;
-    using Infos = typename SyncSignal::Infos;
-    using TaskSignal = typename SyncSignal::TaskSignal;
-    using CustomFieldFunc = typename DataAddr::CustomFieldFunc;
+    using CollectorGroup = CollectorGroupT<AIComm>;
 
 private:
     struct Stat {
-        int idx;
+        Key key;
         int64_t freq;
-        Stat(int i) : idx(i), freq(0) { }
+
+        // Counter.
+        std::unique_ptr<SemaCollector> counter;
+
+        Stat(Key k) : key(k), freq(0) { 
+            counter.reset(new SemaCollector());
+        }
     };
 
     ContextOptions _context_options;
 
-    std::random_device _rd;
-    std::mt19937 _g;
+    int _num_keys;
 
-    // Collectors.
     std::vector<std::unique_ptr<CollectorGroup> > _groups;
-    int _total_collectors;
+    ctpl::thread_pool _pool;
 
     std::unique_ptr<SyncSignal> _signal;
     CommStats _stats;
 
-    // Key -> index.
+    // Key -> Stat.
     std::unordered_map<Key, Stat> _map;
+
     bool _verbose;
-    CustomFieldFunc _field_func;
 
     // First register query_key then add collectors.
-    void register_query_key(const Key& key) {
-        assert(_map.find(key) == _map.end());
-        _map.insert(std::make_pair(key, Stat(_map.size())));
+    Stat &get_stats(const Key& key) {
+        auto it = _map.find(key);
+        if (it == _map.end()) {
+            auto info = _map.emplace(std::make_pair(key, Stat(_map.size())));
+            return info.first->second;
+        } else return it->second;
     }
 
 public:
-    CommT(const ContextOptions &context_options, CustomFieldFunc field_func)
-      : _context_options(context_options), _g(_rd()), _total_collectors(0),
-        _verbose(context_options.verbose_comm), _field_func(field_func) {
-        // Initialize comm.
-        for (int i = 0 ; i < _context_options.num_games; ++i) register_query_key(i);
-
-        // If multithread, register relevant keys.
-        if (_context_options.max_num_threads) {
-            for (int i = 0 ; i < _context_options.num_games; ++i) {
-                for (int tid = 0; tid < _context_options.max_num_threads; ++tid) {
-                    register_query_key(get_query_id(i, tid));
-                }
-            }
-        }
-        _signal.reset(new SyncSignal(_map.size()));
+    CommT(const ContextOptions &context_options)
+      : _context_options(context_options), _verbose(context_options.verbose_comm) {
+        _signal.reset(new SyncSignal());
+        _num_keys = _context_options.num_games * (_context_options.max_num_threads + 1); 
     }
 
     int GetT() const { return _context_options.T; }
 
-    int AddCollectors(int batchsize, int hist_len, int num_collectors) {
-        _groups.emplace_back(
-            new CollectorGroup(_total_collectors, _groups.size(), batchsize, hist_len, num_collectors,
-                  _field_func, _signal.get(), _context_options.verbose_collector));
-        _total_collectors += num_collectors;
+    int AddCollectors(int batchsize, int hist_len) {
+        CollectorGroup *g = new CollectorGroup(_groups.size(), _num_keys, batchsize, hist_len, _signal.get(), _context_options.verbose_collector);
+        _pool.push([g, this](int) { g->MainLoop(); });
+        _groups.emplace_back(g);
         return _groups.size() - 1;
     }
 
@@ -202,58 +128,24 @@ public:
     }
 
     // Agent side.
-    bool SendDataWaitReply(const Key& key, Value& value) {
-        if (_signal->GetDoneNotif().get()) {
-            V_PRINT(_verbose, "[" << key << "] Enter done mode. ");
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-            return false;
-        }
+    bool SendDataWaitReply(const Key& key, AIComm& ai_comm) {
+        Stat &stats = get_stats(key);
+        stats.freq ++;
 
-        auto it = _map.find(key);
-        if (it == _map.end()) return false;
-        int idx = it->second.idx;
-        it->second.freq ++;
-        // _stats.Feed(it->second.freq, _g);
-        //
-        V_PRINT(_verbose, "[k=" << key << "] Start sending data ... idx = " << idx);
+        V_PRINT(_verbose, "[k=" << key << "] Start sending data ... key = " << key);
         // Send the key to all collectors in the container, if the key satisfy the gating function.
         int num_groups = 0;
         for (auto &g : _groups) {
-            if (g->SendData(idx, value.hist_size(), value.game_counter(), value.seq())) num_groups ++;
+            if (g->SendData(stats.key, &ai_comm)) num_groups ++;
         }
 
-        V_PRINT(_verbose, "[k=" << key << "] Start collecting ... ");
+        // Wait until all collectors have done their jobs. 
+        stats.counter->wait(num_groups);
 
-        // Wait for all the collector ids.
-        // std::cout << "[" << key << "] wait for all collector ... #collectors = " << data.num_collectors << std::endl;
-        std::vector<int> batch_data(_groups.size());
-        TaskSignal cmd;
-        const int total_task = NUM_TASK_CMD * num_groups;
-        for (int i = 0; i < total_task; ++i) {
-            // Note that wait_and_reset need to be done at once (withint the same critical region).
-            // Otherwise it might erase signal from other collectors.
-            _signal->GetSignal(idx, &cmd);
-            if (_verbose) {
-                V_PRINT(_verbose, "[k=" << key << "] Get collector: " << std::hex << cmd.collector << std::dec << " id: " << cmd.collector->id() << " gid: " << cmd.collector->gid());
-            }
-            auto &c = *cmd.collector;
-            int cid = c.id();
-            int gid = c.gid();
-
-            if (cmd.type == SELECTED_IN_BATCH) {
-                V_PRINT(_verbose, "[k=" << key << ",c=" << cid  << ",g=" << gid << "] Wake from BatchSelect " << i << "/" << total_task);
-                // Then we have the batch for a collector.
-                batch_data[gid] = c.CopyToInput(idx, value);
-                V_PRINT(_verbose, "[k=" << key << ",c=" << cid << ",g=" << gid << "] done with CopyToInput. " << i << "/" << total_task);
-            } else {
-                V_PRINT(_verbose, "[k=" << key << ",c=" << cid << ",g=" << gid << "] Reply arrived " << i << "/" << total_task);
-                c.CopyToReply(batch_data[gid], value);
-                V_PRINT(_verbose, "[k=" << key << ",c=" << cid << ",g=" << gid << "] Done with CopyToReply " << i << "/" << total_task);
-            }
-        }
-
-        V_PRINT(_verbose, "[k=" << key << "] Done with SendDataWaitReply");
-
+        // Finally wait until 
+        for (auto &g : _groups) g->WaitReply(stats.key);
+        
+        V_PRINT(_verbose, "[k=" << stats.key << "] Done with SendDataWaitReply");
         return true;
     }
 
@@ -262,10 +154,12 @@ public:
     Infos WaitGroupBatchData(int group_id, int time_usec = 0) { return _signal->wait_batch(group_id, time_usec); }
 
     // Tell the collector that a reply was sent.
-    bool Steps(const Infos& infos, int future_timeout_usec = 0) {
-        // The batch is invalid, skip.
-        if (infos.collector == nullptr) return false;
-        infos.collector->SignalBatchUsed(future_timeout_usec);
+    bool Steps(const Infos& infos, int future_time_usec = 0) {
+        std::vector<Key> keys = _groups[infos.gid]->GetBatchKeys();
+        for (const Key &key : keys) {
+            get_stats(key).counter->notify();
+        }
+        _groups[infos.gid]->SignalBatchUsed(future_time_usec);
         return true;
     }
 
@@ -273,22 +167,20 @@ public:
         for (const auto &g : _groups) g->PrintSummary();
     }
 
+    void PrepareStop() {
+        for (const auto &g : _groups) g->SetBatchSize(1);
+    }
+
     void Stop() {
         Notif &done = _signal->GetDoneNotif();
         done.set();
-        for (auto &g : _groups) g->NotifyAwake();
-        const int timeout_usec = 2;
 
-        if (_context_options.wait_per_group) {
-          done.wait(_total_collectors, [this]() {
-              int group_id = _g() % _groups.size();
-              Steps(WaitGroupBatchData(group_id, timeout_usec));
-          });
-        } else {
-          done.wait(_total_collectors, [this]() {
-              Steps(WaitBatchData(timeout_usec));
-          });
-        }
+        // Send a fake signal to deblock all threads.
+        for (auto &g : _groups) g->NotifyAwake();
+
+        // Wait until all threads are done.
+        done.wait(_groups.size());
+        _pool.stop();
     }
 };
 
@@ -307,6 +199,7 @@ public:
 
 private:
     Comm *_comm;
+
     const MetaInfo _meta;
     CircularQueue<Info> _history;
     int _seq;
@@ -399,24 +292,24 @@ public:
     using Reply = _Reply;
     using Data = _Data;
 
+    using Info = InfoT<Data, Reply>;
+
     using Context = ContextT<Options, Data, Reply>;
     using AIComm = AICommT<Context>;
-    using DataAddr = DataAddrT<AIComm>;
 
-    using Comm = CommT<DataAddr, AIComm>;
-    using Info = InfoT<Data, Reply>;
+    using DataAddr = DataAddrT<AIComm>;
+    using Comm = CommT<AIComm>;
     using State = _Data;
     using GameStartFunc =
       std::function<void (int game_idx, const Options& options, const std::atomic_bool &done, AIComm *)>;
     using CustomFieldFunc = typename DataAddr::CustomFieldFunc;
-
-    using Infos = typename Comm::Infos;
 
 private:
     Comm _comm;
     std::vector<std::unique_ptr<AIComm>> _ai_comms;
     Options _options;
     ContextOptions _context_options;
+    CustomFieldFunc _field_func;
 
     ctpl::thread_pool _pool;
     Notif _done;
@@ -424,12 +317,14 @@ private:
 
 public:
     ContextT(const ContextOptions &context_options, const Options& options, CustomFieldFunc field_func = nullptr)
-        : _comm(context_options, field_func), _options(options),
-          _context_options(context_options), _pool(context_options.num_games) {
+        : _comm(context_options), _options(options),
+          _context_options(context_options), _field_func(field_func), _pool(context_options.num_games) {
     }
 
-    int AddCollectors(int batchsize, int hist_len, int num_collectors) {
-        return _comm.AddCollectors(batchsize, hist_len, num_collectors);
+    int AddCollectors(int batchsize, int hist_len) {
+        int gid = _comm.AddCollectors(batchsize, hist_len);
+        _comm.GetCollectorGroup(gid).GetDataAddr().RegCustomFunc(_field_func);
+        return gid;
     }
 
     void Start(GameStartFunc game_start_func) {
@@ -458,8 +353,8 @@ public:
     const MetaInfo &meta(int i) const { return _ai_comms[i]->GetMeta(); }
     int size() const { return _ai_comms.size(); }
 
-    DataAddr &GetDataAddr(int gid, int id_within_group) {
-        return _comm.GetCollectorGroup(gid).GetCollector(id_within_group).GetDataAddr();
+    DataAddr &GetDataAddr(int gid) {
+        return _comm.GetCollectorGroup(gid).GetDataAddr();
     }
 
     void PrintSummary() const { _comm.PrintSummary(); }
@@ -476,15 +371,21 @@ public:
 
     void Stop() {
         // Call the destructor.
-        std::cout << "Beginning stop all collectors ..." << std::endl;
-        _comm.Stop();
+        if (! _game_started) return;
+
+        // First set all batchsize to be 1. 
+        _comm.PrepareStop();
+
+        // Then stop all game threads. 
         std::cout << "Stop all game threads ..." << std::endl;
-        if (_game_started) {
-            _done.set();
-            _done.wait(_pool.size());
-            _pool.stop();
-            _game_started = false;
-        }
+        _done.set();
+        _done.wait(_pool.size());
+        _pool.stop();
+
+        // Finally stop all collectors.
+        std::cout << "Stop all collectors ..." << std::endl;
+        _comm.Stop();
+        _game_started = false;
     }
 
     ~ContextT() {

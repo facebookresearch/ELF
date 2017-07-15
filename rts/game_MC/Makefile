@@ -52,8 +52,9 @@ LDFLAGS += -lm #-ltbb
 ccSOURCES = $(shell find . -name "*.cc"  |  sed 's/^\.\///g')
 # rts_engine
 ccSOURCES += $(shell find ../engine -name "*.cc"  |  sed 's/^\.\///g')
-# Assume all elf files are headers.
 
+# elf
+ccSOURCES += $(shell find ../../elf/lib -name "*.cc"  |  sed 's/^\.\///g')
 
 OBJS = $(addprefix $(OBJ_DIR)/,$(ccSOURCES:.cc=.o))
 DEPFILES = $(OBJS:.o=.d)
