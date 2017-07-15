@@ -9,6 +9,7 @@ import torch
 import sys
 import math
 import numpy as np
+from collections import defaultdict
 
 def cpu2gpu(batch, gpu=0):
     ''' Preallocation '''
@@ -49,7 +50,7 @@ def print_ptrs(batches):
                 print("[thread=%d][t=%d] %s: %x" % (thread_id, t, k, v.data_ptr()))
 
 
-def _setup_tensor(GC, key, desc, group_id, num_thread, use_numpy=False):
+def _setup_tensor(GC, key, desc, group_id, use_numpy=False):
     torch_types = {
         "int" : torch.IntTensor,
         "int64_t" : torch.LongTensor,
@@ -63,36 +64,32 @@ def _setup_tensor(GC, key, desc, group_id, num_thread, use_numpy=False):
         'unsigned char': 'byte'
     }
 
-    batches = []
     T = int(desc["_T"])
 
-    for i in range(num_thread):
-        n = GC.CreateTensor(group_id, i, key, desc)
-        batch = [dict() for t in range(T)]
+    n = GC.CreateTensor(group_id, key, desc)
+    batch = [dict() for t in range(T)]
 
-        # print("thread = %d" % i)
+    # print("thread = %d" % i)
 
-        # Then we get
-        for j in range(n):
-            info = GC.GetTensorInfo(group_id, i, key, j)
-            # Then we use the info to create the tensor.
-            if not use_numpy:
-                v = torch_types[info.type](*info.sz).pin_memory()
-                p = v.data_ptr()
-                stride = v.stride()[0]
-            else:
-                v = np.zeros(info.sz, dtype=numpy_types[info.type])
-                p = v.ctypes.data
-                stride = v.ctypes.strides[0] // v.dtype.itemsize
-            # print(info.key + " " + str(info.sz) + " addr: " + str(p) + " stride: " + str(stride))
+    # Then we get
+    for j in range(n):
+        info = GC.GetTensorInfo(group_id, key, j)
+        # Then we use the info to create the tensor.
+        if not use_numpy:
+            v = torch_types[info.type](*info.sz).pin_memory()
+            p = v.data_ptr()
+            stride = v.stride()[0]
+        else:
+            v = np.zeros(info.sz, dtype=numpy_types[info.type])
+            p = v.ctypes.data
+            stride = v.ctypes.strides[0] // v.dtype.itemsize
+        # print(info.key + " " + str(info.sz) + " addr: " + str(p) + " stride: " + str(stride))
 
-            # Then we set the tensor address and stride.
-            GC.SetTensorAddr(group_id, i, key, j, p, stride)
-            batch[info.hist_loc_for_py][info.key] = v
+        # Then we set the tensor address and stride.
+        GC.SetTensorAddr(group_id, key, j, p, stride)
+        batch[info.hist_loc_for_py][info.key] = v
 
-        batches.append(batch)
-
-    return batches
+    return batch
 
 def to_numpy_t(bt):
     return { k : v.numpy() if not isinstance(v, np.ndarray) else v for k, v in bt.items() }
@@ -134,21 +131,25 @@ class GCWrapper:
 
         inputs = []
         replies = []
-        name2idx = {}
+        idx2name = {}
+        name2idx = defaultdict(list)
         for key, (input, reply) in descriptions.items():
             batchsize = int(input["_batchsize"])
             T = int(input["_T"])
-            group_id = GC.AddCollectors(batchsize, T, num_recv_thread)
-            inputs.append(_setup_tensor(GC, "input", input, group_id, num_recv_thread, use_numpy=use_numpy))
-            if reply is not None:
-                replies.append(_setup_tensor(GC, "reply", reply, group_id, num_recv_thread, use_numpy=use_numpy))
-            else:
-                replies.append(None)
-            name2idx[key] = group_id
+            for i in range(num_recv_thread):
+                group_id = GC.AddCollectors(batchsize, T)
+                inputs.append(_setup_tensor(GC, "input", input, group_id, use_numpy=use_numpy))
+                if reply is not None:
+                    replies.append(_setup_tensor(GC, "reply", reply, group_id, use_numpy=use_numpy))
+                else:
+                    replies.append(None)
+                idx2name[group_id] = key
+                name2idx[key].append(group_id)
 
         self.GC = GC
         self.inputs = inputs
         self.replies = replies
+        self.idx2name = idx2name
         self.name2idx = name2idx
 
     def setup_gpu(self, gpu):
@@ -167,31 +168,25 @@ class GCWrapper:
         '''
         if key not in self.name2idx:
             return False
-        self._cb[self.name2idx[key]] = cb
+        for gid in self.name2idx[key]:
+            self._cb[gid] = cb
         return True
 
     def _call(self, infos):
-        sel = self.inputs[infos.gid][infos.id_in_group]
+        sel = self.inputs[infos.gid]
         if self.inputs_gpu is not None:
             sel_gpu = self.inputs_gpu[infos.gid]
             transfer_cpu2gpu(sel, sel_gpu)
         else:
             sel_gpu = None
         if len(self.replies) > infos.gid and self.replies[infos.gid] is not None:
-            reply = self.replies[infos.gid][infos.id_in_group]
+            reply = self.replies[infos.gid]
         else:
             reply = None
 
         # Call
         if infos.gid in self._cb:
             return self._cb[infos.gid](sel, sel_gpu, reply)
-
-    def RunGroup(self, key):
-        '''Wait group of a specific collector key. '''
-        self.infos = self.GC.WaitGroup(self.name2idx[key], 0)
-        res = self._call(self.infos)
-        self.GC.Steps(self.infos)
-        return res
 
     def Run(self):
         '''Wait group of an arbitrary collector key. Samples in a returned batch are always from the same group, but the group key of the batch may be arbitrary.'''
