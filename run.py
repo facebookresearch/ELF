@@ -60,7 +60,7 @@ class Eval:
     def __init__(self):
         self.args = ArgsProvider(
             call_from = self,
-            define_params = [
+            define_args = [
                 ("stats", dict(type=str, choices=["rewards", "winrate"], default="rewards")),
                 ("num_eval", 500)
             ]

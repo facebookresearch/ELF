@@ -5,8 +5,7 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-from model_base import *
-from rlmethod_common import ActorCritic
+from rlpytorch import Model, ActorCritic
 
 import torch
 import torch.nn as nn
