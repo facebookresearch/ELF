@@ -103,32 +103,10 @@ public:
 #define PRINT(arg) { std::stringstream ss; ss << arg; _signal->Print(ss.str()); }
 #define V_PRINT(verbose, arg) if (verbose) PRINT(arg)
 
-template <typename T>
-struct CollectConditionT {
-    int last_seq, game_counter;
-    int freq_send;
-
-    const int hist_overlap = 1;
-
-    CollectConditionT() : last_seq(-1), game_counter(0), freq_send(0) { }
-
-    bool Check(int hist_len, T *data) {
-        // Update game counter.
-        if (data->game_counter() > game_counter) {
-            game_counter = data->game_counter();
-            last_seq = -1;
-        }
-        if (data->hist_size() < hist_len || data->seq() - last_seq < hist_len - hist_overlap) return false;
-        last_seq = data->seq();
-        return true;
-    }
-};
-
 // Each collector group has a batch collector and a sequence of operators.
 template <typename AIComm>
 class CollectorGroupT {
 public:
-    using CollectCondition = CollectConditionT<AIComm>;
     using DataAddr = DataAddrT<AIComm>;
     using Key = decltype(MetaInfo::query_id);
 
@@ -141,9 +119,6 @@ private:
 
     // Current batch.
     std::vector<AIComm *> _batch;
-
-    // Game conditions
-    std::unordered_map<Key, CollectCondition> _conds;
     elf::BatchCollectorT<Key, AIComm> _batch_collector;
 
     DataAddr _data_addr;
@@ -170,13 +145,10 @@ private:
     }
 
 public:
-    CollectorGroupT(int gid, const std::vector<Key> &keys, int batchsize, int hist_len, 
+    CollectorGroupT(int gid, const std::vector<Key> &keys, int batchsize, int hist_len,
             SyncSignal *signal, bool verbose)
-        : _gid(gid), _batchsize(batchsize), _hist_len(hist_len), 
+        : _gid(gid), _batchsize(batchsize), _hist_len(hist_len),
           _batch_collector(keys.size()), _signal(signal), _verbose(verbose) {
-        for (const Key &key : keys) {
-            _conds.emplace(std::make_pair(key, CollectCondition()));
-        }
     }
 
     DataAddr &GetDataAddr() { return _data_addr; }
@@ -185,19 +157,11 @@ public:
     void SetBatchSize(int batchsize) { _batchsize = batchsize; }
 
     // Game side.
-    bool SendData(const Key &key, AIComm *data) {
-        auto it = _conds.find(key);
-        if (it == _conds.end()) return false;
-
-        if (it->second.Check(_hist_len, data)) {
-            if (_verbose) std::cout << "[" << key << "][" << _gid << "] c.SendData ... " << std::endl;
-            // Collect data for this condition.
-            _batch_collector.sendData(key, data);
-            _num_enqueue ++;
-            it->second.freq_send ++;
-            return true;
-        }
-        return false;
+    void SendData(const Key &key, AIComm *data) {
+        if (_verbose) std::cout << "[" << key << "][" << _gid << "] c.SendData ... " << std::endl;
+        // Collect data for this condition.
+        _batch_collector.sendData(key, data);
+        _num_enqueue ++;
     }
 
     void WaitReply(const Key &key) {
@@ -257,12 +221,14 @@ public:
     void SignalBatchUsed(int future_timeout) { _wakeup.notify(future_timeout); }
 
     void PrintSummary() const {
+        /*
         std::cout << "Group[" << _gid << "]: HistLen = " << _hist_len << std::endl;
         std::cout << "[" << _gid << "]: #Enqueue: " << _num_enqueue << std::endl;
         for (const auto& p : _conds) {
             std::cout << "[" << _gid << "][" << p.first << "]: #Send[" << p.second.freq_send << "/"
                       << (float)p.second.freq_send / _num_enqueue << "]" << std::endl;
         }
+        */
     }
 
     // For other thread.

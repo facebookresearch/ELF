@@ -76,8 +76,7 @@ def _setup_tensor(GC, key, desc, group_id, use_numpy=False):
         info = GC.GetTensorInfo(group_id, key, j)
         # Then we use the info to create the tensor.
         if not use_numpy:
-            v = torch_types[info.type](*info.sz)
-            # v = v.pin_memory()
+            v = torch_types[info.type](*info.sz).pin_memory()
             p = v.data_ptr()
             stride = v.stride()[0]
         else:
@@ -165,7 +164,7 @@ class GCWrapper:
     def setup_gpu(self, gpu):
         '''Setup the gpu used in the wrapper'''
         self.gpu = gpu
-        # self.inputs_gpu = [ cpu2gpu(self.inputs[gids[0]], gpu=gpu) for gids in self.gpu2gid ]
+        self.inputs_gpu = [ cpu2gpu(self.inputs[gids[0]], gpu=gpu) for gids in self.gpu2gid ]
 
     def reg_callback(self, key, cb):
         '''Set callback function for key
@@ -178,8 +177,8 @@ class GCWrapper:
         '''
         if key not in self.name2idx:
             return False
-        #for gid in self.name2idx[key]:
-        #    self._cb[gid] = cb
+        for gid in self.name2idx[key]:
+            self._cb[gid] = cb
         return True
 
     def _call(self, infos):

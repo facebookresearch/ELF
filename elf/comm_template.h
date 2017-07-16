@@ -58,6 +58,27 @@ struct InfoT {
     REGISTER_PYBIND_FIELDS(seq, game_counter, hash_code, data, reply_version, reply);
 };
 
+template <typename T>
+struct CondPerGroupT {
+    int last_seq, game_counter;
+    int freq_send;
+
+    const int hist_overlap = 1;
+
+    CondPerGroupT() : last_seq(-1), game_counter(0), freq_send(0) { }
+
+    bool Check(int hist_len, T *data) {
+        // Update game counter.
+        if (data->game_counter() > game_counter) {
+            game_counter = data->game_counter();
+            last_seq = -1;
+        }
+        if (data->hist_size() < hist_len || data->seq() - last_seq < hist_len - hist_overlap) return false;
+        last_seq = data->seq();
+        return true;
+    }
+};
+
 // A CommT has N state collectors, each with a different gating function.
 template <typename AIComm>
 class CommT {
@@ -72,10 +93,22 @@ private:
 
         // Counter.
         std::unique_ptr<SemaCollector> counter;
+        std::vector<CondPerGroupT<AIComm>> conds;
 
         Stat(Key k) : key(k), freq(0) {
             counter.reset(new SemaCollector());
         }
+
+        void InitCond(int ngroup) {
+            for (int i = 0; i < ngroup; ++i) {
+                conds.emplace_back();
+            }
+        }
+    };
+
+    struct GroupStat {
+        std::vector<int> hist_lens;
+        std::vector<int> subgroup;
     };
 
     ContextOptions _context_options;
@@ -84,7 +117,7 @@ private:
     std::mt19937 _g;
 
     std::vector<Key> _keys;
-    std::map<int, std::vector<int>> _exclusive_groups;
+    std::vector<GroupStat> _exclusive_groups;
 
     std::vector<std::unique_ptr<CollectorGroup> > _groups;
     ctpl::thread_pool _pool;
@@ -130,11 +163,11 @@ public:
         _groups.emplace_back(new CollectorGroup(_groups.size(), _keys, batchsize, hist_len, _signal.get(), _context_options.verbose_collector));
         int gid = _groups.size() - 1;
 
-        auto it = _exclusive_groups.find(exclusive_id);
-        if (it == _exclusive_groups.end()) {
-            it = _exclusive_groups.emplace(std::make_pair(exclusive_id, std::vector<int>())).first;
+        if ((int)_exclusive_groups.size() <= exclusive_id) {
+            _exclusive_groups.emplace_back();
         }
-        it->second.push_back(gid);
+        _exclusive_groups[exclusive_id].subgroup.push_back(gid);
+        _exclusive_groups[exclusive_id].hist_lens.push_back(hist_len);
 
         return gid;
     }
@@ -145,6 +178,10 @@ public:
     void CollectorsReady() {
         if (_context_options.wait_per_group) {
             _signal->use_queue_per_group(_groups.size());
+        }
+
+        for (auto &p : _map) {
+            p.second.InitCond(_exclusive_groups.size());
         }
 
         _pool.resize(_groups.size());
@@ -167,11 +204,17 @@ public:
         std::string str_selected_groups;
 
         // For each exclusive group, randomly select one.
-        for (const auto &p : _exclusive_groups) {
-            int idx = _g() % p.second.size();
-            int gid = p.second[idx];
+        for (size_t i = 0; i < _exclusive_groups.size(); ++i) {
+            const auto& subgroup = _exclusive_groups[i].subgroup;
+            const auto& hist_lens = _exclusive_groups[i].hist_lens;
+            int idx = _g() % subgroup.size();
+            int gid = subgroup[idx];
+            int hist_len = hist_lens[idx];
 
-            if (_groups[gid]->SendData(key, &ai_comm)) {
+            if (stats.conds[i].Check(hist_len, &ai_comm)) {
+                stats.conds[i].freq_send ++;
+
+                _groups[gid]->SendData(key, &ai_comm);
                 str_selected_groups += std::to_string(gid) + ",";
                 selected_groups.push_back(gid);
             }
