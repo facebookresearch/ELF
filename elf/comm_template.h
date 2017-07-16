@@ -98,7 +98,8 @@ private:
     bool _verbose;
 
     void compute_keys() {
-        for (int i = 0 ; i < _context_options.num_games; ++i) keys.push_back(get_query_id(i, -1));
+        _keys.clear();
+        for (int i = 0 ; i < _context_options.num_games; ++i) _keys.push_back(get_query_id(i, -1));
         // If multithread, register relevant keys.
         if (_context_options.max_num_threads) {
             for (int i = 0 ; i < _context_options.num_games; ++i) {
@@ -202,7 +203,10 @@ public:
     bool Steps(const Infos& infos, int future_time_usec = 0) {
         std::vector<Key> keys = _groups[infos.gid]->GetBatchKeys();
         for (const Key &key : keys) {
-            get_stats(key).counter->notify();
+            auto it = _map.find(key);
+            if (it != _map.end()) {
+                it->second.counter->notify();
+            }
         }
         _groups[infos.gid]->SignalBatchUsed(future_time_usec);
         return true;
