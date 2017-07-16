@@ -76,7 +76,8 @@ def _setup_tensor(GC, key, desc, group_id, use_numpy=False):
         info = GC.GetTensorInfo(group_id, key, j)
         # Then we use the info to create the tensor.
         if not use_numpy:
-            v = torch_types[info.type](*info.sz).pin_memory()
+            v = torch_types[info.type](*info.sz)
+            # v = v.pin_memory()
             p = v.data_ptr()
             stride = v.stride()[0]
         else:
@@ -133,11 +134,16 @@ class GCWrapper:
         replies = []
         idx2name = {}
         name2idx = defaultdict(list)
+
+        gid2gpu = {}
+        gpu2gid = []
+
         for key, (input, reply) in descriptions.items():
             batchsize = int(input["_batchsize"])
             T = int(input["_T"])
+            gpu2gid.append(list())
             for i in range(num_recv_thread):
-                group_id = GC.AddCollectors(batchsize, T)
+                group_id = GC.AddCollectors(batchsize, T, len(gpu2gid) - 1)
                 inputs.append(_setup_tensor(GC, "input", input, group_id, use_numpy=use_numpy))
                 if reply is not None:
                     replies.append(_setup_tensor(GC, "reply", reply, group_id, use_numpy=use_numpy))
@@ -145,17 +151,21 @@ class GCWrapper:
                     replies.append(None)
                 idx2name[group_id] = key
                 name2idx[key].append(group_id)
+                gpu2gid[-1].append(group_id)
+                gid2gpu[group_id] = len(gpu2gid) - 1
 
         self.GC = GC
         self.inputs = inputs
         self.replies = replies
         self.idx2name = idx2name
         self.name2idx = name2idx
+        self.gid2gpu = gid2gpu
+        self.gpu2gid = gpu2gid
 
     def setup_gpu(self, gpu):
         '''Setup the gpu used in the wrapper'''
         self.gpu = gpu
-        self.inputs_gpu = [ cpu2gpu(batch[0], gpu=gpu) for batch in self.inputs ]
+        # self.inputs_gpu = [ cpu2gpu(self.inputs[gids[0]], gpu=gpu) for gids in self.gpu2gid ]
 
     def reg_callback(self, key, cb):
         '''Set callback function for key
@@ -168,14 +178,14 @@ class GCWrapper:
         '''
         if key not in self.name2idx:
             return False
-        for gid in self.name2idx[key]:
-            self._cb[gid] = cb
+        #for gid in self.name2idx[key]:
+        #    self._cb[gid] = cb
         return True
 
     def _call(self, infos):
         sel = self.inputs[infos.gid]
         if self.inputs_gpu is not None:
-            sel_gpu = self.inputs_gpu[infos.gid]
+            sel_gpu = self.inputs_gpu[self.gid2gpu[infos.gid]]
             transfer_cpu2gpu(sel, sel_gpu)
         else:
             sel_gpu = None

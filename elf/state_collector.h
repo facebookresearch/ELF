@@ -126,7 +126,7 @@ struct CollectConditionT {
 
 // Each collector group has a batch collector and a sequence of operators.
 template <typename AIComm>
-class CollectorGroupT { 
+class CollectorGroupT {
 public:
     using CollectCondition = CollectConditionT<AIComm>;
     using DataAddr = DataAddrT<AIComm>;
@@ -139,7 +139,7 @@ private:
 
     int _hist_len;
 
-    // Current batch. 
+    // Current batch.
     std::vector<AIComm *> _batch;
 
     // Game conditions
@@ -175,6 +175,7 @@ public:
     }
 
     DataAddr &GetDataAddr() { return _data_addr; }
+    int gid() const { return _gid; }
 
     void SetBatchSize(int batchsize) { _batchsize = batchsize; }
 
@@ -197,12 +198,13 @@ public:
     }
 
     void WaitReply(const Key &key) {
+        V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] WaitReply for k = " << key);
         _batch_collector.waitReply(key);
     }
 
     // Main Loop
     void MainLoop() {
-        // Two post processing. You can add more.
+        V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Starting MainLoop of collector, hist_len = " << _hist_len << " batchsize = " << _batchsize);
         while (true) {
             // Wait until we have a complete batch.
             _batch = _batch_collector.waitBatch(_batchsize);
@@ -210,27 +212,33 @@ public:
             // Time to leave the loop.
             if (_batch.size() == 1 && _batch[0] == nullptr) break;
 
-            V_PRINT(_verbose, "[" << _gid << "] about to groupify. batchsize = " << _batch.size());
+            V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Compute input. batchsize = " << _batch.size());
 
             _data_addr.GetInputs(_batch);
-     
+
             // Signal.
+            V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Send_batch. batchsize = " << _batch.size());
             send_batch(_batch.size());
 
-            V_PRINT(_verbose, "[" << _gid << "] about to wait until the batch is processed");
-
+            V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Wait until the batch is processed");
             // Wait until it is processed.
             wait_batch_used();
 
-            V_PRINT(_verbose, "[" << _gid << "] about to Step()");
-
+            V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] PutReplies()");
             _data_addr.PutReplies(_batch);
 
             // Finally make the game run again.
-            for (AIComm *ai_comm : _batch) _batch_collector.signalReply(ai_comm->GetMeta().query_id);
+            V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Resume games");
+            for (AIComm *ai_comm : _batch) {
+                const Key& key = ai_comm->GetMeta().query_id;
+                V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Resume signal sent to k = " << key);
+                _batch_collector.signalReply(key);
+            }
+
+            V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] All resume signal sent, batchsize = " << _batch.size());
         }
 
-        V_PRINT(_verbose, "[" << _gid << "] Collector ends. Notify the upper level");
+        V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Collector ends. Notify the upper level");
         _signal->GetDoneNotif().notify();
     }
 

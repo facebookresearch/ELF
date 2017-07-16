@@ -73,14 +73,18 @@ private:
         // Counter.
         std::unique_ptr<SemaCollector> counter;
 
-        Stat(Key k) : key(k), freq(0) { 
+        Stat(Key k) : key(k), freq(0) {
             counter.reset(new SemaCollector());
         }
     };
 
     ContextOptions _context_options;
 
+    std::random_device _rd;
+    std::mt19937 _g;
+
     int _num_keys;
+    std::map<int, std::vector<int>> _exclusive_groups;
 
     std::vector<std::unique_ptr<CollectorGroup> > _groups;
     ctpl::thread_pool _pool;
@@ -102,20 +106,40 @@ private:
         } else return it->second;
     }
 
+    std::vector<Key> get_keys() const {
+      std::vector<Key> keys;
+      for (int i = 0 ; i < _context_options.num_games; ++i) keys.push_back(get_query_id(i, -1));
+      // If multithread, register relevant keys.
+      if (_context_options.max_num_threads) {
+        for (int i = 0 ; i < _context_options.num_games; ++i) {
+          for (int tid = 0; tid < _context_options.max_num_threads; ++tid) {
+            keys.push_back(get_query_id(i, tid));
+          }
+        }
+      }
+      return keys;
+    }
+
 public:
     CommT(const ContextOptions &context_options)
-      : _context_options(context_options), _verbose(context_options.verbose_comm) {
+      : _context_options(context_options),  _g(_rd()), _verbose(context_options.verbose_comm) {
         _signal.reset(new SyncSignal());
-        _num_keys = _context_options.num_games * (_context_options.max_num_threads + 1); 
+        _num_keys = _context_options.num_games * (_context_options.max_num_threads + 1);
     }
 
     int GetT() const { return _context_options.T; }
 
-    int AddCollectors(int batchsize, int hist_len) {
-        CollectorGroup *g = new CollectorGroup(_groups.size(), _num_keys, batchsize, hist_len, _signal.get(), _context_options.verbose_collector);
-        _pool.push([g, this](int) { g->MainLoop(); });
-        _groups.emplace_back(g);
-        return _groups.size() - 1;
+    int AddCollectors(int batchsize, int hist_len, int exclusive_id) {
+        _groups.emplace_back(new CollectorGroup(_groups.size(), _num_keys, batchsize, hist_len, _signal.get(), _context_options.verbose_collector));
+        int gid = _groups.size() - 1;
+
+        auto it = _exclusive_groups.find(exclusive_id);
+        if (it == _exclusive_groups.end()) {
+            it = _exclusive_groups.emplace(std::make_pair(exclusive_id, std::vector<int>())).first;
+        }
+        it->second.push_back(gid);
+
+        return gid;
     }
 
     CollectorGroup &GetCollectorGroup(int gid) { return *_groups[gid]; }
@@ -125,6 +149,12 @@ public:
         if (_context_options.wait_per_group) {
             _signal->use_queue_per_group(_groups.size());
         }
+
+        _pool.resize(_groups.size());
+        for (auto &g : _groups) {
+          CollectorGroup *p = g.get();
+          _pool.push([p, this](int) { p->MainLoop(); });
+        }
     }
 
     // Agent side.
@@ -132,20 +162,37 @@ public:
         Stat &stats = get_stats(key);
         stats.freq ++;
 
-        V_PRINT(_verbose, "[k=" << key << "] Start sending data ... key = " << key);
+        V_PRINT(_verbose, "[k=" << key << "] Start sending data");
         // Send the key to all collectors in the container, if the key satisfy the gating function.
-        int num_groups = 0;
-        for (auto &g : _groups) {
-            if (g->SendData(stats.key, &ai_comm)) num_groups ++;
+        std::vector<int> selected_groups;
+        std::string str_selected_groups;
+
+        // For each exclusive group, randomly select one.
+        for (const auto &p : _exclusive_groups) {
+            int idx = _g() % p.second.size();
+            int gid = p.second[idx];
+
+            if (_groups[gid]->SendData(key, &ai_comm)) {
+                str_selected_groups += std::to_string(gid) + ",";
+                selected_groups.push_back(gid);
+            }
         }
 
-        // Wait until all collectors have done their jobs. 
-        stats.counter->wait(num_groups);
+        if (! selected_groups.empty()) {
+            V_PRINT(_verbose, "[k=" << key << "] Sent to " << selected_groups.size() << " groups " << str_selected_groups << " waiting for the data to be processed");
 
-        // Finally wait until 
-        for (auto &g : _groups) g->WaitReply(stats.key);
-        
-        V_PRINT(_verbose, "[k=" << stats.key << "] Done with SendDataWaitReply");
+            // Wait until all collectors have done their jobs.
+            stats.counter->wait(selected_groups.size());
+
+            V_PRINT(_verbose, "[k=" << key << "] All " << selected_groups.size() << " has done their jobs, Wait until the game is released");
+
+            // Finally wait until resume is sent.
+            for (const int gid : selected_groups) {
+                _groups[gid]->WaitReply(key);
+            }
+        }
+
+        V_PRINT(_verbose, "[k=" << key << "] Done with SendDataWaitReply");
         return true;
     }
 
@@ -321,8 +368,8 @@ public:
           _context_options(context_options), _field_func(field_func), _pool(context_options.num_games) {
     }
 
-    int AddCollectors(int batchsize, int hist_len) {
-        int gid = _comm.AddCollectors(batchsize, hist_len);
+    int AddCollectors(int batchsize, int hist_len, int exclusive_id) {
+        int gid = _comm.AddCollectors(batchsize, hist_len, exclusive_id);
         _comm.GetCollectorGroup(gid).GetDataAddr().RegCustomFunc(_field_func);
         return gid;
     }
@@ -373,10 +420,10 @@ public:
         // Call the destructor.
         if (! _game_started) return;
 
-        // First set all batchsize to be 1. 
+        // First set all batchsize to be 1.
         _comm.PrepareStop();
 
-        // Then stop all game threads. 
+        // Then stop all game threads.
         std::cout << "Stop all game threads ..." << std::endl;
         _done.set();
         _done.wait(_pool.size());

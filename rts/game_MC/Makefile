@@ -17,8 +17,8 @@ endif
 
 PYTHON_CONFIG ?= python-config
 
-OPTFLAGS ?= -O3 -msse3
-# OPTFLAGS ?= -g3 -fsanitize=address,undefined,leak -O2 -lasan
+# OPTFLAGS ?= -O3 -msse3
+OPTFLAGS ?= -g3 -fsanitize=address,undefined,leak -O2 -lasan
 # OPTFLAGS ?= -g3 -fsanitize=leak -O2 -lubsan
 DEFINES = -DDEBUG #-DUSE_PYBIND11
 

@@ -69,6 +69,8 @@ public:
     }
 
     inline int wait(int expected_count, int usec = 0) {
+        if (expected_count == 0) return _count;
+
         std::unique_lock<std::mutex> lock(_mutex);
         if (usec == 0) {
             _cv.wait(lock, [this, expected_count]() { return _count >= expected_count; });

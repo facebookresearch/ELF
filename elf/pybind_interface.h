@@ -46,7 +46,7 @@ void register_common_func(py::module &m) {
   void Steps(const Infos& infos) { context->Steps(infos); } \
   std::string Version() const { return context->Version(); } \
   void PrintSummary() const { context->PrintSummary(); } \
-  int AddCollectors(int batchsize, int hist_len) { return context->AddCollectors(batchsize, hist_len); } \
+  int AddCollectors(int batchsize, int hist_len, int exclusive_id) { return context->AddCollectors(batchsize, hist_len, exclusive_id); } \
   const MetaInfo &meta(int i) const { return context->meta(i); } \
   int size() const { return context->size(); } \
 \
