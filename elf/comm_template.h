@@ -83,7 +83,7 @@ private:
     std::random_device _rd;
     std::mt19937 _g;
 
-    int _num_keys;
+    std::vector<Key> _keys;
     std::map<int, std::vector<int>> _exclusive_groups;
 
     std::vector<std::unique_ptr<CollectorGroup> > _groups;
@@ -97,40 +97,36 @@ private:
 
     bool _verbose;
 
-    // First register query_key then add collectors.
-    Stat &get_stats(const Key& key) {
-        auto it = _map.find(key);
-        if (it == _map.end()) {
-            auto info = _map.emplace(std::make_pair(key, Stat(_map.size())));
-            return info.first->second;
-        } else return it->second;
+    void compute_keys() {
+        for (int i = 0 ; i < _context_options.num_games; ++i) keys.push_back(get_query_id(i, -1));
+        // If multithread, register relevant keys.
+        if (_context_options.max_num_threads) {
+            for (int i = 0 ; i < _context_options.num_games; ++i) {
+                for (int tid = 0; tid < _context_options.max_num_threads; ++tid) {
+                    _keys.push_back(get_query_id(i, tid));
+                }
+            }
+        }
     }
 
-    std::vector<Key> get_keys() const {
-      std::vector<Key> keys;
-      for (int i = 0 ; i < _context_options.num_games; ++i) keys.push_back(get_query_id(i, -1));
-      // If multithread, register relevant keys.
-      if (_context_options.max_num_threads) {
-        for (int i = 0 ; i < _context_options.num_games; ++i) {
-          for (int tid = 0; tid < _context_options.max_num_threads; ++tid) {
-            keys.push_back(get_query_id(i, tid));
-          }
+    void init_stats() {
+        for (const Key& key : _keys) {
+            _map.emplace(std::make_pair(key, Stat(key)));
         }
-      }
-      return keys;
     }
 
 public:
     CommT(const ContextOptions &context_options)
       : _context_options(context_options),  _g(_rd()), _verbose(context_options.verbose_comm) {
         _signal.reset(new SyncSignal());
-        _num_keys = _context_options.num_games * (_context_options.max_num_threads + 1);
+        compute_keys();
+        init_stats();
     }
 
     int GetT() const { return _context_options.T; }
 
     int AddCollectors(int batchsize, int hist_len, int exclusive_id) {
-        _groups.emplace_back(new CollectorGroup(_groups.size(), _num_keys, batchsize, hist_len, _signal.get(), _context_options.verbose_collector));
+        _groups.emplace_back(new CollectorGroup(_groups.size(), _keys, batchsize, hist_len, _signal.get(), _context_options.verbose_collector));
         int gid = _groups.size() - 1;
 
         auto it = _exclusive_groups.find(exclusive_id);
@@ -159,7 +155,9 @@ public:
 
     // Agent side.
     bool SendDataWaitReply(const Key& key, AIComm& ai_comm) {
-        Stat &stats = get_stats(key);
+        auto it = _map.find(key);
+        if (it == _map.end()) return false;
+        Stat &stats = it->second;
         stats.freq ++;
 
         V_PRINT(_verbose, "[k=" << key << "] Start sending data");

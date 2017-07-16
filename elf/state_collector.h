@@ -170,8 +170,13 @@ private:
     }
 
 public:
-    CollectorGroupT(int gid, int num_keys, int batchsize, int hist_len, SyncSignal *signal, bool verbose)
-        : _gid(gid), _batchsize(batchsize), _hist_len(hist_len), _batch_collector(num_keys), _signal(signal), _verbose(verbose) {
+    CollectorGroupT(int gid, const std::vector<Key> &keys, int batchsize, int hist_len, 
+            SyncSignal *signal, bool verbose)
+        : _gid(gid), _batchsize(batchsize), _hist_len(hist_len), 
+          _batch_collector(keys.size()), _signal(signal), _verbose(verbose) {
+        for (const Key &key : keys) {
+            _conds.emplace(std::make_pair(key, CollectCondition()));
+        }
     }
 
     DataAddr &GetDataAddr() { return _data_addr; }
@@ -182,9 +187,7 @@ public:
     // Game side.
     bool SendData(const Key &key, AIComm *data) {
         auto it = _conds.find(key);
-        if (it == _conds.end()) {
-            it = _conds.emplace(std::make_pair(key, CollectCondition())).first;
-        }
+        if (it == _conds.end()) return false;
 
         if (it->second.Check(_hist_len, data)) {
             if (_verbose) std::cout << "[" << key << "][" << _gid << "] c.SendData ... " << std::endl;
