@@ -19,6 +19,7 @@ import threading
 import tqdm
 import pickle
 
+from collections import defaultdict
 from datetime import datetime
 
 import torch.multiprocessing as _mp
@@ -44,6 +45,42 @@ class Sampler:
             # print("Use multinomial approach")
             action = sample_multinomial(state_curr, self.args, node="pi")
         return action
+
+class StatsCollector:
+    def __init__(self):
+        self.id2seqs_actor = defaultdict(lambda : -1)
+        self.id2seqs_train = defaultdict(lambda : -1)
+
+    def actor(self, sel, sel_gpu, reply):
+        '''Check the states for an episode.'''
+        b = sel[0]
+        for i, (id, seq, last_terminal) in enumerate(zip(b["id"], b["seq"], b["last_terminal"])):
+            # print("[%d] actor %d" % (i, id))
+            if last_terminal:
+                self.id2seqs_actor[id] = -1
+            predicted = self.id2seqs_actor[id] + 1
+            if seq != predicted:
+                raise ValueError("Invalid next seq: id = %d, seq = %d, should be %d" % (id, seq, predicted))
+            self.id2seqs_actor[id] += 1
+
+    def train(self, sel, sel_gpu, reply):
+        T = len(sel)
+        batchsize = len(sel[0]["id"])
+
+        # Check whether the states are consecutive
+        for i in range(batchsize):
+            id = sel[0]["id"][i]
+            last_seq = self.id2seqs_train[id]
+            print("train %d, last_seq: %d" % (id, last_seq))
+            for t in range(T):
+                if sel[t]["last_terminal"][i]:
+                    last_seq = -1
+                if sel[t]["seq"][i] != last_seq + 1:
+                    raise ValueError("Invalid next seq: id = %d, t = %d, seq = %d, should be %d" % (id, t, sel[t]["seq"][i], last_seq + 1))
+                last_seq += 1
+
+            # Overlapped by 1.
+            self.id2seqs_train[id] = last_seq - 1
 
 class Trainer:
     def __init__(self):
@@ -148,6 +185,7 @@ class Trainer:
         self.rl_method = rl_method
         self.mi = mi
         self.sampler = sampler
+
 
 class SingleProcessRun:
     def __init__(self):

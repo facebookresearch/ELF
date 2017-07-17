@@ -52,13 +52,13 @@ def print_ptrs(batches):
 
 def _setup_tensor(GC, key, desc, group_id, use_numpy=False):
     torch_types = {
-        "int" : torch.IntTensor,
+        "int32_t" : torch.IntTensor,
         "int64_t" : torch.LongTensor,
         "float" : torch.FloatTensor,
         "unsigned char" : torch.ByteTensor
     }
     numpy_types = {
-        "int": 'i4',
+        "int32_t": 'i4',
         'int64_t': 'i8',
         'float': 'f4',
         'unsigned char': 'byte'
@@ -152,6 +152,13 @@ class GCWrapper:
                 name2idx[key].append(group_id)
                 gpu2gid[-1].append(group_id)
                 gid2gpu[group_id] = len(gpu2gid) - 1
+
+        # Zero out all replies.
+        for reply in replies:
+            if reply is not None:
+                for r in reply:
+                    for _, v in r.items():
+                        v[:] = 0
 
         self.GC = GC
         self.inputs = inputs

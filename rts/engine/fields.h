@@ -50,6 +50,7 @@ DEFINE_REWARD(AIComm, float, data.last_reward);
 DEFINE_POLICY_DISTR(AIComm, float, reply.action_probs);
 DEFINE_LAST_TERMINAL(AIComm, unsigned char);
 DEFINE_TERMINAL(AIComm, unsigned char);
+
 FIELD_SIMPLE(AIComm, Value, float, reply.value);
 FIELD_SIMPLE(AIComm, Action, int64_t, reply.global_action);
 

@@ -32,7 +32,8 @@ class Loader:
                 ("seed", 0),
                 ("simple_ratio", -1),
                 ("ratio_change", 0),
-                ("actor_only", dict(action="store_true"))
+                ("actor_only", dict(action="store_true")),
+                ("additional_labels", dict(type=str, default=None, help="Add additional labels in the batch. E.g., id,seq,last_terminal")),
             ],
             more_args = ["batchsize", "T"],
             child_providers = [ self.context_args.args ]
@@ -80,18 +81,23 @@ class Loader:
         # For actor model, no reward needed, we only want to get input and return distribution of actions.
         # sampled action and and value will be filled from the reply.
         desc["actor"] = (
-            dict(id="", s=str(num_unittype+7), r0="", r1="", last_r="", last_terminal="", _batchsize=str(args.batchsize), _T="1"),
+            dict(s=str(num_unittype+7), r0="", r1="", last_r="", last_terminal="", _batchsize=str(args.batchsize), _T="1"),
             dict(rv="", pi=str(num_action), V="1", a="1", _batchsize=str(args.batchsize), _T="1")
         )
 
         if not args.actor_only:
             # For training, we want input, action (filled by actor models), value (filled by actor models) and reward.
             desc["train"] = (
-                dict(rv="", id="", pi=str(num_action), s=str(num_unittype+7),
-                     r0="", r1="", a="1", r="1", V="1", seq="", terminal="",
+                dict(rv="", pi=str(num_action), s=str(num_unittype+7),
+                     r0="", r1="", a="1", r="1", V="1", terminal="",
                      _batchsize=str(args.batchsize), _T=str(args.T)),
                 None
             )
+
+        if args.additional_labels is not None:
+            extra = { label : "" for label in args.additional_labels.split(",") }
+            for _, v in desc.items():
+                v[0].update(extra)
 
         params = dict(
             num_action = num_action,

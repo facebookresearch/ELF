@@ -22,7 +22,7 @@ inline std::string type_desc() { return "unknown"; }
 template <> \
 inline std::string type_desc<type>() { return #type; }
 
-TYPE_DESC(int);
+TYPE_DESC(int32_t);
 TYPE_DESC(float);
 TYPE_DESC(double);
 TYPE_DESC(int64_t);
@@ -99,15 +99,16 @@ public: \
 
 
 template<typename AIComm>
-FIELD_SIMPLE(AIComm, Seq, int, seq);
+FIELD_SIMPLE(AIComm, Seq, int32_t, seq);
 
 template<typename AIComm>
-FIELD_SIMPLE(AIComm, ReplyVersion, int, reply_version);
+FIELD_SIMPLE(AIComm, ReplyVersion, int32_t, reply_version);
 
 template<typename AIComm>
-class FieldId : public FieldT<AIComm, int> {
+class FieldId : public FieldT<AIComm, int32_t> {
 public:
     void ToPtr(int batch_idx, const AIComm& ai_comm) override {
+      // [TODO]: We should use GetMeta().query_id
       *this->addr(batch_idx) = ai_comm.GetMeta().id;
     }
 };

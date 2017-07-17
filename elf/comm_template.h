@@ -60,21 +60,24 @@ struct InfoT {
 
 template <typename T>
 struct CondPerGroupT {
-    int last_seq, game_counter;
+    int last_used_seq, last_seq;
+    int game_counter;
     int freq_send;
 
     const int hist_overlap = 1;
 
-    CondPerGroupT() : last_seq(-1), game_counter(0), freq_send(0) { }
+    CondPerGroupT() : last_used_seq(1), last_seq(1), game_counter(0), freq_send(0) { }
 
     bool Check(int hist_len, T *data) {
         // Update game counter.
         if (data->game_counter() > game_counter) {
             game_counter = data->game_counter();
-            last_seq = -1;
+            // Make sure no frame is missed. Note that data->seq() starts from 1 (because it actually points to the next seq).
+            last_used_seq -= last_seq;
         }
-        if (data->hist_size() < hist_len || data->seq() - last_seq < hist_len - hist_overlap) return false;
         last_seq = data->seq();
+        if (data->hist_size() < hist_len || data->seq() - last_used_seq < hist_len - hist_overlap) return false;
+        last_used_seq = data->seq();
         return true;
     }
 };
@@ -198,7 +201,7 @@ public:
         Stat &stats = it->second;
         stats.freq ++;
 
-        V_PRINT(_verbose, "[k=" << key << "] Start sending data");
+        V_PRINT(_verbose, "[k=" << key << "] Start sending data, seq = " << ai_comm.seq() << " hist_size = " << ai_comm.hist_size());
         // Send the key to all collectors in the container, if the key satisfy the gating function.
         std::vector<int> selected_groups;
         std::string str_selected_groups;
@@ -212,6 +215,7 @@ public:
             int hist_len = hist_lens[idx];
 
             if (stats.conds[i].Check(hist_len, &ai_comm)) {
+                V_PRINT(_verbose, "[k=" << key << "] Pass test for group " << gid << " hist_len = " << hist_len);
                 stats.conds[i].freq_send ++;
 
                 _groups[gid]->SendData(key, &ai_comm);
