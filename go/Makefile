@@ -48,11 +48,11 @@ endif
 
 $(SO): $(OBJS)
 	@echo "[$(SO)] ..."
-	$(CXX) $^ -fPIC -shared -o $@ $(CXXFLAGS) $(LDFLAGS)
+	@$(CXX) $^ -fPIC -shared -o $@ $(CXXFLAGS) $(LDFLAGS)
 
 $(BINS): %.bin: $(OBJS) %.cpp
 	@echo "[bin] $@ ..."
-	$(CXX) $^ -o $@ $(CXXFLAGS) $(LDFLAGS)
+	@$(CXX) $^ -o $@ $(CXXFLAGS) $(LDFLAGS)
 
 $(OBJ_DIR)/%.o: %.cc
 	@echo "[cc] $< ..."

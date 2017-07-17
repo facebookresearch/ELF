@@ -1,5 +1,4 @@
-from model_base import *
-from rlmethod_common import ActorCritic, Q_learning, MultiplePrediction
+from rlpytorch import Model, ActorCritic, MultiplePrediction
 
 import torch
 import torch.nn as nn
@@ -45,5 +44,5 @@ class Model_Policy(Model):
 
 # Format: key, [model, method]
 Models = {
-    "multiple_prediction" : [Model_Policy, MultiplePrediction]
+    "df_policy" : [Model_Policy, MultiplePrediction]
 }

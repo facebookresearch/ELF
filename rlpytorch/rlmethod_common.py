@@ -146,7 +146,7 @@ class MultiplePrediction(LearningMethod):
         self.policy_loss = nn.NLLLoss().cuda()
         self.value_loss = nn.MSELoss().cuda()
 
-    def _params(self):
+    def _args(self):
         return [
             ("dummy", 0)
         ]

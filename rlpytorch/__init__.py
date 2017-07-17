@@ -6,7 +6,7 @@
 # of patent rights can be found in the PATENTS file in the same directory.
 
 from .args_utils import ArgsProvider
-from .rlmethod_common import ActorCritic
+from .rlmethod_common import ActorCritic, MultiplePrediction
 from .rlmethod_base import LearningMethod
 from .model_base import Model
 from .model_loader import ModelLoader
