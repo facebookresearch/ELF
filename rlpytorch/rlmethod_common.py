@@ -141,6 +141,34 @@ class ActorCritic(LearningMethod):
             self.stats["entropy_err"].feed(entropy_err.data[0])
             #print("[%d]: reward=%.4f, sum_reward=%.2f, acc_reward=%.4f, value_err=%.4f, policy_err=%.4f" % (i, r.mean(), r.sum(), R.mean(), value_err.data[0], policy_err.data[0]))
 
+class MultiplePrediction(LearningMethod):
+    def _init(self, args):
+        self.policy_loss = nn.NLLLoss().cuda()
+        self.value_loss = nn.MSELoss().cuda()
+
+    def _params(self):
+        return [
+            ("dummy", 0)
+        ]
+
+    def update(self, batch):
+        ''' Update given batch '''
+        # Current timestep.
+        state_curr = self.model_interface.forward("model", batch[0])
+        total_loss = None
+        eps = 1e-6
+        targets = batch[0]["actions"]
+        for i, pred in enumerate(state_curr["actions"]):
+            # backward.
+            loss = self.policy_loss((pred + eps).log(), Variable(targets[:, i]))
+            self.stats["loss" + str(i)].feed(loss.data[0])
+            if total_loss is None: total_loss = loss
+            else: total_loss += loss / (i + 1)
+
+        self.stats["total_loss"].feed(total_loss.data[0])
+        total_loss.backward()
+
 CommonMethods = {
-    "actor_critic": ActorCritic
+    "actor_critic": ActorCritic,
+    "multiple_prediction": MultiplePrediction
 }
