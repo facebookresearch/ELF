@@ -48,27 +48,28 @@ using Context = ContextT<GameOptions, GameState, Reply>;
 using DataAddr = typename Context::DataAddr;
 using AIComm = typename Context::AIComm;
 using Comm = typename Context::Comm;
+using HistType = typename AIComm::HistType;
 
-class FieldState : public FieldT<AIComm, float> {
+class FieldState : public FieldT<HistType, float> {
 public:
-    void ToPtr(int batch_idx, const AIComm& ai_comm) override {
-        const auto &info = ai_comm.newest(this->_hist_loc);
+    void ToPtr(int batch_idx, const HistType& in) override {
+        const auto &info = in.newest(this->_hist_loc);
         std::copy(info.data.buf.begin(), info.data.buf.end(), this->addr(batch_idx));
     }
 };
 
-DEFINE_LAST_REWARD(AIComm, float, data.last_reward);
-DEFINE_REWARD(AIComm, float, data.last_reward);
-DEFINE_POLICY_DISTR(AIComm, float, reply.prob);
+DEFINE_LAST_REWARD(HistType, float, data.last_reward);
+DEFINE_REWARD(HistType, float, data.last_reward);
+DEFINE_POLICY_DISTR(HistType, float, reply.prob);
 
-DEFINE_TERMINAL(AIComm, unsigned char);
-DEFINE_LAST_TERMINAL(AIComm, unsigned char);
+DEFINE_TERMINAL(HistType, unsigned char);
+DEFINE_LAST_TERMINAL(HistType, unsigned char);
 
-FIELD_SIMPLE(AIComm, Value, float, reply.value);
-FIELD_SIMPLE(AIComm, Action, int64_t, reply.action);
+FIELD_SIMPLE(HistType, Value, float, reply.value);
+FIELD_SIMPLE(HistType, Action, int64_t, reply.action);
 
-using DataAddr = DataAddrT<AIComm>;
-using DataAddrService = DataAddrServiceT<AIComm>;
+using DataAddr = DataAddrT<HistType>;
+using DataAddrService = DataAddrServiceT<HistType>;
 
 static constexpr int kWidth = 160;
 static constexpr int kHeight = 210;
@@ -77,4 +78,4 @@ static constexpr int kInputStride = kWidth*kHeight*3/kRatio/kRatio;
 static constexpr int kWidthRatio = kWidth / kRatio;
 static constexpr int kHeightRatio = kHeight / kRatio;
 
-bool CustomFieldFunc(int batchsize, const std::string& key, const std::string& v, SizeType *sz, FieldBase<AIComm> **p);
+bool CustomFieldFunc(int batchsize, const std::string& key, const std::string& v, SizeType *sz, FieldBase<HistType> **p);

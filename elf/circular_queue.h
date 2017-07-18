@@ -80,6 +80,12 @@ public:
         _head = 0; _tail = 0; _sz = 0;
         _q.resize(_q.size(), T());
     }
+
+    // oldest = 0, newest = _history.maxlen() - 1
+    T &oldest(int i = 0) { return get_from_push(maxlen() - i - 1); }
+    const T &oldest(int i = 0) const { return get_from_push(maxlen() - i - 1); }
+    T &newest(int i = 0) { return get_from_push(i); }
+    const T &newest(int i = 0) const { return get_from_push(i); }
 };
 
 

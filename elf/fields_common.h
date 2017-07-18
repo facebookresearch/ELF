@@ -15,59 +15,59 @@
 //   1. for newest(0), the reward is in the future and we don't know (set to 0.0)
 //   2. for newest(k), we can find the reward in k-1.
 //
-#define DEFINE_REWARD(AIComm, type, last_reward) \
-class FieldReward : public FieldT<AIComm, type> { \
+#define DEFINE_REWARD(HistType, type, last_reward) \
+class FieldReward : public FieldT<HistType, type> { \
 public: \
-    void ToPtr(int batch_idx, const AIComm& ai_comm) override { \
+    void ToPtr(int batch_idx, const HistType& in) override { \
       auto *target = this->addr(batch_idx); \
       if (this->_hist_loc == 0) *target = type(); \
-      else *target = ai_comm.newest(this->_hist_loc  - 1).last_reward; \
+      else *target = in.newest(this->_hist_loc  - 1).last_reward; \
     } \
 }
 
-#define DEFINE_LAST_REWARD(AIComm, type, last_reward) \
-class FieldLastReward : public FieldT<AIComm, type> { \
+#define DEFINE_LAST_REWARD(HistType, type, last_reward) \
+class FieldLastReward : public FieldT<HistType, type> { \
 public: \
-    void ToPtr(int batch_idx, const AIComm& ai_comm) override { \
+    void ToPtr(int batch_idx, const HistType& in) override { \
       auto *target = this->addr(batch_idx); \
-      *target = ai_comm.newest(this->_hist_loc).last_reward; \
+      *target = in.newest(this->_hist_loc).last_reward; \
     } \
 }
 
-#define DEFINE_POLICY_DISTR(AIComm, type, prob_distr) \
-class FieldPolicy : public FieldT<AIComm, type> { \
+#define DEFINE_POLICY_DISTR(HistType, type, prob_distr) \
+class FieldPolicy : public FieldT<HistType, type> { \
 public: \
-    void ToPtr(int batch_idx, const AIComm& ai_comm) override { \
-        const auto& prob = ai_comm.newest(this->_hist_loc).prob_distr; \
+    void ToPtr(int batch_idx, const HistType& in) override { \
+        const auto& prob = in.newest(this->_hist_loc).prob_distr; \
         auto *target = this->addr(batch_idx); \
         if (prob.size() == (size_t)this->_stride) std::copy(prob.begin(), prob.end(), target); \
         else std::fill(target, target + this->_stride, 0); \
     } \
-    void FromPtr(int batch_idx, AIComm& ai_comm) const override { \
-        auto &prob = ai_comm.newest(this->_hist_loc).prob_distr; \
+    void FromPtr(int batch_idx, HistType& in) const override { \
+        auto &prob = in.newest(this->_hist_loc).prob_distr; \
         const auto *target = this->addr(batch_idx); \
         if (prob.size() != (size_t)_stride) prob.resize(this->_stride); \
         std::copy(target, target + this->_stride, prob.begin()); \
     } \
 }
 
-#define DEFINE_LAST_TERMINAL(AIComm, type) \
-class FieldLastTerminal : public FieldT<AIComm, type> { \
+#define DEFINE_LAST_TERMINAL(HistType, type) \
+class FieldLastTerminal : public FieldT<HistType, type> { \
 public: \
-    void ToPtr(int batch_idx, const AIComm& ai_comm) override { \
-        const auto &record = ai_comm.newest(this->_hist_loc); \
+    void ToPtr(int batch_idx, const HistType& in) override { \
+        const auto &record = in.newest(this->_hist_loc); \
         *this->addr(batch_idx) = (record.seq == 0 && record.game_counter > 0) ? 1 : 0; \
     } \
 }
 
-#define DEFINE_TERMINAL(AIComm, type) \
-class FieldTerminal : public FieldT<AIComm, type> { \
+#define DEFINE_TERMINAL(HistType, type) \
+class FieldTerminal : public FieldT<HistType, type> { \
 public: \
-    void ToPtr(int batch_idx, const AIComm& ai_comm) override { \
+    void ToPtr(int batch_idx, const HistType& in) override { \
       auto *target = this->addr(batch_idx); \
       if (this->_hist_loc == 0) *target = 0; \
       else { \
-        const auto &record = ai_comm.newest(this->_hist_loc - 1); \
+        const auto &record = in.newest(this->_hist_loc - 1); \
         *target = (record.seq == 0 && record.game_counter > 0) ? 1: 0; \
       } \
     } \
