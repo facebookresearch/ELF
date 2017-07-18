@@ -77,7 +77,7 @@ tqdm
 
 How to train    
 ===============
-To train a model for MiniRTS, please first compile `./rts/game_MC` (See the instruction [here](./rts/game_MC/README.md) and [here](./rts/README.md))). Note that a compilation of `./rts/backend` is not necessary for training, unless you want to see visualization. 
+To train a model for MiniRTS, please first compile `./rts/game_MC` (See the instruction in `./rts/game_MC` and `./rts`). Note that a compilation of `./rts/backend` is not necessary for training, unless you want to see visualization. 
 
 Then please run the following commands in the current directory:
 
