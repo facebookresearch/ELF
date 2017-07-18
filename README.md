@@ -89,7 +89,10 @@ python3 run.py
     --opponent_type AI_SIMPLE                     # Use AI_SIMPLE as rule-based AI
     --tqdm                                        # Show progress bar.
     --gpu 0                                       # Use first gpu. 
+    --T 20                                        # 20 step actor-critic
 ```
+
+Note that long horizon (e.g., `--T 20`) could make the training much faster and (at the same time) stable. With long horizon, you should be able to train it to 70% winrate within 12 hours with 16CPU and 1GPU. 
 
 You can control the number of CPUs used in the training using `taskset -c`. The following is a sample output:
 ```
