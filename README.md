@@ -92,9 +92,9 @@ python3 run.py
     --T 20                                        # 20 step actor-critic
 ```
 
-Note that long horizon (e.g., `--T 20`) could make the training much faster and (at the same time) stable. With long horizon, you should be able to train it to 70% winrate within 12 hours with 16CPU and 1GPU. 
+Note that long horizon (e.g., `--T 20`) could make the training much faster and (at the same time) stable. With long horizon, you should be able to train it to 70% winrate within 12 hours with 16CPU and 1GPU. Here is one example [pretrained model](yuandong-tian.com/model-minirts-212808.bin) with `T = 16`. You can control the number of CPUs used in the training using `taskset -c`. 
 
-You can control the number of CPUs used in the training using `taskset -c`. The following is a sample output:
+The following is a sample output during training:
 ```
 $ game=./rts/game_MC/game model=actor_critic model_file=./rts/game_MC/model taskset -c 0-9 python3 run.py --batchsize 128 --freq_update 50 --fs_opponent 20 --latest_start 500 --latest_start_decay 0.99 --num_games 1024 --opponent_type AI_SIMPLE --tqdm
 Namespace(T=6, actor_only=False, ai_type='AI_NN', batchsize=128, discount=0.99, entropy_ratio=0.01, epsilon=0.0, eval=False, freq_update=50, fs_ai=50, fs_opponent=20, game_multi=None, gpu=None, grad_clip_norm=None, greedy=False, handicap_level=0, latest_start=500, latest_start_decay=0.99, load=None, max_tick=30000, mcts_threads=64, min_prob=1e-06, num_episode=10000, num_games=1024, num_minibatch=5000, opponent_type='AI_SIMPLE', ratio_change=0, record_dir='./record', sample_node='pi', sample_policy='epsilon-greedy', save_dir=None, save_prefix='save', seed=0, simple_ratio=-1, tqdm=True, verbose_collector=False, verbose_comm=False, wait_per_group=False)
@@ -124,6 +124,7 @@ To evaluate a model for MiniRTS, try the following command:
 ```bash
 eval_only=1 game=./rts/game_MC/game model=actor_critic model_file=./rts/game_MC/model \ 
 python3 run.py 
+    --load [your model]
     --batchsize 128 
     --fs_opponent 20
     --latest_start 500 
@@ -133,7 +134,28 @@ python3 run.py
     --stats winrate
     --num_eval 10000
     --tqdm
-    --eval_gpu 0
+    --eval_gpu 0                    # Use GPU 0 as the evaluation gpu.
+    --additional_labels id          # Tell the game environment to output additional dict entries.
+```
+
+Here is an example output (it takes 1 min 40 seconds to evaluate all games with 12 CPUs):
+```
+$ rts eval_only=1 game=./rts/game_MC/game model_file=./rts/game_MC/model model=actor_critic taskset -c 12-23 python3 run.py  --num_games 128 --batchsize 32 --tqdm --load model-minirts-212808.bin --eval_gpu 4 --fs_opponent 50 --latest_start 0 --opponent_type AI_SIMPLE --stats winrate --num_eval 10000 --additional_labels id
+Namespace(T=6, actor_only=False, additional_labels='id', ai_type='AI_NN', batchsize=32, discount=0.99, entropy_ratio=0.01, epsilon=0.0, eval=False, eval_freq=10, eval_gpu=4, freq_update=1, fs_ai=50, fs_opponent=50, game_multi=None, gpu=None, grad_clip_norm=None, greedy=False, handicap_level=0, latest_start=0, latest_start_decay=0.7, load='./save-212808.bin', max_tick=30000, mcts_threads=64, min_prob=1e-06, num_episode=10000, num_eval=10000, num_games=128, num_minibatch=5000, opponent_type='AI_SIMPLE', ratio_change=0, record_dir='./record', sample_node='pi', sample_policy='epsilon-greedy', save_dir=None, save_prefix='save', seed=0, simple_ratio=-1, stats='winrate', tqdm=True, verbose_collector=False, verbose_comm=False, wait_per_group=False)
+Version:  dc895b8ea7df8ef7f98a1a031c3224ce878d52f0_
+Num Actions:  9
+Num unittype:  6
+Load from ./save-212808.bin
+Version:  dc895b8ea7df8ef7f98a1a031c3224ce878d52f0_
+Num Actions:  9
+Num unittype:  6
+100%|████████████████████████████████████████████████████████████████████████████████████████████| 10000/10000 [01:40<00:00, 99.94it/s]
+str_acc_win_rate: Accumulated win rate: 0.735 [7295/2628/9923]
+best_win_rate: 0.7351607376801297
+new_record: True
+count: 0
+str_win_rate: [0] Win rate: 0.735 [7295/2628/9923], Best win rate: 0.735 [0]
+Stop all game threads ...
 ```
 
 Reference  
