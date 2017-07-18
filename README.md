@@ -77,7 +77,9 @@ tqdm
 
 How to train    
 ===============
-To train a model for MiniRTS, run the following in the current directory:
+To train a model for MiniRTS, please first compile `./rts/game_MC` (See the instruction [here](./rts/game_MC/README.md) and [here](./rts/README.md))). Note that a compilation of `./rts/backend` is not necessary for training, unless you want to see visualization. 
+
+Then please run the following commands in the current directory:
 
 ```bash
 game=./rts/game_MC/game model=actor_critic model_file=./rts/game_MC/model \ 
@@ -92,7 +94,7 @@ python3 run.py
     --T 20                                        # 20 step actor-critic
 ```
 
-Note that long horizon (e.g., `--T 20`) could make the training much faster and (at the same time) stable. With long horizon, you should be able to train it to 70% winrate within 12 hours with 16CPU and 1GPU. Here is one example [pretrained model](yuandong-tian.com/model-minirts-212808.bin) with `T = 16`. You can control the number of CPUs used in the training using `taskset -c`. 
+Note that long horizon (e.g., `--T 20`) could make the training much faster and (at the same time) stable. With long horizon, you should be able to train it to 70% winrate within 12 hours with 16CPU and 1GPU. Here is one example [pretrained model](http://yuandong-tian.com/model-minirts-212808.bin) with `T = 16`. You can control the number of CPUs used in the training using `taskset -c`. 
 
 The following is a sample output during training:
 ```
