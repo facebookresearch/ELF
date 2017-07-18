@@ -161,7 +161,7 @@ if __name__ == '__main__':
     all_args = ArgsProvider.Load(parser, args_providers)
 
     GC = game.initialize()
-    GC.setup_gpu(0)
+    GC.setup_gpu(all_args.gpu)
     all_args.method_class = method_class
 
     model = model_loader.load_model(GC.params)

@@ -88,6 +88,7 @@ python3 run.py
     --latest_start 500  --latest_start_decay 0.99 # Use rule-based AI for the first 500 ticks, then trained AI takes over. latest_start decays with rate latest_start_decay. 
     --opponent_type AI_SIMPLE                     # Use AI_SIMPLE as rule-based AI
     --tqdm                                        # Show progress bar.
+    --gpu 0                                       # Use first gpu. 
 ```
 
 You can control the number of CPUs used in the training using `taskset -c`. The following is a sample output:
@@ -129,6 +130,7 @@ python3 run.py
     --stats winrate
     --num_eval 10000
     --tqdm
+    --eval_gpu 0
 ```
 
 Reference  

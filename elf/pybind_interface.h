@@ -18,7 +18,6 @@ template <typename GameContext>
 void register_common_func(py::module &m) {
   using GC = typename GameContext::GC;
   using Options = typename GC::Options;
-  using Infos = typename GC::Infos;
 
   PYCLASS_WITH_FIELDS(m, ContextOptions)
     .def(py::init<>())
@@ -42,33 +41,34 @@ void register_common_func(py::module &m) {
 #endif
 
 #define CONTEXT_CALLS(GC, context) \
-  GC::Infos Wait(int timeout) { return context->Wait(timeout); } \
-  GC::Infos WaitGroup(int group_id, int timeout) { return context->WaitGroup(group_id, timeout); } \
-  void Steps(const GC::Infos& infos) { context->Steps(infos); } \
+  Infos Wait(int timeout) { return context->Wait(timeout); } \
+  Infos WaitGroup(int group_id, int timeout) { return context->WaitGroup(group_id, timeout); } \
+  void Steps(const Infos& infos) { context->Steps(infos); } \
   std::string Version() const { return context->Version(); } \
   void PrintSummary() const { context->PrintSummary(); } \
-  int AddCollectors(int batchsize, int hist_len, int num_collectors) { return context->AddCollectors(batchsize, hist_len, num_collectors); } \
+  int AddCollectors(int batchsize, int hist_len, int exclusive_id) { return context->AddCollectors(batchsize, hist_len, exclusive_id); } \
   const MetaInfo &meta(int i) const { return context->meta(i); } \
   int size() const { return context->size(); } \
-  int CreateTensor(int gid, int id_within_group, const std::string &key, const std::map<std::string, std::string> &desc) {\
+\
+  int CreateTensor(int gid, const std::string &key, const std::map<std::string, std::string> &desc) {\
       if (key == "input") \
-         return context->GetDataAddr(gid, id_within_group).GetInputService().Create(desc); \
+         return context->GetDataAddr(gid).GetInputService().Create(desc); \
       else if (key == "reply") \
-         return context->GetDataAddr(gid, id_within_group).GetReplyService().Create(desc); \
+         return context->GetDataAddr(gid).GetReplyService().Create(desc); \
       else throw std::range_error("Invalid key " + key); \
   } \
-  EntryInfo GetTensorInfo(int gid, int id_within_group, const std::string &key, int k) { \
+  EntryInfo GetTensorInfo(int gid, const std::string &key, int k) { \
       if (key == "input") \
-         return context->GetDataAddr(gid, id_within_group).GetInputService().entries()[k].entry_info;\
+         return context->GetDataAddr(gid).GetInputService().entries()[k].entry_info;\
       else if (key == "reply") \
-        return context->GetDataAddr(gid, id_within_group).GetReplyService().entries()[k].entry_info;\
+        return context->GetDataAddr(gid).GetReplyService().entries()[k].entry_info;\
       else throw std::range_error("Invalid key " + key); \
   } \
-  void SetTensorAddr(int gid, int id_within_group, const std::string &key, int k, int64_t p, int stride) { \
+  void SetTensorAddr(int gid, const std::string &key, int k, int64_t p, int stride) { \
       if (key == "input") \
-         context->GetDataAddr(gid, id_within_group).GetInputService().entries()[k].Set(p, stride);\
+         context->GetDataAddr(gid).GetInputService().entries()[k].Set(p, stride);\
       else if (key == "reply") \
-         context->GetDataAddr(gid, id_within_group).GetReplyService().entries()[k].Set(p, stride);\
+         context->GetDataAddr(gid).GetReplyService().entries()[k].Set(p, stride);\
       else throw std::range_error("Invalid key " + key); \
   } \
 
