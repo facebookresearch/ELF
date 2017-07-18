@@ -94,7 +94,9 @@ python3 run.py
     --T 20                                        # 20 step actor-critic
 ```
 
-Note that long horizon (e.g., `--T 20`) could make the training much faster and (at the same time) stable. With long horizon, you should be able to train it to 70% winrate within 12 hours with 16CPU and 1GPU. Here is one example [pretrained model](http://yuandong-tian.com/model-minirts-212808.bin) with `T = 16`. You can control the number of CPUs used in the training using `taskset -c`. 
+Note that long horizon (e.g., `--T 20`) could make the training much faster and (at the same time) stable. With long horizon, you should be able to train it to 70% winrate within 12 hours with 16CPU and 1GPU.  You can control the number of CPUs used in the training using `taskset -c`. 
+
+Here is one [pretrained model](http://yuandong-tian.com/model-minirts-212808.bin) with `T = 16`. Here is one game [replay](https://www.youtube.com/watch?v=YgZyWobkqfw). 
 
 The following is a sample output during training:
 ```
@@ -140,7 +142,7 @@ python3 run.py
     --additional_labels id          # Tell the game environment to output additional dict entries.
 ```
 
-Here is an example output (it takes 1 min 40 seconds to evaluate all games with 12 CPUs):
+Here is an example output (it takes 1 min 40 seconds to evaluate 10k games with 12 CPUs):
 ```
 $ rts eval_only=1 game=./rts/game_MC/game model_file=./rts/game_MC/model model=actor_critic taskset -c 12-23 python3 run.py  --num_games 128 --batchsize 32 --tqdm --load model-minirts-212808.bin --eval_gpu 4 --fs_opponent 50 --latest_start 0 --opponent_type AI_SIMPLE --stats winrate --num_eval 10000 --additional_labels id
 Namespace(T=6, actor_only=False, additional_labels='id', ai_type='AI_NN', batchsize=32, discount=0.99, entropy_ratio=0.01, epsilon=0.0, eval=False, eval_freq=10, eval_gpu=4, freq_update=1, fs_ai=50, fs_opponent=50, game_multi=None, gpu=None, grad_clip_norm=None, greedy=False, handicap_level=0, latest_start=0, latest_start_decay=0.7, load='./save-212808.bin', max_tick=30000, mcts_threads=64, min_prob=1e-06, num_episode=10000, num_eval=10000, num_games=128, num_minibatch=5000, opponent_type='AI_SIMPLE', ratio_change=0, record_dir='./record', sample_node='pi', sample_policy='epsilon-greedy', save_dir=None, save_prefix='save', seed=0, simple_ratio=-1, stats='winrate', tqdm=True, verbose_collector=False, verbose_comm=False, wait_per_group=False)
