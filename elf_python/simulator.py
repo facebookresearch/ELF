@@ -4,26 +4,34 @@ import torch.multiprocessing as _mp
 mp = _mp.get_context('spawn')
 
 class Simulator(mp.Process):
-    def __init__(self, connector_names, id, desc):
+    '''
+    Wrapper for simulator.
+    Functions to override:
+        on_init: Initialization after the process has started.
+        restart: restart the environment.
+        terminal: property that tell whether the game has reached terminal
+        get_key: from the key, get the content. e.g. ``get_key("s")`` will give the encoded state of the game.
+        set_key: set the key from replies. e.g., ``set_key("a", 2)`` set the action to be 2 (and the underlying game can continue).
+    '''
+    def __init__(self, id, desc):
         '''
         Example:
-        desc = {
-            "actor" : (
-                dict(s="", last_terminal=""),
-                dict(a="")
+        desc = dict(
+            actor = dict(
+                input = dict(s="", last_terminal=""),
+                reply = dict(a="")
+                connector = "name1"
             ),
-            "train" : (
-                dict(s="", r="", a=""),
-                None
+            train = dict(
+                input = dict(s="", r="", a=""),
+                reply = None,
+                connector = "name2"
             )
         }
-        connector_names = {
-            "actor" : "name1",
-            "train" : "name2"
-        }
         '''
-        self.connector_names = connector_names
+        super(Simulator, self).__init__()
         self.id = id
+        self.agent_name = "game-" + self.id
         self.desc = desc
 
     def on_init(self):
@@ -37,7 +45,7 @@ class Simulator(mp.Process):
         pass
 
     @abc.abstractmethod
-    def get_key(self, key, *args, **kwargs):
+    def get_key(self, key):
         pass
 
     @abc.abstractmethod
@@ -47,50 +55,54 @@ class Simulator(mp.Process):
     def run(self):
         '''Return reward'''
         self.chs = { }
-        for key, cn in self.connector_names.items():
-            self.chs[key] = InitSender(cn, self.id)
-        self.on_init()
-        self.restart()
+        for key, v in self.desc.items():
+            self.chs[key] = InitSender(v["connector"], self.id)
 
-        seq = 0
-        game_counter = 0
+        self.seq = 0
+        self.game_counter = 0
+        self.restart()
 
         while True:
             send_chs = {}
             reply_chs = {}
+            reply_format = {}
             data = { }
-            for key, (input, reply) in self.desc.items():
+            for name, v in self.desc.items():
                 # Collector and send data.
-                data_to_send = { k : self.get_key(k) for k, _ in input.items() }
+                data_to_send = { k : self.get_key(k) for k, _ in v["input"].items() }
                 data_to_send.update({
-                    "_agent_name" : str("game-") + str(self.id),
-                    "_game_counter" : game_counter,
-                    "_seq" : seq
+                    "_agent_name" : self.agent_name,
+                    "_game_counter" : self.game_counter,
+                    "_seq" : self.seq
                 })
                 # A batch of size 1
-                data[key] = [ data_to_send ]
-                send_chs[key] = self.chs[key]
+                data[name] = [ data_to_send ]
+                send_chs[name] = self.chs[name]
 
-                if reply is not None:
-                    reply_chs[key] = self.chs[key]
+                if v["reply"] is not None:
+                    reply_chs[name] = self.chs[name]
+                    reply_format[name] = v["reply"]
 
             # Send all.
+            # print("[%s]: Before send ..." % agent_name)
             SendAll(send_chs, data)
 
             # Wait for receive if there is any. Note that if there are multiple
             # desc, then we need to wait simultaneously.
+            # print("[%s]: Before wait reply ..." % agent_name)
             replies = WaitAll(reply_chs)
 
             # Set all the keys.
-            # Note that each reply is also a batch of size 1
-            for key, reply in replies[0].items():
-                for k, v in reply.items():
-                    self.set_key(k, v)
+            for name, reply in replies.items():
+                # Note that each reply is also a batch of size 1
+                for k, v in reply[0].items():
+                    if k in reply_format[name]:
+                        self.set_key(k, v)
 
             if self.terminal:
-                seq = 0
-                game_counter += 1
+                self.seq = 0
+                self.game_counter += 1
                 self.restart()
             else:
-                seq += 1
+                self.seq += 1
 

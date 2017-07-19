@@ -1,15 +1,17 @@
 import threading
 from queue import Queue
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from .utils import queue_get, queue_put
 
 class Replier:
-    def __init__(self, ch, reply_batchsize=1):
+    def __init__(self, ch, reply_batchsize=1, done_flag=None):
         self.reply_batchsize = reply_batchsize
         self.ch = ch
+        self.done_flag = done_flag
 
         # We receive the data to reply.
         self.reply_queue = Queue(maxsize=1000)
+        self.reply_cache = OrderedDict()
         self.max_reply_cache = 10000
         self.reply_cache_lock = threading.Lock()
         threading.Thread(target=self._thread_reply).start()
@@ -35,6 +37,8 @@ class Replier:
 
     def reply(self, batch_t, data):
         ''' Get a batch at time t, reply with data'''
+        if data is None: return
+
         n = batch_t["_batchsize"]
         senders = batch_t["_sender"][:n]
         agent_names = batch_t["_agent_name"][:n]

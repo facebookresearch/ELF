@@ -1,2 +1,2 @@
 from .simulator import Simulator
-from .assembler import BatchAssembler
+from .GCWrapper import GCWrapper

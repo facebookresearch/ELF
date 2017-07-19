@@ -1,6 +1,9 @@
 from queue import Queue, Full, Empty
 import threading
 import numpy as np
+import torch
+
+from datetime import datetime
 from time import sleep
 from collections import deque, Counter, defaultdict, OrderedDict
 
@@ -145,6 +148,84 @@ class Pool:
         self.empty_entries.put(batch["_idx"])
 
 
+class SeqStats:
+    def __init__(self, name="seq", seq_limits=None):
+        # Stats.
+        self.stats_seq = Counter()
+        self.clear_stats()
+        self.name = name
+
+        if seq_limits is None:
+            self.limits = [1, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1200, 1400, 1600, 1800, 2000, 2500, 3000, 4000, 5000, float("inf")]
+        else:
+            self.limits = seq_limits
+            if not np.isinf(self.limits[-1]):
+                self.limits.append(float("inf"))
+
+    def feed(self, seqs):
+        for seq_num in seqs:
+            bin_idx = None
+            for i, limit in enumerate(self.limits[1:]):
+                if int(seq_num) < limit:
+                    bin_idx = i
+                    break
+            if seq_num > self.max_seq:
+                self.max_seq = seq_num
+            if seq_num < self.min_seq:
+                self.min_seq = seq_num
+
+            name = "[" + str(self.limits[bin_idx]) + ", " + str(self.limits[bin_idx + 1]) + ")"
+            self.stats_seq[name] += 1
+
+    def print_stats(self, reset=False):
+        total_counts = sum(self.stats_seq.values())
+        if total_counts > 0:
+            print("Distribution of %s [min = %d / max = %d / #count = %d]:" % (self.name, self.min_seq, self.max_seq, total_counts))
+            s = ""
+            for r in sorted(self.stats_seq.keys(), key=lambda x : float(x.split(",")[0][1:])):
+                s += "%s: %d [%.2lf%%]\n" % (r, self.stats_seq[r], 100.0 * self.stats_seq[r] / total_counts)
+            print(s)
+        else:
+            print("Distribution of %s [#count = %d]:" % (self.name, total_counts))
+
+        if reset: self.clear_stats()
+
+    def clear_stats(self):
+        self.stats_seq.clear()
+        self.max_seq = 0
+        self.min_seq = float('inf')
+
+
+class Timer:
+    def __init__(self):
+        self.reset()
+
+    def __call__(self, name):
+        self.curr_name = name
+        return self
+
+    def __enter__(self):
+        self.before[self.curr_name] = datetime.now()
+
+    def __exit__(self, t, value, traceback):
+        after = datetime.now()
+        elapsed = (after - self.before[self.curr_name]).total_seconds() * 1000
+        self.records[self.curr_name][0] += elapsed
+        self.records[self.curr_name][1] += 1
+
+    def summary(self):
+        rets = []
+        for name, record in self.records.items():
+            cumtime, count = record
+            aver_time = float(cumtime) / count
+            rets.append("[%s] %.3f ms [%d]" % (name, aver_time, count))
+        return rets
+
+    def reset(self):
+        self.records = defaultdict(lambda : [0, 0])
+        self.before = { }
+
+
 class BatchStats:
     def __init__(self, seq_limits=None):
         # Stats.
@@ -227,6 +308,8 @@ class MemoryReceiver:
     def on_data(self, m):
         qs = self.batch_assembler.feed(m)
         if qs is not None:
+            # print("MemoryReceiver[%s] Receive batch!" % self.name)
+
             if self.prompt is not None:
                 queue_size = self.batch_queue.qsize()
                 print(self.prompt["on_draw_batch"] + str(queue_size), end="")
@@ -267,11 +350,13 @@ class MemoryReceiver:
             else: m = raw_data
 
         # Send to multiple threads for batch.
+        ret = []
         with self.timer("collect"):
             for data in m:
                 data["_key"] = self._get_key(data)
                 if not "_sender" in data:
                     data["_sender"] = data["_key"]
+                ret.append(data)
 
         return ret
 
@@ -312,7 +397,7 @@ class MemoryReceiver:
     def Step(self, batch, reply):
         # Send reply back and release
         if self.replier is not None:
-            self.replier.Reply(batch, reply)
+            self.replier.reply(batch["cpu"][0], reply)
 
         self.pool.release(batch)
         if self.prompt is not None:

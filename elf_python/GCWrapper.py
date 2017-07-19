@@ -7,7 +7,7 @@ from queue import Queue
 class Collector:
     def __init__(self, name, collector_name, batchsize, T, batch_queue):
         self.receiver = InitConnector(collector_name)
-        self.exp_op = ExpOp(use_future=True)
+        self.exp_op = ExpOp(use_future=False)
         self.assembler = BatchAssembler(batchsize, self.exp_op, T=T)
 
         self.replier = Replier(self.receiver, reply_batchsize=1)
@@ -18,14 +18,12 @@ class Collector:
             MemoryReceiver(name, self.receiver, self.assembler, batch_queue, allow_incomplete_batch=False, replier=self.replier)
 
 class GCWrapper:
-    def __init__(self, simulator_class, desc, connector_names, num_games, batchsize, T):
-        self.connector_names = connector_names
+    def __init__(self, simulator_class, desc, num_games, batchsize, T):
+        self.desc = desc
         self.batch_q = Queue()
-        self.collectors = [ Collector(cn, batchsize, T, self.batch_q) for cn in self.connector_names ]
+        self.collectors = [ Collector(key, v["connector"], batchsize, T, self.batch_q) for key, v in self.desc.items() ]
 
-        for i in range(num_games):
-            self.simulators.append(simulator_class(self.connector_names, i, desc))
-
+        self.simulators = [ simulator_class(str(i), desc) for i in range(num_games) ]
         for simulator in self.simulators:
             simulator.start()
 
@@ -42,3 +40,4 @@ class GCWrapper:
             reply = self._cb[rv.name](batch["cpu"], batch["gpu"])
 
         rv.Step(batch, reply)
+
