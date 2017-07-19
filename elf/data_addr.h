@@ -56,8 +56,8 @@ public:
     virtual std::string info() const = 0;
 };
 
-template <typename AIComm, typename T>
-class FieldT : public FieldBase<AIComm> {
+template <typename In, typename T>
+class FieldT : public FieldBase<In> {
 protected:
     T *_p;
     int _stride;
@@ -86,30 +86,30 @@ public:
     }
 };
 
-#define FIELD_SIMPLE(comm_name, name, type, subfield) \
-class Field ## name : public FieldT<comm_name, type> { \
+#define FIELD_SIMPLE(In, name, type, subfield) \
+class Field ## name : public FieldT<In, type> { \
 public: \
-    void ToPtr(int batch_idx, const comm_name& ai_comm) { \
-      *this->addr(batch_idx) = ai_comm.newest(this->_hist_loc).subfield;\
+    void ToPtr(int batch_idx, const In& in) { \
+      *this->addr(batch_idx) = in.newest(this->_hist_loc).subfield;\
     } \
-    void FromPtr(int batch_idx, comm_name& ai_comm) const {\
-      ai_comm.newest(this->_hist_loc).subfield = *this->addr(batch_idx);\
+    void FromPtr(int batch_idx, In& in) const {\
+      in.newest(this->_hist_loc).subfield = *this->addr(batch_idx);\
     } \
 }
 
 
-template<typename AIComm>
-FIELD_SIMPLE(AIComm, Seq, int32_t, seq);
+template<typename In>
+FIELD_SIMPLE(In, Seq, int32_t, seq);
 
-template<typename AIComm>
-FIELD_SIMPLE(AIComm, ReplyVersion, int32_t, reply_version);
+template<typename In>
+FIELD_SIMPLE(In, ReplyVersion, int32_t, reply_version);
 
-template<typename AIComm>
-class FieldId : public FieldT<AIComm, int32_t> {
+template<typename In>
+class FieldId : public FieldT<In, int32_t> {
 public:
-    void ToPtr(int batch_idx, const AIComm& ai_comm) override {
+    void ToPtr(int batch_idx, const In& in) override {
       // [TODO]: We should use GetMeta().query_id
-      *this->addr(batch_idx) = ai_comm.GetMeta().id;
+      *this->addr(batch_idx) = in.newest().meta->id;
     }
 };
 
@@ -124,9 +124,9 @@ struct EntryInfo {
   REGISTER_PYBIND_FIELDS(key, hist_loc_for_py, type, sz);
 };
 
-template <typename AIComm>
+template <typename In>
 struct AddrEntryT {
-    using AddrType = std::unique_ptr<FieldBase<AIComm>>;
+    using AddrType = std::unique_ptr<FieldBase<In>>;
 
     EntryInfo entry_info;
     AddrType addr;
@@ -142,13 +142,13 @@ struct AddrEntryT {
 };
 
 // DataAddr service
-template <typename AIComm>
+template <typename In>
 class DataAddrServiceT {
 public:
-    using AddrEntry = AddrEntryT<AIComm>;
+    using AddrEntry = AddrEntryT<In>;
     using AddrType = typename AddrEntry::AddrType;
     using DescType = std::map<std::string, std::string>;
-    using CustomFunc = std::function<bool (int batchsize, const std::string& key, const std::string& v, SizeType *, FieldBase<AIComm> **)>;
+    using CustomFunc = std::function<bool (int batchsize, const std::string& key, const std::string& v, SizeType *, FieldBase<In> **)>;
 
 private:
     std::vector<AddrEntry> _entries;
@@ -180,18 +180,18 @@ public:
                 if (key[0] == '_') continue;
 
                 SizeType sz;
-                FieldBase<AIComm> *p = nullptr;
+                FieldBase<In> *p = nullptr;
 
                 if (key == "seq") {
                     sz = SizeType{batchsize};
-                    p = new FieldSeq<AIComm>();
+                    p = new FieldSeq<In>();
                 } else if (key == "id") {
                     sz = SizeType{batchsize};
-                    p = new FieldId<AIComm>();
+                    p = new FieldId<In>();
                 } else if (key == "rv") {
                     // reply version
                     sz = SizeType{batchsize};
-                    p = new FieldReplyVersion<AIComm>();
+                    p = new FieldReplyVersion<In>();
                 } else if (_func != nullptr) {
                     if (! _func(batchsize, key, it->second, &sz, &p))
                       continue;
@@ -224,10 +224,10 @@ public:
 };
 
 // Finally DataAddr
-template <typename AIComm>
+template <typename In>
 class DataAddrT {
 public:
-    using DataAddrService = DataAddrServiceT<AIComm>;
+    using DataAddrService = DataAddrServiceT<In>;
     using CustomFunc = typename DataAddrService::CustomFunc;
     using AddrEntry = typename DataAddrService::AddrEntry;
     using AddrType = typename AddrEntry::AddrType;
@@ -246,24 +246,24 @@ public:
         _reply_addrs.RegCustomFunc(func);
     }
 
-    void GetInput(int batch_idx, const AIComm& ai_comm) {
+    void GetInput(int batch_idx, const In& in) {
         // Copy stuff to input
         for (auto &entry : _input_addrs.entries()) {
-            if (entry.addr->valid()) entry.addr->ToPtr(batch_idx, ai_comm);
+            if (entry.addr->valid()) entry.addr->ToPtr(batch_idx, in);
         }
     }
-    void GetInputs(const std::vector<AIComm *> &batch) {
+    void GetInputs(const std::vector<In *> &batch) {
         // Copy stuff to input
         for (size_t i = 0; i < batch.size(); ++i) GetInput(i, *batch[i]);
     }
 
-    void PutReply(int batch_idx, AIComm &ai_comm) {
+    void PutReply(int batch_idx, In &in) {
         for (const auto &entry : _reply_addrs.entries()) {
-            if (entry.addr->valid()) entry.addr->FromPtr(batch_idx, ai_comm);
+            if (entry.addr->valid()) entry.addr->FromPtr(batch_idx, in);
         }
     }
 
-    void PutReplies(std::vector<AIComm *> &batch) {
+    void PutReplies(std::vector<In *> &batch) {
         // Copy stuff to input
         for (size_t i = 0; i < batch.size(); ++i) PutReply(i, *batch[i]);
     }

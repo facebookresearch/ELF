@@ -9,7 +9,7 @@
 
 #include "fields.h"
 
-bool CustomFieldFunc(int batchsize, const std::string& key, const std::string& v, SizeType *sz, FieldBase<AIComm> **p) {
+bool CustomFieldFunc(int batchsize, const std::string& key, const std::string& v, SizeType *sz, FieldBase<HistType> **p) {
     // Note that ptr and stride will be set after the memory are initialized in the Python side.
     if (key == "s") {
         const int channel_size = stoi(v);

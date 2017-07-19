@@ -116,7 +116,7 @@ bool TrainedAI2::on_act(const GameEnv &env) {
     // Get the current action from the queue.
     int num_action = NUM_AISTATE;
     int h = num_action - 1;
-    const Reply& reply = _ai_comm->newest().reply;
+    const Reply& reply = _ai_comm->history().newest().reply;
     // uint64_t hash_code;
 
     switch(reply.action_type) {

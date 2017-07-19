@@ -55,7 +55,7 @@ class StatsCollector:
         '''Check the states for an episode.'''
         b = sel[0]
         for i, (id, seq, last_terminal) in enumerate(zip(b["id"], b["seq"], b["last_terminal"])):
-            # print("[%d] actor %d" % (i, id))
+            # print("[%d] actor %d, seq %d" % (i, id, seq))
             if last_terminal:
                 self.id2seqs_actor[id] = -1
             predicted = self.id2seqs_actor[id] + 1
