@@ -71,10 +71,9 @@ context.Stop()
 
 Dependency    
 ===============
-C++ compiler with C++11 support (e.g., gcc >= 4.9) is required. Python3.x is required. The following libraries are required:
-```
-tbb
-```
+C++ compiler with C++11 support (e.g., gcc >= 4.9) is required. The following libraries are required `tbb`.
+
+Python 3.x is required. In addition, you need to install following package: [PyTorch](http://pytorch.org/), `tqdm`, `zmq`, `msgpack`, `msgpack_numpy`
 
 How to train    
 ===============
