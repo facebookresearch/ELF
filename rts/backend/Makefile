@@ -35,7 +35,10 @@ LDFLAGS += -lm -ltbb
 
 # rts_engine
 ccSOURCES += $(shell find . -name "*.cc"  |  sed 's/^\.\///g')
-# Assume all elf files are headers.
+
+# elf
+ccSOURCES += $(shell find ../../elf/lib -name "*.cc"  |  sed 's/^\.\///g')
+
 OBJ_DIR = obj
 OBJS = $(addprefix $(OBJ_DIR)/,$(ccSOURCES:.cc=.o))
 GAME_OBJ_DIR = $(GAME_DIR)/obj
