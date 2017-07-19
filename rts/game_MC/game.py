@@ -97,14 +97,14 @@ class Loader:
         if args.additional_labels is not None:
             extra = { label : "" for label in args.additional_labels.split(",") }
             for _, v in desc.items():
-                v[0].update(extra)
+                v["input"].update(extra)
 
         params = dict(
             num_action = num_action,
             num_unit_type = num_unittype,
             num_group = 1 if args.actor_only else 2,
-            action_batchsize = int(desc["actor"][0]["_batchsize"]),
-            train_batchsize = int(desc["train"][0]["_batchsize"]) if not args.actor_only else None,
+            action_batchsize = int(desc["actor"]["input"]["_batchsize"]),
+            train_batchsize = int(desc["train"]["input"]["_batchsize"]) if not args.actor_only else None,
             T = args.T
         )
 
