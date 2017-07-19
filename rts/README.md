@@ -5,7 +5,7 @@
 Dependency
 ============
 
-The simulators are written in C++11, so please compile using gcc >= 4.8.
+The simulators are written in C++11, so please compile using gcc >= 4.9.
 
 The engine also comes with a web-based platform-independent visualization interface with JavaScript (thanks Qucheng Gong for getting this to work). A backend runs in the terminal and communicates with the front-end webpage to drive the game and receive any keyboard/mouse feedbacks from the web interface. In order to make the visualization work, please:
 
