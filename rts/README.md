@@ -1,5 +1,7 @@
 # RTS engines
 
+[![Build Status](https://travis-ci.org/nlohmann/json.svg?branch=master)](https://travis-ci.org/facebookresearch/ELF)
+
 Dependency
 ============
 
@@ -7,10 +9,18 @@ The simulators are written in C++11, so please compile using gcc >= 4.8.
 
 The engine also comes with a web-based platform-independent visualization interface with JavaScript (thanks Qucheng Gong for getting this to work). A backend runs in the terminal and communicates with the front-end webpage to drive the game and receive any keyboard/mouse feedbacks from the web interface. In order to make the visualization work, please:
 
-1. Install zeromq 4.0.4 from source and its C++ binding (https://github.com/zeromq/cppzmq), and copy them to /usr/local/include (or other places accessible from gcc).
-
+1. Install zeromq 4.0.4 from source.
+```
+wget https://archive.org/download/zeromq_4.0.4/zeromq-4.0.4.tar.gz
+tar xfz zeromq-4.0.4.tar.gz
+cd zeromq-4.0.4 && ./configure && make && sudo make install
+```
 2. Install libczmq 3.0.2 from source.
-
+```
+wget https://github.com/zeromq/czmq/releases/download/v3.0.2/czmq-3.0.2.tar.gz
+tar xfz czmq-3.0.2.tar.gz
+cd czmq-3.0.2 && ./configure && make && sudo make install
+```
 Due to the issues of `CZMQ-ZWSStock`, only a specific version of zeromq and czmq can be used. We welcome any better solutions.
 
 How to compile
@@ -51,7 +61,7 @@ For game_CF:
 Run `./minirts flag_selfplay` for a simple selfplay of Capture the Flag game.
 
 For game_TD:
-Run `./minirts td_simple --max_tick 3000` for a simple Tower Defense game. 
+Run `./minirts td_simple --max_tick 3000` for a simple Tower Defense game.
 
 Visualization  
 -------------

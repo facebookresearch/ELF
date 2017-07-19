@@ -1,0 +1,41 @@
+#########################
+# project configuration #
+#########################
+
+# C++ project
+language: cpp
+compiler:
+  - gcc
+  - clang
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - gcc-4.9
+    - g++-4.9
+    - clang
+
+install:
+  # create deps dir if not existing
+  - DEPS_DIR="${TRAVIS_BUILD_DIR}/deps"
+  - mkdir -p ${DEPS_DIR} && cd ${DEPS_DIR}
+  - travis_retry wget --quiet https://archive.org/download/zeromq_4.0.4/zeromq-4.0.4.tar.gz
+  - tar xfz zeromq-4.0.4.tar.gz
+  - (cd zeromq-4.0.4 && ./configure && make && sudo make install)
+  - travis_retry wget --quiet https://github.com/zeromq/czmq/releases/download/v3.0.2/czmq-3.0.2.tar.gz
+  - tar xfz czmq-3.0.2.tar.gz
+  - (cd czmq-3.0.2 && ./configure && make && sudo make install)
+  - sudo apt-get install libtbb-dev
+  - cd ..
+
+script:
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-4.9" CC="gcc-4.9"; fi
+  - (cd rts/game_MC && make gen && make)
+  - (cd rts/game_CF && make gen && make)
+  - (cd rts/game_TD && make gen && make)
+  - cd rts/backend
+  - make clean && make minirts GAME_DIR=../game_MC
+  - make clean && make minirts GAME_DIR=../game_CF
+  - make clean && make minirts GAME_DIR=../game_TD
+
