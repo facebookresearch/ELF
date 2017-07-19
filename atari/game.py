@@ -99,9 +99,9 @@ if __name__ == '__main__':
 
     GC = loader.initialize()
 
-    def actor(sel, sel_gpu, reply):
+    def actor(sel, sel_gpu):
         # pickle.dump(to_numpy(sel), open("tmp%d.bin" % k, "wb"), protocol=2)
-        reply[0]["a"][:] = 0
+        return dict(a=[0]*sel[0]["s"].size(0))
 
     GC.reg_callback("actor", actor)
 

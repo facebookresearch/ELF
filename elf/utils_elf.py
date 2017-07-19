@@ -199,14 +199,24 @@ class GCWrapper:
             transfer_cpu2gpu(sel, sel_gpu)
         else:
             sel_gpu = None
+
+        # Get the reply array
         if len(self.replies) > infos.gid and self.replies[infos.gid] is not None:
-            reply = self.replies[infos.gid]
+            sel_reply = self.replies[infos.gid]
         else:
-            reply = None
+            sel_reply = None
 
         # Call
         if infos.gid in self._cb:
-            return self._cb[infos.gid](sel, sel_gpu, reply)
+            reply = self._cb[infos.gid](sel, sel_gpu)
+            # If reply is meaningful, send them back.
+            if isinstance(reply, dict):
+                # Current we only support reply to the most recent history.
+                reply_msg = sel_reply[0]
+                for k, v in reply.items():
+                    # Copy it down to cpu.
+                    if k in reply_msg:
+                        reply_msg[k][:] = v
 
     def Run(self):
         '''Wait group of an arbitrary collector key. Samples in a returned batch are always from the same group, but the group key of the batch may be arbitrary.'''

@@ -105,13 +105,13 @@ _T             History length
 Register callback function
 --------------------------
 Once we setup the batches, we then need to register the callback functions for each collector with :func:`reg_callback`. 
-The callback function has the signature ``cb(input_batch, input_batch_gpu, reply_batch)``: 
+The callback function has the signature ``cb(input_batch, input_batch_gpu)``, and should return a dict with entries that you want to reply to the game.
 ::
     model = [your model]
 
-    def on_actor(input_batch, input_batch_gpu, reply_batch):
+    def on_actor(input_batch, input_batch_gpu):
         output = model(input_batch_gpu)
-        reply_batch[0]["a"][:] = sample_action(output["pi"])
+        return dict(a=sample_action(output["pi"]))
         
     GameContext.reg_callback("actor", on_actor)
 

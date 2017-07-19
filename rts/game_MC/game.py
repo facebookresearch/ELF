@@ -122,13 +122,13 @@ if __name__ == '__main__':
     loader = Loader()
     args = ArgsProvider.Load(parser, [loader])
 
-    def actor(sel, sel_gpu, reply):
+    def actor(sel, sel_gpu):
         '''
         import pdb
         pdb.set_trace()
         pickle.dump(utils_elf.to_numpy(sel), open("tmp%d.bin" % k, "wb"), protocol=2)
         '''
-        reply[0]["a"][:] = 0
+        return dict(a=[0]*sel[0]["s"].size(0))
 
     GC = loader.initialize()
     GC.reg_callback("actor", actor)

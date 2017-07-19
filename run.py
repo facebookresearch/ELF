@@ -90,14 +90,16 @@ class Eval:
         elif self.args.stats == "winrate":
             self.collector = WinRate()
 
-        def actor(sel, sel_gpu, reply):
-            self.trainer.actor(sel, sel_gpu, reply)
+        def actor(sel, sel_gpu):
+            reply = self.trainer.actor(sel, sel_gpu)
             v = sel[0]
 
             for batch_idx, (id, last_terminal) in enumerate(zip(v["id"], v["last_terminal"])):
                 self.collector.feed(id, v["last_r"][batch_idx])
                 if last_terminal:
                     self.collector.terminal(id)
+
+            return reply
 
         self.GC.reg_callback("actor", actor)
 
@@ -183,10 +185,12 @@ if __name__ == '__main__':
             eval_process.set(evaluator, all_args)
             eval_process.run_same_process(mi.clone(all_args.eval_gpu))
         else:
-            def train_and_update(sel, sel_gpu, reply):
-                model_updated = trainer.train(sel, sel_gpu, reply)
+            def train_and_update(sel, sel_gpu):
+                reply = trainer.train(sel, sel_gpu)
+                model_updated = trainer.just_updated
                 if model_updated and eval_process is not None:
                     eval_process.update_model("actor", mi["actor"])
+                return reply
 
             GC.reg_callback("train", train_and_update)
             GC.reg_callback("actor", trainer.actor)

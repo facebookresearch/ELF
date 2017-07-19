@@ -51,7 +51,7 @@ class StatsCollector:
         self.id2seqs_actor = defaultdict(lambda : -1)
         self.id2seqs_train = defaultdict(lambda : -1)
 
-    def actor(self, sel, sel_gpu, reply):
+    def actor(self, sel, sel_gpu):
         '''Check the states for an episode.'''
         b = sel[0]
         for i, (id, seq, last_terminal) in enumerate(zip(b["id"], b["seq"], b["last_terminal"])):
@@ -63,7 +63,10 @@ class StatsCollector:
                 raise ValueError("Invalid next seq: id = %d, seq = %d, should be %d" % (id, seq, predicted))
             self.id2seqs_actor[id] += 1
 
-    def train(self, sel, sel_gpu, reply):
+        # Return trivial actions.
+        return dict(a=[0]*len(b["id"]))
+
+    def train(self, sel, sel_gpu):
         T = len(sel)
         batchsize = len(sel[0]["id"])
 
@@ -97,6 +100,7 @@ class Trainer:
             more_args = ["num_games", "batchsize", "num_minibatch"],
             on_get_args = self._on_get_args
         )
+        self.just_update = False
 
     def _on_get_args(self, _):
         args = self.args
@@ -108,7 +112,7 @@ class Trainer:
         if args.save_dir is None:
             args.save_dir = os.environ.get("save", "./")
 
-    def train(self, sel, sel_gpu, reply):
+    def train(self, sel, sel_gpu):
         # training procedure.
         self.timer.Record("batch_train")
         self.rl_method.run(sel_gpu)
@@ -125,34 +129,22 @@ class Trainer:
             # print("Update actor model")
             # Save the current model.
             self.mi.update_model("actor", self.mi["model"])
-            return True
+            self.just_updated = True
 
-        return False
+        self.just_updated = False
 
-    def actor(self, sel, sel_gpu, reply):
+    def actor(self, sel, sel_gpu):
         # actor model.
         self.timer.Record("batch_actor")
         state_curr = self.mi.forward("actor", sel_gpu[0])
         action = self.sampler.sample(state_curr)
 
-        # Copy it down to cpu.
-        reply_msg = reply[0]
-        reply_msg["pi"][:] = state_curr["pi"].data
-        reply_msg["a"][:] = action
-        reply_msg["V"][:] = state_curr["V"].data
-        reply_msg["rv"][:] = self.mi["actor"].step
+        reply_msg = dict(pi=state_curr["pi"].data, a=action, V=state_curr["V"].data, rv=self.mi["actor"].step)
 
-        if self.args.save:
-            data = utils_elf.to_numpy_t(sel[0])
-            data.update(utils_elf.to_numpy_t(reply_msg))
-            pickle.dump(
-                data,
-                open(os.path.join(self.args.record_dir, "record-actor-%d.bin" % self.actor_count), "wb"),
-                protocol=2
-            )
         self.timer.Record("compute_actor")
         self.actor_count += 1
 
+        return reply_msg
 
     def episode_start(self, i):
         self.train_count = 0
@@ -323,7 +315,7 @@ class MultiProcessRun:
         self.total_train_count = 0
         self.success_train_count = 0
 
-    def _train(self, sel, sel_gpu, reply):
+    def _train(self, sel, sel_gpu):
         # Send to remote for remote processing.
         self.total_train_count += 1
         success = self.shared_data.send_batch(sel)
