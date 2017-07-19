@@ -3,6 +3,8 @@ import torch
 import random
 import tqdm
 
+'''Minimal example that uses the Python version of concurrent environment from ELF'''
+
 class SimpleGame(Simulator):
     MAX_STATE = 6
     def __init__(self, id, desc):
