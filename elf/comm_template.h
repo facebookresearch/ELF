@@ -33,10 +33,12 @@
 // Game clients write replies to some shared data structure,
 // and call ReplyComplete() to indicate that the game simulators (who's waiting on WaitReply()) can continue.
 
-// Game information exchanged between Python and C
+// Game information
 template <typename Data, typename Reply>
 struct InfoT {
     // Meta info for this game.
+    const MetaInfo *meta = nullptr;
+
     // Current sequence number.
     int seq = 0;    // seq * frame_skip == tick
 
@@ -55,7 +57,7 @@ struct InfoT {
     // Reply (action, etc)
     Reply reply;
 
-    REGISTER_PYBIND_FIELDS(seq, game_counter, hash_code, data, reply_version, reply);
+    REGISTER_PYBIND_FIELDS(meta, seq, game_counter, hash_code, data, reply_version, reply);
 };
 
 template <typename T>
@@ -66,28 +68,30 @@ struct CondPerGroupT {
 
     const int hist_overlap = 1;
 
-    CondPerGroupT() : last_used_seq(1), last_seq(1), game_counter(0), freq_send(0) { }
+    CondPerGroupT() : last_used_seq(0), last_seq(0), game_counter(0), freq_send(0) { }
 
     bool Check(int hist_len, T *data) {
         // Update game counter.
-        if (data->game_counter() > game_counter) {
-            game_counter = data->game_counter();
-            // Make sure no frame is missed. Note that data->seq() starts from 1 (because it actually points to the next seq).
-            last_used_seq -= last_seq;
+        int new_game_counter = data->newest().game_counter;
+        if (new_game_counter > game_counter) {
+            game_counter = new_game_counter;
+            // Make sure no frame is missed. seq starts from 0.
+            last_used_seq -= last_seq + 1;
         }
-        last_seq = data->seq();
-        if (data->hist_size() < hist_len || data->seq() - last_used_seq < hist_len - hist_overlap) return false;
-        last_used_seq = data->seq();
+        int curr_seq = data->newest().seq;
+        last_seq = curr_seq;
+        if (data->size() < hist_len || curr_seq - last_used_seq < hist_len - hist_overlap) return false;
+        last_used_seq = curr_seq;
         return true;
     }
 };
 
 // A CommT has N state collectors, each with a different gating function.
-template <typename AIComm>
+template <typename In>
 class CommT {
 public:
     using Key = decltype(MetaInfo::query_id);
-    using CollectorGroup = CollectorGroupT<AIComm>;
+    using CollectorGroup = CollectorGroupT<In>;
 
 private:
     struct Stat {
@@ -96,7 +100,7 @@ private:
 
         // Counter.
         std::unique_ptr<SemaCollector> counter;
-        std::vector<CondPerGroupT<AIComm>> conds;
+        std::vector<CondPerGroupT<In>> conds;
 
         Stat(Key k) : key(k), freq(0) {
             counter.reset(new SemaCollector());
@@ -195,13 +199,13 @@ public:
     }
 
     // Agent side.
-    bool SendDataWaitReply(const Key& key, AIComm& ai_comm) {
+    bool SendDataWaitReply(const Key& key, In& data) {
         auto it = _map.find(key);
         if (it == _map.end()) return false;
         Stat &stats = it->second;
         stats.freq ++;
 
-        V_PRINT(_verbose, "[k=" << key << "] Start sending data, seq = " << ai_comm.seq() << " hist_size = " << ai_comm.hist_size());
+        V_PRINT(_verbose, "[k=" << key << "] Start sending data, seq = " << data.newest().seq << " hist_size = " << data.size());
         // Send the key to all collectors in the container, if the key satisfy the gating function.
         std::vector<int> selected_groups;
         std::string str_selected_groups;
@@ -214,11 +218,11 @@ public:
             int gid = subgroup[idx];
             int hist_len = hist_lens[idx];
 
-            if (stats.conds[i].Check(hist_len, &ai_comm)) {
+            if (stats.conds[i].Check(hist_len, &data)) {
                 V_PRINT(_verbose, "[k=" << key << "] Pass test for group " << gid << " hist_len = " << hist_len);
                 stats.conds[i].freq_send ++;
 
-                _groups[gid]->SendData(key, &ai_comm);
+                _groups[gid]->SendData(key, &data);
                 str_selected_groups += std::to_string(gid) + ",";
                 selected_groups.push_back(gid);
             }
@@ -287,16 +291,20 @@ public:
 template <typename Context>
 class AICommT {
 public:
+    using Info = typename Context::Info;
+    using HistType = CircularQueue<Info>;
+
     using AIComm = AICommT<Context>;
+
     using Comm = typename Context::Comm;
     using Reply = typename Context::Reply;
     using Data = typename Context::Data;
-    using Info = typename Context::Info;
 
 private:
     Comm *_comm;
 
     const MetaInfo _meta;
+
     CircularQueue<Info> _history;
     int _seq;
     int _game_counter;
@@ -321,6 +329,7 @@ public:
         if (_history.full()) _history.Pop();
         curr().seq = _seq ++;
         curr().game_counter = _game_counter;
+        curr().meta = &_meta;
     }
 
     const MetaInfo &GetMeta() const { return _meta; }
@@ -328,14 +337,9 @@ public:
     Data *GetData() { return &curr().data; }
     std::mt19937 &gen() { return _g; }
 
-    // Python interface.
-    // oldest = 0, newest = _history.maxlen() - 1
-    Info &oldest(int i = 0) { return _history.get_from_push(_history.maxlen() - i - 1); }
-    const Info &oldest(int i = 0) const { return _history.get_from_push(_history.maxlen() - i - 1); }
-    Info &newest(int i = 0) { return _history.get_from_push(i); }
-    const Info &newest(int i = 0) const { return _history.get_from_push(i); }
+    CircularQueue<Info> &history() { return _history; }
+    const CircularQueue<Info> &history() const { return _history; }
 
-    int hist_size() const { return _history.size(); }
     int seq() const { return _seq; }
     int game_counter() const { return _game_counter; }
 
@@ -354,7 +358,7 @@ public:
         curr().reply_version = 0;
         _history.Push();
         // std::cout << "[" << _meta.id << "] Before SendDataWaitReply" << std::endl;
-        return _comm->SendDataWaitReply(_meta.query_id, *this);
+        return _comm->SendDataWaitReply(_meta.query_id, _history);
         // std::cout << "[" << _meta.id << "] Done with SendDataWaitReply, continue" << std::endl;
     }
 
@@ -391,10 +395,13 @@ public:
     using Info = InfoT<Data, Reply>;
 
     using Context = ContextT<Options, Data, Reply>;
+
+    using HistType = CircularQueue<Info>;
+    using DataAddr = DataAddrT<HistType>;
+    using Comm = CommT<HistType>;
+
     using AIComm = AICommT<Context>;
 
-    using DataAddr = DataAddrT<AIComm>;
-    using Comm = CommT<AIComm>;
     using State = _Data;
     using GameStartFunc =
       std::function<void (int game_idx, const Options& options, const std::atomic_bool &done, AIComm *)>;

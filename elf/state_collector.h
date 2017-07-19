@@ -104,10 +104,10 @@ public:
 #define V_PRINT(verbose, arg) if (verbose) PRINT(arg)
 
 // Each collector group has a batch collector and a sequence of operators.
-template <typename AIComm>
+template <typename In>
 class CollectorGroupT {
 public:
-    using DataAddr = DataAddrT<AIComm>;
+    using DataAddr = DataAddrT<In>;
     using Key = decltype(MetaInfo::query_id);
 
 private:
@@ -118,8 +118,8 @@ private:
     int _hist_len;
 
     // Current batch.
-    std::vector<AIComm *> _batch;
-    elf::BatchCollectorT<Key, AIComm> _batch_collector;
+    std::vector<In *> _batch;
+    elf::BatchCollectorT<Key, In> _batch_collector;
 
     DataAddr _data_addr;
 
@@ -157,7 +157,7 @@ public:
     void SetBatchSize(int batchsize) { _batchsize = batchsize; }
 
     // Game side.
-    void SendData(const Key &key, AIComm *data) {
+    void SendData(const Key &key, In *data) {
         if (_verbose) std::cout << "[" << key << "][" << _gid << "] c.SendData ... " << std::endl;
         // Collect data for this condition.
         _batch_collector.sendData(key, data);
@@ -196,8 +196,8 @@ public:
 
             // Finally make the game run again.
             V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Resume games");
-            for (AIComm *ai_comm : _batch) {
-                const Key& key = ai_comm->GetMeta().query_id;
+            for (In *in : _batch) {
+                const Key& key = in->newest().meta->query_id;
                 V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Resume signal sent to k = " << key);
                 _batch_collector.signalReply(key);
             }
@@ -212,8 +212,8 @@ public:
     // Daemon side.
     std::vector<Key> GetBatchKeys() const {
         std::vector<Key> keys;
-        for (const AIComm *ai_comm : _batch) {
-            keys.push_back(ai_comm->GetMeta().query_id);
+        for (const In *in : _batch) {
+            keys.push_back(in->newest().meta->query_id);
         }
         return keys;
     }
