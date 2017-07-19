@@ -5,6 +5,8 @@ Overview
 
 ELF is an **E**xtensive, **L**ightweight and **F**lexible platform for game research, in particular for real-time strategy (RTS) games. On the C++-side, ELF hosts multiple games in parallel with C++ threading. On the Python side, ELF returns one batch of game state at a time, making it very friendly for modern RL. In comparison, other platforms (e.g., OpenAI Gym) wraps one single game instance with one Python interface. This makes concurrent game execution a bit complicated, which is a requirement of many modern reinforcement learning algorithms.
 
+Besides, ELF now also provides a Python version for running concurrent game environments, by Python multiprocessing with ZeroMQ inter-process communication. See `./ex_elfpy.py` for a simple example. 
+
 For research on RTS games, ELF comes with an fast RTS engine, and three concrete environments: MiniRTS, Capture the Flag and Tower Defense. MiniRTS has all the key dynamics of a real-time strategy game, including gathering resources, building facilities and troops, scouting the unknown territories outside the perceivable regions, and defend/attack the enemy. User can access its internal representation and can freely change the game setting.
 
 ![Overview](./overview.png)
