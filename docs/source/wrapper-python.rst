@@ -38,13 +38,13 @@ Depending on different models we use, we might need different types of batches i
 To satisfy different needs, we use a dict of descriptions to specify the batch we want. The following shows an example:
 ::
     desc = {
-        "actor": (
-            dict(id="", s=str(args.hist_len), last_r="", last_terminal="", _batchsize=str(args.batchsize), _T="1"),
-            dict(rv="", pi=str(num_action), V="1", a="1", _batchsize=str(args.batchsize), _T="1")
+        "actor": dict(
+            input=dict(id="", s=str(args.hist_len), last_r="", last_terminal="", _batchsize=str(args.batchsize), _T="1"),
+            reply=dict(rv="", pi=str(num_action), V="1", a="1", _batchsize=str(args.batchsize), _T="1")
         ), 
-        "optimizer" : (
-            dict(rv="", id="", pi=str(num_action), s=str(args.hist_len), a="1", r="1", V="1", seq="", terminal="", _batchsize=str(args.batchsize), _T=str(args.T)),
-            None
+        "optimizer" : dict(
+            input=dict(rv="", id="", pi=str(num_action), s=str(args.hist_len), a="1", r="1", V="1", seq="", terminal="", _batchsize=str(args.batchsize), _T=str(args.T)),
+            reply=None
         )
     }
 
@@ -52,7 +52,7 @@ The descriptions are a dict of tuple of dicts. Each dict entry corresponds to a 
 ELF will allocate shared memory between C++ threads and Python for each specified batch. When ELF runs, it will wait until any collector 
 has got a complete batch and returns the collector id. Note that following this design, we could have multiple actors, which is very useful for self-play, etc.
 
-Each dict entry is a key-value pair ``key, (input_desc, reply_desc)``:
+Each dict entry is a key-dict pair ``key, dict(input=input_desc, reply=reply_desc)``:
 
 * ``key`` is the name of the collector.
 * ``input_desc`` is an *input batch* that contains all variables that have been filled by the blocked game environemnts;

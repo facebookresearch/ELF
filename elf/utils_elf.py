@@ -121,7 +121,8 @@ class GCWrapper:
         num_games = co.num_games
 
         total_batchsize = 0
-        for key, (input, reply) in descriptions.items():
+        for key, v in descriptions.items():
+            input = v["input"]
             if "_batchsize" not in input or input["_batchsize"] is None:
                 print("Batchsize cannot be None!")
                 sys.exit(1)
@@ -137,7 +138,10 @@ class GCWrapper:
         gid2gpu = {}
         gpu2gid = []
 
-        for key, (input, reply) in descriptions.items():
+        for key, v in descriptions.items():
+            input = v["input"]
+            reply = v["reply"]
+
             batchsize = int(input["_batchsize"])
             T = int(input["_T"])
             gpu2gid.append(list())

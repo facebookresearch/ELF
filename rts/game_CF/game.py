@@ -77,20 +77,20 @@ class Loader:
         desc = {}
         # For actor model, no reward needed, we only want to get input and return distribution of actions.
         # sampled action and and value will be filled from the reply.
-        desc["actor"] = (
-            dict(id="", s=str(num_unittype+8), r0="", r1="", last_r="", last_terminal="", _batchsize=str(args.batchsize), _T="1"),
-            dict(rv="", pi=str(num_action), V="1", a="1", _batchsize=str(args.batchsize), _T="1")
+        desc["actor"] = dict(
+            input=dict(id="", s=str(num_unittype+8), r0="", r1="", last_r="", last_terminal="", _batchsize=str(args.batchsize), _T="1"),
+            reply=dict(rv="", pi=str(num_action), V="1", a="1", _batchsize=str(args.batchsize), _T="1")
         )
 
         if not args.actor_only:
             # For training: group 1
             # We want input, action (filled by actor models), value (filled by actor
             # models) and reward.
-            desc["train"] = (
-                dict(rv="", id="", pi=str(num_action), s=str(num_unittype+8),
-                     r0="", r1="", a="1", r="1", V="1", seq="", terminal="",
-                     _batchsize=str(args.batchsize), _T=str(args.T)),
-                None
+            desc["train"] = dict(
+                input=dict(rv="", id="", pi=str(num_action), s=str(num_unittype+8),
+                           r0="", r1="", a="1", r="1", V="1", seq="", terminal="",
+                           _batchsize=str(args.batchsize), _T=str(args.T)),
+                reply=None
             )
 
         params = dict(
