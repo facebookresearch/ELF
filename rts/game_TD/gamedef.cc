@@ -40,6 +40,9 @@ void GameDef::InitUnits() {
     _units[TOWER_BASE] = _C(0, 100, 0, 0.0, 9999, 1, 9999, {0, 0, 0, 0}, vector<CmdType>{ATTACK, BUILD_TOWER, TOWER_DEFENSE_WAVE_START});
     _units[TOWER] = _C(50, 100, 0, 0.0, 50, 3, 5, {0, 15, 0, 0}, vector<CmdType>{ATTACK}, ATTR_INVULNERABLE);
     _units[TOWER_ATTACKER] = _C(0, 50, 0, 0.1, 10, 1, 5, {0, 100, 0, 0}, vector<CmdType>{MOVE, ATTACK});
+    reg_engine();
+    reg_engine_specific();
+    reg_td_specific();
 }
 
 vector<pair<CmdBPtr, int> > GameDef::GetInitCmds(const RTSGameOptions&) const{

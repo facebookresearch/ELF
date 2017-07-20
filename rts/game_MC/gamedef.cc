@@ -41,6 +41,9 @@ void GameDef::InitUnits() {
     _units[RANGE_ATTACKER] = _C(100, 50, 0, 0.2, 10, 5, 5, vector<int>{0, 10, 0, 0}, vector<CmdType>{MOVE, ATTACK});
     _units[BARRACKS] = _C(200, 200, 1, 0.0, 0, 0, 5, vector<int>{0, 0, 0, 50}, vector<CmdType>{BUILD});
     _units[BASE] = _C(500, 500, 2, 0.0, 0, 0, 5, {0, 0, 0, 50}, vector<CmdType>{BUILD});
+    reg_engine();
+    reg_engine_specific();
+    reg_minirts_specific();
 }
 
 vector<pair<CmdBPtr, int> > GameDef::GetInitCmds(const RTSGameOptions&) const{
