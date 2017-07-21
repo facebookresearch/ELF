@@ -78,9 +78,9 @@ class Loader:
         params = dict()
         params["num_action"] = GC.get_num_actions()
         params["num_group"] = 1 if args.actor_only else 2
-        params["action_batchsize"] = int(desc["actor"][0]["_batchsize"])
+        params["action_batchsize"] = int(desc["actor"]["input"]]["_batchsize"])
         if not args.actor_only:
-            params["train_batchsize"] = int(desc["train"][0]["_batchsize"])
+            params["train_batchsize"] = int(desc["train"]["input"]["_batchsize"])
         params["hist_len"] = args.hist_len
         params["T"] = args.T
 
