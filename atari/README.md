@@ -30,8 +30,9 @@ python3 run.py
     —-freq_update 50        # How often the actor used to predict the action gets updated.
     —-num_games 1024        # Num of concurrent games.
     --tqdm                  # If you want to show nice progress bar. 
+    --gpu 0                 # Use first gpu
 ```
-Here is an example pre-trained model for breakout [link](http://yuandong-tian.com/atari_breakout.bin).
+`--num_games 256` and `--batchsize 32` should give you 90% GPU usage (on K40M). Here is an example pre-trained model for breakout [link](http://yuandong-tian.com/atari_breakout.bin).
 
 Evaluation  
 ==============
