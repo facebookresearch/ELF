@@ -72,6 +72,9 @@ class ArgsProvider:
         if self._on_get_args is not None:
             self._on_get_args(args)
 
+    def get_define_keys(self):
+        return [ k for k, _ in self._define_args ]
+
     def Load(parser, args_providers, cmd_line=sys.argv[1:]):
         '''Load args from ``cmd_line``
 

@@ -210,7 +210,7 @@ class GCWrapper:
         if infos.gid in self._cb:
             reply = self._cb[infos.gid](sel, sel_gpu)
             # If reply is meaningful, send them back.
-            if isinstance(reply, dict):
+            if isinstance(reply, dict) and sel_reply is not None:
                 # Current we only support reply to the most recent history.
                 reply_msg = sel_reply[0]
                 for k, v in reply.items():

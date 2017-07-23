@@ -105,7 +105,7 @@ void AtariGame::MainLoop(const std::atomic_bool& done) {
           _ai_comm->FillInReply(Reply(act, 0.0));
       } else {
           _ai_comm->SendDataWaitReply();
-          act = _ai_comm->newest().reply.action;
+          act = _ai_comm->history().newest().reply.action;
           // act = (*_distr_action)(g);
           // std::cout << "[" << _game_idx << "]: " << act << std::endl;
       }
@@ -155,7 +155,7 @@ int AtariGame::_prevent_stuck(std::default_random_engine &g, int act) {
     if (_last_act_count >= kMaxRep) {
       // The player might get stuck. Save it.
       act = (*_distr_action)(g);
-      _ai_comm->newest().reply.action = act;
+      _ai_comm->history().newest().reply.action = act;
     }
   } else {
     // Reset counter.

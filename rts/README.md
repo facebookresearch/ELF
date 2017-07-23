@@ -42,7 +42,7 @@ cd ./rts/backend
 make minirts GAME_DIR=../game_MC
 ```
 
-And you will see an executable `minirts`. Similarly for `./rts/game_TD` and `./rts/game_CF`.
+And you will see an executable `minirts`. Similarly for `./rts/game_TD` and `./rts/game_CF`. When you make a new game, you need to first `make clean`.
 
 Usage of the standalone backend
 ============
@@ -116,3 +116,12 @@ Strong in combat but its attack range is 1.
 
 3. Range Attacker  
 Fast movement, long attack range but has low HP. Hit-and-run possible.
+
+Replay
+===================
+
+You can save and load replays.
+Add option `--save_replay [replay_prefix]` to save a replay file when you run minirts.
+Afterwards, you can load it with `./minirts replay --load_replay [your_rep_file] --vis_after 0` and then open minirts.html in your browser.
+
+Click Faster or Slower, or drag the slider to adjust replay speed. Click Cycle to alternate player perspective. Click Pause to pause/unpause the game.
