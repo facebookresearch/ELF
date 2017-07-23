@@ -86,7 +86,6 @@ struct CondPerGroupT {
     }
 };
 
-// A CommT has N state collectors, each with a different gating function.
 template <typename In>
 class CommT {
 public:
@@ -252,6 +251,9 @@ public:
 
     // Tell the collector that a reply was sent.
     bool Steps(const Infos& infos, int future_time_usec = 0) {
+        // For invalid infos, return.
+        if (infos.gid < 0) return false;
+
         std::vector<Key> keys = _groups[infos.gid]->GetBatchKeys();
         for (const Key &key : keys) {
             auto it = _map.find(key);
@@ -272,6 +274,7 @@ public:
     }
 
     void Stop() {
+        // Block all sends from game environments.
         Notif &done = _signal->GetDoneNotif();
         done.set();
 
@@ -476,6 +479,15 @@ public:
         // Call the destructor.
         if (! _game_started) return;
 
+        ctpl::thread_pool tmp_pool(1);
+        const int wait_usec = 2;
+        std::atomic_bool tmp_thread_done(false);
+        tmp_pool.push([&](int) {
+            while (! tmp_thread_done) {
+                Steps(Wait(wait_usec));
+            }
+        });
+
         // First set all batchsize to be 1.
         _comm.PrepareStop();
 
@@ -488,6 +500,9 @@ public:
         // Finally stop all collectors.
         std::cout << "Stop all collectors ..." << std::endl;
         _comm.Stop();
+
+        tmp_thread_done = true;
+        tmp_pool.stop();
         _game_started = false;
     }
 

@@ -113,7 +113,9 @@ public:
 private:
     const int _gid;
     // Here batchsize can be changed on demand.
-    std::atomic<int> _batchsize;
+    int _batchsize;
+    CCQueue2<int> _batchsize_q;
+    Semaphore<int> _batchsize_back;
 
     int _hist_len;
 
@@ -148,13 +150,20 @@ public:
     CollectorGroupT(int gid, const std::vector<Key> &keys, int batchsize, int hist_len,
             SyncSignal *signal, bool verbose)
         : _gid(gid), _batchsize(batchsize), _hist_len(hist_len),
-          _batch_collector(keys.size()), _signal(signal), _verbose(verbose) {
+          _batch_collector(keys), _signal(signal), _verbose(verbose) {
     }
 
     DataAddr &GetDataAddr() { return _data_addr; }
     int gid() const { return _gid; }
 
-    void SetBatchSize(int batchsize) { _batchsize = batchsize; }
+    void SetBatchSize(int batchsize) { 
+        // std::cout << "Before send batchsize " << batchsize << std::endl;
+        _batchsize_q.enqueue(batchsize);
+        int dummy;
+        // std::cout << "After send batchsize " << batchsize << " Waiting for reply" << std::endl;
+        _batchsize_back.wait(&dummy);
+        // std::cout << "Reply got. batchsize " << batchsize << std::endl;
+    }
 
     // Game side.
     void SendData(const Key &key, In *data) {
@@ -174,6 +183,13 @@ public:
         V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Starting MainLoop of collector, hist_len = " << _hist_len << " batchsize = " << _batchsize);
         while (true) {
             // Wait until we have a complete batch.
+            int new_batchsize;
+            if (_batchsize_q.wait_dequeue_timed(new_batchsize, 0)) {
+                _batchsize = new_batchsize;
+                // std::cout << "CollectorGroup: get new batchsize. batchsize = " << _batchsize << std::endl;
+                _batchsize_back.notify(0);
+                // std::cout << "CollectorGroup: After notification. batchsize = " << _batchsize << std::endl;
+            }
             _batch = _batch_collector.waitBatch(_batchsize);
 
             // Time to leave the loop.

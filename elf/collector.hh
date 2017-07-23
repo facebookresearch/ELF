@@ -30,7 +30,6 @@ namespace elf {
 
 template <typename Key, typename Value>
 class CollectorWithCCQueue {
-  int _max_keys;
 #ifdef USE_TBB
   tbb::concurrent_queue<int> Q;
 #else
@@ -38,7 +37,6 @@ class CollectorWithCCQueue {
 #endif
 
   std::unordered_map<Key, int> _index_map;
-  std::mutex _map_and_data_write_lock;
 
   struct TaskData {
     Value* val = nullptr;
@@ -50,20 +48,13 @@ class CollectorWithCCQueue {
   };
   std::vector<std::unique_ptr<TaskData>> _data;
 
-  int get_index_maybe_create(const Key& key) {
-    auto itr = _index_map.find(key);
-    int index;
-    if (itr == _index_map.end()) {
-      std::lock_guard<std::mutex> lg{_map_and_data_write_lock};
-      index = _data.size();
-      m_assert(index < _max_keys);
-      _data.emplace_back(new TaskData{});
-      _index_map.emplace(key, index);
-    } else {
-      index = itr->second;
-    }
-    m_assert(index < (int)_data.size());
-    return index;
+  int get_index(const Key &key) const {
+    auto it = _index_map.find(key);
+    if (it == _index_map.end()) {
+        std::cout << "key [" << key << "] not found! this should never happen! " << std::endl;
+        return -1;
+    }   
+    return it->second;
   }
 
   inline void notify(std::unique_ptr<TaskData>& d) {
@@ -73,16 +64,20 @@ class CollectorWithCCQueue {
   }
 
   public:
-  explicit CollectorWithCCQueue(int max_keys)
-    : _max_keys{max_keys} {
-    _data.reserve(max_keys);
-    _index_map.reserve(max_keys);
+  explicit CollectorWithCCQueue(const std::vector<Key> &keys) {
+      // Preload all the keys.
+      for (size_t i = 0; i < keys.size(); ++i) {
+          _data.emplace_back(new TaskData{});
+          _index_map.emplace(keys[i], i);
+      }
   }
 
   CollectorWithCCQueue(const CollectorWithCCQueue&) = delete;
 
   void sendData(const Key& key, Value* value) {
-    int index = get_index_maybe_create(key);
+    int index = get_index(key);
+    if (index < 0) throw std::range_error("[sendData] key " + std::to_string(key) + " not found!");
+
     _data[index]->val = value;
 #ifdef USE_TBB
     Q.push(index);
@@ -92,13 +87,17 @@ class CollectorWithCCQueue {
   }
 
   void signalReply(const Key& key) {
-    int index = _index_map[key];  // TODO assert
+    int index = get_index(key);
+    if (index < 0) throw std::range_error("[signalReply] key " + std::to_string(key) + " not found!");
+
     auto& data = _data[index];
     notify(data);
   }
 
   void waitReply(const Key& key) {
-    int index = _index_map[key];
+    int index = get_index(key);
+    if (index < 0) throw std::range_error("[waitReply] key " + std::to_string(key) + " not found!");
+
     auto& data = _data[index];
     std::unique_lock<std::mutex> lk(data->mutex);
     while (!data->flag)
@@ -107,7 +106,9 @@ class CollectorWithCCQueue {
   }
 
   void sendDataWaitReply(const Key& key, Value* value) {
-    int index = get_index_maybe_create(key);
+    int index = get_index(key);
+    if (index < 0) throw std::range_error("[sendDataWaitReply] key " + std::to_string(key) + " not found!");
+
     auto& data = _data[index];
     data->val = value;
     std::unique_lock<std::mutex> lk(data->mutex);
@@ -190,8 +191,8 @@ class BatchCollectorT: public CollectorT<Key, Value> {
   public:
     using BatchValue = std::vector<Value*>;
 
-    explicit BatchCollectorT(int max_keys):
-      CollectorT<Key, Value>{max_keys} {}
+    explicit BatchCollectorT(const std::vector<Key> &keys):
+      CollectorT<Key, Value>{keys} {}
 
     // non reentrable
     BatchValue waitBatch(int batch_size) {
