@@ -107,7 +107,6 @@ public:
 template <typename In>
 class CollectorGroupT {
 public:
-    using DataAddr = DataAddrT<In>;
     using Key = decltype(MetaInfo::query_id);
 
 private:
@@ -123,7 +122,8 @@ private:
     std::vector<In *> _batch;
     elf::BatchCollectorT<Key, In> _batch_collector;
 
-    DataAddr _data_addr;
+    std::unique_ptr<elf::Copier<In>> _copier_input;
+    std::unique_ptr<elf::Copier<In>> _copier_reply;
 
     SyncSignal *_signal;
 
@@ -153,7 +153,12 @@ public:
           _batch_collector(keys), _signal(signal), _verbose(verbose) {
     }
 
-    DataAddr &GetDataAddr() { return _data_addr; }
+    std::unique_ptr<elf::Copier<In>> &GetCopier(const std::string &key) {
+        if (key == "input") return _copier_input;
+        else if (key == "reply") return _copier_reply;
+        else throw std::range_error("Unknown key " + key);
+    }
+
     int gid() const { return _gid; }
 
     void SetBatchSize(int batchsize) {
@@ -197,7 +202,7 @@ public:
 
             V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Compute input. batchsize = " << _batch.size());
 
-            _data_addr.GetInputs(_batch);
+            _copier_input->copy_batch(_batch);
 
             // Signal.
             V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Send_batch. batchsize = " << _batch.size());
@@ -208,7 +213,7 @@ public:
             wait_batch_used();
 
             V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] PutReplies()");
-            _data_addr.PutReplies(_batch);
+            _copier_reply->copy_batch(_batch);
 
             // Finally make the game run again.
             V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Resume games");

@@ -14,22 +14,27 @@
 #include "../elf/pybind_helper.h"
 #include "../elf/comm_template.h"
 #include "../elf/fields_common.h"
+#include "../elf/copier.h"
 
 // use int rather than Action enum as reply
 struct Reply {
-  int action;
-  float value;
-  std::vector<float> prob;
-  Reply(int action = 0, float value = 0.0) : action(action), value(value) { }
-  void Clear() { action = 0; value = 0.0; fill(prob.begin(), prob.end(), 0.0); }
+  int a;
+  float V;
+  std::vector<float> pi;
+  Reply(int action = 0, float value = 0.0) : a(action), V(value) { }
+  void Clear() { a = 0; V = 0.0; fill(pi.begin(), pi.end(), 0.0); }
+
+  DECLARE_FIELD(Reply, a, V, pi);
 };
 
 struct GameState {
-    // This is 2x smaller images.
-    std::vector<float> buf;
-    int tick = 0;
-    int lives = 0;
-    reward_t last_reward = 0; // reward of last action
+  // This is 2x smaller images.
+  std::vector<float> s;
+  int tick = 0;
+  int lives = 0;
+  reward_t last_r = 0; // reward of last action
+
+  DECLARE_FIELD(GameState, s, tick, lives, last_r);
 };
 
 struct GameOptions {
@@ -42,34 +47,6 @@ struct GameOptions {
   REGISTER_PYBIND_FIELDS(rom_file, frame_skip, repeat_action_probability, seed, hist_len, reward_clip);
 };
 
-using GameInfo = HistT<InfoT<GameState, Reply>>;
-using Context = ContextT<GameOptions, GameInfo>;
-
-using DataAddr = typename Context::DataAddr;
-using AIComm = typename Context::AIComm;
-using Comm = typename Context::Comm;
-
-class FieldState : public FieldT<GameInfo, float> {
-public:
-    void ToPtr(int batch_idx, const GameInfo& in) override {
-        const auto &info = in.newest(this->_hist_loc);
-        std::copy(info.GetData().buf.begin(), info.GetData().buf.end(), this->addr(batch_idx));
-    }
-};
-
-DEFINE_LAST_REWARD(GameInfo, float, GetData().last_reward);
-DEFINE_REWARD(GameInfo, float, GetData().last_reward);
-DEFINE_POLICY_DISTR(GameInfo, float, GetReply().prob);
-
-DEFINE_TERMINAL(GameInfo, unsigned char);
-DEFINE_LAST_TERMINAL(GameInfo, unsigned char);
-
-FIELD_SIMPLE(GameInfo, Value, float, GetReply().value);
-FIELD_SIMPLE(GameInfo, Action, int64_t, GetReply().action);
-
-using DataAddr = DataAddrT<GameInfo>;
-using DataAddrService = DataAddrServiceT<GameInfo>;
-
 static constexpr int kWidth = 160;
 static constexpr int kHeight = 210;
 static constexpr int kRatio = 2;
@@ -77,4 +54,14 @@ static constexpr int kInputStride = kWidth*kHeight*3/kRatio/kRatio;
 static constexpr int kWidthRatio = kWidth / kRatio;
 static constexpr int kHeightRatio = kHeight / kRatio;
 
-bool CustomFieldFunc(int batchsize, const std::string& key, const std::string& v, SizeType *sz, FieldBase<GameInfo> **p);
+inline elf::SharedBufferSize GetInputEntry(const std::string &key, const std::string &v) {
+  if (key == "s") return elf::SharedBufferSize{3 * stoi(v), kHeightRatio, kWidthRatio};
+  else if (key == "r" || key == "last_r" || key == "terminal" || key == "last_terminal") return elf::SharedBufferSize{1};
+  else return elf::SharedBufferSize{0};
+}
+
+inline elf::SharedBufferSize GetReplyEntry(const std::string &key, const std::string &v) {
+  if (key == "pi" || key == "V") return elf::SharedBufferSize{stoi(v)};
+  else if (key == "a") elf::SharedBufferSize{1};
+  else return elf::SharedBufferSize{0};
+}

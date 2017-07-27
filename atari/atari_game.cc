@@ -206,40 +206,4 @@ void AtariGame::_fill_state(GameState& state) {
     _copy_screen(state);
 }
 
-bool CustomFieldFunc(int batchsize, const std::string& key,
-    const std::string& v, SizeType *sz, FieldBase<GameInfo> **p) {
-    // Note that ptr and stride will be set after the memory are initialized in the Python side.
-    if (key == "s") {
-        const int hist_len = stoi(v);
-        *sz = SizeType{batchsize, 3 * hist_len, kHeightRatio, kWidthRatio};
-        *p = new FieldState();
-    } else if (key == "pi") {
-        const int action_len = stoi(v);
-        *sz = SizeType{batchsize, action_len};
-        *p = new FieldPolicy();
-    } else if (key == "a") {
-        *sz = SizeType{batchsize};
-        *p = new FieldAction();
-    } else if (key == "r") {
-        // const float reward_limit = stof(v);
-        *sz = SizeType{batchsize};
-        *p = new FieldReward();
-    } else if (key == "last_r") {
-        // const float reward_limit = stof(v);
-        *sz = SizeType{batchsize};
-        *p = new FieldLastReward();
-    } else if (key == "V") {
-        const int value_len = stoi(v);
-        *sz = SizeType{batchsize, value_len};
-        *p = new FieldValue();
-    } else if (key == "terminal") {
-        *sz = SizeType{batchsize};
-        *p = new FieldTerminal();
-    } else if (key == "last_terminal") {
-        *sz = SizeType{batchsize};
-        *p = new FieldLastTerminal();
-    } else {
-        return false;
-    }
-    return true;
-}
+

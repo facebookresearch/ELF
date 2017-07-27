@@ -32,6 +32,14 @@
 // SendData() add Key-Data pairs to the queue and WaitDataUntil() returns batched Key-Data pairs.
 // Game clients write replies to some shared data structure,
 // and call ReplyComplete() to indicate that the game simulators (who's waiting on WaitReply()) can continue.
+//
+struct SeqInfo {
+    int seq;
+    int game_counter;
+    bool terminal() const {
+        return seq == 0 && game_counter > 0;
+    }
+};
 
 // Game information
 template <typename _Data, typename _Reply>
@@ -473,7 +481,6 @@ public:
     using Data = typename Info::Data;
 
     using Context = ContextT<Options, Info>;
-    using DataAddr = DataAddrT<Info>;
     using Comm = CommT<Info>;
 
     using AIComm = AICommT<Context, Info>;
@@ -501,7 +508,6 @@ public:
 
     int AddCollectors(int batchsize, int hist_len, int exclusive_id) {
         int gid = _comm.AddCollectors(batchsize, hist_len, exclusive_id);
-        _comm.GetCollectorGroup(gid).GetDataAddr().RegCustomFunc(_field_func);
         return gid;
     }
 
@@ -531,9 +537,22 @@ public:
     const MetaInfo &meta(int i) const { return _ai_comms[i]->GetMeta(); }
     int size() const { return _ai_comms.size(); }
 
-    DataAddr &GetDataAddr(int gid) {
-        return _comm.GetCollectorGroup(gid).GetDataAddr();
+    void CreateTensor(int gid, const std::string &key, const std::map<std::string, std::string> &desc) {
+        auto &copier = _comm.GetCollectorGroup(gid).GetCopier(key);
+        std::map<std::string, elf::SharedBufferSize> shared_list;
+        int batchsize = std::stoi(desc["_batchsize"]);
+        int T = std::stoi(desc["_T"]);
+
+        for (const auto &p : desc) {
+            auto sz = GetEntry(key, p.first, p.second);
+            sz.SetBatchSizeAndHistoryLen(batchsize, T);
+            // Put batchsize and history.
+            shared_list.emplace(std::make_pair(p.first, sz));
+        }
+
+        copier.reset(new elf::Copier<Info>(shared_list));
     }
+    EntryInfo GetTensorInfo(int gid, const std::string &key);
 
     void PrintSummary() const { _comm.PrintSummary(); }
 
