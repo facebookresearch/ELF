@@ -21,7 +21,7 @@ public: \
     void ToPtr(int batch_idx, const HistType& in) override { \
       auto *target = this->addr(batch_idx); \
       if (this->_hist_loc == 0) *target = type(); \
-      else *target = in.newest(this->_hist_loc  - 1).last_reward; \
+      else *target = in.data.newest(this->_hist_loc  - 1).last_reward; \
     } \
 }
 
@@ -30,7 +30,7 @@ class FieldLastReward : public FieldT<HistType, type> { \
 public: \
     void ToPtr(int batch_idx, const HistType& in) override { \
       auto *target = this->addr(batch_idx); \
-      *target = in.newest(this->_hist_loc).last_reward; \
+      *target = in.data.newest(this->_hist_loc).last_reward; \
     } \
 }
 
@@ -38,13 +38,13 @@ public: \
 class FieldPolicy : public FieldT<HistType, type> { \
 public: \
     void ToPtr(int batch_idx, const HistType& in) override { \
-        const auto& prob = in.newest(this->_hist_loc).prob_distr; \
+        const auto& prob = in.data.newest(this->_hist_loc).prob_distr; \
         auto *target = this->addr(batch_idx); \
         if (prob.size() == (size_t)this->_stride) std::copy(prob.begin(), prob.end(), target); \
         else std::fill(target, target + this->_stride, 0); \
     } \
     void FromPtr(int batch_idx, HistType& in) const override { \
-        auto &prob = in.newest(this->_hist_loc).prob_distr; \
+        auto &prob = in.data.newest(this->_hist_loc).prob_distr; \
         const auto *target = this->addr(batch_idx); \
         if (prob.size() != (size_t)_stride) prob.resize(this->_stride); \
         std::copy(target, target + this->_stride, prob.begin()); \
@@ -55,8 +55,8 @@ public: \
 class FieldLastTerminal : public FieldT<HistType, type> { \
 public: \
     void ToPtr(int batch_idx, const HistType& in) override { \
-        const auto &record = in.newest(this->_hist_loc); \
-        *this->addr(batch_idx) = (record.GetSeq() == 0 && record.GetGameCounter() > 0) ? 1 : 0; \
+        const auto &record = in.data.newest(this->_hist_loc); \
+        *this->addr(batch_idx) = (record.seq.last_terminal() ? 1 : 0); \
     } \
 }
 
@@ -67,8 +67,8 @@ public: \
       auto *target = this->addr(batch_idx); \
       if (this->_hist_loc == 0) *target = 0; \
       else { \
-        const auto &record = in.newest(this->_hist_loc - 1); \
-        *target = (record.GetSeq() == 0 && record.GetGameCounter() > 0) ? 1: 0; \
+        const auto &record = in.data.newest(this->_hist_loc - 1); \
+        *target = (record.seq.last_terminal() ? 1: 0); \
       } \
     } \
 }

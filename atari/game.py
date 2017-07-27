@@ -15,8 +15,11 @@ import argparse
 from time import sleep
 import os
 import atari_game as atari
+import torch
 
 import sys
+sys.path.append('../')
+
 from elf import GCWrapper, ContextArgs
 from rlpytorch import ArgsProvider
 
@@ -86,7 +89,7 @@ class Loader:
 
         return GCWrapper(GC, co, desc, use_numpy=False, params=params)
 
-cmd_line = "--num_games 16 --batchsize 4 --hist_len 1 --frame_skip 4 --actor_only"
+cmd_line = "--num_games 64 --batchsize 16 --hist_len 1 --frame_skip 4 --actor_only"
 
 nIter = 5000
 elapsed_wait_only = 0
@@ -101,7 +104,10 @@ if __name__ == '__main__':
 
     def actor(sel, sel_gpu):
         # pickle.dump(to_numpy(sel), open("tmp%d.bin" % k, "wb"), protocol=2)
-        return dict(a=[0]*sel[0]["s"].size(0))
+        batchsize = sel[0]["s"].size(0)
+        actions = torch.LongTensor(batchsize)
+        actions.zero_()
+        return dict(a=actions)
 
     GC.reg_callback("actor", actor)
 

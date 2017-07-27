@@ -97,20 +97,23 @@ void AtariGame::MainLoop(const std::atomic_bool& done) {
         return;
       }
       _ai_comm->Prepare();
-      _fill_state(_ai_comm->GetData().GetData());
+      _fill_state(_ai_comm->info().data.newest().state);
 
       int act;
       if (i < start_loc) {
           act = (*_distr_action)(g);
-          _ai_comm->SkipWaitReply(Reply(act, 0.0));
+          _ai_comm->info().data.newest().reply = Reply(act, 0.0);
       } else {
           _ai_comm->SendDataWaitReply();
-          act = _ai_comm->GetData().GetReply().action;
+          act = _ai_comm->info().data.newest().reply.action;
           // act = (*_distr_action)(g);
           // std::cout << "[" << _game_idx << "]: " << act << std::endl;
       }
 
       // Illegal action.
+      // const GameState &info = _ai_comm->info().data.newest();
+      // std::cout << "[" << _game_idx << "][" << info.seq.game_counter << "][" << info.seq.seq << "] act: "
+      //          << act << "[a=" << info.reply.action << "][V=" << info.reply.value << "]" << std::endl;
       if (act < 0 || act >= _action_set.size() || _ale->game_over()) break;
       act = _prevent_stuck(g, act);
       int frame_skip = distr_frame_skip(g);
@@ -155,7 +158,7 @@ int AtariGame::_prevent_stuck(std::default_random_engine &g, int act) {
     if (_last_act_count >= kMaxRep) {
       // The player might get stuck. Save it.
       act = (*_distr_action)(g);
-      _ai_comm->GetData().GetReply().action = act;
+      _ai_comm->info().data.newest().reply.action = act;
     }
   } else {
     // Reset counter.
@@ -170,7 +173,7 @@ void AtariGame::_reset_stuck_state() {
   _last_act = -1;
 }
 
-void AtariGame::_copy_screen(GameState &state) {
+void AtariGame::_copy_screen(State &state) {
     _ale->getScreenRGB(_buf);
     if (_h.full()) _h.Pop();
 
@@ -196,7 +199,7 @@ void AtariGame::_copy_screen(GameState &state) {
     }
 }
 
-void AtariGame::_fill_state(GameState& state) {
+void AtariGame::_fill_state(State& state) {
     state.tick = _ale->getEpisodeFrameNumber();
     state.last_reward = _last_reward;
     if (_reward_clip > 0.0) {

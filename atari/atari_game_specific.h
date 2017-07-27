@@ -21,13 +21,15 @@ struct Reply {
   int a;
   float V;
   std::vector<float> pi;
-  Reply(int action = 0, float value = 0.0) : a(action), V(value) { }
-  void Clear() { a = 0; V = 0.0; fill(pi.begin(), pi.end(), 0.0); }
+  int reply_version;
+
+  Reply(int action = 0, float value = 0.0) : action(action), value(value), reply_version(0) { }
+  void Clear() { action = 0; value = 0.0; fill(prob.begin(), prob.end(), 0.0); reply_version = 0; }
 
   DECLARE_FIELD(Reply, a, V, pi);
 };
 
-struct GameState {
+struct State {
   // This is 2x smaller images.
   std::vector<float> s;
   int tick = 0;
@@ -35,6 +37,16 @@ struct GameState {
   reward_t last_r = 0; // reward of last action
 
   DECLARE_FIELD(GameState, s, tick, lives, last_r);
+};
+
+struct GameState {
+    SeqInfo seq;
+    State state;
+    Reply reply;
+    void Prepare(const SeqInfo &seq_info) {
+        seq = seq_info;
+        reply.Clear();
+    }
 };
 
 struct GameOptions {

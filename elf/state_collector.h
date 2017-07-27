@@ -218,7 +218,7 @@ public:
             // Finally make the game run again.
             V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Resume games");
             for (In *in : _batch) {
-                const Key& key = in->newest().GetMeta()->query_id;
+                const Key& key = in->meta.query_id;
                 V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Resume signal sent to k = " << key);
                 _batch_collector.signalReply(key);
             }
@@ -234,7 +234,7 @@ public:
     std::vector<Key> GetBatchKeys() const {
         std::vector<Key> keys;
         for (const In *in : _batch) {
-            keys.push_back(in->newest().GetMeta()->query_id);
+            keys.push_back(in->meta.query_id);
         }
         return keys;
     }

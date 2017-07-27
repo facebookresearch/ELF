@@ -61,8 +61,8 @@ class AtariGame {
     int _prevent_stuck(std::default_random_engine &g, int act);
     void _reset_stuck_state();
 
-    void _fill_state(GameState&);
-    void _copy_screen(GameState &);
+    void _fill_state(State&);
+    void _copy_screen(State &);
 
   public:
     AtariGame(const GameOptions&);
