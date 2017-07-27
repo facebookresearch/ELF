@@ -42,8 +42,6 @@ struct GameState {
         seq = seq_info;
         reply.Clear();
     }
-    void DonePrepare() {
-    }
 };
 
 struct GameOptions {

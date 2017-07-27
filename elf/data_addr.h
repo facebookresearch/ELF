@@ -86,6 +86,8 @@ public:
     }
 };
 
+// std::cout << "FromPtr: hist_loc = " << this->_hist_loc << ", value = " << *this->addr(batch_idx) << std::endl;
+
 #define FIELD_SIMPLE(In, name, type, subfield) \
 class Field ## name : public FieldT<In, type> { \
 public: \
