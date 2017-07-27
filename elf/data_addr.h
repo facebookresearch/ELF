@@ -90,26 +90,26 @@ public:
 class Field ## name : public FieldT<In, type> { \
 public: \
     void ToPtr(int batch_idx, const In& in) { \
-      *this->addr(batch_idx) = in.newest(this->_hist_loc).subfield;\
+      *this->addr(batch_idx) = in.data.newest(this->_hist_loc).subfield;\
     } \
     void FromPtr(int batch_idx, In& in) const {\
-      in.newest(this->_hist_loc).subfield = *this->addr(batch_idx);\
+      in.data.newest(this->_hist_loc).subfield = *this->addr(batch_idx);\
     } \
 }
 
 
 template<typename In>
-FIELD_SIMPLE(In, Seq, int32_t, GetSeq());
+FIELD_SIMPLE(In, Seq, int32_t, seq.seq);
 
 template<typename In>
-FIELD_SIMPLE(In, ReplyVersion, int32_t, GetReplyVersion());
+FIELD_SIMPLE(In, ReplyVersion, int32_t, reply.reply_version);
 
 template<typename In>
 class FieldId : public FieldT<In, int32_t> {
 public:
     void ToPtr(int batch_idx, const In& in) override {
       // [TODO]: We should use GetMeta().query_id
-      *this->addr(batch_idx) = in.newest().GetMeta()->id;
+      *this->addr(batch_idx) = in.meta.id;
     }
 };
 

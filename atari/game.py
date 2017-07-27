@@ -17,6 +17,8 @@ import os
 import atari_game as atari
 
 import sys
+sys.path.append('../')
+
 from elf import GCWrapper, ContextArgs
 from rlpytorch import ArgsProvider
 

@@ -19,7 +19,7 @@
 
 class GameContext {
   public:
-    using GC = ContextT<GameOptions, GameInfo>;
+    using GC = Context;
 
   private:
     std::unique_ptr<GC> _context;
