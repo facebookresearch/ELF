@@ -15,6 +15,7 @@ import argparse
 from time import sleep
 import os
 import atari_game as atari
+import torch
 
 import sys
 sys.path.append('../')
@@ -103,7 +104,8 @@ if __name__ == '__main__':
 
     def actor(sel, sel_gpu):
         # pickle.dump(to_numpy(sel), open("tmp%d.bin" % k, "wb"), protocol=2)
-        return dict(a=[0]*sel[0]["s"].size(0))
+        batchsize = sel[0]["s"].size(0)
+        return dict(a=torch.LongTensor(batchsize))
 
     GC.reg_callback("actor", actor)
 
