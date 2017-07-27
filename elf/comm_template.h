@@ -34,30 +34,65 @@
 // and call ReplyComplete() to indicate that the game simulators (who's waiting on WaitReply()) can continue.
 
 // Game information
-template <typename Data, typename Reply>
-struct InfoT {
+template <typename _Data, typename _Reply>
+class InfoT {
+public:
+    using Data = _Data;
+    using Reply = _Reply;
+
+private:
     // Meta info for this game.
-    const MetaInfo *meta = nullptr;
+    const MetaInfo *_meta = nullptr;
 
     // Current sequence number.
-    int seq = 0;    // seq * frame_skip == tick
+    int _seq = 0;    // seq * frame_skip == tick
 
     // How many games have been played.
-    int game_counter = 0;
+    int _game_counter = 0;
 
     // Hash code for current data.
-    unsigned long hash_code = 0;
+    unsigned long _hash_code = 0;
 
     // Game data (state, etc)
-    Data data;
+    Data _data;
 
     // Model used to generate reply.
-    int reply_version = 0;
+    int _reply_version = 0;
 
     // Reply (action, etc)
-    Reply reply;
+    Reply _reply;
 
-    REGISTER_PYBIND_FIELDS(meta, seq, game_counter, hash_code, data, reply_version, reply);
+public:
+    const MetaInfo *GetMeta() const { return _meta; }
+
+    Data &GetData() { return _data; }
+    const Data &GetData() const { return _data; }
+
+    Reply &GetReply() { return _reply; }
+    const Reply &GetReply() const { return _reply; }
+
+    void DonePrepare() {
+        _reply.Clear();
+        _reply_version = 0;
+    }
+
+    void SkipWaitReply(const Reply &reply) {
+        _reply = reply;
+    }
+
+    int GetSeq() const { return _seq; }
+    int GetGameCounter() const { return _game_counter; }
+    int GetReplyVersion() const { return _reply_version; }
+
+    // TODO: these two are not really good design, will change in the next commit.
+    int &GetSeq() { return _seq; }
+    int &GetReplyVersion() { return _reply_version; }
+
+    void Prepare(const MetaInfo &meta, int game_counter, int seq) {
+        _meta = &meta;
+        _game_counter = game_counter;
+        _seq = seq;
+    }
 };
 
 template <typename T>
@@ -72,13 +107,13 @@ struct CondPerGroupT {
 
     bool Check(int hist_len, T *data) {
         // Update game counter.
-        int new_game_counter = data->newest().game_counter;
+        int new_game_counter = data->newest().GetGameCounter();
         if (new_game_counter > game_counter) {
             game_counter = new_game_counter;
             // Make sure no frame is missed. seq starts from 0.
             last_used_seq -= last_seq + 1;
         }
-        int curr_seq = data->newest().seq;
+        int curr_seq = data->newest().GetSeq();
         last_seq = curr_seq;
         if (data->size() < hist_len || curr_seq - last_used_seq < hist_len - hist_overlap) return false;
         last_used_seq = curr_seq;
@@ -204,7 +239,7 @@ public:
         Stat &stats = it->second;
         stats.freq ++;
 
-        V_PRINT(_verbose, "[k=" << key << "] Start sending data, seq = " << data.newest().seq << " hist_size = " << data.size());
+        V_PRINT(_verbose, "[k=" << key << "] Start sending data, seq = " << data.newest().GetSeq() << " hist_len = " << data.size());
         // Send the key to all collectors in the container, if the key satisfy the gating function.
         std::vector<int> selected_groups;
         std::string str_selected_groups;
@@ -287,18 +322,68 @@ public:
     }
 };
 
+template <typename In>
+class HistT {
+public:
+    using HistType = CircularQueue<In>;
+    using Data = typename In::Data;
+    using Reply = typename In::Reply;
+
+private:
+    CircularQueue<In> _history;
+
+    In &curr() { return _history.ItemPush(); }
+    const In &curr() const { return _history.ItemPush(); }
+
+public:
+    HistT(int len) : _history(len) { }
+
+    void Prepare(const MetaInfo &meta, int game_counter, int seq) {
+        // we move the history forward.
+        if (_history.full()) _history.Pop();
+        curr().Prepare(meta, game_counter, seq);
+    }
+
+    // Note that these two will be called after .Push, so we need to retrieve them from .newest().
+    // TODO: Make them consistent.
+    const MetaInfo *GetMeta() const { return newest().GetMeta(); }
+
+    const Reply &GetReply() const { return newest().GetReply(); }
+    Reply &GetReply() { return newest().GetReply(); }
+
+    Data &GetData() { return curr().GetData(); }
+    const Data &GetData() const { return curr().GetData(); }
+
+    int size() const { return _history.size(); }
+
+    void DonePrepare() {
+        curr().DonePrepare();
+        _history.Push();
+    }
+
+    // If we don't want to send the data to get reply, we can fill in by ourself.
+    void SkipWaitReply(const Reply& reply) {
+        curr().SkipWaitReply(reply);
+        _history.Push();
+    }
+
+    // oldest = 0, newest = _history.maxlen() - 1
+    In &oldest(int i = 0) { return _history.get_from_push(_history.maxlen() - i - 1); }
+    const In &oldest(int i = 0) const { return _history.get_from_push(_history.maxlen() - i - 1); }
+    In &newest(int i = 0) { return _history.get_from_push(i); }
+    const In &newest(int i = 0) const { return _history.get_from_push(i); }
+
+};
+
 // Communication between main_loop and AI (which is in a separate thread).
 // main_loop will send the environment data to AI, and call AI's Act().
 // In Act(), AI will compute the best move and return it back.
 //
-template <typename Context>
+template <typename Context, typename _Info>
 class AICommT {
 public:
-    using Info = typename Context::Info;
-    using HistType = CircularQueue<Info>;
-
-    using AIComm = AICommT<Context>;
-
+    using Info = _Info;
+    using AIComm = AICommT<Context, Info>;
     using Comm = typename Context::Comm;
     using Reply = typename Context::Reply;
     using Data = typename Context::Data;
@@ -307,41 +392,35 @@ private:
     Comm *_comm;
 
     const MetaInfo _meta;
+    Info _data;
 
-    CircularQueue<Info> _history;
     int _seq;
     int _game_counter;
 
     std::mt19937 _g;
 
-    Info &curr() { return _history.ItemPush(); }
-    const Info &curr() const { return _history.ItemPush(); }
-
 public:
     AICommT(int id, Comm *comm)
-        : _comm(comm), _meta(id), _history(comm->GetT()), _seq(0), _game_counter(0), _g(_meta.query_id) {
+        : _comm(comm), _meta(id), _data(comm->GetT()), _seq(0), _game_counter(0), _g(_meta.query_id) {
+        // TODO Make _data constructor more generalizable.
     }
 
     AICommT(const AIComm& parent, int child_id)
-        : _comm(parent._comm), _meta(parent._meta, child_id), _history(parent._history),
+        : _comm(parent._comm), _meta(parent._meta, child_id), _data(parent._data),
           _seq(parent._seq), _game_counter(parent._game_counter), _g(_meta.query_id) {
     }
 
     void Prepare() {
         // we move the history forward.
-        if (_history.full()) _history.Pop();
-        curr().seq = _seq ++;
-        curr().game_counter = _game_counter;
-        curr().meta = &_meta;
+        _data.Prepare(_meta, _game_counter, _seq);
+        _seq ++;
     }
 
     const MetaInfo &GetMeta() const { return _meta; }
 
-    Data *GetData() { return &curr().data; }
+    Info &GetData() { return _data;  }
+    const Info &GetData() const { return _data;  }
     std::mt19937 &gen() { return _g; }
-
-    CircularQueue<Info> &history() { return _history; }
-    const CircularQueue<Info> &history() const { return _history; }
 
     int seq() const { return _seq; }
     int game_counter() const { return _game_counter; }
@@ -357,18 +436,14 @@ public:
         }
         */
         // Clear reply.
-        curr().reply.Clear();
-        curr().reply_version = 0;
-        _history.Push();
+        _data.DonePrepare();
         // std::cout << "[" << _meta.id << "] Before SendDataWaitReply" << std::endl;
-        return _comm->SendDataWaitReply(_meta.query_id, _history);
+        return _comm->SendDataWaitReply(_meta.query_id, _data);
         // std::cout << "[" << _meta.id << "] Done with SendDataWaitReply, continue" << std::endl;
     }
 
-    // If we don't want to send the data to get reply, we can fill in by ourself.
-    void FillInReply(const Reply &reply) {
-        curr().reply = reply;
-        _history.Push();
+    void SkipWaitReply(const Reply &reply) {
+        _data.SkipWaitReply(reply);
     }
 
     void Restart() {
@@ -387,25 +462,22 @@ public:
 };
 
 // The game context, which could include multiple games.
-template <typename _Options, typename _Data, typename _Reply>
+template <typename _Options, typename _Info>
 class ContextT {
 public:
     using Options = _Options;
     using Key = decltype(MetaInfo::query_id);
-    using Reply = _Reply;
-    using Data = _Data;
 
-    using Info = InfoT<Data, Reply>;
+    using Info = _Info;
+    using Reply = typename Info::Reply;
+    using Data = typename Info::Data;
 
-    using Context = ContextT<Options, Data, Reply>;
+    using Context = ContextT<Options, Info>;
+    using DataAddr = DataAddrT<Info>;
+    using Comm = CommT<Info>;
 
-    using HistType = CircularQueue<Info>;
-    using DataAddr = DataAddrT<HistType>;
-    using Comm = CommT<HistType>;
+    using AIComm = AICommT<Context, Info>;
 
-    using AIComm = AICommT<Context>;
-
-    using State = _Data;
     using GameStartFunc =
       std::function<void (int game_idx, const Options& options, const std::atomic_bool &done, AIComm *)>;
     using CustomFieldFunc = typename DataAddr::CustomFieldFunc;

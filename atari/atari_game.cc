@@ -97,15 +97,15 @@ void AtariGame::MainLoop(const std::atomic_bool& done) {
         return;
       }
       _ai_comm->Prepare();
-      _fill_state(*_ai_comm->GetData());
+      _fill_state(_ai_comm->GetData().GetData());
 
       int act;
       if (i < start_loc) {
           act = (*_distr_action)(g);
-          _ai_comm->FillInReply(Reply(act, 0.0));
+          _ai_comm->SkipWaitReply(Reply(act, 0.0));
       } else {
           _ai_comm->SendDataWaitReply();
-          act = _ai_comm->history().newest().reply.action;
+          act = _ai_comm->GetData().GetReply().action;
           // act = (*_distr_action)(g);
           // std::cout << "[" << _game_idx << "]: " << act << std::endl;
       }
@@ -155,7 +155,7 @@ int AtariGame::_prevent_stuck(std::default_random_engine &g, int act) {
     if (_last_act_count >= kMaxRep) {
       // The player might get stuck. Save it.
       act = (*_distr_action)(g);
-      _ai_comm->history().newest().reply.action = act;
+      _ai_comm->GetData().GetReply().action = act;
     }
   } else {
     // Reset counter.
@@ -207,7 +207,7 @@ void AtariGame::_fill_state(GameState& state) {
 }
 
 bool CustomFieldFunc(int batchsize, const std::string& key,
-    const std::string& v, SizeType *sz, FieldBase<HistType> **p) {
+    const std::string& v, SizeType *sz, FieldBase<GameInfo> **p) {
     // Note that ptr and stride will be set after the memory are initialized in the Python side.
     if (key == "s") {
         const int hist_len = stoi(v);

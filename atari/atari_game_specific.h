@@ -42,34 +42,33 @@ struct GameOptions {
   REGISTER_PYBIND_FIELDS(rom_file, frame_skip, repeat_action_probability, seed, hist_len, reward_clip);
 };
 
-using GameInfo = InfoT<GameState, Reply>;
-using Context = ContextT<GameOptions, GameState, Reply>;
+using GameInfo = HistT<InfoT<GameState, Reply>>;
+using Context = ContextT<GameOptions, GameInfo>;
 
 using DataAddr = typename Context::DataAddr;
 using AIComm = typename Context::AIComm;
 using Comm = typename Context::Comm;
-using HistType = typename AIComm::HistType;
 
-class FieldState : public FieldT<HistType, float> {
+class FieldState : public FieldT<GameInfo, float> {
 public:
-    void ToPtr(int batch_idx, const HistType& in) override {
+    void ToPtr(int batch_idx, const GameInfo& in) override {
         const auto &info = in.newest(this->_hist_loc);
-        std::copy(info.data.buf.begin(), info.data.buf.end(), this->addr(batch_idx));
+        std::copy(info.GetData().buf.begin(), info.GetData().buf.end(), this->addr(batch_idx));
     }
 };
 
-DEFINE_LAST_REWARD(HistType, float, data.last_reward);
-DEFINE_REWARD(HistType, float, data.last_reward);
-DEFINE_POLICY_DISTR(HistType, float, reply.prob);
+DEFINE_LAST_REWARD(GameInfo, float, GetData().last_reward);
+DEFINE_REWARD(GameInfo, float, GetData().last_reward);
+DEFINE_POLICY_DISTR(GameInfo, float, GetReply().prob);
 
-DEFINE_TERMINAL(HistType, unsigned char);
-DEFINE_LAST_TERMINAL(HistType, unsigned char);
+DEFINE_TERMINAL(GameInfo, unsigned char);
+DEFINE_LAST_TERMINAL(GameInfo, unsigned char);
 
-FIELD_SIMPLE(HistType, Value, float, reply.value);
-FIELD_SIMPLE(HistType, Action, int64_t, reply.action);
+FIELD_SIMPLE(GameInfo, Value, float, GetReply().value);
+FIELD_SIMPLE(GameInfo, Action, int64_t, GetReply().action);
 
-using DataAddr = DataAddrT<HistType>;
-using DataAddrService = DataAddrServiceT<HistType>;
+using DataAddr = DataAddrT<GameInfo>;
+using DataAddrService = DataAddrServiceT<GameInfo>;
 
 static constexpr int kWidth = 160;
 static constexpr int kHeight = 210;
@@ -78,4 +77,4 @@ static constexpr int kInputStride = kWidth*kHeight*3/kRatio/kRatio;
 static constexpr int kWidthRatio = kWidth / kRatio;
 static constexpr int kHeightRatio = kHeight / kRatio;
 
-bool CustomFieldFunc(int batchsize, const std::string& key, const std::string& v, SizeType *sz, FieldBase<HistType> **p);
+bool CustomFieldFunc(int batchsize, const std::string& key, const std::string& v, SizeType *sz, FieldBase<GameInfo> **p);

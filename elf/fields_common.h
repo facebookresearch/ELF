@@ -56,7 +56,7 @@ class FieldLastTerminal : public FieldT<HistType, type> { \
 public: \
     void ToPtr(int batch_idx, const HistType& in) override { \
         const auto &record = in.newest(this->_hist_loc); \
-        *this->addr(batch_idx) = (record.seq == 0 && record.game_counter > 0) ? 1 : 0; \
+        *this->addr(batch_idx) = (record.GetSeq() == 0 && record.GetGameCounter() > 0) ? 1 : 0; \
     } \
 }
 
@@ -68,7 +68,7 @@ public: \
       if (this->_hist_loc == 0) *target = 0; \
       else { \
         const auto &record = in.newest(this->_hist_loc - 1); \
-        *target = (record.seq == 0 && record.game_counter > 0) ? 1: 0; \
+        *target = (record.GetSeq() == 0 && record.GetGameCounter() > 0) ? 1: 0; \
       } \
     } \
 }

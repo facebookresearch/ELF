@@ -156,7 +156,7 @@ public:
     DataAddr &GetDataAddr() { return _data_addr; }
     int gid() const { return _gid; }
 
-    void SetBatchSize(int batchsize) { 
+    void SetBatchSize(int batchsize) {
         // std::cout << "Before send batchsize " << batchsize << std::endl;
         _batchsize_q.enqueue(batchsize);
         int dummy;
@@ -213,7 +213,7 @@ public:
             // Finally make the game run again.
             V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Resume games");
             for (In *in : _batch) {
-                const Key& key = in->newest().meta->query_id;
+                const Key& key = in->newest().GetMeta()->query_id;
                 V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Resume signal sent to k = " << key);
                 _batch_collector.signalReply(key);
             }
@@ -229,7 +229,7 @@ public:
     std::vector<Key> GetBatchKeys() const {
         std::vector<Key> keys;
         for (const In *in : _batch) {
-            keys.push_back(in->newest().meta->query_id);
+            keys.push_back(in->newest().GetMeta()->query_id);
         }
         return keys;
     }

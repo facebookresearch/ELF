@@ -99,17 +99,17 @@ public: \
 
 
 template<typename In>
-FIELD_SIMPLE(In, Seq, int32_t, seq);
+FIELD_SIMPLE(In, Seq, int32_t, GetSeq());
 
 template<typename In>
-FIELD_SIMPLE(In, ReplyVersion, int32_t, reply_version);
+FIELD_SIMPLE(In, ReplyVersion, int32_t, GetReplyVersion());
 
 template<typename In>
 class FieldId : public FieldT<In, int32_t> {
 public:
     void ToPtr(int batch_idx, const In& in) override {
       // [TODO]: We should use GetMeta().query_id
-      *this->addr(batch_idx) = in.newest().meta->id;
+      *this->addr(batch_idx) = in.newest().GetMeta()->id;
     }
 };
 
