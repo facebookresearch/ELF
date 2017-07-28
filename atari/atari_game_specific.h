@@ -26,9 +26,9 @@ static constexpr int kHeightRatio = kHeight / kRatio;
 struct GameState {
     using State = GameState;
     // Seq information.
-    int32_t seq;
-    int32_t game_counter;
-    char last_terminal;
+    int32_t seq = 0;
+    int32_t game_counter = 0;
+    char last_terminal = 0;
 
     // This is 2x smaller images.
     std::vector<float> s;
@@ -44,6 +44,10 @@ struct GameState {
 
     void Clear() { a = 0; V = 0.0; fill(pi.begin(), pi.end(), 0.0); rv = 0; }
 
+    void Init(int num_action) {
+        pi.resize(num_action, 0.0);
+    }
+
     GameState &Prepare(const SeqInfo &seq_info) {
         seq = seq_info.seq;
         game_counter = seq_info.game_counter;
@@ -51,6 +55,15 @@ struct GameState {
 
         Clear();
         return *this;
+    }
+
+    void Restart() {
+        tick = 0;
+        lives = 0;
+        last_r = 0; // reward of last action
+        seq = 0;
+        game_counter = 0;
+        last_terminal = 0;
     }
 
     DECLARE_FIELD(GameState, seq, game_counter, last_terminal, s, tick, lives, last_r, a, V, pi, rv);

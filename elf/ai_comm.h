@@ -81,6 +81,7 @@ public:
     }
 
     void Restart() {
+        _info.data.Restart();
         _curr_seq.NewEpisode();
     }
 

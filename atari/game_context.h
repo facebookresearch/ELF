@@ -60,7 +60,7 @@ class GameContext {
         auto init = [this](HistT<GameState> &state) {
             state.InitHist(_T);
             for (auto &s : state.v()) {
-                s.pi.resize(_num_action, 0.0);
+                s.Init(_num_action);
             }
         };
         _context->Start(init, f);

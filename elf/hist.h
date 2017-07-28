@@ -21,6 +21,10 @@ public:
         _h.reset(new CircularQueue<Data>(len));
     }
 
+    void Restart() {
+        _h->clear();
+    }
+
     DataPrepareReturn Prepare(const SeqInfo &seq) {
         // we move the history forward.
         if (_h->full()) _h->Pop();
