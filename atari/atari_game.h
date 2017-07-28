@@ -51,7 +51,6 @@ class AtariGame {
     // 210 * 160 * 3
     // We also save history here.
     std::vector<unsigned char> _buf;
-    CircularQueue<std::vector<float>> _h;
 
     reward_t _last_reward = 0;
     AtariGameSummary _summary;

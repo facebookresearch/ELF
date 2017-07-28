@@ -58,7 +58,7 @@ void AtariGameSummary::Print() const {
     std::cout << " current accumulated reward: " << _accu_reward << std::endl;
 }
 
-AtariGame::AtariGame(const GameOptions& opt) : _h(opt.hist_len) {
+AtariGame::AtariGame(const GameOptions& opt) {
   lock_guard<mutex> lg(ALE_GLOBAL_LOCK);
   _ale.reset(new ALEInterface);
   long seed = compute_seed(opt.seed);
@@ -176,28 +176,12 @@ void AtariGame::_reset_stuck_state() {
 
 void AtariGame::_copy_screen(GameState &state) {
     _ale->getScreenRGB(_buf);
-    if (_h.full()) _h.Pop();
 
     const int stride = kInputStride;
-    // Then copy it to the current state.
-    // Stride hard coded.
-    auto &item = _h.ItemPush();
-    item.resize(stride);
+    state.s.resize(stride);
 
     // Downsample the image.
-    _downsample(_buf, &item[0]);
-    _h.Push();
-
-    // Then you put all the history state to game state.
-    state.s.resize(_h.maxlen() * stride);
-    for (int i = 0; i < _h.size(); ++i) {
-        const auto &v = _h.get_from_push(i);
-        std::copy(v.begin(), v.end(), &state.s[i * stride]);
-    }
-    if (_h.size() < _h.maxlen()) {
-        const int n_missing = _h.maxlen() - _h.size();
-        ::memset(&state.s[_h.size() * stride], 0, sizeof(float) * sizeof(n_missing * stride));
-    }
+    _downsample(_buf, &state.s[0]);
 }
 
 void AtariGame::_fill_state(GameState& state) {
