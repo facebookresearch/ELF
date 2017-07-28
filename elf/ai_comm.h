@@ -45,8 +45,6 @@ private:
 
 public:
     AICommT(int id, Comm *comm) : _comm(comm), _info(id), _g(_info.meta.query_id) {
-        // TODO Make _data constructor more generalizable.
-        _info.data.InitHist(comm->GetT());
     }
 
     AICommT(const AIComm& parent, int child_id)

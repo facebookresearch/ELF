@@ -31,6 +31,8 @@ public:
     // Note that these two will be called after .Push, so we need to retrieve them from .newest().
     // TODO: Make them consistent.
     int size() const { return _h->size(); }
+    std::vector<Data> &v() { return _h->v(); }
+    const std::vector<Data> &v() const { return _h->v(); }
 
     // oldest = 0, newest = _h->maxlen() - 1
     Data &oldest(int i = 0) { return _h->get_from_push(_h->maxlen() - i - 1); }
@@ -42,11 +44,11 @@ public:
 namespace elf {
 
 template <typename State>
-void CopyToMem(Copier<State> &copier, const std::vector<HistT<State> *> &batch) {
+void CopyToMem(const std::vector<CopyItemT<State>> &copier, const std::vector<HistT<State> *> &batch) {
   if (batch.empty()) return;
   size_t batchsize = batch.size();
 
-  for (const auto& item: copier.GetFieldMap()) {
+  for (const auto& item: copier) {
     size_t capacity = item.Capacity(batch[0]->newest());
     size_t hist_len = capacity / batchsize;
 
@@ -61,11 +63,11 @@ void CopyToMem(Copier<State> &copier, const std::vector<HistT<State> *> &batch) 
 }
 
 template <typename State>
-void CopyFromMem(Copier<State> &copier, std::vector<HistT<State> *> &batch) {
+void CopyFromMem(const std::vector<CopyItemT<State>> &copier, std::vector<HistT<State> *> &batch) {
   if (batch.empty()) return;
   size_t batchsize = batch.size();
 
-  for (const auto& item: copier.GetFieldMap()) {
+  for (const auto& item: copier) {
     size_t capacity = item.Capacity(batch[0]->newest());
     size_t hist_len = capacity / batchsize;
     // [batchsize, histsize, xx, xx, xx]

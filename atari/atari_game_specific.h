@@ -16,6 +16,13 @@
 #include "../elf/hist.h"
 #include "../elf/copier.hh"
 
+static constexpr int kWidth = 160;
+static constexpr int kHeight = 210;
+static constexpr int kRatio = 2;
+static constexpr int kInputStride = kWidth*kHeight*3/kRatio/kRatio;
+static constexpr int kWidthRatio = kWidth / kRatio;
+static constexpr int kHeightRatio = kHeight / kRatio;
+
 struct GameState {
     using State = GameState;
     // Seq information.
@@ -59,26 +66,3 @@ struct GameOptions {
     REGISTER_PYBIND_FIELDS(rom_file, frame_skip, repeat_action_probability, seed, hist_len, reward_clip);
 };
 
-static constexpr int kWidth = 160;
-static constexpr int kHeight = 210;
-static constexpr int kRatio = 2;
-static constexpr int kInputStride = kWidth*kHeight*3/kRatio/kRatio;
-static constexpr int kWidthRatio = kWidth / kRatio;
-static constexpr int kHeightRatio = kHeight / kRatio;
-
-inline EntryInfo GetEntry(const std::string &entry, const std::string &key, const std::string &v) {
-  auto *mm = GameState::get_mm(key);
-  if (mm == nullptr) return EntryInfo();
-
-  std::string type_name = mm->type();
-
-  if (entry == "input") {
-    if (key == "s") return EntryInfo(key, type_name, {3 * stoi(v), kHeightRatio, kWidthRatio});
-    else if (key == "last_r" || key == "last_terminal") return EntryInfo(key, type_name, {1});
-  } else if (entry == "reply") {
-    if (key == "pi" || key == "V") return EntryInfo(key, type_name, {stoi(v)});
-    else if (key == "a" || key == "rv") return EntryInfo(key, type_name, {1});
-  }
-
-  return EntryInfo();
-}

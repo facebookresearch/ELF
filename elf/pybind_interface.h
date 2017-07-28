@@ -46,15 +46,17 @@ void register_common_func(py::module &m) {
   void Steps(const Infos& infos) { context->Steps(infos); } \
   std::string Version() const { return context->Version(); } \
   void PrintSummary() const { context->PrintSummary(); } \
-  int AddCollectors(int batchsize, int hist_len, int exclusive_id) { return context->AddCollectors(batchsize, hist_len, exclusive_id); } \
+  int AddCollectors(int batchsize, int hist_len, int exclusive_id) { \
+    return context->comm().AddCollectors(batchsize, hist_len, exclusive_id); \
+  } \
   const MetaInfo &meta(int i) const { return context->meta(i); } \
   int size() const { return context->size(); } \
 \
-  std::vector<EntryInfo> GetTensorSpec(const std::string &key, const std::map<std::string, std::string> &desc) { \
-      return context->GetTensorSpec(key, desc); \
+  EntryInfo GetTensorSpec(int gid, const std::string &key) { \
+      return context->comm().GetCollectorGroup(gid).GetEntry(key, [&](const std::string &key) { return EntryFunc(key); }); \
   } \
-  void SetupTensor(int gid, const std::string &entry, const std::map<std::string, std::pair<std::uint64_t, std::size_t> > &pts) { \
-      context->SetupTensor(gid, entry, pts); \
+  void AddTensor(int gid, const std::string &input_reply, const EntryInfo &e) { \
+      context->comm().GetCollectorGroup(gid).AddEntry(input_reply, e); \
   } \
 
 
@@ -72,6 +74,6 @@ void register_common_func(py::module &m) {
     .def("Stop", &GameContext::Stop) \
     .def("__getitem__", &GameContext::meta) \
     .def("__len__", &GameContext::size) \
-    .def("SetupTensor", &GameContext::SetupTensor) \
+    .def("AddTensor", &GameContext::AddTensor) \
     .def("GetTensorSpec", &GameContext::GetTensorSpec) \
 

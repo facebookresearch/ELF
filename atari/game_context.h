@@ -25,11 +25,14 @@ class GameContext {
     std::unique_ptr<GC> _context;
     std::vector<AtariGame> games;
 
+    int _T;
+
     int _width, _height, _num_action;
 
   public:
     GameContext(const ContextOptions& context_options, const GameOptions& options) {
-      _context.reset(new GC{context_options, options, ::GetEntry});
+      _context.reset(new GC{context_options, options});
+      _T = context_options.T;
 
       for (int i = 0; i < context_options.num_games; ++i) {
         games.emplace_back(options);
@@ -54,12 +57,32 @@ class GameContext {
             game.initialize_comm(game_idx, ai_comm);
             game.MainLoop(done);
         };
-        _context->Start(f);
+        auto init = [this](HistT<GameState> &state) {
+            state.InitHist(_T);
+            for (auto &s : state.v()) {
+                s.pi.resize(_num_action, 0.0);
+            }
+        };
+        _context->Start(init, f);
     }
 
     int get_screen_width() const { return _width; }
     int get_screen_height() const { return _height; }
     int get_num_actions() const { return _num_action; }
+
+    EntryInfo EntryFunc(const std::string &key) {
+        auto *mm = GameState::get_mm(key);
+        if (mm == nullptr) return EntryInfo();
+
+        std::string type_name = mm->type();
+
+        if (key == "s") return EntryInfo(key, type_name, {3, kHeightRatio, kWidthRatio});
+        else if (key == "last_r" || key == "last_terminal") return EntryInfo(key, type_name, {1});
+        else if (key == "pi" || key == "V") return EntryInfo(key, type_name, {_num_action}, _num_action);
+        else if (key == "a" || key == "rv") return EntryInfo(key, type_name, {1});
+
+        return EntryInfo();
+    }
 
     CONTEXT_CALLS(GC, _context);
 

@@ -132,8 +132,6 @@ public:
         init_stats();
     }
 
-    int GetT() const { return _context_options.T; }
-
     int AddCollectors(int batchsize, int hist_len, int exclusive_id) {
         _groups.emplace_back(new CollectorGroup(_groups.size(), _keys, batchsize, hist_len, _signal.get(), _context_options.verbose_collector));
         int gid = _groups.size() - 1;
@@ -277,39 +275,37 @@ public:
     using Comm = CommT<Info>;
     using AIComm = AICommT<Comm>;
 
-    using GameStartFunc =
-      std::function<void (int game_idx, const Options& options, const std::atomic_bool &done, AIComm *)>;
-    using EntryFunc =
-      std::function<EntryInfo (const std::string &entry, const std::string &key, const std::string &v)>;
+    using GameStartFunc = std::function<void (int game_idx, const Options& options, const std::atomic_bool &done, AIComm *)>;
+    using DataInitFunc = std::function<void (Data &)>;
 
 private:
     Comm _comm;
     std::vector<std::unique_ptr<AIComm>> _ai_comms;
     Options _options;
     ContextOptions _context_options;
-    EntryFunc _entry_func;
 
     ctpl::thread_pool _pool;
     Notif _done;
     bool _game_started = false;
 
 public:
-    ContextT(const ContextOptions &context_options, const Options& options, EntryFunc entry_func)
+    ContextT(const ContextOptions &context_options, const Options& options)
         : _comm(context_options), _options(options), _context_options(context_options),
-          _entry_func(entry_func), _pool(context_options.num_games) {
+          _pool(context_options.num_games) {
     }
 
-    int AddCollectors(int batchsize, int hist_len, int exclusive_id) {
-        int gid = _comm.AddCollectors(batchsize, hist_len, exclusive_id);
-        return gid;
-    }
+    Comm &comm() { return _comm; }
+    const Comm &comm() const { return _comm; }
 
-    void Start(GameStartFunc game_start_func) {
+    void Start(DataInitFunc data_init, GameStartFunc game_start_func) {
         _comm.CollectorsReady();
 
         _ai_comms.resize(_pool.size());
         for (int i = 0; i < _pool.size(); ++i) {
             _ai_comms[i].reset(new AIComm{i, &_comm});
+            // Initialize Data
+            data_init(_ai_comms[i]->info().data);
+            //
             _pool.push([i, this, &game_start_func](int){
                 const std::atomic_bool &done = _done.flag();
                 game_start_func(i, _options, done, _ai_comms[i].get());
@@ -329,33 +325,6 @@ public:
 
     const MetaInfo &meta(int i) const { return _ai_comms[i]->info().meta; }
     int size() const { return _ai_comms.size(); }
-
-    std::vector<EntryInfo> GetTensorSpec(const std::string &key, const std::map<std::string, std::string> &desc) {
-        std::vector<EntryInfo> entries;
-
-        int batchsize = std::stoi(get_value<std::string, std::string>(desc, "_batchsize", "1"));
-        int T = std::stoi(get_value<std::string, std::string>(desc, "_T", "1"));
-
-        for (const auto &p : desc) {
-            if (p.first.empty() || p.first[0] == '_') continue;
-
-            EntryInfo entry_info = _entry_func(key, p.first, p.second);
-            if (entry_info.sz.empty()) {
-                std::cout << "[" << key << "][key=" << p.first << "][value=" << p.second << "]: key is not specified!" << std::endl;
-                continue;
-            }
-
-            entry_info.SetBatchSizeAndHistory(batchsize, T);
-            // std::cout << entry_info.PrintInfo() << std::endl << std::flush;
-            entries.emplace_back(entry_info);
-        }
-        return entries;
-    }
-
-    void SetupTensor(int gid, const std::string &entry,
-        const std::map<std::string, std::pair<std::uint64_t, std::size_t> > &pts) {
-        _comm.GetCollectorGroup(gid).SetEntry(entry, pts);
-    }
 
     void PrintSummary() const { _comm.PrintSummary(); }
 

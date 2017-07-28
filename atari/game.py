@@ -64,10 +64,8 @@ class Loader:
         # sampled action and and value will be filled from the reply.
 
         desc["actor"] = dict(
-            # input=dict(id="", s=str(args.hist_len), last_r="", last_terminal="", _batchsize=str(args.batchsize), _T="1"),
-            # reply=dict(rv="", pi=str(num_action), V="1", a="1", _batchsize=str(args.batchsize), _T="1")
-            input=dict(s=str(args.hist_len), last_r="", last_terminal="", _batchsize=str(args.batchsize), _T="1"),
-            reply=dict(rv="", V="1", a="1", _batchsize=str(args.batchsize), _T="1")
+            input=dict(batchsize=args.batchsize, T=1, keys=["s", "last_r", "last_terminal"]),
+            reply=dict(batchsize=args.batchsize, T=1, keys=["rv", "pi", "V", "a"])
         )
 
         if not args.actor_only:
@@ -75,7 +73,7 @@ class Loader:
             # We want input, action (filled by actor models), value (filled by actor
             # models) and reward.
             desc["train"] = dict(
-                input=dict(rv="", id="", pi=str(num_action), s=str(args.hist_len), a="1", r="1", V="1", seq="", terminal="", _batchsize=str(args.batchsize), _T=str(args.T)),
+                input=[dict(batchsize=args.batchsize, T=args.T), ["rv", "id", "pi", "s", "a", "r", "V", "seq", "terminal"] ],
                 reply=None
             )
 
@@ -83,9 +81,9 @@ class Loader:
         params = dict()
         params["num_action"] = GC.get_num_actions()
         params["num_group"] = 1 if args.actor_only else 2
-        params["action_batchsize"] = int(desc["actor"]["input"]["_batchsize"])
+        params["action_batchsize"] = desc["actor"]["input"]["batchsize"]
         if not args.actor_only:
-            params["train_batchsize"] = int(desc["train"]["input"]["_batchsize"])
+            params["train_batchsize"] = desc["train"]["input"]["batchsize"]
         params["hist_len"] = args.hist_len
         params["T"] = args.T
 

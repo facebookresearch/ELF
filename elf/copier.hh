@@ -192,30 +192,9 @@ struct CopyItemT {
 };
 
 template <typename State>
-class Copier {
-  using buffermap_t = std::unordered_map<std::string, SharedBuffer>;
-  public:
-    using CopyItem = CopyItemT<State>;
-
-    Copier(const std::unordered_map<std::string, SharedBuffer>& buffermap) {
-      static_assert(std::is_standard_layout<State>::value, "Copier only works on classes with standard layout!");
-      for (auto& pair: buffermap) {
-        auto *mm = State::get_mm(pair.first);
-        m_assert(mm != nullptr);
-        fieldmap_.emplace_back(pair.first, pair.second, mm);
-      }
-    }
-
-    const std::vector<CopyItem> &GetFieldMap() const { return fieldmap_; }
-
-  private:
-    std::vector<CopyItem> fieldmap_;
-};
-
-template <typename State>
-void CopyToMem(Copier<State> &copier, const std::vector<State *> &batch) {
+void CopyToMem(const std::vector<CopyItemT<State>> &copier, const std::vector<State *> &batch) {
   if (batch.empty()) return;
-  for (const auto& item: copier.GetFieldMap()) {
+  for (const auto& item: copier) {
     m_assert(item.Check(*batch[0], batch.size()));
 
     char *p = item.ptr();
@@ -227,9 +206,9 @@ void CopyToMem(Copier<State> &copier, const std::vector<State *> &batch) {
 }
 
 template <typename State>
-void CopyFromMem(Copier<State> &copier, std::vector<State *> &batch) {
+void CopyFromMem(const std::vector<CopyItemT<State>> &copier, std::vector<State *> &batch) {
   if (batch.empty()) return;
-  for (const auto& item: copier.GetFieldMap()) {
+  for (const auto& item: copier) {
     m_assert(item.Check(*batch[0], batch.size()));
 
     const char *p = item.ptr();

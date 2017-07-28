@@ -107,10 +107,14 @@ struct EntryInfo {
   std::string key;
   std::string type;
   std::vector<int> sz;
+  int extra_len;
 
-  EntryInfo() { }
-  EntryInfo(const std::string& key, const std::string& type, std::initializer_list<int> l)
-    : key(key), type(type), sz(l) {
+  uint64_t p;
+  std::size_t byte_size;
+
+  EntryInfo() : p(0), byte_size(0) { }
+  EntryInfo(const std::string& key, const std::string& type, std::initializer_list<int> l, int extra_len = 1)
+    : key(key), type(type), sz(l), extra_len(extra_len), p(0), byte_size(0) {
   }
 
   void SetBatchSizeAndHistory(int batchsize, int T) {
@@ -130,7 +134,7 @@ struct EntryInfo {
       return ss.str();
   }
 
-  REGISTER_PYBIND_FIELDS(key, type, sz);
+  REGISTER_PYBIND_FIELDS(key, type, sz, p, byte_size);
 };
 
 // Each collector group has a batch collector and a sequence of operators.
@@ -140,6 +144,8 @@ public:
     using Key = decltype(MetaInfo::query_id);
     using State = typename In::State;
     using Data = typename In::Data;
+    using CopyItem = elf::CopyItemT<State>;
+    using EntryFunc = std::function<EntryInfo (const std::string &key)>;
 
 private:
     const int _gid;
@@ -155,8 +161,8 @@ private:
     std::vector<Data *> _batch_data;
     elf::BatchCollectorT<Key, In> _batch_collector;
 
-    std::unique_ptr<elf::Copier<State>> _copier_input;
-    std::unique_ptr<elf::Copier<State>> _copier_reply;
+    std::vector<CopyItem> _copier_input;
+    std::vector<CopyItem> _copier_reply;
 
     SyncSignal *_signal;
 
@@ -186,16 +192,29 @@ public:
           _batch_collector(keys), _signal(signal), _verbose(verbose) {
     }
 
-    void SetEntry(const std::string &entry, const std::map<std::string, std::pair<std::uint64_t, std::size_t> > &pts) {
-        std::unordered_map<std::string, elf::SharedBuffer> buffers;
-        for (const auto &p : pts) {
-            buffers.emplace(std::make_pair(p.first, elf::SharedBuffer(p.second.first, p.second.second)));
-        }
-        elf::Copier<State> *copier = new elf::Copier<State>(buffers);
+    EntryInfo GetEntry(const std::string &key, EntryFunc entry_func) const {
+        if (key.empty()) return EntryInfo();
 
-        if (entry == "input") _copier_input.reset(copier);
-        else if (entry == "reply") return _copier_reply.reset(copier);
-        else throw std::range_error("Unknown entry " + entry);
+        EntryInfo entry_info = entry_func(key);
+        if (entry_info.sz.empty()) {
+            std::cout << "[" << key << "] key is not specified!" << std::endl;
+            return EntryInfo();
+        }
+
+        entry_info.SetBatchSizeAndHistory(_batchsize, _hist_len);
+        return entry_info;
+    }
+
+    void AddEntry(const std::string &input_reply, const EntryInfo &e) {
+        std::vector<CopyItem> *copier = nullptr;
+
+        if (input_reply == "input") copier = &_copier_input;
+        else if (input_reply == "reply") copier = &_copier_reply;
+        else throw std::range_error("Unknown input_reply " + input_reply);
+
+        auto *mm = State::get_mm(e.key);
+        m_assert(mm != nullptr);
+        copier->emplace_back(e.key, elf::SharedBuffer(e.p, e.byte_size), mm);
     }
 
     int gid() const { return _gid; }
@@ -245,7 +264,7 @@ public:
 
             V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Compute input. batchsize = " << _batch.size());
 
-            elf::CopyToMem(*_copier_input, _batch_data);
+            elf::CopyToMem(_copier_input, _batch_data);
 
             // Signal.
             V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Send_batch. batchsize = " << _batch.size());
@@ -256,7 +275,7 @@ public:
             wait_batch_used();
 
             V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] PutReplies()");
-            elf::CopyFromMem(*_copier_reply, _batch_data);
+            elf::CopyFromMem(_copier_reply, _batch_data);
 
             // Finally make the game run again.
             V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Resume games");

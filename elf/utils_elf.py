@@ -30,7 +30,7 @@ def pin_clone(batch):
     return { k : v.clone().pin_memory() for k, v in batch.items() }
 
 
-def _setup_tensor(GC, entry, desc, group_id, use_numpy=False):
+def _setup_tensor(GC, input_reply, descs, group_id, use_numpy=False):
     torch_types = {
         "int32_t" : torch.IntTensor,
         "int64_t" : torch.LongTensor,
@@ -46,23 +46,21 @@ def _setup_tensor(GC, entry, desc, group_id, use_numpy=False):
         'char': 'byte'
     }
 
-    tensor_info = GC.GetTensorSpec(entry, desc)
-
-    tensors = { }
     batch = { }
-    for info in tensor_info:
+    for desc in descs:
+        info = GC.GetTensorSpec(group_id, desc)
+
         if not use_numpy:
             v = torch_types[info.type](*info.sz).pin_memory()
-            p = v.data_ptr()
-            sz = v.numel() * v.element_size()
+            info.p = v.data_ptr()
+            info.byte_size = v.numel() * v.element_size()
         else:
             v = np.zeros(info.sz, dtype=numpy_types[info.type])
-            p = v.ctypes.data
-            sz = v.size * v.dtype.itemsize
-        tensors[info.key] = (p, sz)
+            info.p = v.ctypes.data
+            info.byte_size = v.size * v.dtype.itemsize
         batch[info.key] = v
+        GC.AddTensor(group_id, input_reply, info)
 
-    GC.SetupTensor(group_id, entry, tensors)
     return batch
 
 def to_numpy(batch):
@@ -93,10 +91,10 @@ class GCWrapper:
         total_batchsize = 0
         for key, v in descriptions.items():
             input = v["input"]
-            if "_batchsize" not in input or input["_batchsize"] is None:
+            if "batchsize" not in input or input["batchsize"] is None:
                 print("Batchsize cannot be None!")
                 sys.exit(1)
-            total_batchsize += int(input["_batchsize"])
+            total_batchsize += input["batchsize"]
         num_recv_thread = math.floor(num_games / total_batchsize)
         num_recv_thread = max(num_recv_thread, 1)
         print("#recv_thread = %d" % num_recv_thread)
@@ -113,15 +111,15 @@ class GCWrapper:
             input = v["input"]
             reply = v["reply"]
 
-            batchsize = int(input["_batchsize"])
-            T = int(input["_T"])
+            batchsize = input["batchsize"]
+            T = input["T"]
             gpu2gid.append(list())
             for i in range(num_recv_thread):
                 group_id = GC.AddCollectors(batchsize, T, len(gpu2gid) - 1)
 
-                inputs.append(_setup_tensor(GC, "input", input, group_id, use_numpy=use_numpy))
+                inputs.append(_setup_tensor(GC, "input", input["keys"], group_id, use_numpy=use_numpy))
                 if reply is not None:
-                    replies.append(_setup_tensor(GC, "reply", reply, group_id, use_numpy=use_numpy))
+                    replies.append(_setup_tensor(GC, "reply", reply["keys"], group_id, use_numpy=use_numpy))
                 else:
                     replies.append(None)
 
