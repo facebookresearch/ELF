@@ -77,7 +77,7 @@ inline EntryInfo GetEntry(const std::string &entry, const std::string &key, cons
     else if (key == "last_r" || key == "last_terminal") return EntryInfo(key, type_name, {1});
   } else if (entry == "reply") {
     if (key == "pi" || key == "V") return EntryInfo(key, type_name, {stoi(v)});
-    else if (key == "a") return EntryInfo(key, type_name, {1});
+    else if (key == "a" || key == "rv") return EntryInfo(key, type_name, {1});
   }
 
   return EntryInfo();

@@ -339,17 +339,14 @@ public:
         for (const auto &p : desc) {
             if (p.first.empty() || p.first[0] == '_') continue;
 
-            std::cout << "Deal with key = " << p.first << std::endl << std::flush;
             EntryInfo entry_info = _entry_func(key, p.first, p.second);
-            std::cout << "Done with key = " << p.first << std::endl << std::flush;
-
-            if (entries.back().sz.empty()) {
+            if (entry_info.sz.empty()) {
                 std::cout << "[" << key << "][key=" << p.first << "][value=" << p.second << "]: key is not specified!" << std::endl;
                 continue;
             }
 
             entry_info.SetBatchSizeAndHistory(batchsize, T);
-            std::cout << entry_info.PrintInfo() << std::endl << std::flush;
+            // std::cout << entry_info.PrintInfo() << std::endl << std::flush;
             entries.emplace_back(entry_info);
         }
         return entries;

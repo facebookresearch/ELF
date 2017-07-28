@@ -46,14 +46,11 @@ def _setup_tensor(GC, entry, desc, group_id, use_numpy=False):
         'char': 'byte'
     }
 
-    print("Before GetTensorSpec")
     tensor_info = GC.GetTensorSpec(entry, desc)
-    print(tensor_info)
 
     tensors = { }
     batch = { }
     for info in tensor_info:
-        print(info)
         if not use_numpy:
             v = torch_types[info.type](*info.sz).pin_memory()
             p = v.data_ptr()
@@ -64,9 +61,6 @@ def _setup_tensor(GC, entry, desc, group_id, use_numpy=False):
             sz = v.size * v.dtype.itemsize
         tensors[info.key] = (p, sz)
         batch[info.key] = v
-
-    print("Before setup tensor")
-    print(tensors)
 
     GC.SetupTensor(group_id, entry, tensors)
     return batch
@@ -123,9 +117,7 @@ class GCWrapper:
             T = int(input["_T"])
             gpu2gid.append(list())
             for i in range(num_recv_thread):
-                print("Add collector!")
                 group_id = GC.AddCollectors(batchsize, T, len(gpu2gid) - 1)
-                print("Collector added, group_id = %d!" % group_id)
 
                 inputs.append(_setup_tensor(GC, "input", input, group_id, use_numpy=use_numpy))
                 if reply is not None:
@@ -141,9 +133,8 @@ class GCWrapper:
         # Zero out all replies.
         for reply in replies:
             if reply is not None:
-                for r in reply:
-                    for _, v in r.items():
-                        v[:] = 0
+                for k, v in reply.items():
+                    v[:] = 0
 
         self.GC = GC
         self.inputs = inputs
@@ -193,11 +184,10 @@ class GCWrapper:
             # If reply is meaningful, send them back.
             if isinstance(reply, dict) and sel_reply is not None:
                 # Current we only support reply to the most recent history.
-                reply_msg = sel_reply[0]
                 for k, v in reply.items():
                     # Copy it down to cpu.
-                    if k in reply_msg:
-                        reply_msg[k][:] = v
+                    if k in sel_reply:
+                        sel_reply[k][:] = v
 
     def Run(self):
         '''Wait group of an arbitrary collector key. Samples in a returned batch are always from the same group, but the group key of the batch may be arbitrary.'''

@@ -106,7 +106,7 @@ if __name__ == '__main__':
 
     def actor(sel, sel_gpu):
         # pickle.dump(to_numpy(sel), open("tmp%d.bin" % k, "wb"), protocol=2)
-        batchsize = sel[0]["s"].size(0)
+        batchsize = sel["s"].size(0)
         actions = torch.LongTensor(batchsize)
         actions.zero_()
         return dict(a=actions)
