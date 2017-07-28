@@ -29,7 +29,7 @@ class GameContext {
 
   public:
     GameContext(const ContextOptions& context_options, const GameOptions& options) {
-      _context.reset(new GC{context_options, options, CustomFieldFunc});
+      _context.reset(new GC{context_options, options, ::GetEntry});
 
       for (int i = 0; i < context_options.num_games; ++i) {
         games.emplace_back(options);

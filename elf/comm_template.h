@@ -7,8 +7,7 @@
 * of patent rights can be found in the PATENTS file in the same directory.
 */
 
-#ifndef _COMM_TEMPLATE_H_
-#define _COMM_TEMPLATE_H_
+#pragma once
 
 #include <queue>
 #include <cassert>
@@ -20,48 +19,13 @@
 #include <iostream>
 #include <random>
 #include <algorithm>
-#include <utility>
 
 #include "pybind_helper.h"
 #include "python_options_utils_cpp.h"
 
 #include "state_collector.h"
-#include "circular_queue.h"
+#include "ai_comm.h"
 #include "stats.h"
-
-// Action/State communications between game simulators and game clients.
-// SendData() add Key-Data pairs to the queue and WaitDataUntil() returns batched Key-Data pairs.
-// Game clients write replies to some shared data structure,
-// and call ReplyComplete() to indicate that the game simulators (who's waiting on WaitReply()) can continue.
-//
-struct SeqInfo {
-    int seq;
-    int game_counter;
-    SeqInfo() : seq(0), game_counter(0) { }
-    bool last_terminal() const {
-        return seq == 0 && game_counter > 0;
-    }
-    void Inc() { seq ++; }
-    void NewEpisode() { seq = 0; game_counter ++; }
-};
-
-// Game information
-template <typename _Data>
-struct InfoT {
-    using Data = _Data;
-
-    // Meta info for this game.
-    const MetaInfo meta;
-
-    // Game data (state, etc)
-    // Note that data should have the following methods
-    // Prepare(SeqInfo), initialize everything.
-    // DonePrepare()
-    Data data;
-
-    InfoT(int id) : meta(id) { }
-    InfoT(const InfoT<Data> &parent, int child_id) : meta(parent.meta, child_id) { }
-};
 
 template <typename T>
 struct CondPerGroupT {
@@ -75,13 +39,13 @@ struct CondPerGroupT {
 
     bool Check(int hist_len, const T &info) {
         // Update game counter.
-        int new_game_counter = info.data.newest().seq.game_counter;
+        int new_game_counter = info.data.newest().game_counter;
         if (new_game_counter > game_counter) {
             game_counter = new_game_counter;
             // Make sure no frame is missed. seq starts from 0.
             last_used_seq -= last_seq + 1;
         }
-        int curr_seq = info.data.newest().seq.seq;
+        int curr_seq = info.data.newest().seq;
         last_seq = curr_seq;
         if (info.data.size() < hist_len || curr_seq - last_used_seq < hist_len - hist_overlap) return false;
         last_used_seq = curr_seq;
@@ -209,7 +173,7 @@ public:
         Stat &stats = it->second;
         stats.freq ++;
 
-        V_PRINT(_verbose, "[k=" << key << "] Start sending data, seq = " << info.data.newest().seq.seq << " hist_len = " << info.data.size());
+        V_PRINT(_verbose, "[k=" << key << "] Start sending data, seq = " << info.data.newest().seq << " hist_len = " << info.data.size());
         // Send the key to all collectors in the container, if the key satisfy the gating function.
         std::vector<int> selected_groups;
         std::string str_selected_groups;
@@ -292,108 +256,12 @@ public:
     }
 };
 
-template <typename _Data>
-class HistT {
-private:
-    using Data = _Data;
-    using DataPrepareReturn = decltype(std::declval<Data>().Prepare(SeqInfo()));
-    std::unique_ptr<CircularQueue<Data>> _h;
-
-public:
-    void InitHist(int len) {
-        _h.reset(new CircularQueue<Data>(len));
-    }
-
-    DataPrepareReturn Prepare(const SeqInfo &seq) {
-        // we move the history forward.
-        if (_h->full()) _h->Pop();
-        _h->Push();
-        return newest().Prepare(seq);
-    }
-
-    // Note that these two will be called after .Push, so we need to retrieve them from .newest().
-    // TODO: Make them consistent.
-    int size() const { return _h->size(); }
-
-    // oldest = 0, newest = _h->maxlen() - 1
-    Data &oldest(int i = 0) { return _h->get_from_push(_h->maxlen() - i - 1); }
-    const Data &oldest(int i = 0) const { return _h->get_from_push(_h->maxlen() - i - 1); }
-    Data &newest(int i = 0) { return _h->get_from_push(i); }
-    const Data &newest(int i = 0) const { return _h->get_from_push(i); }
-};
-
-// Communication between main_loop and AI (which is in a separate thread).
-// main_loop will send the environment data to AI, and call AI's Act().
-// In Act(), AI will compute the best move and return it back.
-//
-template <typename _Comm>
-class AICommT {
-public:
-    using Comm = _Comm;
-    using AIComm = AICommT<Comm>;
-    using Data = typename Comm::Data;
-    using Info = typename Comm::Info;
-    using DataPrepareReturn = decltype(std::declval<Data>().Prepare(SeqInfo()));
-
-private:
-    Comm *_comm;
-
-    Info _info;
-    SeqInfo _curr_seq;
-
-    std::mt19937 _g;
-
-public:
-    AICommT(int id, Comm *comm) : _comm(comm), _info(id), _g(_info.meta.query_id) {
-        // TODO Make _data constructor more generalizable.
-        _info.data.InitHist(comm->GetT());
-    }
-
-    AICommT(const AIComm& parent, int child_id)
-        : _comm(parent._comm), _info(parent._info, child_id), _curr_seq(parent._curr_seq), _g(_info.meta.query_id) {
-    }
-
-    DataPrepareReturn Prepare() {
-        // we move the history forward.
-        DataPrepareReturn ret = _info.data.Prepare(_curr_seq);
-        _curr_seq.Inc();
-        return ret;
-    }
-
-    const Info &info() const { return _info; }
-    Info &info() { return _info; }
-
-    std::mt19937 &gen() { return _g; }
-
-    const SeqInfo &seq_info() const { return _curr_seq; }
-
-    // Once we set all the information, send the state.
-    bool SendDataWaitReply() {
-        // Compute a hash code for data.
-        // curr()->hash_code = serializer::hash_obj(curr()->data);
-        /*
-        if (curr().data.reward != 0.0) {
-            std::cout << "[k=" << _meta.id << "][seq=" << curr().seq - 1 << "] "
-                      << "Last_reward: " << curr().data.reward << std::endl;
-        }
-        */
-        // std::cout << "[" << _meta.id << "] Before SendDataWaitReply" << std::endl;
-        return _comm->SendDataWaitReply(_info.meta.query_id, _info);
-        // std::cout << "[" << _meta.id << "] Done with SendDataWaitReply, continue" << std::endl;
-    }
-
-    void Restart() {
-        _curr_seq.NewEpisode();
-    }
-
-    // Spawn Child. The pointer will be own by the caller.
-    AIComm *Spawn(int child_id) const {
-        AIComm *child = new AIComm(*this, child_id);
-        return child;
-    }
-
-    REGISTER_PYBIND;
-};
+template <typename Key, typename Value>
+const Value &get_value(const std::map<Key, Value>& dict, const Key &key, const Value &default_val) {
+  auto it = dict.find(key);
+  if (it == dict.end()) return default_val;
+  else return it->second;
+}
 
 // The game context, which could include multiple games.
 template <typename _Options, typename _Data>
@@ -406,29 +274,29 @@ public:
     using Context = ContextT<Options, Data>;
     using Info = InfoT<Data>;
 
-    using DataAddr = DataAddrT<Info>;
     using Comm = CommT<Info>;
     using AIComm = AICommT<Comm>;
 
     using GameStartFunc =
       std::function<void (int game_idx, const Options& options, const std::atomic_bool &done, AIComm *)>;
-    using CustomFieldFunc = typename DataAddr::CustomFieldFunc;
+    using EntryFunc =
+      std::function<EntryInfo (const std::string &entry, const std::string &key, const std::string &v)>;
 
 private:
     Comm _comm;
     std::vector<std::unique_ptr<AIComm>> _ai_comms;
     Options _options;
     ContextOptions _context_options;
-    CustomFieldFunc _field_func;
+    EntryFunc _entry_func;
 
     ctpl::thread_pool _pool;
     Notif _done;
     bool _game_started = false;
 
 public:
-    ContextT(const ContextOptions &context_options, const Options& options, CustomFieldFunc field_func = nullptr)
-        : _comm(context_options), _options(options),
-          _context_options(context_options), _field_func(field_func), _pool(context_options.num_games) {
+    ContextT(const ContextOptions &context_options, const Options& options, EntryFunc entry_func)
+        : _comm(context_options), _options(options), _context_options(context_options),
+          _entry_func(entry_func), _pool(context_options.num_games) {
     }
 
     int AddCollectors(int batchsize, int hist_len, int exclusive_id) {
@@ -462,22 +330,35 @@ public:
     const MetaInfo &meta(int i) const { return _ai_comms[i]->info().meta; }
     int size() const { return _ai_comms.size(); }
 
-    void CreateTensor(int gid, const std::string &key, const std::map<std::string, std::string> &desc) {
-        auto &copier = _comm.GetCollectorGroup(gid).GetCopier(key);
-        std::map<std::string, elf::SharedBufferSize> shared_list;
-        int batchsize = std::stoi(desc["_batchsize"]);
-        int T = std::stoi(desc["_T"]);
+    std::vector<EntryInfo> GetTensorSpec(const std::string &key, const std::map<std::string, std::string> &desc) {
+        std::vector<EntryInfo> entries;
+
+        int batchsize = std::stoi(get_value<std::string, std::string>(desc, "_batchsize", "1"));
+        int T = std::stoi(get_value<std::string, std::string>(desc, "_T", "1"));
 
         for (const auto &p : desc) {
-            auto sz = GetEntry(key, p.first, p.second);
-            sz.SetBatchSizeAndHistoryLen(batchsize, T);
-            // Put batchsize and history.
-            shared_list.emplace(std::make_pair(p.first, sz));
-        }
+            if (p.first.empty() || p.first[0] == '_') continue;
 
-        copier.reset(new elf::Copier<Info>(shared_list));
+            std::cout << "Deal with key = " << p.first << std::endl << std::flush;
+            EntryInfo entry_info = _entry_func(key, p.first, p.second);
+            std::cout << "Done with key = " << p.first << std::endl << std::flush;
+
+            if (entries.back().sz.empty()) {
+                std::cout << "[" << key << "][key=" << p.first << "][value=" << p.second << "]: key is not specified!" << std::endl;
+                continue;
+            }
+
+            entry_info.SetBatchSizeAndHistory(batchsize, T);
+            std::cout << entry_info.PrintInfo() << std::endl << std::flush;
+            entries.emplace_back(entry_info);
+        }
+        return entries;
     }
-    EntryInfo GetTensorInfo(int gid, const std::string &key);
+
+    void SetupTensor(int gid, const std::string &entry,
+        const std::map<std::string, std::pair<std::uint64_t, std::size_t> > &pts) {
+        _comm.GetCollectorGroup(gid).SetEntry(entry, pts);
+    }
 
     void PrintSummary() const { _comm.PrintSummary(); }
 
@@ -526,5 +407,3 @@ public:
         if (! _done.get()) Stop();
     }
 };
-
-#endif

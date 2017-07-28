@@ -17,6 +17,7 @@
 
 #include "../elf/pybind_helper.h"
 #include "../elf/comm_template.h"
+#include "../elf/ai_comm.h"
 #include "atari_game_specific.h"
 
 class AtariGameSummary {
@@ -31,6 +32,9 @@ public:
     void Print() const;
 };
 
+using Context = ContextT<GameOptions, HistT<GameState>>;
+using Comm = typename Context::Comm;
+using AIComm = AICommT<Comm>;
 
 class AtariGame {
   private:
@@ -61,8 +65,8 @@ class AtariGame {
     int _prevent_stuck(std::default_random_engine &g, int act);
     void _reset_stuck_state();
 
-    void _fill_state(State&);
-    void _copy_screen(State &);
+    void _fill_state(GameState&);
+    void _copy_screen(GameState &);
 
   public:
     AtariGame(const GameOptions&);

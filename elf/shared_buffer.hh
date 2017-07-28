@@ -12,21 +12,6 @@
 
 namespace elf {
 
-class SharedBufferSize {
-private:
-  std::vector<int> _sizes;
-
-public:
-  SharedBufferSize(std::initializer_list<int> l) : _sizes(l) { }
-  int size() const {
-      int total_size = 1;
-      for (int v : _sizes) {
-        total_size *= v;
-      }
-      return total_size;
-  }
-};
-
 // A buffer owned outside of C++
 class SharedBuffer {
   public:

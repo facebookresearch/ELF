@@ -126,6 +126,59 @@
                   ( macroname, C, __VA_ARGS__ ) \
                   )
 
+#define MM_APPLY_COMMA( macroname, C, ... ) \
+        MM_INVOKE( \
+                    MM_CONCAT( MM_APPLY_COMMA_, MM_NARG( __VA_ARGS__ ) ), \
+                    ( macroname, C, __VA_ARGS__ ) \
+                    )
+
+#define MM_APPLY_COMMA_1( macroname, C, a1 ) \
+        MM_INVOKE_B( macroname, (C, a1) )
+
+#define MM_APPLY_COMMA_2( macroname, C, a1, a2 ) \
+        MM_INVOKE_B( macroname, (C, a1) ), \
+    MM_APPLY_COMMA_1( macroname, C, a2 )
+
+#define MM_APPLY_COMMA_3( macroname, C, a1, a2, a3 ) \
+        MM_INVOKE_B( macroname, (C, a1) ), \
+    MM_APPLY_COMMA_2( macroname, C, a2, a3 )
+
+#define MM_APPLY_COMMA_4( macroname, C, a1, a2, a3, a4 ) \
+        MM_INVOKE_B( macroname, (C, a1) ), \
+    MM_APPLY_COMMA_3( macroname, C, a2, a3, a4)
+
+#define MM_APPLY_COMMA_5( macroname, C, a1, a2, a3, a4, a5 ) \
+        MM_INVOKE_B( macroname, (C, a1) ), \
+    MM_APPLY_COMMA_4( macroname, C, a2, a3, a4, a5)
+
+#define MM_APPLY_COMMA_6( macroname, C, a1, a2, a3, a4, a5, a6 ) \
+        MM_INVOKE_B( macroname, (C, a1) ), \
+    MM_APPLY_COMMA_5( macroname, C, a2, a3, a4, a5, a6)
+
+#define MM_APPLY_COMMA_7( macroname, C, a1, a2, a3, a4, a5, a6, a7 ) \
+        MM_INVOKE_B( macroname, (C, a1) ), \
+    MM_APPLY_COMMA_6( macroname, C, a2, a3, a4, a5, a6, a7)
+
+#define MM_APPLY_COMMA_8( macroname, C, a1, a2, a3, a4, a5, a6, a7, a8 ) \
+        MM_INVOKE_B( macroname, (C, a1) ), \
+    MM_APPLY_COMMA_7( macroname, C, a2, a3, a4, a5, a6, a7, a8)
+
+#define MM_APPLY_COMMA_9( macroname, C, a1, a2, a3, a4, a5, a6, a7, a8, a9 ) \
+        MM_INVOKE_B( macroname, (C, a1) ), \
+    MM_APPLY_COMMA_8( macroname, C, a2, a3, a4, a5, a6, a7, a8, a9)
+
+#define MM_APPLY_COMMA_10( macroname, C, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) \
+        MM_INVOKE_B( macroname, (C, a1) ), \
+    MM_APPLY_COMMA_9( macroname, C, a2, a3, a4, a5, a6, a7, a8, a9, a10)
+
+#define MM_APPLY_COMMA_11( macroname, C, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11) \
+        MM_INVOKE_B( macroname, (C, a1) ), \
+    MM_APPLY_COMMA_10( macroname, C, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11)
+
+#define MM_APPLY_COMMA_12( macroname, C, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12) \
+        MM_INVOKE_B( macroname, (C, a1) ), \
+    MM_APPLY_COMMA_11( macroname, C, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)
+
 // C: pyclass instance
 #define ADD_PYBIND_FIELD(C, field) C.def_readwrite(#field, &std::remove_reference<decltype(C)>::type::type::field);
 

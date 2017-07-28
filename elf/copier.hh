@@ -10,8 +10,10 @@
 #include "pybind_helper.h"
 #include "shared_buffer.hh"
 
+#define MM_DECLTYPE(_, x) decltype(x)
+#define MM_STRINGIFY(_, x) #x
 
-namespace {
+namespace elf_internal {
 
 template <typename Struct>
 class FieldMemoryManager {
@@ -21,16 +23,33 @@ class FieldMemoryManager {
     }
 
     // copy this field to the destination buffer
-    virtual void copy_to(const Struct& s, void* dst) = 0;
+    virtual void copy_to_mem(const Struct& s, void* dst) = 0;
+    virtual void copy_from_mem(const void *src, Struct& s) = 0;
 
     // return size of buffer required to store this field, in bytes
-    virtual size_t size(const Struct& s) = 0;
+    virtual size_t size(const Struct& s) const = 0;
+
+    // Return type string (can we do better?)
+    virtual std::string type() const = 0;
 
     virtual ~FieldMemoryManager() {}
 
   protected:
     int _offset;
 };
+
+template <typename T>
+class TypeStr;
+
+#define TYPESTR(T) template <> class TypeStr<T> { public: static constexpr char const *str = #T; }
+
+TYPESTR(int32_t);
+TYPESTR(int64_t);
+TYPESTR(char);
+TYPESTR(float);
+TYPESTR(unsigned char);
+TYPESTR(short);
+TYPESTR(bool);
 
 template <typename Struct, typename FieldT, typename Enable=void>
 class FieldMemoryManagerT;
@@ -42,13 +61,21 @@ class FieldMemoryManagerT<Struct, FieldT,
   public:
     FieldMemoryManagerT(int offset): FieldMemoryManager<Struct>{offset} {}
 
-    void copy_to(const Struct& s, void* dst) override {
+    void copy_to_mem(const Struct& s, void* dst) override {
       static_assert(std::is_pod<FieldT>::value, "FieldT is not POD!");
       const FieldT* srcptr = reinterpret_cast<const FieldT*>(reinterpret_cast<const char*>(&s) + this->_offset);
       memcpy(dst, srcptr, sizeof(FieldT));  // should work for basic type, arrays, structs
     }
 
-    size_t size(const Struct&) override { return sizeof(FieldT); }
+    void copy_from_mem(const void *src, Struct& s) override {
+      static_assert(std::is_pod<FieldT>::value, "FieldT is not POD!");
+      FieldT* dstptr = reinterpret_cast<FieldT*>(reinterpret_cast<char*>(&s) + this->_offset);
+      memcpy(dstptr, src, sizeof(FieldT));  // should work for basic type, arrays, structs
+    }
+
+    size_t size(const Struct&) const override { return sizeof(FieldT); }
+
+    std::string type() const override { return std::string(TypeStr<FieldT>::str); }
 };
 
 
@@ -64,15 +91,23 @@ class FieldMemoryManagerT<Struct, VecT,
   public:
     FieldMemoryManagerT(int offset): FieldMemoryManager<Struct>{offset} {}
 
-    void copy_to(const Struct& s, void* dst) override {
+    void copy_to_mem(const Struct& s, void* dst) override {
       const VecT* srcptr = reinterpret_cast<const VecT*>(reinterpret_cast<const char*>(&s) + this->_offset);
       memcpy(dst, srcptr->data(), srcptr->size() * sizeof(typename VecT::value_type));
     }
 
-    size_t size(const Struct& s) override {
+    void copy_from_mem(const void *src, Struct& s) override {
+      // Note that we need to preallocate the size.
+      VecT* dstptr = reinterpret_cast<VecT*>(reinterpret_cast<char*>(&s) + this->_offset);
+      memcpy(dstptr->data(), src, dstptr->size() * sizeof(typename VecT::value_type));
+    }
+
+    size_t size(const Struct& s) const override {
       const VecT* srcptr = reinterpret_cast<const VecT*>(reinterpret_cast<const char*>(&s) + this->_offset);
       return srcptr->size() * sizeof(typename VecT::value_type);
     }
+
+    std::string type() const override { return std::string(TypeStr<typename VecT::value_type>::str); }
 };
 
 template <typename State, typename ...Ts>
@@ -108,6 +143,8 @@ private:
   void _add_map(
       const std::vector<std::string>& names,
       const std::vector<int>& offsets) {
+    (void)names;
+    (void)offsets;
     m_assert(names.size() == idx); m_assert(offsets.size() == idx);
   }
 
@@ -119,63 +156,101 @@ private:
 namespace elf {
 
 template <typename State>
+struct CopyItemT {
+    std::string key;
+    SharedBuffer buf;
+    elf_internal::FieldMemoryManager<State>* mm;
+
+    CopyItemT(const std::string &key, const SharedBuffer &buf, elf_internal::FieldMemoryManager<State> *mm)
+      : key(key), buf(buf), mm(mm) {
+    }
+
+    bool Check(const State &s, size_t count) const {
+      size_t sz = mm->size(s);
+      return buf.size() == sz * count;
+    }
+
+    size_t Capacity(const State &s) const {
+      return buf.size() / mm->size(s);
+    }
+
+    char *ptr() const { return static_cast<char*>(buf.ptr()); }
+
+    char *CopyToMem(const State &s, char *p) const {
+      if (! Check(s, 1)) return nullptr;
+      mm->copy_to_mem(s, p);
+      p += mm->size(s);
+      return p;
+    }
+
+    const char *CopyFromMem(State &s, const char *p) const {
+      if (! Check(s, 1)) return nullptr;
+      mm->copy_from_mem(p, s);
+      p += mm->size(s);
+      return p;
+    }
+};
+
+template <typename State>
 class Copier {
   using buffermap_t = std::unordered_map<std::string, SharedBuffer>;
   public:
+    using CopyItem = CopyItemT<State>;
+
     Copier(const std::unordered_map<std::string, SharedBuffer>& buffermap) {
       static_assert(std::is_standard_layout<State>::value, "Copier only works on classes with standard layout!");
-      for (auto& pair: buffermap)
-        fieldmap_.emplace_back(
-            std::make_tuple(pair.first, pair.second, State::get_mm(pair.first)));
-    }
-
-    // copy a single instance
-    void copy(const State& s) {
-      for (auto& tp: fieldmap_) {
-        auto& mm = std::get<2>(tp);
-        size_t sz = mm->size(s);
-        auto& buf = std::get<1>(tp);
-        m_assert(buf.size() == sz);
-        mm->copy_to(s, buf.ptr());
+      for (auto& pair: buffermap) {
+        auto *mm = State::get_mm(pair.first);
+        m_assert(mm != nullptr);
+        fieldmap_.emplace_back(pair.first, pair.second, mm);
       }
     }
 
-    void copy_batch(const std::vector<State>& states) {
-      for (auto& tp: fieldmap_) {
-        auto& mm = std::get<2>(tp);
-        auto& buf = std::get<1>(tp);
-        char* ptr = static_cast<char*>(buf.ptr());
-
-        m_assert(states.size() > 0);
-        size_t single_size = mm->size(states[0]);
-        size_t total_size = single_size * states.size();
-        m_assert(total_size == buf.size());
-
-        for (auto& s: states) {
-          size_t sz = mm->size(s);
-          m_assert(single_size == sz);
-          mm->copy_to(s, ptr);
-          ptr += single_size;
-        }
-      }
-    }
+    const std::vector<CopyItem> &GetFieldMap() const { return fieldmap_; }
 
   private:
-    std::vector<std::tuple<std::string, SharedBuffer, FieldMemoryManager<State>*>> fieldmap_;
+    std::vector<CopyItem> fieldmap_;
 };
+
+template <typename State>
+void CopyToMem(Copier<State> &copier, const std::vector<State *> &batch) {
+  if (batch.empty()) return;
+  for (const auto& item: copier.GetFieldMap()) {
+    m_assert(item.Check(*batch[0], batch.size()));
+
+    char *p = item.ptr();
+    for (auto* s: batch) {
+       p = item.CopyToMem(*s, p);
+       m_assert(p != nullptr);
+    }
+  }
+}
+
+template <typename State>
+void CopyFromMem(Copier<State> &copier, std::vector<State *> &batch) {
+  if (batch.empty()) return;
+  for (const auto& item: copier.GetFieldMap()) {
+    m_assert(item.Check(*batch[0], batch.size()));
+
+    const char *p = item.ptr();
+    for (auto* s: batch) {
+       p = item.CopyFromMem(*s, p);
+       m_assert(p != nullptr);
+    }
+  }
+}
 
 }
 
-#define MM_DECLTYPE(_, x) decltype(x)
-#define MM_STRINGIFY(_, x) #x
 #define DECLARE_FIELD(C, ...) \
-  static FieldMemoryManager<C>* get_mm(std::string field_name) { \
-    static auto fc = FieldMapConstructor<C, MM_APPLY_COMMA(MM_DECLTYPE, _, __VA_ARGS__)>( \
+  static elf_internal::FieldMemoryManager<C>* get_mm(std::string field_name) { \
+    static auto fc = elf_internal::FieldMapConstructor<C, MM_APPLY_COMMA(MM_DECLTYPE, _, __VA_ARGS__)>( \
         {MM_APPLY_COMMA(MM_STRINGIFY, _, __VA_ARGS__)}, \
         {MM_APPLY_COMMA(offsetof, C, __VA_ARGS__)} \
         ); \
     auto& map = fc.get(); \
     auto itr = map.find(field_name); \
-    m_assert(itr != map.end()); \
-    return itr->second; \
+    if (itr == map.end()) return nullptr; \
+    else return itr->second; \
   }
+

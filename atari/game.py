@@ -64,8 +64,10 @@ class Loader:
         # sampled action and and value will be filled from the reply.
 
         desc["actor"] = dict(
-            input=dict(id="", s=str(args.hist_len), last_r="", last_terminal="", _batchsize=str(args.batchsize), _T="1"),
-            reply=dict(rv="", pi=str(num_action), V="1", a="1", _batchsize=str(args.batchsize), _T="1")
+            # input=dict(id="", s=str(args.hist_len), last_r="", last_terminal="", _batchsize=str(args.batchsize), _T="1"),
+            # reply=dict(rv="", pi=str(num_action), V="1", a="1", _batchsize=str(args.batchsize), _T="1")
+            input=dict(s=str(args.hist_len), last_r="", last_terminal="", _batchsize=str(args.batchsize), _T="1"),
+            reply=dict(rv="", V="1", a="1", _batchsize=str(args.batchsize), _T="1")
         )
 
         if not args.actor_only:

@@ -13,51 +13,50 @@
 
 #include "../elf/pybind_helper.h"
 #include "../elf/comm_template.h"
-#include "../elf/fields_common.h"
-#include "../elf/copier.h"
-
-// use int rather than Action enum as reply
-struct Reply {
-  int a;
-  float V;
-  std::vector<float> pi;
-  int reply_version;
-
-  Reply(int action = 0, float value = 0.0) : action(action), value(value), reply_version(0) { }
-  void Clear() { action = 0; value = 0.0; fill(prob.begin(), prob.end(), 0.0); reply_version = 0; }
-
-  DECLARE_FIELD(Reply, a, V, pi);
-};
-
-struct State {
-  // This is 2x smaller images.
-  std::vector<float> s;
-  int tick = 0;
-  int lives = 0;
-  reward_t last_r = 0; // reward of last action
-
-  DECLARE_FIELD(GameState, s, tick, lives, last_r);
-};
+#include "../elf/hist.h"
+#include "../elf/copier.hh"
 
 struct GameState {
-    SeqInfo seq;
-    State state;
-    Reply reply;
+    using State = GameState;
+    // Seq information.
+    int32_t seq;
+    int32_t game_counter;
+    char last_terminal;
+
+    // This is 2x smaller images.
+    std::vector<float> s;
+    int32_t tick = 0;
+    int32_t lives = 0;
+    reward_t last_r = 0; // reward of last action
+
+    // Reply
+    int32_t a;
+    float V;
+    std::vector<float> pi;
+    int32_t rv;
+
+    void Clear() { a = 0; V = 0.0; fill(pi.begin(), pi.end(), 0.0); rv = 0; }
+
     GameState &Prepare(const SeqInfo &seq_info) {
-        seq = seq_info;
-        reply.Clear();
+        seq = seq_info.seq;
+        game_counter = seq_info.game_counter;
+        last_terminal = seq_info.last_terminal;
+
+        Clear();
         return *this;
     }
+
+    DECLARE_FIELD(GameState, seq, game_counter, last_terminal, s, tick, lives, last_r, a, V, pi, rv);
 };
 
 struct GameOptions {
-  std::string rom_file;
-  int frame_skip = 1;
-  float repeat_action_probability = 0.;
-  int seed = 0;
-  int hist_len = 4;
-  reward_t reward_clip = 1.0;
-  REGISTER_PYBIND_FIELDS(rom_file, frame_skip, repeat_action_probability, seed, hist_len, reward_clip);
+    std::string rom_file;
+    int frame_skip = 1;
+    float repeat_action_probability = 0.;
+    int seed = 0;
+    int hist_len = 4;
+    reward_t reward_clip = 1.0;
+    REGISTER_PYBIND_FIELDS(rom_file, frame_skip, repeat_action_probability, seed, hist_len, reward_clip);
 };
 
 static constexpr int kWidth = 160;
@@ -67,14 +66,19 @@ static constexpr int kInputStride = kWidth*kHeight*3/kRatio/kRatio;
 static constexpr int kWidthRatio = kWidth / kRatio;
 static constexpr int kHeightRatio = kHeight / kRatio;
 
-inline elf::SharedBufferSize GetInputEntry(const std::string &key, const std::string &v) {
-  if (key == "s") return elf::SharedBufferSize{3 * stoi(v), kHeightRatio, kWidthRatio};
-  else if (key == "r" || key == "last_r" || key == "terminal" || key == "last_terminal") return elf::SharedBufferSize{1};
-  else return elf::SharedBufferSize{0};
-}
+inline EntryInfo GetEntry(const std::string &entry, const std::string &key, const std::string &v) {
+  auto *mm = GameState::get_mm(key);
+  if (mm == nullptr) return EntryInfo();
 
-inline elf::SharedBufferSize GetReplyEntry(const std::string &key, const std::string &v) {
-  if (key == "pi" || key == "V") return elf::SharedBufferSize{stoi(v)};
-  else if (key == "a") elf::SharedBufferSize{1};
-  else return elf::SharedBufferSize{0};
+  std::string type_name = mm->type();
+
+  if (entry == "input") {
+    if (key == "s") return EntryInfo(key, type_name, {3 * stoi(v), kHeightRatio, kWidthRatio});
+    else if (key == "last_r" || key == "last_terminal") return EntryInfo(key, type_name, {1});
+  } else if (entry == "reply") {
+    if (key == "pi" || key == "V") return EntryInfo(key, type_name, {stoi(v)});
+    else if (key == "a") return EntryInfo(key, type_name, {1});
+  }
+
+  return EntryInfo();
 }

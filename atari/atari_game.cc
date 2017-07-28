@@ -97,15 +97,16 @@ void AtariGame::MainLoop(const std::atomic_bool& done) {
         return;
       }
       auto& gs = _ai_comm->Prepare();
-      _fill_state(gs.state);
+      _fill_state(gs);
 
       int act;
       if (i < start_loc) {
           act = (*_distr_action)(g);
-          gs.reply = Reply(act, 0.0);
+          gs.a = act;
+          gs.V = 0;
       } else {
           _ai_comm->SendDataWaitReply();
-          act = gs.reply.action;
+          act = gs.a;
           // act = (*_distr_action)(g);
           // std::cout << "[" << _game_idx << "]: " << act << std::endl;
       }
@@ -115,7 +116,7 @@ void AtariGame::MainLoop(const std::atomic_bool& done) {
       //          << act << "[a=" << gs.reply.action << "][V=" << gs.reply.value << "]" << std::endl;
       if (act < 0 || act >= _action_set.size() || _ale->game_over()) break;
       act = _prevent_stuck(g, act);
-      gs.reply.action = act;
+      gs.a = act;
 
       int frame_skip = distr_frame_skip(g);
       _last_reward = 0;
@@ -173,7 +174,7 @@ void AtariGame::_reset_stuck_state() {
   _last_act = -1;
 }
 
-void AtariGame::_copy_screen(State &state) {
+void AtariGame::_copy_screen(GameState &state) {
     _ale->getScreenRGB(_buf);
     if (_h.full()) _h.Pop();
 
@@ -188,22 +189,22 @@ void AtariGame::_copy_screen(State &state) {
     _h.Push();
 
     // Then you put all the history state to game state.
-    state.buf.resize(_h.maxlen() * stride);
+    state.s.resize(_h.maxlen() * stride);
     for (int i = 0; i < _h.size(); ++i) {
         const auto &v = _h.get_from_push(i);
-        std::copy(v.begin(), v.end(), &state.buf[i * stride]);
+        std::copy(v.begin(), v.end(), &state.s[i * stride]);
     }
     if (_h.size() < _h.maxlen()) {
         const int n_missing = _h.maxlen() - _h.size();
-        ::memset(&state.buf[_h.size() * stride], 0, sizeof(float) * sizeof(n_missing * stride));
+        ::memset(&state.s[_h.size() * stride], 0, sizeof(float) * sizeof(n_missing * stride));
     }
 }
 
-void AtariGame::_fill_state(State& state) {
+void AtariGame::_fill_state(GameState& state) {
     state.tick = _ale->getEpisodeFrameNumber();
-    state.last_reward = _last_reward;
+    state.last_r = _last_reward;
     if (_reward_clip > 0.0) {
-        state.last_reward = std::max(std::min(state.last_reward, _reward_clip), -_reward_clip);
+        state.last_r = std::max(std::min(state.last_r, _reward_clip), -_reward_clip);
     }
     state.lives = _ale->lives();
     _copy_screen(state);

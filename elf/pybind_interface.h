@@ -50,27 +50,13 @@ void register_common_func(py::module &m) {
   const MetaInfo &meta(int i) const { return context->meta(i); } \
   int size() const { return context->size(); } \
 \
-  int CreateTensor(int gid, const std::string &key, const std::map<std::string, std::string> &desc) {\
-      if (key == "input") \
-         return context->GetDataAddr(gid).GetInputService().Create(desc); \
-      else if (key == "reply") \
-         return context->GetDataAddr(gid).GetReplyService().Create(desc); \
-      else throw std::range_error("Invalid key " + key); \
+  std::vector<EntryInfo> GetTensorSpec(const std::string &key, const std::map<std::string, std::string> &desc) { \
+      return context->GetTensorSpec(key, desc); \
   } \
-  EntryInfo GetTensorInfo(int gid, const std::string &key, int k) { \
-      if (key == "input") \
-         return context->GetDataAddr(gid).GetInputService().entries()[k].entry_info;\
-      else if (key == "reply") \
-        return context->GetDataAddr(gid).GetReplyService().entries()[k].entry_info;\
-      else throw std::range_error("Invalid key " + key); \
+  void SetupTensor(int gid, const std::string &entry, const std::map<std::string, std::pair<std::uint64_t, std::size_t> > &pts) { \
+      context->SetupTensor(gid, entry, pts); \
   } \
-  void SetTensorAddr(int gid, const std::string &key, int k, int64_t p, int stride) { \
-      if (key == "input") \
-         context->GetDataAddr(gid).GetInputService().entries()[k].Set(p, stride);\
-      else if (key == "reply") \
-         context->GetDataAddr(gid).GetReplyService().entries()[k].Set(p, stride);\
-      else throw std::range_error("Invalid key " + key); \
-  } \
+
 
 #define CONTEXT_REGISTER(GameContext) \
   using GC = typename GameContext::GC; \
@@ -86,7 +72,6 @@ void register_common_func(py::module &m) {
     .def("Stop", &GameContext::Stop) \
     .def("__getitem__", &GameContext::meta) \
     .def("__len__", &GameContext::size) \
-    .def("CreateTensor", &GameContext::CreateTensor) \
-    .def("GetTensorInfo", &GameContext::GetTensorInfo) \
-    .def("SetTensorAddr", &GameContext::SetTensorAddr) \
+    .def("SetupTensor", &GameContext::SetupTensor) \
+    .def("GetTensorSpec", &GameContext::GetTensorSpec) \
 
