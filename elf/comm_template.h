@@ -20,6 +20,7 @@
 #include <iostream>
 #include <random>
 #include <algorithm>
+#include <utility>
 
 #include "pybind_helper.h"
 #include "python_options_utils_cpp.h"
@@ -50,7 +51,7 @@ struct InfoT {
     using Data = _Data;
 
     // Meta info for this game.
-    MetaInfo meta;
+    const MetaInfo meta;
 
     // Game data (state, etc)
     // Note that data should have the following methods
@@ -295,6 +296,7 @@ template <typename _Data>
 class HistT {
 private:
     using Data = _Data;
+    using DataPrepareReturn = decltype(std::declval<Data>().Prepare(SeqInfo()));
     std::unique_ptr<CircularQueue<Data>> _h;
 
 public:
@@ -302,11 +304,11 @@ public:
         _h.reset(new CircularQueue<Data>(len));
     }
 
-    void Prepare(const SeqInfo &seq) {
+    DataPrepareReturn Prepare(const SeqInfo &seq) {
         // we move the history forward.
         if (_h->full()) _h->Pop();
         _h->Push();
-        newest().Prepare(seq);
+        return newest().Prepare(seq);
     }
 
     // Note that these two will be called after .Push, so we need to retrieve them from .newest().
@@ -331,6 +333,7 @@ public:
     using AIComm = AICommT<Comm>;
     using Data = typename Comm::Data;
     using Info = typename Comm::Info;
+    using DataPrepareReturn = decltype(std::declval<Data>().Prepare(SeqInfo()));
 
 private:
     Comm *_comm;
@@ -350,10 +353,11 @@ public:
         : _comm(parent._comm), _info(parent._info, child_id), _curr_seq(parent._curr_seq), _g(_info.meta.query_id) {
     }
 
-    void Prepare() {
+    DataPrepareReturn Prepare() {
         // we move the history forward.
-        _info.data.Prepare(_curr_seq);
+        DataPrepareReturn ret = _info.data.Prepare(_curr_seq);
         _curr_seq.Inc();
+        return ret;
     }
 
     const Info &info() const { return _info; }

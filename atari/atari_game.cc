@@ -96,26 +96,27 @@ void AtariGame::MainLoop(const std::atomic_bool& done) {
       if (done.load()) {
         return;
       }
-      _ai_comm->Prepare();
-      _fill_state(_ai_comm->info().data.newest().state);
+      auto& gs = _ai_comm->Prepare();
+      _fill_state(gs.state);
 
       int act;
       if (i < start_loc) {
           act = (*_distr_action)(g);
-          _ai_comm->info().data.newest().reply = Reply(act, 0.0);
+          gs.reply = Reply(act, 0.0);
       } else {
           _ai_comm->SendDataWaitReply();
-          act = _ai_comm->info().data.newest().reply.action;
+          act = gs.reply.action;
           // act = (*_distr_action)(g);
           // std::cout << "[" << _game_idx << "]: " << act << std::endl;
       }
 
       // Illegal action.
-      // const GameState &info = _ai_comm->info().data.newest();
-      // std::cout << "[" << _game_idx << "][" << info.seq.game_counter << "][" << info.seq.seq << "] act: "
-      //          << act << "[a=" << info.reply.action << "][V=" << info.reply.value << "]" << std::endl;
+      // std::cout << "[" << _game_idx << "][" << gs.seq.game_counter << "][" << gs.seq.seq << "] act: "
+      //          << act << "[a=" << gs.reply.action << "][V=" << gs.reply.value << "]" << std::endl;
       if (act < 0 || act >= _action_set.size() || _ale->game_over()) break;
       act = _prevent_stuck(g, act);
+      gs.reply.action = act;
+
       int frame_skip = distr_frame_skip(g);
       _last_reward = 0;
       for (int j = 0; j < frame_skip; ++j) {
@@ -158,7 +159,6 @@ int AtariGame::_prevent_stuck(std::default_random_engine &g, int act) {
     if (_last_act_count >= kMaxRep) {
       // The player might get stuck. Save it.
       act = (*_distr_action)(g);
-      _ai_comm->info().data.newest().reply.action = act;
     }
   } else {
     // Reset counter.
