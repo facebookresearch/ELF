@@ -43,9 +43,10 @@ struct GameState {
     SeqInfo seq;
     State state;
     Reply reply;
-    void Prepare(const SeqInfo &seq_info) {
+    GameState &Prepare(const SeqInfo &seq_info) {
         seq = seq_info;
         reply.Clear();
+        return *this;
     }
 };
 

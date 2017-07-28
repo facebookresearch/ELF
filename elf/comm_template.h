@@ -50,7 +50,7 @@ struct InfoT {
     using Data = _Data;
 
     // Meta info for this game.
-    MetaInfo meta;
+    const MetaInfo meta;
 
     // Game data (state, etc)
     // Note that data should have the following methods
@@ -302,11 +302,11 @@ public:
         _h.reset(new CircularQueue<Data>(len));
     }
 
-    void Prepare(const SeqInfo &seq) {
+    decltype(Data::Prepare) Prepare(const SeqInfo &seq) {
         // we move the history forward.
         if (_h->full()) _h->Pop();
         _h->Push();
-        newest().Prepare(seq);
+        return newest().Prepare(seq);
     }
 
     // Note that these two will be called after .Push, so we need to retrieve them from .newest().
