@@ -51,16 +51,25 @@ template <typename State>
 void CopyToMem(const std::vector<CopyItemT<State>> &copier, const std::vector<HistT<State> *> &batch) {
   if (batch.empty()) return;
   size_t batchsize = batch.size();
+  size_t overall_hist_len = batch[0]->size();
 
   for (const auto& item: copier) {
     size_t capacity = item.Capacity(batch[0]->newest());
     size_t hist_len = capacity / batchsize;
+    size_t min_hist_len = std::min(hist_len, overall_hist_len);
 
     char *p = item.ptr();
     for (auto* s: batch) {
-       for (size_t t = 0; t < hist_len; ++t) {
+       for (size_t t = 0; t < min_hist_len; ++t) {
          p = item.CopyToMem(s->newest(t), p);
          m_assert(p != nullptr);
+       }
+       if (hist_len > overall_hist_len) {
+         // Fill them with the last hist.
+         for (int i = overall_hist_len; i < hist_len; ++i) {
+           p = item.CopyToMem(s->newest(overall_hist_len - 1), p);
+           m_assert(p != nullptr);
+         }
        }
     }
   }
@@ -70,17 +79,25 @@ template <typename State>
 void CopyFromMem(const std::vector<CopyItemT<State>> &copier, std::vector<HistT<State> *> &batch) {
   if (batch.empty()) return;
   size_t batchsize = batch.size();
+  size_t overall_hist_len = batch[0]->size();
 
   for (const auto& item: copier) {
     size_t capacity = item.Capacity(batch[0]->newest());
     size_t hist_len = capacity / batchsize;
-    // [batchsize, histsize, xx, xx, xx]
+    size_t min_hist_len = std::min(hist_len, overall_hist_len);
 
     const char *p = item.ptr();
     for (auto* s: batch) {
-       for (size_t t = 0; t < hist_len; ++t) {
+       for (size_t t = 0; t < min_hist_len; ++t) {
          p = item.CopyFromMem(s->newest(t), p);
          m_assert(p != nullptr);
+       }
+       if (hist_len > overall_hist_len) {
+         // Fill them with the last hist.
+         for (int i = overall_hist_len; i < hist_len; ++i) {
+           p = item.CopyFromMem(s->newest(overall_hist_len - 1), p);
+           m_assert(p != nullptr);
+         }
        }
     }
   }
