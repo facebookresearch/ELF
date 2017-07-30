@@ -122,8 +122,8 @@ class Batch:
     def pin_clone(self):
         return Batch(**{ k : v.clone().pin_memory() for k, v in self.batch.items() })
 
-    def to_numpy(batch):
-        return Batch(**{ k : v.numpy() if not isinstance(v, np.ndarray) else v for k, v in self.batch.items() })
+    def to_numpy(self):
+        return { k : v.numpy() if not isinstance(v, np.ndarray) else v for k, v in self.batch.items() }
 
 
 class GCWrapper:

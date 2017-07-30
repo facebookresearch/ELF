@@ -1,6 +1,8 @@
 #pragma once
 
 #include <utility>
+#include "pybind_helper.h"
+#include "python_options_utils_cpp.h"
 
 #include "circular_queue.h"
 #include "copier.hh"
@@ -43,6 +45,8 @@ public:
     const Data &oldest(int i = 0) const { return _h->get_from_push(_h->maxlen() - i - 1); }
     Data &newest(int i = 0) { return _h->get_from_push(i); }
     const Data &newest(int i = 0) const { return _h->get_from_push(i); }
+
+    REGISTER_PYBIND;
 };
 
 namespace elf {

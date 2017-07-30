@@ -1,6 +1,4 @@
 #pragma once
-#include "pybind_helper.h"
-#include "python_options_utils_cpp.h"
 #include "common.h"
 
 #include <random>
@@ -90,6 +88,4 @@ public:
         AIComm *child = new AIComm(*this, child_id);
         return child;
     }
-
-    REGISTER_PYBIND;
 };

@@ -100,20 +100,43 @@ cmd_line = "--num_games 64 --batchsize 16 --hist_len 1 --frame_skip 4 --actor_on
 nIter = 5000
 elapsed_wait_only = 0
 
+import pickle
+import random
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    if len(sys.argv) > 1:
+        cmd_line = sys.argv[1:]
+    else:
+        cmd_line = cmd_line.split(" ")
 
     loader = Loader()
-    args = ArgsProvider.Load(parser, [loader], cmd_line=cmd_line.split(" "))
+    args = ArgsProvider.Load(parser, [loader], cmd_line=cmd_line)
 
     GC = loader.initialize()
 
+    actor_count = 0
+    train_count = 0
     def actor(sel, sel_gpu):
-        # pickle.dump(to_numpy(sel), open("tmp%d.bin" % k, "wb"), protocol=2)
+        global actor_count, GC
+        actor_count += 1
         batchsize = sel["s"].size(1)
-        return dict(a=torch.LongTensor(batchsize).zero_())
+        actions = [ random.randint(0, GC.params["num_action"]-1) for i in range(batchsize) ]
+        reply = dict(a=actions)
+
+        data = sel.to_numpy()
+        data.update(reply)
+
+        pickle.dump(data, open("tmp-actor%d.bin" % actor_count, "wb"), protocol=2)
+        return reply
+
+    def train(sel, sel_gpu):
+        global train_count
+        pickle.dump(sel.to_numpy(), open("tmp-train%d.bin" % train_count, "wb"), protocol=2)
+        train_count += 1
 
     GC.reg_callback("actor", actor)
+    GC.reg_callback("train", train)
 
     reward_dist = Counter()
 

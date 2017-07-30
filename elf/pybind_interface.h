@@ -10,6 +10,7 @@
 #pragma once
 
 #include "comm_template.h"
+#include "hist.h"
 #include <pybind11/pybind11.h>
 
 namespace py = pybind11;
@@ -18,6 +19,7 @@ template <typename GameContext>
 void register_common_func(py::module &m) {
   using GC = typename GameContext::GC;
   using Options = typename GC::Options;
+  using State = typename GC::State;
 
   PYCLASS_WITH_FIELDS(m, ContextOptions)
     .def(py::init<>())
@@ -30,6 +32,13 @@ void register_common_func(py::module &m) {
     .def(py::init<>());
 
   PYCLASS_WITH_FIELDS(m, Infos);
+
+  PYCLASS_WITH_FIELDS(m, State);
+
+  using HistState = HistT<State>;
+  PYCLASS_WITH_FIELDS(m, HistState)
+    .def("newest", [](const HistState &hstate, int i) { return hstate.newest(i); })
+    .def("size", &HistState::size);
 
   PYCLASS_WITH_FIELDS(m, MetaInfo);
 }
@@ -50,6 +59,7 @@ void register_common_func(py::module &m) {
     return context->comm().AddCollectors(batchsize, hist_len, exclusive_id); \
   } \
   const MetaInfo &meta(int i) const { return context->meta(i); } \
+  const typename GC::Data &env(int i) const { return context->env(i); } \
   int size() const { return context->size(); } \
 \
   EntryInfo GetTensorSpec(int gid, const std::string &key, int T) { \
@@ -76,4 +86,6 @@ void register_common_func(py::module &m) {
     .def("__len__", &GameContext::size) \
     .def("AddTensor", &GameContext::AddTensor) \
     .def("GetTensorSpec", &GameContext::GetTensorSpec) \
+    .def("meta", &GameContext::meta, py::return_value_policy::reference) \
+    .def("env", &GameContext::env, py::return_value_policy::reference) \
 

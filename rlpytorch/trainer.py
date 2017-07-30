@@ -46,47 +46,6 @@ class Sampler:
             action = sample_multinomial(state_curr, self.args, node="pi")
         return action
 
-class StatsCollector:
-    def __init__(self):
-        self.id2seqs_actor = defaultdict(lambda : -1)
-        self.id2seqs_train = defaultdict(lambda : -1)
-
-    def actor(self, sel, sel_gpu):
-        '''Check the states for an episode.'''
-        b = sel.hist(0)
-        for i, (id, seq, game_counter, last_terminal) in enumerate(zip(b["id"], b["seq"], b["game_counter"], b["last_terminal"])):
-            # print("[%d] actor %d, seq %d" % (i, id, seq))
-            if last_terminal:
-                self.id2seqs_actor[id] = -1
-            predicted = self.id2seqs_actor[id] + 1
-            if seq != predicted:
-                prompt = "Invalid next seq: id = %d, seq = %d, game_counter = %d, should be seq = %d" % (id, seq, game_counter, predicted)
-                import pdb
-                pdb.set_trace()
-                raise ValueError(prompt)
-            self.id2seqs_actor[id] += 1
-
-        # Return trivial actions.
-        return dict(a=[0]*b["id"].size(0))
-
-    def train(self, sel, sel_gpu):
-        T = sel["id"].size(0)
-        batchsize = sel["id"].size(1)
-
-        # Check whether the states are consecutive
-        for i in range(batchsize):
-            id = sel["id"][0][i]
-            last_seq = self.id2seqs_train[id]
-            # print("train %d, last_seq: %d" % (id, last_seq))
-            for t in range(T):
-                if sel["last_terminal"][t][i]:
-                    last_seq = -1
-                if sel["seq"][t][i] != last_seq + 1:
-                    raise ValueError("Invalid next seq: id = %d, t = %d, seq = %d, should be %d" % (id, t, sel["seq"][t][i], last_seq + 1))
-                last_seq += 1
-
-            # Overlapped by 1.
-            self.id2seqs_train[id] = last_seq - 1
 
 class Trainer:
     def __init__(self):

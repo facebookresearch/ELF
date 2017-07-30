@@ -270,6 +270,7 @@ public:
     using Key = decltype(MetaInfo::query_id);
 
     using Data = _Data;
+    using State = typename Data::State;
     using Context = ContextT<Options, Data>;
     using Info = InfoT<Data>;
 
@@ -297,6 +298,7 @@ public:
 
     Comm &comm() { return _comm; }
     const Comm &comm() const { return _comm; }
+    const Data& env(int i) const { return _ai_comms[i]->info().data; }
 
     void Start(DataInitFunc data_init, GameStartFunc game_start_func) {
         _comm.CollectorsReady();
