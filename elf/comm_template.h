@@ -308,7 +308,10 @@ public:
             _ai_comms[i].reset(new AIComm{i, &_comm});
             // Initialize Data
             data_init(i, _ai_comms[i]->info().data);
-            //
+        }
+
+        // Now we start all jobs.
+        for (int i = 0; i < _pool.size(); ++i) {
             _pool.push([i, this, &game_start_func](int){
                 const std::atomic_bool &done = _done.flag();
                 game_start_func(i, _options, done, _ai_comms[i].get());
