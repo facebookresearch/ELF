@@ -103,8 +103,8 @@ class Loader:
             num_action = num_action,
             num_unit_type = num_unittype,
             num_group = 1 if args.actor_only else 2,
-            action_batchsize = int(desc["actor"]["input"]["_batchsize"]),
-            train_batchsize = int(desc["train"]["input"]["_batchsize"]) if not args.actor_only else None,
+            action_batchsize = int(desc["actor"]["batchsize"]),
+            train_batchsize = int(desc["train"]["batchsize"]) if not args.actor_only else None,
             T = args.T
         )
 

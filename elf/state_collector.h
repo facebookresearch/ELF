@@ -118,8 +118,8 @@ struct EntryInfo {
 
   void SetBatchSizeAndHistory(int batchsize, int T) {
       std::vector<int> sz2;
-      sz2.push_back(batchsize);
       sz2.push_back(T);
+      sz2.push_back(batchsize);
       for (const int &v : sz) sz2.push_back(v);
       sz = sz2;
   }
@@ -185,17 +185,15 @@ private:
     }
 
 public:
-    CollectorGroupT(int gid, const std::vector<Key> &keys, int batchsize, int hist_len,
-            SyncSignal *signal, bool verbose)
-        : _gid(gid), _batchsize(batchsize), _hist_len(hist_len),
-          _batch_collector(keys), _signal(signal), _verbose(verbose) {
+    CollectorGroupT(int gid, const std::vector<Key> &keys, int batchsize, SyncSignal *signal, bool verbose)
+        : _gid(gid), _batchsize(batchsize), _batch_collector(keys), _signal(signal), _verbose(verbose) {
     }
 
-    EntryInfo GetEntry(const std::string &key, EntryFunc entry_func) const {
+    EntryInfo GetEntry(const std::string &key, int hist_len, EntryFunc entry_func) const {
         if (key.empty()) return EntryInfo();
 
         EntryInfo entry_info = entry_func(key);
-        entry_info.SetBatchSizeAndHistory(_batchsize, _hist_len);
+        entry_info.SetBatchSizeAndHistory(_batchsize, hist_len);
         return entry_info;
     }
 

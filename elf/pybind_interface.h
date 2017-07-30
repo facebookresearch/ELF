@@ -52,8 +52,8 @@ void register_common_func(py::module &m) {
   const MetaInfo &meta(int i) const { return context->meta(i); } \
   int size() const { return context->size(); } \
 \
-  EntryInfo GetTensorSpec(int gid, const std::string &key) { \
-      return context->comm().GetCollectorGroup(gid).GetEntry(key, [&](const std::string &key) { return EntryFunc(key); }); \
+  EntryInfo GetTensorSpec(int gid, const std::string &key, int T) { \
+      return context->comm().GetCollectorGroup(gid).GetEntry(key, T, [&](const std::string &key) { return EntryFunc(key); }); \
   } \
   void AddTensor(int gid, const std::string &input_reply, const EntryInfo &e) { \
       context->comm().GetCollectorGroup(gid).AddEntry(input_reply, e); \

@@ -26,13 +26,14 @@ class GameContext {
     std::vector<AtariGame> games;
 
     int _T;
-
+    int _hist_len;
     int _width, _height, _num_action;
 
   public:
     GameContext(const ContextOptions& context_options, const GameOptions& options) {
       _context.reset(new GC{context_options, options});
       _T = context_options.T;
+      _hist_len = options.hist_len;
 
       for (int i = 0; i < context_options.num_games; ++i) {
         games.emplace_back(options);
@@ -82,10 +83,10 @@ class GameContext {
 
         std::string type_name = mm->type();
 
-        if (key == "s") return EntryInfo(key, type_name, {3, kHeightRatio, kWidthRatio});
+        if (key == "s") return EntryInfo(key, type_name, {3 * _hist_len, kHeightRatio, kWidthRatio});
         else if (key == "last_r" || key == "last_terminal" || key == "id" || key == "seq" || key == "game_counter") return EntryInfo(key, type_name);
-        else if (key == "pi" || key == "V") return EntryInfo(key, type_name, {_num_action});
-        else if (key == "a" || key == "rv") return EntryInfo(key, type_name);
+        else if (key == "pi") return EntryInfo(key, type_name, {_num_action});
+        else if (key == "a" || key == "rv" || key == "V") return EntryInfo(key, type_name);
 
         return EntryInfo();
     }

@@ -53,7 +53,7 @@ class StatsCollector:
 
     def actor(self, sel, sel_gpu):
         '''Check the states for an episode.'''
-        b = sel.slice_hist1(0)
+        b = sel.hist(0)
         for i, (id, seq, game_counter, last_terminal) in enumerate(zip(b["id"], b["seq"], b["game_counter"], b["last_terminal"])):
             # print("[%d] actor %d, seq %d" % (i, id, seq))
             if last_terminal:
@@ -70,19 +70,19 @@ class StatsCollector:
         return dict(a=[0]*b["id"].size(0))
 
     def train(self, sel, sel_gpu):
-        T = sel["id"].size(1)
-        batchsize = sel["id"].size(0)
+        T = sel["id"].size(0)
+        batchsize = sel["id"].size(1)
 
         # Check whether the states are consecutive
         for i in range(batchsize):
-            id = sel["id"][i][0]
+            id = sel["id"][0][i]
             last_seq = self.id2seqs_train[id]
             # print("train %d, last_seq: %d" % (id, last_seq))
             for t in range(T):
-                if sel["last_terminal"][i][t]:
+                if sel["last_terminal"][t][i]:
                     last_seq = -1
-                if sel["seq"][i][t] != last_seq + 1:
-                    raise ValueError("Invalid next seq: id = %d, t = %d, seq = %d, should be %d" % (id, t, sel["seq"][i][t], last_seq + 1))
+                if sel["seq"][t][i] != last_seq + 1:
+                    raise ValueError("Invalid next seq: id = %d, t = %d, seq = %d, should be %d" % (id, t, sel["seq"][t][i], last_seq + 1))
                 last_seq += 1
 
             # Overlapped by 1.
@@ -139,7 +139,7 @@ class Trainer:
     def actor(self, sel, sel_gpu):
         # actor model.
         self.timer.Record("batch_actor")
-        state_curr = self.mi.forward("actor", sel_gpu[0])
+        state_curr = self.mi.forward("actor", sel_gpu.hist(0))
         action = self.sampler.sample(state_curr)
 
         reply_msg = dict(pi=state_curr["pi"].data, a=action, V=state_curr["V"].data, rv=self.mi["actor"].step)

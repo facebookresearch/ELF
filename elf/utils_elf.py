@@ -30,11 +30,11 @@ class Batch:
     def __init__(self, **kwargs):
         self.batch = kwargs
 
-    def _request(GC, group_id, key):
-        info = GC.GetTensorSpec(group_id, key)
+    def _request(GC, group_id, key, T):
+        info = GC.GetTensorSpec(group_id, key, T)
         if info.key == '':
             last_key = "last_" + key
-            info = GC.GetTensorSpec(group_id, last_key)
+            info = GC.GetTensorSpec(group_id, last_key, T)
             if info.key == '':
                 raise ValueError("key[%s] or last_key[%s] is not specified!" % (key, last_key))
         return info
@@ -53,12 +53,15 @@ class Batch:
 
         return v, info
 
-    def load(GC, input_reply, keys, group_id, use_numpy=False):
+    def load(GC, input_reply, desc, group_id, use_numpy=False):
         batch = Batch()
         batch.infos = { }
 
+        keys = desc["keys"]
+        T = desc["T"]
+
         for key in keys:
-            info = Batch._request(GC, group_id, key)
+            info = Batch._request(GC, group_id, key, T)
             v, info = Batch._alloc(info, use_numpy=use_numpy)
             batch.batch[info.key] = v
             batch.infos[info.key] = info
@@ -72,7 +75,7 @@ class Batch:
         else:
             key_with_last = "last_" + key
             if key_with_last in self.batch:
-                return self.batch[key_with_last][:, 1:]
+                return self.batch[key_with_last][1:]
             else:
                 raise KeyError("Batch(): specified key: %s or %s not found!" % (key, key_with_last))
 
@@ -91,17 +94,20 @@ class Batch:
                     bk = bk.view(-1)
                     for i, vv in enumerate(v):
                         bk[i] = vv
+                elif isinstance(v, (int, float)):
+                    bk.fill_(v)
                 else:
                     bk[:] = v
 
     def cpu2gpu(self, gpu=0):
         return Batch(**{ k : v.cuda(gpu) for k, v in self.batch.items() })
 
-    def slice_hist(self, s, e):
-        return Batch(**{ k : v[:, s:e] for k, v in self.batch.items() })
-
-    def slice_hist1(self, s):
-        return Batch(**{ k : v[:, s] for k, v in self.batch.items() })
+    def hist(self, s, key=None):
+        '''s=1 means going back in time by one step, etc'''
+        if key is None:
+            return Batch(**{ k : v[s] for k, v in self.batch.items() })
+        else:
+            return self[key][s]
 
     def transfer_cpu2gpu(self, batch_gpu, async=True):
         # For each time step
@@ -144,11 +150,7 @@ class GCWrapper:
 
         total_batchsize = 0
         for key, v in descriptions.items():
-            input = v["input"]
-            if "batchsize" not in input or input["batchsize"] is None:
-                print("Batchsize cannot be None!")
-                sys.exit(1)
-            total_batchsize += input["batchsize"]
+            total_batchsize += v["batchsize"]
         num_recv_thread = math.floor(num_games / total_batchsize)
         num_recv_thread = max(num_recv_thread, 1)
         print("#recv_thread = %d" % num_recv_thread)
@@ -164,16 +166,18 @@ class GCWrapper:
         for key, v in descriptions.items():
             input = v["input"]
             reply = v["reply"]
-
-            batchsize = input["batchsize"]
+            batchsize = v["batchsize"]
             T = input["T"]
+            if reply is not None and reply["T"] > T:
+                T = reply["T"]
+
             gpu2gid.append(list())
             for i in range(num_recv_thread):
                 group_id = GC.AddCollectors(batchsize, T, len(gpu2gid) - 1)
 
-                inputs.append(Batch.load(GC, "input", input["keys"], group_id, use_numpy=use_numpy))
+                inputs.append(Batch.load(GC, "input", input, group_id, use_numpy=use_numpy))
                 if reply is not None:
-                    replies.append(Batch.load(GC, "reply", reply["keys"], group_id, use_numpy=use_numpy))
+                    replies.append(Batch.load(GC, "reply", reply, group_id, use_numpy=use_numpy))
                 else:
                     replies.append(None)
 

@@ -65,8 +65,9 @@ class Loader:
         # sampled action and and value will be filled from the reply.
 
         desc["actor"] = dict(
-            input=dict(batchsize=args.batchsize, T=1, keys=set(["s", "last_r", "last_terminal"])),
-            reply=dict(batchsize=args.batchsize, T=1, keys=set(["rv", "pi", "V", "a"]))
+            batchsize=args.batchsize,
+            input=dict(T=1, keys=set(["s", "last_r", "last_terminal"])),
+            reply=dict(T=1, keys=set(["rv", "pi", "V", "a"]))
         )
 
         if not args.actor_only:
@@ -74,7 +75,8 @@ class Loader:
             # We want input, action (filled by actor models), value (filled by actor
             # models) and reward.
             desc["train"] = dict(
-                input=dict(batchsize=args.batchsize, T=args.T, keys=set(["rv", "id", "pi", "s", "a", "r", "V", "seq", "terminal"])),
+                batchsize=args.batchsize,
+                input=dict(T=args.T, keys=set(["rv", "id", "pi", "s", "a", "r", "V", "seq", "terminal"])),
                 reply=None
             )
 
@@ -85,9 +87,9 @@ class Loader:
 
         # Initialize shared memory (between Python and C++) based on the specification defined by desc.
         params["num_group"] = 1 if args.actor_only else 2
-        params["action_batchsize"] = desc["actor"]["input"]["batchsize"]
+        params["action_batchsize"] = desc["actor"]["batchsize"]
         if not args.actor_only:
-            params["train_batchsize"] = desc["train"]["input"]["batchsize"]
+            params["train_batchsize"] = desc["train"]["batchsize"]
         params["hist_len"] = args.hist_len
         params["T"] = args.T
 
@@ -108,7 +110,7 @@ if __name__ == '__main__':
 
     def actor(sel, sel_gpu):
         # pickle.dump(to_numpy(sel), open("tmp%d.bin" % k, "wb"), protocol=2)
-        batchsize = sel["s"].size(0)
+        batchsize = sel["s"].size(1)
         return dict(a=torch.LongTensor(batchsize).zero_())
 
     GC.reg_callback("actor", actor)

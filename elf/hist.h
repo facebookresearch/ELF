@@ -60,25 +60,21 @@ void CopyToMem(const std::vector<CopyItemT<State>> &copier, const std::vector<Hi
 
     char *p = item.ptr();
     // std::cout << "key = " << item.key << ". p = " << std::hex << (void *)p << std::dec << " min_hist_len = " << min_hist_len << std::endl;
-
-    for (auto* s: batch) {
-       for (size_t t = 0; t < min_hist_len; ++t) {
-         const State &state = s->newest(min_hist_len - t - 1);
-         /*
-         if (item.key == "id") {
-           std::cout << state.PrintInfo() << std::endl;
-           std::cout << "key = " << item.key << ". p = " << std::hex << (void *)p << std::dec << " min_hist_len = " << min_hist_len << std::endl;
-         }
-         */
-         p = item.CopyToMem(state, p);
-       }
-       if (hist_len > overall_hist_len) {
-         // Fill them with the oldest hist.
-         for (int i = overall_hist_len; i < hist_len; ++i) {
-           const State &state = s->newest(min_hist_len - 1);
-           p = item.CopyToMem(state, p);
-         }
-       }
+    //
+    for (size_t t = 0; t < min_hist_len; ++t) {
+      for (auto* s: batch) {
+        const State &state = s->newest(min_hist_len - t - 1);
+        p = item.CopyToMem(state, p);
+      }
+    }
+    if (hist_len > overall_hist_len) {
+      // Fill them with the oldest hist.
+      for (int i = overall_hist_len; i < hist_len; ++i) {
+        for (auto *s: batch) {
+          const State &state = s->newest(min_hist_len - 1);
+          p = item.CopyToMem(state, p);
+        }
+      }
     }
   }
 }
@@ -95,8 +91,8 @@ void CopyFromMem(const std::vector<CopyItemT<State>> &copier, std::vector<HistT<
     size_t min_hist_len = std::min(hist_len, overall_hist_len);
 
     const char *p = item.ptr();
-    for (auto* s: batch) {
-       for (size_t t = 0; t < min_hist_len; ++t) {
+    for (size_t t = 0; t < min_hist_len; ++t) {
+      for (auto* s: batch) {
          State &state = s->newest(min_hist_len - t - 1);
          p = item.CopyFromMem(state, p);
        }

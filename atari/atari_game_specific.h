@@ -35,10 +35,10 @@ struct GameState {
     std::vector<float> s;
     int32_t tick = 0;
     int32_t lives = 0;
-    reward_t last_r = 0; // reward of last action
+    float last_r = 0.0; // reward of last action
 
     // Reply
-    int32_t a;
+    int64_t a;
     float V;
     std::vector<float> pi;
     int32_t rv;
