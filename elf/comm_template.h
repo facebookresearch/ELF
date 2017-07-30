@@ -18,6 +18,7 @@
 #include <atomic>
 #include <iostream>
 #include <random>
+#include <map>
 #include <algorithm>
 
 #include "pybind_helper.h"
