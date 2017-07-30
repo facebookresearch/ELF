@@ -53,33 +53,36 @@ class StatsCollector:
 
     def actor(self, sel, sel_gpu):
         '''Check the states for an episode.'''
-        b = sel[0]
-        for i, (id, seq, last_terminal) in enumerate(zip(b["id"], b["seq"], b["last_terminal"])):
+        b = sel.slice_hist1(0)
+        for i, (id, seq, game_counter, last_terminal) in enumerate(zip(b["id"], b["seq"], b["game_counter"], b["last_terminal"])):
             # print("[%d] actor %d, seq %d" % (i, id, seq))
             if last_terminal:
                 self.id2seqs_actor[id] = -1
             predicted = self.id2seqs_actor[id] + 1
             if seq != predicted:
-                raise ValueError("Invalid next seq: id = %d, seq = %d, should be %d" % (id, seq, predicted))
+                prompt = "Invalid next seq: id = %d, seq = %d, game_counter = %d, should be seq = %d" % (id, seq, game_counter, predicted)
+                import pdb
+                pdb.set_trace()
+                raise ValueError(prompt)
             self.id2seqs_actor[id] += 1
 
         # Return trivial actions.
-        return dict(a=[0]*len(b["id"]))
+        return dict(a=[0]*b["id"].size(0))
 
     def train(self, sel, sel_gpu):
-        T = len(sel)
-        batchsize = len(sel[0]["id"])
+        T = sel["id"].size(1)
+        batchsize = sel["id"].size(0)
 
         # Check whether the states are consecutive
         for i in range(batchsize):
-            id = sel[0]["id"][i]
+            id = sel["id"][i][0]
             last_seq = self.id2seqs_train[id]
-            print("train %d, last_seq: %d" % (id, last_seq))
+            # print("train %d, last_seq: %d" % (id, last_seq))
             for t in range(T):
-                if sel[t]["last_terminal"][i]:
+                if sel["last_terminal"][i][t]:
                     last_seq = -1
-                if sel[t]["seq"][i] != last_seq + 1:
-                    raise ValueError("Invalid next seq: id = %d, t = %d, seq = %d, should be %d" % (id, t, sel[t]["seq"][i], last_seq + 1))
+                if sel["seq"][i][t] != last_seq + 1:
+                    raise ValueError("Invalid next seq: id = %d, t = %d, seq = %d, should be %d" % (id, t, sel["seq"][i][t], last_seq + 1))
                 last_seq += 1
 
             # Overlapped by 1.

@@ -11,26 +11,7 @@ import math
 import numpy as np
 from collections import defaultdict
 
-def cpu2gpu(batch, gpu=0):
-    ''' Preallocation '''
-    return { k : v.cuda(gpu) for k, v in batch.items() }
-
-def transfer_cpu2gpu(batch, batch_gpu, async=True):
-    # For each time step
-    for k, v in batch.items():
-        batch_gpu[k].copy_(v, async=async)
-
-def transfer_cpu2cpu(batch, batch_dst, async=True):
-    # For each time step
-    for k, v in batch.items():
-        batch_dst[k].copy_(v)
-
-
-def pin_clone(batch):
-    return { k : v.clone().pin_memory() for k, v in batch.items() }
-
-
-def _setup_tensor(GC, input_reply, descs, group_id, use_numpy=False):
+class Batch:
     torch_types = {
         "int32_t" : torch.IntTensor,
         "int64_t" : torch.LongTensor,
@@ -46,25 +27,98 @@ def _setup_tensor(GC, input_reply, descs, group_id, use_numpy=False):
         'char': 'byte'
     }
 
-    batch = { }
-    for desc in descs:
-        info = GC.GetTensorSpec(group_id, desc)
+    def __init__(self, **kwargs):
+        self.batch = kwargs
 
+    def _request(GC, group_id, key):
+        info = GC.GetTensorSpec(group_id, key)
+        if info.key == '':
+            last_key = "last_" + key
+            info = GC.GetTensorSpec(group_id, last_key)
+            if info.key == '':
+                raise ValueError("key[%s] or last_key[%s] is not specified!" % (key, last_key))
+        return info
+
+    def _alloc(info, use_numpy=True):
         if not use_numpy:
-            v = torch_types[info.type](*info.sz).pin_memory()
+            v = Batch.torch_types[info.type](*info.sz).pin_memory()
+            v.fill_(1)
             info.p = v.data_ptr()
             info.byte_size = v.numel() * v.element_size()
         else:
-            v = np.zeros(info.sz, dtype=numpy_types[info.type])
+            v = np.zeros(info.sz, dtype=Batch.numpy_types[info.type])
+            v[:] = 1
             info.p = v.ctypes.data
             info.byte_size = v.size * v.dtype.itemsize
-        batch[info.key] = v
-        GC.AddTensor(group_id, input_reply, info)
 
-    return batch
+        return v, info
 
-def to_numpy(batch):
-    return { k : v.numpy() if not isinstance(v, np.ndarray) else v for k, v in batch.items() }
+    def load(GC, input_reply, keys, group_id, use_numpy=False):
+        batch = Batch()
+        batch.infos = { }
+
+        for key in keys:
+            info = Batch._request(GC, group_id, key)
+            v, info = Batch._alloc(info, use_numpy=use_numpy)
+            batch.batch[info.key] = v
+            batch.infos[info.key] = info
+            GC.AddTensor(group_id, input_reply, info)
+
+        return batch
+
+    def __getitem__(self, key):
+        if key in self.batch:
+            return self.batch[key]
+        else:
+            key_with_last = "last_" + key
+            if key_with_last in self.batch:
+                return self.batch[key_with_last][:, 1:]
+            else:
+                raise KeyError("Batch(): specified key: %s or %s not found!" % (key, key_with_last))
+
+    def setzero(self):
+        for _, v in self.batch.items():
+            v[:] = 0
+
+    def copy_from(self, src):
+        this_src = src if isinstance(src, dict) else src.batch
+
+        for k, v in this_src.items():
+            # Copy it down to cpu.
+            if k in self.batch:
+                bk = self.batch[k]
+                if isinstance(v, list) and bk.numel() == len(v):
+                    bk = bk.view(-1)
+                    for i, vv in enumerate(v):
+                        bk[i] = vv
+                else:
+                    bk[:] = v
+
+    def cpu2gpu(self, gpu=0):
+        return Batch(**{ k : v.cuda(gpu) for k, v in self.batch.items() })
+
+    def slice_hist(self, s, e):
+        return Batch(**{ k : v[:, s:e] for k, v in self.batch.items() })
+
+    def slice_hist1(self, s):
+        return Batch(**{ k : v[:, s] for k, v in self.batch.items() })
+
+    def transfer_cpu2gpu(self, batch_gpu, async=True):
+        # For each time step
+        for k, v in self.batch.items():
+            batch_gpu[k].copy_(v, async=async)
+
+    def transfer_cpu2cpu(self, batch_dst, async=True):
+        # For each time step
+        for k, v in self.batch.items():
+            batch_dst[k].copy_(v)
+
+    def pin_clone(self):
+        return Batch(**{ k : v.clone().pin_memory() for k, v in self.batch.items() })
+
+    def to_numpy(batch):
+        return Batch(**{ k : v.numpy() if not isinstance(v, np.ndarray) else v for k, v in self.batch.items() })
+
 
 class GCWrapper:
     def __init__(self, GC, co, descriptions, use_numpy=False, gpu=0, params=dict()):
@@ -117,9 +171,9 @@ class GCWrapper:
             for i in range(num_recv_thread):
                 group_id = GC.AddCollectors(batchsize, T, len(gpu2gid) - 1)
 
-                inputs.append(_setup_tensor(GC, "input", input["keys"], group_id, use_numpy=use_numpy))
+                inputs.append(Batch.load(GC, "input", input["keys"], group_id, use_numpy=use_numpy))
                 if reply is not None:
-                    replies.append(_setup_tensor(GC, "reply", reply["keys"], group_id, use_numpy=use_numpy))
+                    replies.append(Batch.load(GC, "reply", reply["keys"], group_id, use_numpy=use_numpy))
                 else:
                     replies.append(None)
 
@@ -131,8 +185,7 @@ class GCWrapper:
         # Zero out all replies.
         for reply in replies:
             if reply is not None:
-                for k, v in reply.items():
-                    v[:] = 0
+                reply.setzero()
 
         self.GC = GC
         self.inputs = inputs
@@ -145,7 +198,7 @@ class GCWrapper:
     def setup_gpu(self, gpu):
         '''Setup the gpu used in the wrapper'''
         self.gpu = gpu
-        self.inputs_gpu = [ cpu2gpu(self.inputs[gids[0]], gpu=gpu) for gids in self.gpu2gid ]
+        self.inputs_gpu = [ self.inputs[gids[0]].cpu2gpu(gpu=gpu) for gids in self.gpu2gid ]
 
     def reg_callback(self, key, cb):
         '''Set callback function for key
@@ -166,7 +219,7 @@ class GCWrapper:
         sel = self.inputs[infos.gid]
         if self.inputs_gpu is not None:
             sel_gpu = self.inputs_gpu[self.gid2gpu[infos.gid]]
-            transfer_cpu2gpu(sel, sel_gpu)
+            sel.transfer_cpu2gpu(sel_gpu)
         else:
             sel_gpu = None
 
@@ -182,10 +235,7 @@ class GCWrapper:
             # If reply is meaningful, send them back.
             if isinstance(reply, dict) and sel_reply is not None:
                 # Current we only support reply to the most recent history.
-                for k, v in reply.items():
-                    # Copy it down to cpu.
-                    if k in sel_reply:
-                        sel_reply[k][:] = v
+                sel_reply.copy_from(reply)
 
     def Run(self):
         '''Wait group of an arbitrary collector key. Samples in a returned batch are always from the same group, but the group key of the batch may be arbitrary.'''

@@ -26,6 +26,7 @@ static constexpr int kHeightRatio = kHeight / kRatio;
 struct GameState {
     using State = GameState;
     // Seq information.
+    int32_t id = -1;
     int32_t seq = 0;
     int32_t game_counter = 0;
     char last_terminal = 0;
@@ -44,7 +45,8 @@ struct GameState {
 
     void Clear() { a = 0; V = 0.0; fill(pi.begin(), pi.end(), 0.0); rv = 0; }
 
-    void Init(int num_action) {
+    void Init(int iid, int num_action) {
+        id = iid;
         pi.resize(num_action, 0.0);
     }
 
@@ -57,6 +59,12 @@ struct GameState {
         return *this;
     }
 
+    std::string PrintInfo() const {
+        std::stringstream ss;
+        ss << "[id:" << id << "][seq:" << seq << "][game_counter:" << game_counter << "][last_terminal:" << last_terminal << "]";
+        return ss.str();
+    }
+
     void Restart() {
         tick = 0;
         lives = 0;
@@ -66,7 +74,7 @@ struct GameState {
         last_terminal = 0;
     }
 
-    DECLARE_FIELD(GameState, seq, game_counter, last_terminal, s, tick, lives, last_r, a, V, pi, rv);
+    DECLARE_FIELD(GameState, id, seq, game_counter, last_terminal, s, tick, lives, last_r, a, V, pi, rv);
 };
 
 struct GameOptions {

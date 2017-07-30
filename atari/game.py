@@ -35,7 +35,8 @@ class Loader:
                 ("rom_file", "pong.bin"),
                 ("actor_only", dict(action="store_true")),
                 ("reward_clip", 1),
-                ("rom_dir", os.path.dirname(__file__))
+                ("rom_dir", os.path.dirname(__file__)),
+                ("additional_labels", dict(type=str, default=None, help="Add additional labels in the batch. E.g., id,seq,last_terminal")),
             ],
             more_args = ["batchsize", "T"],
             child_providers = [ self.context_args.args ]
@@ -56,16 +57,16 @@ class Loader:
         GC = atari.GameContext(co, opt)
         print("Version: ", GC.Version())
 
-        num_action = GC.get_num_actions()
-        print("Num Actions: ", num_action)
+        params = GC.GetParams()
+        print("Num Actions: ", params["num_action"])
 
         desc = {}
         # For actor model, No reward needed, we only want to get input and return distribution of actions.
         # sampled action and and value will be filled from the reply.
 
         desc["actor"] = dict(
-            input=dict(batchsize=args.batchsize, T=1, keys=["s", "last_r", "last_terminal"]),
-            reply=dict(batchsize=args.batchsize, T=1, keys=["rv", "pi", "V", "a"])
+            input=dict(batchsize=args.batchsize, T=1, keys=set(["s", "last_r", "last_terminal"])),
+            reply=dict(batchsize=args.batchsize, T=1, keys=set(["rv", "pi", "V", "a"]))
         )
 
         if not args.actor_only:
@@ -73,13 +74,16 @@ class Loader:
             # We want input, action (filled by actor models), value (filled by actor
             # models) and reward.
             desc["train"] = dict(
-                input=[dict(batchsize=args.batchsize, T=args.T), ["rv", "id", "pi", "s", "a", "r", "V", "seq", "terminal"] ],
+                input=dict(batchsize=args.batchsize, T=args.T, keys=set(["rv", "id", "pi", "s", "a", "r", "V", "seq", "terminal"])),
                 reply=None
             )
 
+        if args.additional_labels is not None:
+            extra = args.additional_labels.split(",")
+            for _, v in desc.items():
+                v["input"]["keys"].update(extra)
+
         # Initialize shared memory (between Python and C++) based on the specification defined by desc.
-        params = dict()
-        params["num_action"] = GC.get_num_actions()
         params["num_group"] = 1 if args.actor_only else 2
         params["action_batchsize"] = desc["actor"]["input"]["batchsize"]
         if not args.actor_only:
@@ -105,9 +109,7 @@ if __name__ == '__main__':
     def actor(sel, sel_gpu):
         # pickle.dump(to_numpy(sel), open("tmp%d.bin" % k, "wb"), protocol=2)
         batchsize = sel["s"].size(0)
-        actions = torch.LongTensor(batchsize)
-        actions.zero_()
-        return dict(a=actions)
+        return dict(a=torch.LongTensor(batchsize).zero_())
 
     GC.reg_callback("actor", actor)
 

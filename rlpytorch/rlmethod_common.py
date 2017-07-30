@@ -75,8 +75,9 @@ class ActorCritic(LearningMethod):
         ''' Actor critic model '''
         model_interface = self.model_interface
         args = self.args
-        T = len(batch)
-        bt = batch[T - 1]
+
+        T = batch["s"].size(1)
+        bt = batch.slice_hist(T - args.hist_len, T)
 
         state_curr = model_interface.forward("model", bt)
         R = state_curr["V"].data
@@ -89,8 +90,8 @@ class ActorCritic(LearningMethod):
         self.stats["init_reward"].feed(R.mean())
         ratio_clamp = 10
 
-        for t in range(T - 2, -1, -1):
-            bt = batch[t]
+        for t in range(T - 1, args.hist_len, -1):
+            bt = batch.slice_hist(t - args.hist_len, t)
 
             # go through the sample and get the rewards.
             a = bt["a"]

@@ -95,9 +95,9 @@ class Loader:
             )
 
         if args.additional_labels is not None:
-            extra = { label : "" for label in args.additional_labels.split(",") }
+            extra = args.additional_labels.split(",")
             for _, v in desc.items():
-                v["input"].update(extra)
+                v["input"]["keys"].update(extra)
 
         params = dict(
             num_action = num_action,

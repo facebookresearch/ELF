@@ -276,7 +276,7 @@ public:
     using AIComm = AICommT<Comm>;
 
     using GameStartFunc = std::function<void (int game_idx, const Options& options, const std::atomic_bool &done, AIComm *)>;
-    using DataInitFunc = std::function<void (Data &)>;
+    using DataInitFunc = std::function<void (int, Data &)>;
 
 private:
     Comm _comm;
@@ -304,7 +304,7 @@ public:
         for (int i = 0; i < _pool.size(); ++i) {
             _ai_comms[i].reset(new AIComm{i, &_comm});
             // Initialize Data
-            data_init(_ai_comms[i]->info().data);
+            data_init(i, _ai_comms[i]->info().data);
             //
             _pool.push([i, this, &game_start_func](int){
                 const std::atomic_bool &done = _done.flag();

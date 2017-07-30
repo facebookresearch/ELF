@@ -64,6 +64,7 @@ class FieldMemoryManagerT<Struct, FieldT,
     void copy_to_mem(const Struct& s, void* dst) override {
       static_assert(std::is_pod<FieldT>::value, "FieldT is not POD!");
       const FieldT* srcptr = reinterpret_cast<const FieldT*>(reinterpret_cast<const char*>(&s) + this->_offset);
+      // std::cout << "src = " << *srcptr << ", dst = " << *reinterpret_cast<const FieldT*>(dst) << std::endl;
       memcpy(dst, srcptr, sizeof(FieldT));  // should work for basic type, arrays, structs
     }
 
@@ -165,11 +166,6 @@ struct CopyItemT {
       : key(key), buf(buf), mm(mm) {
     }
 
-    bool Check(const State &s, size_t count) const {
-      size_t sz = mm->size(s);
-      return buf.size() == sz * count;
-    }
-
     size_t Capacity(const State &s) const {
       return buf.size() / mm->size(s);
     }
@@ -177,14 +173,12 @@ struct CopyItemT {
     char *ptr() const { return static_cast<char*>(buf.ptr()); }
 
     char *CopyToMem(const State &s, char *p) const {
-      if (! Check(s, 1)) return nullptr;
       mm->copy_to_mem(s, p);
       p += mm->size(s);
       return p;
     }
 
     const char *CopyFromMem(State &s, const char *p) const {
-      if (! Check(s, 1)) return nullptr;
       mm->copy_from_mem(p, s);
       p += mm->size(s);
       return p;
@@ -200,7 +194,6 @@ void CopyToMem(const std::vector<CopyItemT<State>> &copier, const std::vector<St
     char *p = item.ptr();
     for (auto* s: batch) {
        p = item.CopyToMem(*s, p);
-       m_assert(p != nullptr);
     }
   }
 }
@@ -214,7 +207,6 @@ void CopyFromMem(const std::vector<CopyItemT<State>> &copier, std::vector<State 
     const char *p = item.ptr();
     for (auto* s: batch) {
        p = item.CopyFromMem(*s, p);
-       m_assert(p != nullptr);
     }
   }
 }

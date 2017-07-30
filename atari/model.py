@@ -45,7 +45,9 @@ class Model_ActorCritic(Model):
         self.softmax = nn.Softmax()
 
     def forward(self, x):
-        s = self._var(x["s"])
+        params = self.args.params
+
+        s = self._var(x["s"].view(-1, 12, params["feature_height"], params["feature_width"]))
         # print("input size = " + str(s.size()))
         rep = self.trunk(s)
         # print("trunk size = " + str(rep.size()))

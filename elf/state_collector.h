@@ -107,14 +107,13 @@ struct EntryInfo {
   std::string key;
   std::string type;
   std::vector<int> sz;
-  int extra_len;
 
   uint64_t p;
   std::size_t byte_size;
 
   EntryInfo() : p(0), byte_size(0) { }
-  EntryInfo(const std::string& key, const std::string& type, std::initializer_list<int> l, int extra_len = 1)
-    : key(key), type(type), sz(l), extra_len(extra_len), p(0), byte_size(0) {
+  EntryInfo(const std::string& key, const std::string& type, std::initializer_list<int> l = {})
+    : key(key), type(type), sz(l), p(0), byte_size(0) {
   }
 
   void SetBatchSizeAndHistory(int batchsize, int T) {
@@ -196,11 +195,6 @@ public:
         if (key.empty()) return EntryInfo();
 
         EntryInfo entry_info = entry_func(key);
-        if (entry_info.sz.empty()) {
-            std::cout << "[" << key << "] key is not specified!" << std::endl;
-            return EntryInfo();
-        }
-
         entry_info.SetBatchSizeAndHistory(_batchsize, _hist_len);
         return entry_info;
     }

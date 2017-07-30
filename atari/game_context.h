@@ -57,18 +57,24 @@ class GameContext {
             game.initialize_comm(game_idx, ai_comm);
             game.MainLoop(done);
         };
-        auto init = [this](HistT<GameState> &state) {
+        auto init = [this](int id, HistT<GameState> &state) {
             state.InitHist(_T);
             for (auto &s : state.v()) {
-                s.Init(_num_action);
+                s.Init(id, _num_action);
             }
         };
         _context->Start(init, f);
     }
 
-    int get_screen_width() const { return _width; }
-    int get_screen_height() const { return _height; }
-    int get_num_actions() const { return _num_action; }
+    std::map<std::string, int> GetParams() const {
+        return std::map<std::string, int>{
+          { "width", _width },
+          { "height", _height },
+          { "num_action", _num_action },
+          { "feature_width", kWidthRatio },
+          { "feature_height", kHeightRatio },
+        };
+    }
 
     EntryInfo EntryFunc(const std::string &key) {
         auto *mm = GameState::get_mm(key);
@@ -77,9 +83,9 @@ class GameContext {
         std::string type_name = mm->type();
 
         if (key == "s") return EntryInfo(key, type_name, {3, kHeightRatio, kWidthRatio});
-        else if (key == "last_r" || key == "last_terminal") return EntryInfo(key, type_name, {1});
-        else if (key == "pi" || key == "V") return EntryInfo(key, type_name, {_num_action}, _num_action);
-        else if (key == "a" || key == "rv") return EntryInfo(key, type_name, {1});
+        else if (key == "last_r" || key == "last_terminal" || key == "id" || key == "seq" || key == "game_counter") return EntryInfo(key, type_name);
+        else if (key == "pi" || key == "V") return EntryInfo(key, type_name, {_num_action});
+        else if (key == "a" || key == "rv") return EntryInfo(key, type_name);
 
         return EntryInfo();
     }
