@@ -12,8 +12,8 @@ else
 	OMP_FLAG=-fopenmp
 endif
 
-#OPTFLAGS ?= -O3 -msse3 -march=native -pthread
-OPTFLAGS ?= -g3 -fsanitize=address,undefined -O0
+OPTFLAGS ?= -O3 -msse3 -march=native -pthread
+#OPTFLAGS ?= -g3 -fsanitize=address,undefined -O0
 DEFINES = -DUSE_PYBIND11 -DNDEBUG
 
 # optional extra packages

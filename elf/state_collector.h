@@ -52,8 +52,6 @@ private:
     // Lock for printing.
     std::mutex _mutex_cout;
 
-    std::mutex _visit_shared_mem;
-
 public:
     SyncSignal() { }
 
@@ -99,13 +97,6 @@ public:
     void Print(const std::string &s) {
         std::unique_lock<std::mutex> lock(_mutex_cout);
         std::cout << s << std::endl;
-    }
-
-    void StartVisitSharedMem() {
-        _visit_shared_mem.lock();
-    }
-    void EndVisitSharedMem() {
-        _visit_shared_mem.unlock();
     }
 };
 
@@ -265,9 +256,7 @@ public:
 
             V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Compute input. batchsize = " << _batch.size());
 
-            _signal->StartVisitSharedMem();
             elf::CopyToMem(_copier_input, _batch_data);
-            _signal->EndVisitSharedMem();
 
             // Signal.
             V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Send_batch. batchsize = " << _batch.size());
@@ -279,9 +268,7 @@ public:
 
             V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] PutReplies()");
 
-            _signal->StartVisitSharedMem();
             elf::CopyFromMem(_copier_reply, _batch_data);
-            _signal->EndVisitSharedMem();
 
             // Finally make the game run again.
             V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Resume games");

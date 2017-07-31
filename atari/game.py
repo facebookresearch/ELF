@@ -76,7 +76,7 @@ class Loader:
             # models) and reward.
             desc["train"] = dict(
                 batchsize=args.batchsize,
-                input=dict(T=args.T, keys=set(["rv", "id", "pi", "s", "a", "r", "V", "seq", "terminal"])),
+                input=dict(T=args.T, keys=set(["rv", "id", "pi", "s", "a", "last_r", "V", "seq", "last_terminal"])),
                 reply=None
             )
 
@@ -124,15 +124,16 @@ if __name__ == '__main__':
         actions = [ random.randint(0, GC.params["num_action"]-1) for i in range(batchsize) ]
         reply = dict(a=actions)
 
+        '''
         data = sel.to_numpy()
         data.update(reply)
-
         pickle.dump(data, open("tmp-actor%d.bin" % actor_count, "wb"), protocol=2)
+        '''
         return reply
 
     def train(sel, sel_gpu):
         global train_count
-        pickle.dump(sel.to_numpy(), open("tmp-train%d.bin" % train_count, "wb"), protocol=2)
+        # pickle.dump(sel.to_numpy(), open("tmp-train%d.bin" % train_count, "wb"), protocol=2)
         train_count += 1
 
     GC.reg_callback("actor", actor)
