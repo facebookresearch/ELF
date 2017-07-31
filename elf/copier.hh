@@ -64,7 +64,9 @@ class FieldMemoryManagerT<Struct, FieldT,
     void copy_to_mem(const Struct& s, void* dst) override {
       static_assert(std::is_pod<FieldT>::value, "FieldT is not POD!");
       const FieldT* srcptr = reinterpret_cast<const FieldT*>(reinterpret_cast<const char*>(&s) + this->_offset);
-      // std::cout << "src = " << *srcptr << ", dst = " << *reinterpret_cast<const FieldT*>(dst) << std::endl;
+      //std::cout << "[" << type() << "]";
+      //std::cout << " src = " << (int)*srcptr << ", ";
+      //std::cout << " dst = " << (int)*reinterpret_cast<const FieldT*>(dst) << std::endl;
       memcpy(dst, srcptr, sizeof(FieldT));  // should work for basic type, arrays, structs
     }
 
@@ -173,6 +175,7 @@ struct CopyItemT {
     char *ptr() const { return static_cast<char*>(buf.ptr()); }
 
     char *CopyToMem(const State &s, char *p) const {
+      // std::cout << "CopyToMem: key = " << key << std::endl;
       mm->copy_to_mem(s, p);
       p += mm->size(s);
       return p;

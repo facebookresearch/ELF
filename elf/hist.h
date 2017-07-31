@@ -43,7 +43,10 @@ public:
     // oldest = 0, newest = _h->maxlen() - 1
     Data &oldest(int i = 0) { return _h->get_from_push(_h->maxlen() - i - 1); }
     const Data &oldest(int i = 0) const { return _h->get_from_push(_h->maxlen() - i - 1); }
-    Data &newest(int i = 0) { return _h->get_from_push(i); }
+    Data &newest(int i = 0) {
+      // std::cout << "[" <<  _h->get_from_push(i).id << "] newest(" << i << ")" << std::endl;
+      return _h->get_from_push(i);
+    }
     const Data &newest(int i = 0) const { return _h->get_from_push(i); }
 
     REGISTER_PYBIND;

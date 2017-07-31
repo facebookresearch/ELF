@@ -19,7 +19,8 @@
 static constexpr int kWidth = 160;
 static constexpr int kHeight = 210;
 static constexpr int kRatio = 2;
-static constexpr int kInputStride = kWidth*kHeight*3/kRatio/kRatio;
+static constexpr int kBufSize = kWidth*kHeight*3;
+static constexpr int kInputStride = kBufSize / kRatio / kRatio;
 static constexpr int kWidthRatio = kWidth / kRatio;
 static constexpr int kHeightRatio = kHeight / kRatio;
 

@@ -33,15 +33,18 @@ class Batch:
     def _request(GC, group_id, key, T):
         info = GC.GetTensorSpec(group_id, key, T)
         if info.key == '':
+            print(key + " is not found, try last_" + key)
             last_key = "last_" + key
             info = GC.GetTensorSpec(group_id, last_key, T)
             if info.key == '':
                 raise ValueError("key[%s] or last_key[%s] is not specified!" % (key, last_key))
         return info
 
-    def _alloc(info, use_numpy=True):
+    def _alloc(info, use_gpu=True, use_numpy=True):
         if not use_numpy:
-            v = Batch.torch_types[info.type](*info.sz).pin_memory()
+            v = Batch.torch_types[info.type](*info.sz)
+            if use_gpu:
+                v = v.pin_memory()
             v.fill_(1)
             info.p = v.data_ptr()
             info.byte_size = v.numel() * v.element_size()
@@ -53,7 +56,7 @@ class Batch:
 
         return v, info
 
-    def load(GC, input_reply, desc, group_id, use_numpy=False):
+    def load(GC, input_reply, desc, group_id, use_gpu=True, use_numpy=False):
         batch = Batch()
         batch.infos = { }
 
@@ -62,7 +65,7 @@ class Batch:
 
         for key in keys:
             info = Batch._request(GC, group_id, key, T)
-            v, info = Batch._alloc(info, use_numpy=use_numpy)
+            v, info = Batch._alloc(info, use_gpu=use_gpu, use_numpy=use_numpy)
             batch.batch[info.key] = v
             batch.infos[info.key] = info
             GC.AddTensor(group_id, input_reply, info)
@@ -127,7 +130,7 @@ class Batch:
 
 
 class GCWrapper:
-    def __init__(self, GC, co, descriptions, use_numpy=False, gpu=0, params=dict()):
+    def __init__(self, GC, co, descriptions, use_numpy=False, gpu=None, params=dict()):
         '''Initialize GCWarpper
 
         Parameters:
@@ -139,13 +142,13 @@ class GCWrapper:
             params(dict): additional parameters
         '''
 
-        self._init_collectors(GC, co, descriptions, use_numpy=use_numpy)
+        self._init_collectors(GC, co, descriptions, use_gpu=gpu is not None, use_numpy=use_numpy)
         self.gpu = gpu
         self.inputs_gpu = None
         self.params = params
         self._cb = { }
 
-    def _init_collectors(self, GC, co, descriptions, use_numpy=False):
+    def _init_collectors(self, GC, co, descriptions, use_gpu=True, use_numpy=False):
         num_games = co.num_games
 
         total_batchsize = 0
@@ -175,9 +178,9 @@ class GCWrapper:
             for i in range(num_recv_thread):
                 group_id = GC.AddCollectors(batchsize, T, len(gpu2gid) - 1)
 
-                inputs.append(Batch.load(GC, "input", input, group_id, use_numpy=use_numpy))
+                inputs.append(Batch.load(GC, "input", input, group_id, use_gpu=use_gpu, use_numpy=use_numpy))
                 if reply is not None:
-                    replies.append(Batch.load(GC, "reply", reply, group_id, use_numpy=use_numpy))
+                    replies.append(Batch.load(GC, "reply", reply, group_id, use_gpu=use_gpu, use_numpy=use_numpy))
                 else:
                     replies.append(None)
 
@@ -255,6 +258,14 @@ class GCWrapper:
     def Stop(self):
         '''Stop all game environments. :func:`Start()` cannot be called again after :func:`Stop()` has been called.'''
         self.GC.Stop()
+
+    def reg_sig_int(self):
+        import signal
+        def signal_handler(s, frame):
+            print('Detected Ctrl-C!')
+            self.Stop()
+            sys.exit(0)
+        signal.signal(signal.SIGINT, signal_handler)
 
     def PrintSummary(self):
         '''Print summary'''

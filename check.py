@@ -102,6 +102,7 @@ if __name__ == '__main__':
 
     GC.reg_callback("actor", collector.actor)
     GC.reg_callback("train", collector.train)
+    GC.reg_sig_int()
 
     runner.setup(GC)
     runner.run()

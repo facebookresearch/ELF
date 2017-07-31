@@ -50,6 +50,7 @@ int main() {
       tm.restart();
     }
   }
+  GC.Stop();
   cout << "tm duration" << tm.duration() << endl;
   cout << "seconds per iter:" << tm.duration() / N << endl;
   cout << N / tm.duration() * batchsize * go.frame_skip << endl;

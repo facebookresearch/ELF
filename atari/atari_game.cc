@@ -75,6 +75,7 @@ AtariGame::AtariGame(const GameOptions& opt) : _h(opt.hist_len) {
   _action_set = _ale->getMinimalActionSet();
   _distr_action.reset(new std::uniform_int_distribution<>(0, _action_set.size() - 1));
   _reward_clip = opt.reward_clip;
+  _buf.resize(kBufSize, 0);
 }
 
 void AtariGame::MainLoop(const std::atomic_bool& done) {
