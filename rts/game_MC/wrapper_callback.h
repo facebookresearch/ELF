@@ -15,13 +15,11 @@
 #include "../engine/game.h"
 #include "python_options.h"
 
-using GC = ContextT<PythonOptions, ExtGame, Reply>;
-
 class WrapperCallbacks {
 private:
     int _game_idx;
     const PythonOptions &_options;
-    GC::AIComm *_ai_comm;
+    Context::AIComm *_ai_comm;
 
     AI *_opponent;
     AI *_ai;
@@ -30,8 +28,8 @@ private:
     int _simple_ratio;
 
 public:
-    explicit WrapperCallbacks(int game_idx, const PythonOptions &options, GC::AIComm *ai_comm) 
-        : _game_idx(game_idx), _options(options), _ai_comm(ai_comm), _opponent(nullptr), _ai(nullptr) { } 
+    explicit WrapperCallbacks(int game_idx, const PythonOptions &options, Context::AIComm *ai_comm)
+        : _game_idx(game_idx), _options(options), _ai_comm(ai_comm), _opponent(nullptr), _ai(nullptr) { }
 
     static void GlobalInit();
     void OnGameOptions(RTSGameOptions *rts_options);
