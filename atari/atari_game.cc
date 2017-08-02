@@ -112,7 +112,7 @@ void AtariGame::MainLoop(const std::atomic_bool& done) {
 
       // Illegal action.
       if (act < 0 || act >= _action_set.size() || _ale->game_over()) break;
-      act = _prevent_stuck(g, act);
+      // act = _prevent_stuck(g, act);
       int frame_skip = distr_frame_skip(g);
       _last_reward = 0;
       for (int j = 0; j < frame_skip; ++j) {
