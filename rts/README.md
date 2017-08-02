@@ -7,26 +7,13 @@ Dependency
 
 The simulators are written in C++11, so please compile using gcc >= 4.9.
 
-The engine also comes with a web-based platform-independent visualization interface with JavaScript (thanks Qucheng Gong for getting this to work). A backend runs in the terminal and communicates with the front-end webpage to drive the game and receive any keyboard/mouse feedbacks from the web interface. In order to make the visualization work, please:
-
-1. Install zeromq 4.0.4 from source.
-```
-wget https://archive.org/download/zeromq_4.0.4/zeromq-4.0.4.tar.gz
-tar xfz zeromq-4.0.4.tar.gz
-cd zeromq-4.0.4 && ./configure && make && sudo make install
-```
-2. Install libczmq 3.0.2 from source.
-```
-wget https://github.com/zeromq/czmq/releases/download/v3.0.2/czmq-3.0.2.tar.gz
-tar xfz czmq-3.0.2.tar.gz
-cd czmq-3.0.2 && ./configure && make && sudo make install
-```
-Due to the issues of `CZMQ-ZWSStock`, only a specific version of zeromq and czmq can be used. We welcome any better solutions.
+The engine also comes with a web-based platform-independent visualization interface with JavaScript (thanks Qucheng Gong for getting this to work).
+A backend runs in the terminal and communicates with the front-end webpage to drive the game and receive any keyboard/mouse feedbacks from the web interface.
 
 How to compile
 ============
 
-For simulators, simply run the following commands:    
+For simulators, simply run the following commands:
 
 ```bash
 cd ./rts/game_MC
@@ -39,7 +26,7 @@ Once you have compiled the simulator, run the following command to compile the s
 
 ```bash
 cd ./rts/backend
-make minirts GAME_DIR=../game_MC
+make GAME_DIR=../game_MC
 ```
 
 And you will see an executable `minirts`. Similarly for `./rts/game_TD` and `./rts/game_CF`. When you make a new game, you need to first `make clean`.
@@ -63,7 +50,7 @@ Run `./minirts flag_selfplay` for a simple selfplay of Capture the Flag game.
 For game_TD:
 Run `./minirts td_simple --max_tick 3000` for a simple Tower Defense game.
 
-Visualization  
+Visualization
 -------------
 
 In your terminal run `minirts` to open a server at port 8000:
@@ -77,44 +64,44 @@ and then open `./rts/frontend/minirts.html` in your browser. You should be able 
 
 ![Game ScreenShot](./rts_intro.png)
 
-Human versus AI  
+Human versus AI
 -----------------------
 
 Try `./minirts humanplay --vis_after 0` if you want to compete with the AI in the webpage. This is only implemented for game_MC.
 
-Game play  
+Game play
 ===================
 
 Shortcut
 ------------
 
-1. Move  
+1. Move
 Click one unit, and click an empty place.
 
-2. Attack  
-Click one unit, press `a` and click an enemy unit.  
-   a. No friendly fire. No “attack on ground” yet.  
+2. Attack
+Click one unit, press `a` and click an enemy unit.
+   a. No friendly fire. No “attack on ground” yet.
    b. The enemy unit will retaliate by attacking back.
 
-3. Gather  
-Click one worker, press `t` and click on the resource.  
+3. Gather
+Click one worker, press `t` and click on the resource.
 The worker will move between base and resource with simple path-planning.
 
-4. Build  
-   a. BASE: select and press `s` to produce worker.   
-   b. BARRACKS: select and press `m` for melee_attacker and `r` for range_attacker.  
+4. Build
+   a. BASE: select and press `s` to produce worker.
+   b. BARRACKS: select and press `m` for melee_attacker and `r` for range_attacker.
    c. WORKER: select, press `b`/`c` and click an empty place to build barracks / base.
 
 Units
 ------------
 
-1. Worker  
+1. Worker
 Used to gather and build. Move slow. Also has decent strength as a combat unit.
 
-2. Melee Attacker  
+2. Melee Attacker
 Strong in combat but its attack range is 1.
 
-3. Range Attacker  
+3. Range Attacker
 Fast movement, long attack range but has low HP. Hit-and-run possible.
 
 Replay
