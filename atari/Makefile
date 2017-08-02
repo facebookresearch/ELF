@@ -1,5 +1,5 @@
 UNAME_S := $(shell uname -s)
-PYTHON_CONFIG ?= python-config
+PYTHON_CONFIG ?= python3-config
 ifeq ($(UNAME_S),Linux)
 	CXX ?= g++
 endif
