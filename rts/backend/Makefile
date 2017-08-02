@@ -5,20 +5,15 @@ PYTHON ?= python
 SHELL = bash
 OPTFLAGS ?= -O3 -msse3
 
-CZMQDIR = ../../vendor/CZMQ-ZWSSock
-CZMQSRCS = zwsdecoder.c zwshandshake.c zwssock.c
-CZMQOTMP = $(patsubst %.c,%.o, $(CZMQSRCS))
-CZMQOBJS = $(patsubst %,$(CZMQDIR)/%, $(CZMQOTMP))
-CFLAGS += -std=gnu99 -fPIC
+CFLAGS += -fPIC
 PYTHON_CONFIG ?= python-config
 
-
-
 # optional extra packages
-LIBS = libzmq libczmq zlib
+LIBS = zlib
 INCLUDE_DIR += -I. $(shell pkg-config --cflags $(LIBS)) -isystem ../../vendor -I $(GAME_DIR)
 INCLUDE_DIR += $(shell $(PYTHON_CONFIG) --cflags | cut -d ' ' -f 1)
 
+#DEFINES += -DDEBUG
 CXXFLAGS ?=
 CXXFLAGS += $(INCLUDE_DIR)
 CXXFLAGS += -Wall -Wextra
@@ -31,11 +26,8 @@ LDFLAGS += $(shell $(PYTHON_CONFIG) --ldflags)
 LDFLAGS += $(OPTFLAGS)
 LDFLAGS += -lm -ltbb
 
-#LDFLAGS += -g $(shell find ../../vendor/CZMQ-ZWSSock/objs -name "*.o")
-
 # rts_engine
 ccSOURCES += $(shell find . -name "*.cc"  |  sed 's/^\.\///g')
-
 # elf
 ccSOURCES += $(shell find ../../elf/lib -name "*.cc"  |  sed 's/^\.\///g')
 
@@ -53,6 +45,7 @@ sinclude $(GAME_DEPFILES)
 endif
 
 TARGET = minirts
+all: $(TARGET)
 
 .PHONY: $(TARGET)
 
@@ -66,10 +59,7 @@ $(OBJ_DIR)/%.d: %.cc Makefile
 	@$(CXX) $(CXXFLAGS) -MM -MT "$(OBJ_DIR)/$(<:.cc=.o) $(OBJ_DIR)/$(<:.cc=.d)" "$<"  > "$@"
 
 
-$(CZMQDIR)/%.o: %.c
-	$(CC) $(CXXFLAGS)  -c -o $@ $< -std=gnu99
-
-$(TARGET): $(OBJS) $(GAME_OBJS) $(CZMQOBJS)
+$(TARGET): $(OBJS) $(GAME_OBJS)
 	@echo "Linking ..."
 	@$(CXX) $^ -o $@ $(LDFLAGS) $(CXXFLAGS)
 	@echo "done."

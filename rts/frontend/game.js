@@ -120,9 +120,7 @@ document.body.appendChild(range1);
 document.body.appendChild(canvas);
 
 var send_cmd = function(s) {
-    var message = new JSMQ.Message();
-    message.addString(s);
-    dealer.send(message);
+  dealer.send(s);
 };
 
 canvas.oncontextmenu = function (e) {
@@ -497,25 +495,17 @@ var render = function (game) {
 };
 
 var main = function () {
-    dealer = new JSMQ.Dealer();
-    dealer.connect("ws://localhost:8000");
+  dealer = new WebSocket('ws://localhost:8000');
+  dealer.onopen = function(event) {
+    console.log("WS Opened.");
+  }
 
-    // we must wait for the dealer to be connected before we can send messages, any messages we are trying to send
-    // while the dealer is not connected will be dropped
-    dealer.sendReady = function () {
-        console.log("connected");
-        var message = new JSMQ.Message();
-        message.addString("ready");
-        dealer.send(message);
-    };
-
-    dealer.onMessage = function (message) {
-        var s = message.popString();
-        var len = s.length;
-        var game = JSON.parse(s.substring(1, len));
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-    	render(game);
-    };
+  dealer.onmessage = function (message) {
+    var s = message.data;
+    var game = JSON.parse(s);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    render(game);
+  };
 };
 
 var then = Date.now();

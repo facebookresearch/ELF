@@ -20,12 +20,6 @@ install:
   # create deps dir if not existing
   - DEPS_DIR="${TRAVIS_BUILD_DIR}/deps"
   - mkdir -p ${DEPS_DIR} && cd ${DEPS_DIR}
-  - travis_retry wget --quiet https://archive.org/download/zeromq_4.0.4/zeromq-4.0.4.tar.gz
-  - tar xfz zeromq-4.0.4.tar.gz
-  - (cd zeromq-4.0.4 && ./configure && make && sudo make install)
-  - travis_retry wget --quiet https://github.com/zeromq/czmq/releases/download/v3.0.2/czmq-3.0.2.tar.gz
-  - tar xfz czmq-3.0.2.tar.gz
-  - (cd czmq-3.0.2 && ./configure && make && sudo make install)
   - sudo apt-get install libtbb-dev
   - cd ..
 
