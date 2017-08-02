@@ -8,8 +8,6 @@
 */
 
 #pragma once
-#include <zmq.h>
-
 #include <concurrentqueue.h>
 #include "ws_server.h"
 #include "../engine/ai.h"

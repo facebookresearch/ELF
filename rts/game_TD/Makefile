@@ -1,5 +1,5 @@
 # $File: Makefile
-# $Date: Tue Jun 13 14:20:31 2017 -0700
+# $Date: Tue Aug 01 17:54:46 2017 -0700
 # Usage: PKG_CONFIG_PATH=installation/of/libraries/lib/pkgconfig make gen && make -j8
 
 OBJ_DIR = obj
@@ -30,7 +30,7 @@ GIT_COMMIT_HASH = $(shell git rev-parse HEAD)
 GIT_UNSTAGED = $(shell git diff-index --quiet HEAD -- && echo staged)
 
 # optional extra packages
-LIBS = libzmq zlib
+LIBS = zlib
 INCLUDE_DIR += -I. $(shell pkg-config --cflags $(LIBS)) -isystem ../../vendor
 INCLUDE_DIR += $(shell $(PYTHON_CONFIG) --cflags | cut -d ' ' -f 1)
 LDFLAGS += $(shell pkg-config $(LIBS) --libs)
@@ -46,7 +46,6 @@ CXXFLAGS += $(DEFINES) -std=c++11 $(OPTFLAGS) -fPIC
 
 LDFLAGS += $(OPTFLAGS)
 LDFLAGS += -lm #-ltbb
-#LDFLAGS += -g $(shell find ../../vendor/CZMQ-ZWSSock/objs -name "*.o")
 
 # sources to include
 ccSOURCES = $(shell find . -name "*.cc"  |  sed 's/^\.\///g')
@@ -80,7 +79,7 @@ $(OBJ_DIR)/%.d: %.cc Makefile
 	@echo "[dep] $< ..."
 	@$(CXX) $(CXXFLAGS) -MM -MT "$(OBJ_DIR)/$(<:.cc=.o) $(OBJ_DIR)/$(<:.cc=.d)" "$<"  > "$@"
 
-$(SO): $(OBJS) #$(CZMQOBJS)
+$(SO): $(OBJS)
 	@echo "Linking so ..."
 	@$(CXX) $^ -o $@ $(CXXFLAGS) $(LDFLAGS) -shared
 	@echo "done."
@@ -92,4 +91,4 @@ gen: $(GENERATED_DEF_FILES)
 	$(PYTHON) ../engine/compile_cmds.py --def_file cmd_specific --name td_specific
 
 clean:
-	@rm -rvf $(OBJ_DIR) $(ENGINE_DIR) $(GENERATED_FILES) #$(CZMQOBJS) #$(PROTOFILES)
+	@rm -rvf $(OBJ_DIR) $(ENGINE_DIR) $(GENERATED_FILES)
