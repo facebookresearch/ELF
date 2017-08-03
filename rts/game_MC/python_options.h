@@ -112,7 +112,7 @@ struct GameState {
 
     int32_t seq;
     int32_t game_counter;
-    char last_terminal;
+    char terminal;
 
     int32_t tick;
     int32_t winner;
@@ -131,6 +131,7 @@ struct GameState {
 
     // Reply
     int64_t action_type;
+    int32_t rv;
 
     int64_t a;
     float V;
@@ -143,7 +144,7 @@ struct GameState {
     GameState &Prepare(const SeqInfo &seq_info) {
         seq = seq_info.seq;
         game_counter = seq_info.game_counter;
-        last_terminal = seq_info.last_terminal;
+        // last_terminal = seq_info.last_terminal;
         Clear();
         return *this;
     }
@@ -174,7 +175,7 @@ struct GameState {
         */
     }
 
-    DECLARE_FIELD(GameState, a, V, pi, action_type, last_r, s, res);
+    DECLARE_FIELD(GameState, a, V, pi, action_type, last_r, s, res, rv, terminal, seq, game_counter);
     REGISTER_PYBIND_FIELDS(a, V, pi, action_type, last_r, s, res, tick, winner, player_id, ai_start_tick);
 };
 

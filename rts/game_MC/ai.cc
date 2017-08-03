@@ -15,7 +15,7 @@ void AIBase::save_structured_state(const GameEnv &env, Data *data) const {
     GameState *game = &data->newest();
     game->tick = _receiver->GetTick();
     game->winner = env.GetWinnerId();
-    // game->terminal = env.GetTermination() ? 1 : 0;
+    game->terminal = env.GetTermination() ? 1 : 0;
     game->player_id = _player_id;
 
     const int n_type = env.GetGameDef().GetNumUnitType();

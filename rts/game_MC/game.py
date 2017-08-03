@@ -69,28 +69,26 @@ class Loader:
         # opt.save_replay_prefix = b"replay"
 
         GC = minirts.GameContext(co, opt)
+        params = GC.GetParams()
         print("Version: ", GC.Version())
 
-        num_action = GC.get_num_actions()
-        print("Num Actions: ", num_action)
-
-        num_unittype = GC.get_num_unittype()
-        print("Num unittype: ", num_unittype)
+        print("Num Actions: ", params["num_action"])
+        print("Num unittype: ", params["num_unit_type"])
 
         desc = {}
         # For actor model, no reward needed, we only want to get input and return distribution of actions.
         # sampled action and and value will be filled from the reply.
         desc["actor"] = dict(
-            input=dict(s=str(num_unittype+7), r0="", r1="", last_r="", last_terminal="", _batchsize=str(args.batchsize), _T="1"),
-            reply=dict(rv="", pi=str(num_action), V="1", a="1", _batchsize=str(args.batchsize), _T="1")
+            batchsize=args.batchsize,
+            input=dict(T=1, keys=set(["s", "res", "last_r", "terminal"])),
+            reply=dict(T=1, keys=set(["rv", "pi", "V", "a"]))
         )
 
         if not args.actor_only:
             # For training, we want input, action (filled by actor models), value (filled by actor models) and reward.
             desc["train"] = dict(
-                input=dict(rv="", pi=str(num_action), s=str(num_unittype+7),
-                           r0="", r1="", a="1", r="1", V="1", terminal="",
-                           _batchsize=str(args.batchsize), _T=str(args.T)),
+                batchsize=args.batchsize,
+                input=dict(T=args.T, keys=set(["rv", "pi", "s", "res", "a", "last_r", "V", "terminal"])),
                 reply=None
             )
 
@@ -99,14 +97,12 @@ class Loader:
             for _, v in desc.items():
                 v["input"]["keys"].update(extra)
 
-        params = dict(
-            num_action = num_action,
-            num_unit_type = num_unittype,
+        params.update(dict(
             num_group = 1 if args.actor_only else 2,
             action_batchsize = int(desc["actor"]["batchsize"]),
             train_batchsize = int(desc["train"]["batchsize"]) if not args.actor_only else None,
             T = args.T
-        )
+        ))
 
         return GCWrapper(GC, co, desc, use_numpy=False, params=params)
 
@@ -128,7 +124,7 @@ if __name__ == '__main__':
         pdb.set_trace()
         pickle.dump(utils_elf.to_numpy(sel), open("tmp%d.bin" % k, "wb"), protocol=2)
         '''
-        return dict(a=[0]*sel[0]["s"].size(0))
+        return dict(a=[0]*sel["s"].size(1))
 
     GC = loader.initialize()
     GC.reg_callback("actor", actor)

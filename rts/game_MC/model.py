@@ -37,7 +37,7 @@ class MiniRTSNet(Model):
     def _no_leaky_relu(self):
         return getattr(self.args, "disable_leaky_relu", False)
 
-    def forward(self, input, r0, r1):
+    def forward(self, input, res):
         # BN and LeakyReLU are from Wendy's code.
         h1 = self.conv1(input.view(input.size(0), self.m, 20, 20))
         if not self._no_bn(): h1 = self.conv1_bn(h1)
@@ -75,8 +75,8 @@ class Model_ActorCritic(Model):
         self.softmax = nn.Softmax()
 
     def forward(self, x):
-        s, r0, r1 = x["s"], x["r0"], x["r1"]
-        output = self.net(self._var(s), self._var(r0), self._var(r1))
+        s, res = x["s"], x["res"]
+        output = self.net(self._var(s), self._var(res))
         policy = self.softmax(self.linear_policy(output))
         value = self.linear_value(output)
         return value, dict(V=value, pi=policy)
