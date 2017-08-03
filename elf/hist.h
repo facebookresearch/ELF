@@ -24,7 +24,10 @@ public:
     }
 
     void Restart() {
-        _h->clear();
+        // Cannot clear history, For game whose reward is only revealed in the end,
+        // clear history will lead to even sparser reward (since for a long trajectory,
+        // the state with the reward will appear only in the end).
+        // _h->clear();
     }
 
     DataPrepareReturn Prepare(const SeqInfo &seq) {
