@@ -6,6 +6,7 @@
 # of patent rights can be found in the PATENTS file in the same directory.
 
 import sys
+import os
 
 class ArgsProvider:
     def __init__(self, define_args=[], more_args=[], on_get_args=None, call_from=None, child_providers=[]):
@@ -61,7 +62,14 @@ class ArgsProvider:
 
         for key in self._arg_keys + self._more_args:
             if not hasattr(self, key):
-                setattr(self, key, args.__dict__[key])
+                if key in args.__dict__:
+                    setattr(self, key, args.__dict__[key])
+                else:
+                    prefix = "env_"
+                    if key.startswith(prefix) and key[len(prefix):] in os.environ:
+                        setattr(self, key, os.environ[key[len(prefix):]])
+                    else:
+                        print("Warning: key = %s cannot be found from either args or environment!" % key)
 
         # Override.
         for k, v in kwargs.items():
