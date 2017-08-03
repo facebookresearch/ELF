@@ -52,10 +52,10 @@ class AtariGame {
     std::vector<unsigned char> _buf;
     CircularQueue<std::vector<float>> _h;
 
-    reward_t _reward_clip;
+    float _reward_clip;
     bool _eval_only;
 
-    reward_t _last_reward = 0;
+    float _last_reward = 0;
     AtariGameSummary _summary;
 
     static const int kMaxRep = 30;
