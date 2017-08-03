@@ -58,7 +58,8 @@ void AtariGameSummary::Print() const {
     std::cout << " current accumulated reward: " << _accu_reward << std::endl;
 }
 
-AtariGame::AtariGame(const GameOptions& opt) : _h(opt.hist_len) {
+AtariGame::AtariGame(const GameOptions& opt)
+  : _h(opt.hist_len), _reward_clip(opt.reward_clip), _eval_only(opt.eval_only) {
   lock_guard<mutex> lg(ALE_GLOBAL_LOCK);
   _ale.reset(new ALEInterface);
   long seed = compute_seed(opt.seed);
@@ -74,7 +75,6 @@ AtariGame::AtariGame(const GameOptions& opt) : _h(opt.hist_len) {
   _width = s.width(), _height = s.height();
   _action_set = _ale->getMinimalActionSet();
   _distr_action.reset(new std::uniform_int_distribution<>(0, _action_set.size() - 1));
-  _reward_clip = opt.reward_clip;
 }
 
 void AtariGame::MainLoop(const std::atomic_bool& done) {
@@ -112,7 +112,7 @@ void AtariGame::MainLoop(const std::atomic_bool& done) {
 
       // Illegal action.
       if (act < 0 || act >= _action_set.size() || _ale->game_over()) break;
-      // act = _prevent_stuck(g, act);
+      if (_eval_only) act = _prevent_stuck(g, act);
       int frame_skip = distr_frame_skip(g);
       _last_reward = 0;
       for (int j = 0; j < frame_skip; ++j) {

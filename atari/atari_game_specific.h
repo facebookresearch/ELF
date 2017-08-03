@@ -38,8 +38,9 @@ struct GameOptions {
   float repeat_action_probability = 0.;
   int seed = 0;
   int hist_len = 4;
+  bool eval_only = false;
   reward_t reward_clip = 1.0;
-  REGISTER_PYBIND_FIELDS(rom_file, frame_skip, repeat_action_probability, seed, hist_len, reward_clip);
+  REGISTER_PYBIND_FIELDS(rom_file, frame_skip, repeat_action_probability, seed, hist_len, eval_only, reward_clip);
 };
 
 using GameInfo = InfoT<GameState, Reply>;

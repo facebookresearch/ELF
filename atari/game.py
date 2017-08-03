@@ -34,7 +34,7 @@ class Loader:
                 ("reward_clip", 1),
                 ("rom_dir", os.path.dirname(__file__))
             ],
-            more_args = ["batchsize", "T"],
+            more_args = ["batchsize", "T", "env_eval_only"],
             child_providers = [ self.context_args.args ]
         )
 
@@ -47,6 +47,7 @@ class Loader:
         opt.frame_skip = args.frame_skip
         opt.rom_file = os.path.join(args.rom_dir, args.rom_file)
         opt.seed = 42
+        opt.eval_only = getattr(args, "env_eval_only", 0) == 1
         opt.hist_len = args.hist_len
         opt.reward_clip = args.reward_clip
 
