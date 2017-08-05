@@ -8,10 +8,10 @@
 */
 
 #pragma once
-#include "../elf/python_options_utils_cpp.h"
-#include "../elf/copier.hh"
-#include "../elf/comm_template.h"
-#include "../elf/hist.h"
+#include "../../elf/python_options_utils_cpp.h"
+#include "../../elf/copier.hh"
+#include "../../elf/comm_template.h"
+#include "../../elf/hist.h"
 
 // Simulation type
 #define ST_INVALID 0
@@ -180,4 +180,3 @@ struct GameState {
 };
 
 using Context = ContextT<PythonOptions, HistT<GameState>>;
-

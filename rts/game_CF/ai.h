@@ -12,39 +12,42 @@
 #include "../engine/ai.h"
 #include "python_options.h"
 #include "cf_rule_actor.h"
+#define NUM_RES_SLOT 5
 
-using Context = ContextT<PythonOptions, ExtGame, Reply>;
-using AIComm = AICommT<Context>;
+using Comm = Context::Comm;
+using AIComm = AICommT<Comm>;
+using Data = typename AIComm::Data;
 
-class AIBase : public AIWithComm<AIComm, ExtGame> {
+class AIBase : public AIWithComm<AIComm> {
 protected:
     int last_r0 = 0;
     int last_r1 = 0;
     int last_x = 9;
 
-    void on_save_data(ExtGame *game) override {
+    void on_save_data(Data *data) override {
+        GameState *game = &data->newest();
         if (game->winner != INVALID) return;
 
         // assign partial rewards
         if (game->r0 > last_r0) {
-            game->last_reward = 0.2;
+            game->last_r = 0.2;
             last_r0 = game->r0;
         } else if (game->r1 > last_r1) {
-            game->last_reward = -0.2;
+            game->last_r = -0.2;
             last_r1 = game->r1;
         } else {
-            game->last_reward = float(last_x - game->flag_x) / 100;
+            game->last_r = float(last_x - game->flag_x) / 100;
             last_x = game->flag_x;
         }
     }
 
     // Feature extraction.
-    void save_structured_state(const GameEnv &env, ExtGame *game) const override;
+    void save_structured_state(const GameEnv &env, Data *data) const override;
 
 public:
     AIBase() { }
     AIBase(PlayerId id, int frameskip, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
-        : AIWithComm<AIComm, ExtGame>(id, frameskip, receiver, ai_comm) {
+        : AIWithComm<AIComm>(id, frameskip, receiver, ai_comm) {
     }
 };
 
@@ -69,9 +72,9 @@ private:
         if (_backup_ai != nullptr) _backup_ai->SetCmdReceiver(receiver);
     }
 
-    void on_save_data(ExtGame *game) override {
-        this->AIBase::on_save_data(game);
-        game->ai_start_tick = _backup_ai_tick_thres;
+    void on_save_data(Data *data) override {
+        this->AIBase::on_save_data(data);
+        data->newest().ai_start_tick = _backup_ai_tick_thres;
     }
 
     bool need_structured_state(Tick tick) const override {

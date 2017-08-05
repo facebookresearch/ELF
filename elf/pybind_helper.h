@@ -179,6 +179,18 @@
         MM_INVOKE_B( macroname, (C, a1) ), \
     MM_APPLY_COMMA_11( macroname, C, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)
 
+#define MM_APPLY_COMMA_13( macroname, C, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13) \
+        MM_INVOKE_B( macroname, (C, a1) ), \
+    MM_APPLY_COMMA_12( macroname, C, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13)
+
+#define MM_APPLY_COMMA_14( macroname, C, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14) \
+        MM_INVOKE_B( macroname, (C, a1) ), \
+    MM_APPLY_COMMA_13( macroname, C, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14)
+
+#define MM_APPLY_COMMA_15( macroname, C, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15) \
+        MM_INVOKE_B( macroname, (C, a1) ), \
+    MM_APPLY_COMMA_14( macroname, C, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15)
+
 // C: pyclass instance
 #define ADD_PYBIND_FIELD(C, field) C.def_readwrite(#field, &std::remove_reference<decltype(C)>::type::type::field);
 

@@ -79,7 +79,7 @@ void CopyToMem(const std::vector<CopyItemT<State>> &copier, const std::vector<Hi
     }
     if (hist_len > overall_hist_len) {
       // Fill them with the oldest hist.
-      for (int i = overall_hist_len; i < hist_len; ++i) {
+      for (size_t i = overall_hist_len; i < hist_len; ++i) {
         for (auto *s: batch) {
           const State &state = s->newest(min_hist_len - 1);
           p = item.CopyToMem(state, p);

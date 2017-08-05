@@ -16,7 +16,7 @@
 
 typedef FlagTrainedAI TrainAIType;
 static AI *get_ai(int game_idx, int frame_skip, int ai_type, int backup_ai_type,
-    const PythonOptions &options, GC::AIComm *input_ai_comm, bool use_ai_comm = false) {
+    const PythonOptions &options, Context::AIComm *input_ai_comm, bool use_ai_comm = false) {
     AIComm *ai_comm = use_ai_comm ? input_ai_comm : nullptr;
 
     switch (ai_type) {
@@ -57,7 +57,7 @@ void WrapperCallbacks::OnEpisodeStart(int k, std::mt19937 *rng, RTSGame*) {
     }
 
     // [TODO]: Not a good design.
-    if (_options.ai_type != AI_NN) return;
+    if (_options.ai_type != AI_FLAG_NN) return;
 
     // Random tick, max 1000
     Tick default_ai_end_tick = (*rng)() % (int(_latest_start + 0.5) + 1);

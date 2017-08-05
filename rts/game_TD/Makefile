@@ -6,7 +6,7 @@ OBJ_DIR = obj
 ENGINE_DIR = engine
 CXX ?= g++
 CC ?= gcc
-PYTHON ?= python
+PYTHON ?= python3
 SHELL = bash
 
 ifneq (,$(findstring clang,$(CXX)))
@@ -15,7 +15,7 @@ else
 	OMP_FLAG=-fopenmp
 endif
 
-PYTHON_CONFIG ?= python-config
+PYTHON_CONFIG ?= python3-config
 
 OPTFLAGS ?= -O3 -msse3
 # OPTFLAGS ?= -g3 -fsanitize=address,undefined,leak -O2 -lasan
@@ -52,6 +52,7 @@ ccSOURCES = $(shell find . -name "*.cc"  |  sed 's/^\.\///g')
 # rts_engine
 ccSOURCES += $(shell find ../engine -name "*.cc"  |  sed 's/^\.\///g')
 # Assume all elf files are headers.
+ccSOURCES += $(shell find ../../elf/lib -name "*.cc"  |  sed 's/^\.\///g')
 
 
 OBJS = $(addprefix $(OBJ_DIR)/,$(ccSOURCES:.cc=.o))

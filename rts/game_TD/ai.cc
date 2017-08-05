@@ -11,23 +11,25 @@
 #include "../engine/game_env.h"
 #include "../engine/unit.h"
 
-void AIBase::save_structured_state(const GameEnv &env, ExtGame *game) const {
+void AIBase::save_structured_state(const GameEnv &env, Data *data) const {
+    GameState *game = &data->newest();
     game->tick = _receiver->GetTick();
     game->winner = env.GetWinnerId();
-    game->terminated = env.GetTermination();
+    game->terminal = env.GetTermination() ? 1 : 0;;
     game->game_counter = env.GetGameCounter();
     game->player_id = _player_id;
     const int total_channel = 2;
+    game->base_hp_level = 1.0;
 
     const auto &m = env.GetMap();
 
     // [Channel, width, height]
     const int sz = total_channel * m.GetXSize() * m.GetYSize();
-    game->features.resize(sz);
-    std::fill(game->features.begin(), game->features.end(), 0.0);
+    game->s.resize(sz);
+    std::fill(game->s.begin(), game->s.end(), 0.0);
 
 #define _OFFSET(_c, _x, _y) (((_c) * m.GetYSize() + (_y)) * m.GetXSize() + (_x))
-#define _F(_c, _x, _y) game->features[_OFFSET(_c, _x, _y)]
+#define _F(_c, _x, _y) game->s[_OFFSET(_c, _x, _y)]
 
     for (int i = 0; i < m.GetXSize(); i++) {
         for (int j = 0; j < m.GetYSize(); j++) {
@@ -46,23 +48,19 @@ void AIBase::save_structured_state(const GameEnv &env, ExtGame *game) const {
         }
         ++ unit_iter;
     }
-    game->last_reward = 0.0;
+    game->last_r = 0.0;
     int winner = env.GetWinnerId();
 
     if (winner != INVALID) {
-        if (winner == _player_id) game->last_reward = 1.0;
-        else game->last_reward = -1.0;
+        if (winner == _player_id) game->last_r = 1.0;
+        else game->last_r = -1.0;
     }
 }
 
 bool TDTrainedAI::on_act(const GameEnv &env) {
-    // Get the current action from the queue.
     int h = 0;
-    const Reply& reply = _ai_comm->history().newest().reply;
-    if (reply.global_action >= 0) {
-        // action
-        h = reply.global_action;
-    }
+    const GameState& gs = _ai_comm->info().data.newest();
+    h = gs.a;
     return gather_decide(env, [&](const GameEnv &e, string*, AssignedCmds *assigned_cmds) {
         return _td_rule_actor.TowerDefenseActByState(e, h, assigned_cmds);
     });
