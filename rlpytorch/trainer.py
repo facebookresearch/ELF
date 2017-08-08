@@ -81,7 +81,7 @@ class Trainer:
         self.timer.Record("compute_train")
         if self.args.save:
             pickle.dump(
-                utils_elf.to_numpy(sel),
+                sel.to_numpy(),
                 open(os.path.join(self.args.record_dir, "record-train-%d.bin" % self.train_count), "wb"),
                 protocol=2
             )
@@ -305,4 +305,3 @@ class MultiProcessRun:
 
         self.GC.PrintSummary()
         self.GC.Stop()
-
