@@ -40,7 +40,10 @@ void AIBase::save_structured_state(const GameEnv &env, Data *data) const {
     // Extra data.
     game->ai_start_tick = 0;
 
-    auto unit_iter = env.GetUnitIterator(_player_id);
+    // PlayerId visibility_check = _player_id;
+    PlayerId visibility_check = INVALID;
+
+    auto unit_iter = env.GetUnitIterator(visibility_check);
     float total_hp_ratio = 0.0;
 
     int myworker = 0;
@@ -77,13 +80,14 @@ void AIBase::save_structured_state(const GameEnv &env, Data *data) const {
 
     for (int i = 0; i < env.GetNumOfPlayers(); ++i) {
         // Omit player signal from other player's perspective.
-        if (_player_id != INVALID && _player_id != i) continue;
+        if (visibility_check != INVALID && visibility_check != i) continue;
         const auto &player = env.GetPlayer(i);
         quantized_r[i] = min(int(player.GetResource() / resource_grid), res_pt - 1);
         game->res[i * res_pt + quantized_r[i]] = 1.0;
     }
 
     if (_player_id != INVALID) {
+        // Add resource layer for the current player.
         const int c = _OFFSET(n_type + n_additional + quantized_r[_player_id], 0, 0);
         std::fill(game->s.begin() + c, game->s.begin() + c + m.GetXSize() * m.GetYSize(), 1.0);
     }
