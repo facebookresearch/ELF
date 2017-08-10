@@ -32,6 +32,7 @@ class Batch:
 
     def _request(GC, group_id, key, T):
         info = GC.GetTensorSpec(group_id, key, T)
+        print("Key = \"%s\"" % str(key))
         if info.key == '':
             print(key + " is not found, try last_" + key)
             last_key = "last_" + key
@@ -81,6 +82,9 @@ class Batch:
                 return self.batch[key_with_last][1:]
             else:
                 raise KeyError("Batch(): specified key: %s or %s not found!" % (key, key_with_last))
+
+    def __contains__(self, key):
+        return key in self.batch or "last_" + key in self.batch
 
     def setzero(self):
         for _, v in self.batch.items():

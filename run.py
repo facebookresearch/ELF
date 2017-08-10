@@ -92,10 +92,12 @@ class Eval:
 
         def actor(sel, sel_gpu):
             reply = self.trainer.actor(sel, sel_gpu)
-            v = sel[0]
+            ids = sel["id"][0]
+            last_terminals = sel["last_terminal"][0]
+            last_r = sel["last_r"][0]
 
-            for batch_idx, (id, last_terminal) in enumerate(zip(v["id"], v["last_terminal"])):
-                self.collector.feed(id, v["last_r"][batch_idx])
+            for batch_idx, (id, last_terminal) in enumerate(zip(ids, last_terminals)):
+                self.collector.feed(id, last_r[batch_idx])
                 if last_terminal:
                     self.collector.terminal(id)
 
