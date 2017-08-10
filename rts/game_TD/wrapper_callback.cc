@@ -15,15 +15,15 @@
 #include "ai.h"
 
 typedef TDTrainedAI TrainAIType;
-static AI *get_ai(int game_idx, int frame_skip, int ai_type, int backup_ai_type,
-    const PythonOptions &options, GC::AIComm *input_ai_comm, bool use_ai_comm = false) {
+static AI *get_ai(int /*game_idx*/, int frame_skip, int ai_type, int backup_ai_type,
+    const PythonOptions& /*options*/, Context::AIComm *input_ai_comm, bool use_ai_comm = false) {
     AIComm *ai_comm = use_ai_comm ? input_ai_comm : nullptr;
 
     switch (ai_type) {
        case AI_TD_BUILT_IN:
            return new TDBuiltInAI(INVALID, frame_skip, nullptr, ai_comm);
        case AI_TD_NN:
-           return new TDTrainedAI(INVALID, frame_skip, nullptr, ai_comm, get_ai(game_idx, frame_skip, backup_ai_type, AI_INVALID, options, input_ai_comm));
+           return new TDTrainedAI(INVALID, frame_skip, nullptr, ai_comm);
        default:
            throw std::range_error("Unknown ai_type! ai_type: " + std::to_string(ai_type) +
                    " backup_ai_type: " + std::to_string(backup_ai_type) + " use_ai_comm: " + std::to_string(use_ai_comm));
@@ -57,7 +57,7 @@ void WrapperCallbacks::OnEpisodeStart(int k, std::mt19937 *rng, RTSGame*) {
     }
 
     // [TODO]: Not a good design.
-    if (_options.ai_type != AI_NN) return;
+    if (_options.ai_type != AI_TD_NN) return;
 
     // Random tick, max 1000
     Tick default_ai_end_tick = (*rng)() % (int(_latest_start + 0.5) + 1);

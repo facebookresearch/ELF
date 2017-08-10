@@ -23,10 +23,10 @@
 #include "python_options_utils_cpp.h"
 
 #include "ctpl_stl.h"
-#include "data_addr.h"
 
 #include "primitive.h"
 #include "collector.hh"
+#include "hist.h"
 
 struct Infos {
     int gid;
@@ -103,12 +103,48 @@ public:
 #define PRINT(arg) { std::stringstream ss; ss << arg; _signal->Print(ss.str()); }
 #define V_PRINT(verbose, arg) if (verbose) PRINT(arg)
 
+struct EntryInfo {
+  std::string key;
+  std::string type;
+  std::vector<int> sz;
+
+  uint64_t p;
+  std::size_t byte_size;
+
+  EntryInfo() : p(0), byte_size(0) { }
+  EntryInfo(const std::string& key, const std::string& type, std::initializer_list<int> l = {})
+    : key(key), type(type), sz(l), p(0), byte_size(0) {
+  }
+
+  void SetBatchSizeAndHistory(int batchsize, int T) {
+      std::vector<int> sz2;
+      sz2.push_back(T);
+      sz2.push_back(batchsize);
+      for (const int &v : sz) sz2.push_back(v);
+      sz = sz2;
+  }
+
+  std::string PrintInfo() const {
+      std::stringstream ss;
+      ss << "[" << key << "][type=" << type << "]: ";
+      for (const int &v : sz) {
+        ss << v << ", ";
+      }
+      return ss.str();
+  }
+
+  REGISTER_PYBIND_FIELDS(key, type, sz, p, byte_size);
+};
+
 // Each collector group has a batch collector and a sequence of operators.
 template <typename In>
 class CollectorGroupT {
 public:
-    using DataAddr = DataAddrT<In>;
     using Key = decltype(MetaInfo::query_id);
+    using State = typename In::State;
+    using Data = typename In::Data;
+    using CopyItem = elf::CopyItemT<State>;
+    using EntryFunc = std::function<EntryInfo (const std::string &key)>;
 
 private:
     const int _gid;
@@ -121,9 +157,11 @@ private:
 
     // Current batch.
     std::vector<In *> _batch;
+    std::vector<Data *> _batch_data;
     elf::BatchCollectorT<Key, In> _batch_collector;
 
-    DataAddr _data_addr;
+    std::vector<CopyItem> _copier_input;
+    std::vector<CopyItem> _copier_reply;
 
     SyncSignal *_signal;
 
@@ -147,16 +185,33 @@ private:
     }
 
 public:
-    CollectorGroupT(int gid, const std::vector<Key> &keys, int batchsize, int hist_len,
-            SyncSignal *signal, bool verbose)
-        : _gid(gid), _batchsize(batchsize), _hist_len(hist_len),
-          _batch_collector(keys), _signal(signal), _verbose(verbose) {
+    CollectorGroupT(int gid, const std::vector<Key> &keys, int batchsize, SyncSignal *signal, bool verbose)
+        : _gid(gid), _batchsize(batchsize), _batch_collector(keys), _signal(signal), _verbose(verbose) {
     }
 
-    DataAddr &GetDataAddr() { return _data_addr; }
+    EntryInfo GetEntry(const std::string &key, int hist_len, EntryFunc entry_func) const {
+        if (key.empty()) return EntryInfo();
+
+        EntryInfo entry_info = entry_func(key);
+        entry_info.SetBatchSizeAndHistory(_batchsize, hist_len);
+        return entry_info;
+    }
+
+    void AddEntry(const std::string &input_reply, const EntryInfo &e) {
+        std::vector<CopyItem> *copier = nullptr;
+
+        if (input_reply == "input") copier = &_copier_input;
+        else if (input_reply == "reply") copier = &_copier_reply;
+        else throw std::range_error("Unknown input_reply " + input_reply);
+
+        auto *mm = State::get_mm(e.key);
+        m_assert(mm != nullptr);
+        copier->emplace_back(e.key, elf::SharedBuffer(e.p, e.byte_size), mm);
+    }
+
     int gid() const { return _gid; }
 
-    void SetBatchSize(int batchsize) { 
+    void SetBatchSize(int batchsize) {
         // std::cout << "Before send batchsize " << batchsize << std::endl;
         _batchsize_q.enqueue(batchsize);
         int dummy;
@@ -191,13 +246,17 @@ public:
                 // std::cout << "CollectorGroup: After notification. batchsize = " << _batchsize << std::endl;
             }
             _batch = _batch_collector.waitBatch(_batchsize);
+            _batch_data.clear();
+            for (In *b : _batch) {
+                _batch_data.push_back(&b->data);
+            }
 
             // Time to leave the loop.
             if (_batch.size() == 1 && _batch[0] == nullptr) break;
 
             V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Compute input. batchsize = " << _batch.size());
 
-            _data_addr.GetInputs(_batch);
+            elf::CopyToMem(_copier_input, _batch_data);
 
             // Signal.
             V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Send_batch. batchsize = " << _batch.size());
@@ -208,12 +267,13 @@ public:
             wait_batch_used();
 
             V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] PutReplies()");
-            _data_addr.PutReplies(_batch);
+
+            elf::CopyFromMem(_copier_reply, _batch_data);
 
             // Finally make the game run again.
             V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Resume games");
             for (In *in : _batch) {
-                const Key& key = in->newest().meta->query_id;
+                const Key& key = in->meta.query_id;
                 V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Resume signal sent to k = " << key);
                 _batch_collector.signalReply(key);
             }
@@ -229,7 +289,7 @@ public:
     std::vector<Key> GetBatchKeys() const {
         std::vector<Key> keys;
         for (const In *in : _batch) {
-            keys.push_back(in->newest().meta->query_id);
+            keys.push_back(in->meta.query_id);
         }
         return keys;
     }

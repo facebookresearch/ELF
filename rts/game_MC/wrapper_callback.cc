@@ -16,7 +16,7 @@
 
 typedef TrainedAI2 TrainAIType;
 static AI *get_ai(int game_idx, int frame_skip, int ai_type, int backup_ai_type,
-    const PythonOptions &options, GC::AIComm *input_ai_comm, bool use_ai_comm = false /*, int *opponent_ai_type = INVALID*/) {
+    const PythonOptions &options, Context::AIComm *input_ai_comm, bool use_ai_comm = false /*, int *opponent_ai_type = INVALID*/) {
     AIComm *ai_comm = use_ai_comm ? input_ai_comm : nullptr;
 
     switch (ai_type) {

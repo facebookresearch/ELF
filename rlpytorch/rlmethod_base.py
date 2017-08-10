@@ -38,6 +38,7 @@ class LearningMethod:
             self.args = ArgsProvider(
                 call_from = self,
                 define_args = self._args(),
+                more_args = self._more_args(),
                 on_get_args = self._init
             )
         else:
@@ -57,6 +58,10 @@ class LearningMethod:
 
     def _args(self):
         '''Return the arguments that the learning method will read from the command line'''
+        return []
+
+    def _more_args(self):
+        '''Return the arguments claim by other part of the program that the learning method will use'''
         return []
 
     @abc.abstractmethod

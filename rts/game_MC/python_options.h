@@ -8,7 +8,10 @@
 */
 
 #pragma once
-#include "../elf/python_options_utils_cpp.h"
+#include "../../elf/python_options_utils_cpp.h"
+#include "../../elf/copier.hh"
+#include "../../elf/comm_template.h"
+#include "../../elf/hist.h"
 
 // Simulation type
 #define ST_INVALID 0
@@ -103,45 +106,77 @@ struct PythonOptions {
     REGISTER_PYBIND_FIELDS(simulation_type, ai_type, backup_ai_type, opponent_ai_type, frame_skip_ai, frame_skip_opponent, output_filename, cmd_dumper_prefix, save_replay_prefix, simple_ratio, ratio_change, latest_start, latest_start_decay, max_tick, seed, mcts_threads, mcts_rollout_per_thread, game_name, handicap_level);
 };
 
-struct ExtGame {
-    int tick;
-    int winner;
-    bool terminated;
-    int player_id;
+struct GameState {
+    using State = GameState;
+    using Data = GameState;
+
+    int32_t seq;
+    int32_t game_counter;
+    char terminal;
+
+    int32_t tick;
+    int32_t winner;
+    int32_t player_id;
 
     // Extra data.
     int ai_start_tick;
 
     // Extracted feature map.
-    std::vector<float> features;
+    std::vector<float> s;
 
     // Resource for each player (one-hot representation).
-    std::vector<std::vector<float>> resources;
+    std::vector<float> res;
 
-    float last_reward;
-};
+    float last_r;
 
-struct Reply {
-    int action_type;
+    // Reply
+    int64_t action_type;
+    int32_t rv;
 
-    int global_action;
-    float value;
-    std::vector<float> action_probs;
+    int64_t a;
+    float V;
+    std::vector<float> pi;
 
     // Action per region
     // Python side will output an action map for each region for the player to follow.
-    std::vector<std::vector<std::vector<int>>> action_regions;
+    // std::vector<std::vector<std::vector<int>>> a_region;
+
+    GameState &Prepare(const SeqInfo &seq_info) {
+        seq = seq_info.seq;
+        game_counter = seq_info.game_counter;
+        // last_terminal = seq_info.last_terminal;
+        Clear();
+        return *this;
+    }
+
+    void Restart() {
+
+    }
+
+    void Init(int num_action) {
+        pi.resize(num_action, 0.0);
+    }
 
     void Clear() {
-        global_action = 0;
+        a = 0;
+        V = 0.0;
+        std::fill(pi.begin(), pi.end(), 0.0);
         action_type = ACTION_GLOBAL;
-        action_probs.resize(20, 0);
-        action_regions.resize(20);
+
+        /*
+        // TODO Specify action map dimensions in Init.
+        a_region.resize(20);
         for (size_t i = 0; i < action_regions.size(); ++i) {
             action_regions[i].resize(20);
             for (size_t j = 0; j < action_regions[i].size(); ++j) {
                 action_regions[i][j].resize(20, 0);
             }
         }
+        */
     }
+
+    DECLARE_FIELD(GameState, a, V, pi, action_type, last_r, s, res, rv, terminal, seq, game_counter);
+    REGISTER_PYBIND_FIELDS(a, V, pi, action_type, last_r, s, res, tick, winner, player_id, ai_start_tick);
 };
+
+using Context = ContextT<PythonOptions, HistT<GameState>>;

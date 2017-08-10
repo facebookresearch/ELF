@@ -25,7 +25,7 @@ PYBIND11_PLUGIN(atari_game) {
   register_common_func<GameContext>(m);
 
   CONTEXT_REGISTER(GameContext)
-    .def("get_num_actions", &GameContext::get_num_actions);
+      .def("GetParams", &GameContext::GetParams);
 
   return m.ptr();
 }

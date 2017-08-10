@@ -15,8 +15,11 @@ import argparse
 from time import sleep
 import os
 import atari_game as atari
+import torch
 
 import sys
+sys.path.append('../')
+
 from elf import GCWrapper, ContextArgs
 from rlpytorch import ArgsProvider
 
@@ -32,7 +35,8 @@ class Loader:
                 ("rom_file", "pong.bin"),
                 ("actor_only", dict(action="store_true")),
                 ("reward_clip", 1),
-                ("rom_dir", os.path.dirname(__file__))
+                ("rom_dir", os.path.dirname(__file__)),
+                ("additional_labels", dict(type=str, default=None, help="Add additional labels in the batch. E.g., id,seq,last_terminal")),
             ],
             more_args = ["batchsize", "T", "env_eval_only"],
             child_providers = [ self.context_args.args ]
@@ -54,16 +58,17 @@ class Loader:
         GC = atari.GameContext(co, opt)
         print("Version: ", GC.Version())
 
-        num_action = GC.get_num_actions()
-        print("Num Actions: ", num_action)
+        params = GC.GetParams()
+        print("Num Actions: ", params["num_action"])
 
         desc = {}
         # For actor model, No reward needed, we only want to get input and return distribution of actions.
         # sampled action and and value will be filled from the reply.
 
         desc["actor"] = dict(
-            input=dict(id="", s=str(args.hist_len), last_r="", last_terminal="", _batchsize=str(args.batchsize), _T="1"),
-            reply=dict(rv="", pi=str(num_action), V="1", a="1", _batchsize=str(args.batchsize), _T="1")
+            batchsize=args.batchsize,
+            input=dict(T=1, keys=set(["s", "last_r", "last_terminal"])),
+            reply=dict(T=1, keys=set(["rv", "pi", "V", "a"]))
         )
 
         if not args.actor_only:
@@ -71,40 +76,69 @@ class Loader:
             # We want input, action (filled by actor models), value (filled by actor
             # models) and reward.
             desc["train"] = dict(
-                input=dict(rv="", id="", pi=str(num_action), s=str(args.hist_len), a="1", r="1", V="1", seq="", terminal="", _batchsize=str(args.batchsize), _T=str(args.T)),
+                batchsize=args.batchsize,
+                input=dict(T=args.T, keys=set(["rv", "id", "pi", "s", "a", "last_r", "V", "seq", "last_terminal"])),
                 reply=None
             )
 
+        if args.additional_labels is not None:
+            extra = args.additional_labels.split(",")
+            for _, v in desc.items():
+                v["input"]["keys"].update(extra)
+
         # Initialize shared memory (between Python and C++) based on the specification defined by desc.
-        params = dict()
-        params["num_action"] = GC.get_num_actions()
         params["num_group"] = 1 if args.actor_only else 2
-        params["action_batchsize"] = int(desc["actor"]["input"]["_batchsize"])
+        params["action_batchsize"] = desc["actor"]["batchsize"]
         if not args.actor_only:
-            params["train_batchsize"] = int(desc["train"]["input"]["_batchsize"])
+            params["train_batchsize"] = desc["train"]["batchsize"]
         params["hist_len"] = args.hist_len
         params["T"] = args.T
 
         return GCWrapper(GC, co, desc, use_numpy=False, params=params)
 
-cmd_line = "--num_games 16 --batchsize 4 --hist_len 1 --frame_skip 4 --actor_only"
+cmd_line = "--num_games 64 --batchsize 16 --hist_len 1 --frame_skip 4 --actor_only"
 
 nIter = 5000
 elapsed_wait_only = 0
 
+import pickle
+import random
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    if len(sys.argv) > 1:
+        cmd_line = sys.argv[1:]
+    else:
+        cmd_line = cmd_line.split(" ")
 
     loader = Loader()
-    args = ArgsProvider.Load(parser, [loader], cmd_line=cmd_line.split(" "))
+    args = ArgsProvider.Load(parser, [loader], cmd_line=cmd_line)
 
     GC = loader.initialize()
 
+    actor_count = 0
+    train_count = 0
     def actor(sel, sel_gpu):
-        # pickle.dump(to_numpy(sel), open("tmp%d.bin" % k, "wb"), protocol=2)
-        return dict(a=[0]*sel[0]["s"].size(0))
+        global actor_count, GC
+        actor_count += 1
+        batchsize = sel["s"].size(1)
+        actions = [ random.randint(0, GC.params["num_action"]-1) for i in range(batchsize) ]
+        reply = dict(a=actions)
+
+        '''
+        data = sel.to_numpy()
+        data.update(reply)
+        pickle.dump(data, open("tmp-actor%d.bin" % actor_count, "wb"), protocol=2)
+        '''
+        return reply
+
+    def train(sel, sel_gpu):
+        global train_count
+        # pickle.dump(sel.to_numpy(), open("tmp-train%d.bin" % train_count, "wb"), protocol=2)
+        train_count += 1
 
     GC.reg_callback("actor", actor)
+    GC.reg_callback("train", train)
 
     reward_dist = Counter()
 

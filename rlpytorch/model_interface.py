@@ -53,13 +53,16 @@ class ModelInterface:
         return mi
 
 
-    def add_model(self, key, model, copy=False, cuda=False, optim_params={}):
+    def add_model(self, key, model, copy=False, cuda=False, gpu_id=None, optim_params={}):
         if key in self.models: return False
 
         # New model.
         self.models[key] = model.clone() if copy else model
         if cuda:
-            self.models[key].cuda()
+            if gpu_id is not None:
+                self.models[key].cuda(device_id=gpu_id)
+            else:
+                self.models[key].cuda()
 
         curr_model = self.models[key]
         if len(optim_params) > 0:

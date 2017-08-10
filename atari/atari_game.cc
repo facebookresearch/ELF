@@ -75,6 +75,7 @@ AtariGame::AtariGame(const GameOptions& opt)
   _width = s.width(), _height = s.height();
   _action_set = _ale->getMinimalActionSet();
   _distr_action.reset(new std::uniform_int_distribution<>(0, _action_set.size() - 1));
+  _buf.resize(kBufSize, 0);
 }
 
 void AtariGame::MainLoop(const std::atomic_bool& done) {
@@ -96,23 +97,29 @@ void AtariGame::MainLoop(const std::atomic_bool& done) {
       if (done.load()) {
         return;
       }
-      _ai_comm->Prepare();
-      _fill_state(*_ai_comm->GetData());
+      auto& gs = _ai_comm->Prepare();
+      _fill_state(gs);
 
       int act;
       if (i < start_loc) {
           act = (*_distr_action)(g);
-          _ai_comm->FillInReply(Reply(act, 0.0));
+          gs.a = act;
+          gs.V = 0;
       } else {
           _ai_comm->SendDataWaitReply();
-          act = _ai_comm->history().newest().reply.action;
+          act = gs.a;
           // act = (*_distr_action)(g);
           // std::cout << "[" << _game_idx << "]: " << act << std::endl;
       }
 
       // Illegal action.
+      // std::cout << "[" << _game_idx << "][" << gs.seq.game_counter << "][" << gs.seq.seq << "] act: "
+      //          << act << "[a=" << gs.reply.action << "][V=" << gs.reply.value << "]" << std::endl;
       if (act < 0 || act >= _action_set.size() || _ale->game_over()) break;
-      if (_eval_only) act = _prevent_stuck(g, act);
+      if (_eval_only) {
+          act = _prevent_stuck(g, act);
+          gs.a = act;
+      }
       int frame_skip = distr_frame_skip(g);
       _last_reward = 0;
       for (int j = 0; j < frame_skip; ++j) {
@@ -155,7 +162,6 @@ int AtariGame::_prevent_stuck(std::default_random_engine &g, int act) {
     if (_last_act_count >= kMaxRep) {
       // The player might get stuck. Save it.
       act = (*_distr_action)(g);
-      _ai_comm->history().newest().reply.action = act;
     }
   } else {
     // Reset counter.
@@ -185,61 +191,25 @@ void AtariGame::_copy_screen(GameState &state) {
     _h.Push();
 
     // Then you put all the history state to game state.
-    state.buf.resize(_h.maxlen() * stride);
+    state.s.resize(_h.maxlen() * stride);
     for (int i = 0; i < _h.size(); ++i) {
         const auto &v = _h.get_from_push(i);
-        std::copy(v.begin(), v.end(), &state.buf[i * stride]);
+        std::copy(v.begin(), v.end(), &state.s[i * stride]);
     }
     if (_h.size() < _h.maxlen()) {
         const int n_missing = _h.maxlen() - _h.size();
-        ::memset(&state.buf[_h.size() * stride], 0, sizeof(float) * sizeof(n_missing * stride));
+        ::memset(&state.s[_h.size() * stride], 0, sizeof(float) * sizeof(n_missing * stride));
     }
 }
 
 void AtariGame::_fill_state(GameState& state) {
     state.tick = _ale->getEpisodeFrameNumber();
-    state.last_reward = _last_reward;
+    state.last_r = _last_reward;
     if (_reward_clip > 0.0) {
-        state.last_reward = std::max(std::min(state.last_reward, _reward_clip), -_reward_clip);
+        state.last_r = std::max(std::min(state.last_r, _reward_clip), -_reward_clip);
     }
     state.lives = _ale->lives();
     _copy_screen(state);
 }
 
-bool CustomFieldFunc(int batchsize, const std::string& key,
-    const std::string& v, SizeType *sz, FieldBase<HistType> **p) {
-    // Note that ptr and stride will be set after the memory are initialized in the Python side.
-    if (key == "s") {
-        const int hist_len = stoi(v);
-        *sz = SizeType{batchsize, 3 * hist_len, kHeightRatio, kWidthRatio};
-        *p = new FieldState();
-    } else if (key == "pi") {
-        const int action_len = stoi(v);
-        *sz = SizeType{batchsize, action_len};
-        *p = new FieldPolicy();
-    } else if (key == "a") {
-        *sz = SizeType{batchsize};
-        *p = new FieldAction();
-    } else if (key == "r") {
-        // const float reward_limit = stof(v);
-        *sz = SizeType{batchsize};
-        *p = new FieldReward();
-    } else if (key == "last_r") {
-        // const float reward_limit = stof(v);
-        *sz = SizeType{batchsize};
-        *p = new FieldLastReward();
-    } else if (key == "V") {
-        const int value_len = stoi(v);
-        *sz = SizeType{batchsize, value_len};
-        *p = new FieldValue();
-    } else if (key == "terminal") {
-        *sz = SizeType{batchsize};
-        *p = new FieldTerminal();
-    } else if (key == "last_terminal") {
-        *sz = SizeType{batchsize};
-        *p = new FieldLastTerminal();
-    } else {
-        return false;
-    }
-    return true;
-}
+

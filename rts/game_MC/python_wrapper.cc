@@ -14,30 +14,37 @@
 #include <string>
 #include <iostream>
 
-#include "../engine/fields.h"
 #include "../engine/wrapper_template.h"
 #include "wrapper_callback.h"
-
-using GC = ContextT<PythonOptions, ExtGame, Reply>;
+#include "ai.h"
 
 class GameContext {
 public:
-    using GC = ContextT<PythonOptions, ExtGame, Reply>;
+    using GC = Context;
 
 private:
+    int _T;
     std::unique_ptr<GC> _context;
 
 public:
     GameContext(const ContextOptions& context_options, const PythonOptions& options) {
+      _T = context_options.T;
       // Initialize enums.
       init_enums();
       WrapperCallbacks::GlobalInit();
 
-      _context.reset(new GC{context_options, options, CustomFieldFunc});
+      _context.reset(new GC{context_options, options});
     }
 
     void Start() {
-        _context->Start(thread_main<WrapperCallbacks, GC::AIComm>);
+        auto data_init = [&](int game_idx, HistT<GameState> &hstate) {
+            (void)game_idx;
+            hstate.InitHist(_T);
+            for (auto &item : hstate.v()) {
+                item.Init(GameDef::GetNumAction());
+            }
+        };
+        _context->Start(data_init, thread_main<WrapperCallbacks, GC::AIComm, PythonOptions>);
     }
 
     const std::string &game_unittype2str(int unit_type) const {
@@ -47,14 +54,35 @@ public:
         return _AIState2string((AIState)ai_state);
     }
 
-    int get_num_actions() const { return GameDef::GetNumAction(); }
-    int get_num_unittype() const { return GameDef::GetNumUnitType(); }
+    std::map<std::string, int> GetParams() const {
+        return std::map<std::string, int>{
+            { "num_action", GameDef::GetNumAction() },
+            { "num_unit_type", GameDef::GetNumUnitType() },
+            { "resource_dim", 2 * NUM_RES_SLOT }
+        };
+    }
+
+    CONTEXT_CALLS(GC, _context);
+
+    EntryInfo EntryFunc(const std::string &key) {
+        auto *mm = GameState::get_mm(key);
+        if (mm == nullptr) return EntryInfo();
+
+        std::string type_name = mm->type();
+
+        if (key == "s") return EntryInfo(key, type_name, {GameDef::GetNumUnitType() + 7, 20, 20});
+        else if (key == "last_r" || key == "terminal" || key == "id" || key == "seq" || key == "game_counter") return EntryInfo(key, type_name);
+        else if (key == "pi") return EntryInfo(key, type_name, {GameDef::GetNumAction()});
+        else if (key == "a" || key == "rv" || key == "V") return EntryInfo(key, type_name);
+        else if (key == "res") return EntryInfo(key, type_name, {2, NUM_RES_SLOT});
+
+        return EntryInfo();
+    }
 
     void Stop() {
       _context.reset(nullptr); // first stop the threads, then destroy the games
     }
 
-    CONTEXT_CALLS(GC, _context);
 };
 
 #define CONST(v) m.attr(#v) = py::int_(v)
@@ -63,8 +91,7 @@ PYBIND11_PLUGIN(minirts) {
   py::module m("minirts", "MiniRTS game");
   register_common_func<GameContext>(m);
   CONTEXT_REGISTER(GameContext)
-    .def("get_num_actions", &GameContext::get_num_actions)
-    .def("get_num_unittype", &GameContext::get_num_unittype);
+    .def("GetParams", &GameContext::GetParams);
 
   // Define symbols.
   CONST(ST_INVALID);

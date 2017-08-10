@@ -13,29 +13,31 @@
 #include "python_options.h"
 #include "td_rule_actor.h"
 
-using Context = ContextT<PythonOptions, ExtGame, Reply>;
-using AIComm = AICommT<Context>;
+using Comm = Context::Comm;
+using AIComm = AICommT<Comm>;
+using Data = typename AIComm::Data;
 
-class AIBase : public AIWithComm<AIComm, ExtGame> {
+class AIBase : public AIWithComm<AIComm> {
 protected:
     float last_hp_level = 1.0;
 
-    void on_save_data(ExtGame *game) override {
+    void on_save_data(Data *data) override {
+        GameState *game = &data->newest();
         if (game->winner != INVALID) return;
 
         // assign partial rewards
         if (game->base_hp_level < last_hp_level) {
-            game->last_reward = game->base_hp_level - last_hp_level;
-            game->base_hp_level = last_hp_level;
+            game->last_r = game->base_hp_level - last_hp_level;
+            last_hp_level = game->base_hp_level;
         }
     }
     // Feature extraction.
-    void save_structured_state(const GameEnv &env, ExtGame *game) const override;
+    void save_structured_state(const GameEnv &env, Data *data) const override;
 
 public:
     AIBase() { }
     AIBase(PlayerId id, int frameskip, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
-        : AIWithComm<AIComm, ExtGame>(id, frameskip, receiver, ai_comm) {
+        : AIWithComm<AIComm>(id, frameskip, receiver, ai_comm) {
     }
 };
 
@@ -57,9 +59,9 @@ private:
         if (_backup_ai != nullptr) _backup_ai->SetCmdReceiver(receiver);
     }
 
-    void on_save_data(ExtGame *game) override {
-        this->AIBase::on_save_data(game);
-        game->ai_start_tick = _backup_ai_tick_thres;
+    void on_save_data(Data *data) override {
+        this->AIBase::on_save_data(data);
+        data->newest().ai_start_tick = _backup_ai_tick_thres;
     }
 
     bool need_structured_state(Tick tick) const override {

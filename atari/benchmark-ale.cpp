@@ -44,6 +44,7 @@ std::vector<int> avail(Nth, 0);
 std::atomic_int cntavail{0};
 
 double benchmark(int job) {
+    (void)job;
     std::unique_ptr<ALEInterface> _ale;
 
     int i = 0;
@@ -70,9 +71,9 @@ double benchmark(int job) {
     int N = 10000;
     Timer tm;
     for (i = 0; i < N; ++i) {
-      auto tick = _ale->getEpisodeFrameNumber();
+      // auto tick = _ale->getEpisodeFrameNumber();
       bool terminated = _ale->game_over();
-      int l = _ale->lives();
+      // int l = _ale->lives();
       if (terminated)
         _ale->reset_game();
       vector<unsigned char> buf;

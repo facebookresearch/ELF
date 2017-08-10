@@ -9,7 +9,7 @@
 
 #include "game.h"
 
-template <typename WrapperCB, typename AIComm> 
+template <typename WrapperCB, typename AIComm, typename PythonOptions>
 void thread_main(int game_idx, const PythonOptions &options, const std::atomic_bool &done, AIComm *ai_comm) {
     const string& replay_prefix = options.save_replay_prefix;
 

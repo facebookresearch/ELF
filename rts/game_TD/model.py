@@ -61,8 +61,6 @@ class Model_ActorCritic(Model):
 
     def forward(self, x):
         s = x["s"]
-        #print(s.size())
-        #print(s.type())
         output = self.net(self._var(s))
         policy = self.softmax(self.linear_policy(output))
         value = self.linear_value(output)

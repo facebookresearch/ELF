@@ -10,6 +10,7 @@
 #pragma once
 
 #include "comm_template.h"
+#include "hist.h"
 #include <pybind11/pybind11.h>
 
 namespace py = pybind11;
@@ -18,6 +19,7 @@ template <typename GameContext>
 void register_common_func(py::module &m) {
   using GC = typename GameContext::GC;
   using Options = typename GC::Options;
+  using State = typename GC::State;
 
   PYCLASS_WITH_FIELDS(m, ContextOptions)
     .def(py::init<>())
@@ -30,6 +32,13 @@ void register_common_func(py::module &m) {
     .def(py::init<>());
 
   PYCLASS_WITH_FIELDS(m, Infos);
+
+  PYCLASS_WITH_FIELDS(m, State);
+
+  using HistState = HistT<State>;
+  PYCLASS_WITH_FIELDS(m, HistState)
+    .def("newest", [](const HistState &hstate, int i) { return hstate.newest(i); })
+    .def("size", &HistState::size);
 
   PYCLASS_WITH_FIELDS(m, MetaInfo);
 }
@@ -46,31 +55,20 @@ void register_common_func(py::module &m) {
   void Steps(const Infos& infos) { context->Steps(infos); } \
   std::string Version() const { return context->Version(); } \
   void PrintSummary() const { context->PrintSummary(); } \
-  int AddCollectors(int batchsize, int hist_len, int exclusive_id) { return context->AddCollectors(batchsize, hist_len, exclusive_id); } \
+  int AddCollectors(int batchsize, int hist_len, int exclusive_id) { \
+    return context->comm().AddCollectors(batchsize, hist_len, exclusive_id); \
+  } \
   const MetaInfo &meta(int i) const { return context->meta(i); } \
+  const typename GC::Data &env(int i) const { return context->env(i); } \
   int size() const { return context->size(); } \
 \
-  int CreateTensor(int gid, const std::string &key, const std::map<std::string, std::string> &desc) {\
-      if (key == "input") \
-         return context->GetDataAddr(gid).GetInputService().Create(desc); \
-      else if (key == "reply") \
-         return context->GetDataAddr(gid).GetReplyService().Create(desc); \
-      else throw std::range_error("Invalid key " + key); \
+  EntryInfo GetTensorSpec(int gid, const std::string &key, int T) { \
+      return context->comm().GetCollectorGroup(gid).GetEntry(key, T, [&](const std::string &key) { return EntryFunc(key); }); \
   } \
-  EntryInfo GetTensorInfo(int gid, const std::string &key, int k) { \
-      if (key == "input") \
-         return context->GetDataAddr(gid).GetInputService().entries()[k].entry_info;\
-      else if (key == "reply") \
-        return context->GetDataAddr(gid).GetReplyService().entries()[k].entry_info;\
-      else throw std::range_error("Invalid key " + key); \
+  void AddTensor(int gid, const std::string &input_reply, const EntryInfo &e) { \
+      context->comm().GetCollectorGroup(gid).AddEntry(input_reply, e); \
   } \
-  void SetTensorAddr(int gid, const std::string &key, int k, int64_t p, int stride) { \
-      if (key == "input") \
-         context->GetDataAddr(gid).GetInputService().entries()[k].Set(p, stride);\
-      else if (key == "reply") \
-         context->GetDataAddr(gid).GetReplyService().entries()[k].Set(p, stride);\
-      else throw std::range_error("Invalid key " + key); \
-  } \
+
 
 #define CONTEXT_REGISTER(GameContext) \
   using GC = typename GameContext::GC; \
@@ -86,7 +84,8 @@ void register_common_func(py::module &m) {
     .def("Stop", &GameContext::Stop) \
     .def("__getitem__", &GameContext::meta) \
     .def("__len__", &GameContext::size) \
-    .def("CreateTensor", &GameContext::CreateTensor) \
-    .def("GetTensorInfo", &GameContext::GetTensorInfo) \
-    .def("SetTensorAddr", &GameContext::SetTensorAddr) \
+    .def("AddTensor", &GameContext::AddTensor) \
+    .def("GetTensorSpec", &GameContext::GetTensorSpec) \
+    .def("meta", &GameContext::meta, py::return_value_policy::reference) \
+    .def("env", &GameContext::env, py::return_value_policy::reference) \
 

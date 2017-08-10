@@ -17,6 +17,7 @@
 
 #include "../elf/pybind_helper.h"
 #include "../elf/comm_template.h"
+#include "../elf/ai_comm.h"
 #include "atari_game_specific.h"
 
 class AtariGameSummary {
@@ -31,6 +32,9 @@ public:
     void Print() const;
 };
 
+using Context = ContextT<GameOptions, HistT<GameState>>;
+using Comm = typename Context::Comm;
+using AIComm = AICommT<Comm>;
 
 class AtariGame {
   private:
@@ -48,10 +52,10 @@ class AtariGame {
     std::vector<unsigned char> _buf;
     CircularQueue<std::vector<float>> _h;
 
-    reward_t _reward_clip;
+    float _reward_clip;
     bool _eval_only;
 
-    reward_t _last_reward = 0;
+    float _last_reward = 0;
     AtariGameSummary _summary;
 
     static const int kMaxRep = 30;

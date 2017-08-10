@@ -12,7 +12,7 @@ from .model_base import Model
 from .model_loader import ModelLoader
 from .utils import EvalCount, RewardCount, WinRate, load_module
 from .model_interface import ModelInterface
-from .trainer import Sampler, Trainer, StatsCollector, SingleProcessRun, EvaluationProcess, MultiProcessRun
+from .trainer import Sampler, Trainer, SingleProcessRun, EvaluationProcess, MultiProcessRun
 
 del args_utils
 del rlmethod_common
