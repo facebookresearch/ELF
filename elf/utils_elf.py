@@ -32,7 +32,7 @@ class Batch:
 
     def _request(GC, group_id, key, T):
         info = GC.GetTensorSpec(group_id, key, T)
-        print("Key = \"%s\"" % str(key))
+        # print("Key = \"%s\"" % str(key))
         if info.key == '':
             print(key + " is not found, try last_" + key)
             last_key = "last_" + key
