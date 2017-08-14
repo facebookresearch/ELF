@@ -7,11 +7,14 @@ The simulator is similar to OpenAI Gym "-v0" setting, in which we apply the same
 
 Compilation
 ===================
-Please first install Arcade Learning Environment ([ALE](https://github.com/mgbellemare/Arcade-Learning-Environment)).
+First, install Arcade Learning Environment ([ALE](https://github.com/mgbellemare/Arcade-Learning-Environment)).
 
-After that, just `make` then run `python game.py --rom_file [your game rom file]` to test whether you can run the environment alone. You can put the game rom file in this directory. We do not provide you with the game rom file.
+Then `mkdir build && cd build && cmake .. && make`
 
-If you have both python2 and python3 installed, use `PYTHON_CONFIG=[your python dir]/python-config make`.
+Run `python game.py --rom_file [your game rom file]` to test whether you can run the environment alone.
+You can find roms at [atari_py](https://github.com/openai/atari-py/tree/master/atari_py/atari_roms)
+
+To select the Python version, use cmake flags `-DPYTHON_LIBRARY=/path/to/libpythonX.Y.so -DPYTHON_INCLUDE_DIR=/dir/with/python/headers/`
 The training code in this repo has to use Python3.
 
 Performance

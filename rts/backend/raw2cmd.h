@@ -10,8 +10,8 @@
 #ifndef _RAW2CMD_H_
 #define _RAW2CMD_H_
 
-#include "../engine/game_env.h"
-#include "../engine/cmd.h"
+#include "engine/game_env.h"
+#include "engine/cmd.h"
 class CmdReceiver;
 
 // RawMsgStatus. 

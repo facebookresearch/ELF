@@ -10,8 +10,8 @@
 #ifndef _TD_RULE_ACTOR_H_
 #define _TD_RULE_ACTOR_H_
 
-#include "../engine/rule_actor.h"
-#include "../engine/cmd.h"
+#include "engine/rule_actor.h"
+#include "engine/cmd.h"
 #include "cmd_specific.gen.h"
 
 class TDRuleActor : public RuleActor {

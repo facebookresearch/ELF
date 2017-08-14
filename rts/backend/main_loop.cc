@@ -10,11 +10,11 @@
 //File: main_loop.cc
 //Author: Yuandong Tian <yuandong.tian@gmail.com>
 //
-#include "../engine/common.h"
-#include "../engine/unit.h"
-#include "../engine/game.h"
-#include "../engine/cmd_util.h"
-#include "../engine/ai.h"
+#include "engine/common.h"
+#include "engine/unit.h"
+#include "engine/game.h"
+#include "engine/cmd_util.h"
+#include "engine/ai.h"
 #include "ai.h"
 #include "comm_ai.h"
 #include "player_selector.h"
@@ -31,7 +31,6 @@
 #include <memory>
 #include <chrono>
 #include <thread>
-#include "../../elf/ctpl_stl.h"
 
 using Parser = CmdLineUtils::CmdLineParser;
 

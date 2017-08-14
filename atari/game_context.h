@@ -15,7 +15,7 @@
 #include <pybind11/stl_bind.h>
 
 #include "atari_game.h"
-#include "../elf/pybind_interface.h"
+#include "elf/pybind_interface.h"
 
 class GameContext {
   public:

@@ -14,7 +14,7 @@
 #include <string>
 #include <iostream>
 
-#include "../engine/wrapper_template.h"
+#include "engine/wrapper_template.h"
 #include "wrapper_callback.h"
 #include "ai.h"
 

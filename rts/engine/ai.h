@@ -8,8 +8,6 @@
 */
 #pragma once
 
-#include "../../elf/comm_template.h"
-
 #include "cmd_receiver.h"
 #include "rule_actor.h"
 #include <atomic>

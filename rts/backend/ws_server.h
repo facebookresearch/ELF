@@ -9,8 +9,6 @@
 #include "websocketpp/config/asio_no_tls.hpp"
 #include "websocketpp/server.hpp"
 
-#include "../../elf/lib/debugutils.hh"
-
 namespace {
 
 using websocketpp::lib::placeholders::_1;
@@ -69,7 +67,7 @@ class WSServer {
     };
 
     void on_open(websocketpp::connection_hdl hdl) {
-      m_assert(!hdl_);  // we only allow single client
+      assert(!hdl_);  // we only allow single client
       hdl_.reset(new websocketpp::connection_hdl{hdl});
     }
 

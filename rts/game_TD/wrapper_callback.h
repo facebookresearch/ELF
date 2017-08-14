@@ -9,10 +9,10 @@
 
 #pragma once
 
-#include "../../elf/comm_template.h"
-#include "../../elf/pybind_interface.h"
+#include "elf/comm_template.h"
+#include "elf/pybind_interface.h"
 
-#include "../engine/game.h"
+#include "engine/game.h"
 #include "python_options.h"
 
 class WrapperCallbacks {

@@ -15,9 +15,9 @@
 #include <ale/ale_interface.hpp>
 #include <string>
 
-#include "../elf/pybind_helper.h"
-#include "../elf/comm_template.h"
-#include "../elf/ai_comm.h"
+#include "elf/pybind_helper.h"
+#include "elf/comm_template.h"
+#include "elf/ai_comm.h"
 #include "atari_game_specific.h"
 
 class AtariGameSummary {

@@ -8,8 +8,8 @@
 */
 
 #include "ai.h"
-#include "../engine/game_env.h"
-#include "../engine/unit.h"
+#include "engine/game_env.h"
+#include "engine/unit.h"
 
 void AIBase::save_structured_state(const GameEnv &env, Data *data) const {
     GameState *game = &data->newest();

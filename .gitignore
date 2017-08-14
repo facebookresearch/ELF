@@ -10,3 +10,6 @@ tags
 *.swp
 *.swo
 *.DS_Store
+build
+CMakeFiles
+CMakeCache.txt
