@@ -58,12 +58,14 @@ def remote_run(context, batch_gpu):
 
 class Eval:
     def __init__(self):
+        self.stats = Stats("eval")
         self.args = ArgsProvider(
             call_from = self,
             define_args = [
-                ("stats", dict(type=str, choices=["rewards", "winrate"], default="rewards")),
-                ("num_eval", 500)
-            ]
+                ("num_eval", 500),
+                ("eval_multinomial", dict(action="store_true"))
+            ],
+            child_providers = [ self.stats.args ]
         )
 
     def setup(self, all_args):
@@ -80,25 +82,14 @@ class Eval:
         self.GC.setup_gpu(self.gpu)
 
         self.sampler = Sampler()
-        self.sampler.args.set(all_args, greedy=True)
+        self.sampler.args.set(all_args, greedy=not self.args.eval_multinomial)
 
         self.trainer = Trainer()
         self.trainer.args.set(all_args)
 
-        if self.args.stats == "rewards":
-            self.collector = RewardCount()
-        elif self.args.stats == "winrate":
-            self.collector = WinRate()
-
         def actor(sel, sel_gpu):
             reply = self.trainer.actor(sel, sel_gpu)
-            v = sel[0]
-
-            for batch_idx, (id, last_terminal) in enumerate(zip(v["id"], v["last_terminal"])):
-                self.collector.feed(id, v["last_r"][batch_idx])
-                if last_terminal:
-                    self.collector.terminal(id)
-
+            self.stats.feed_batch(sel)
             return reply
 
         self.GC.reg_callback("actor", actor)
@@ -106,7 +97,7 @@ class Eval:
         self.GC.Start()
 
     def step(self, k, mi):
-        c = self.collector
+        c = self.stats
 
         c.reset_on_new_model()
 
@@ -126,9 +117,7 @@ class Eval:
             while c.count_completed() < self.args.num_eval:
                 self.GC.Run()
 
-        summary = c.summary()
-        for k, v in summary.items():
-            print("%s: %s" % (str(k), str(v)))
+        c.print_summary()
 
     def __del__(self):
         self.GC.Stop()

@@ -20,13 +20,15 @@ using Data = typename AIComm::Data;
 
 class AIBase : public AIWithComm<AIComm> {
 protected:
+    bool _respect_fow;
+
     // Feature extraction.
     void save_structured_state(const GameEnv &env, Data *data) const override;
 
 public:
     AIBase() { }
-    AIBase(PlayerId id, int frameskip, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
-        : AIWithComm<AIComm>(id, frameskip, receiver, ai_comm) {
+    AIBase(PlayerId id, int frameskip, bool respect_fow, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
+        : AIWithComm<AIComm>(id, frameskip, receiver, ai_comm), _respect_fow(respect_fow) {
     }
 };
 
@@ -69,8 +71,8 @@ protected:
     RuleActor *rule_actor() override { return &_mc_rule_actor; }
 
 public:
-    TrainedAI2(PlayerId id, int frame_skip, CmdReceiver *receiver, AIComm *ai_comm, AI *backup_ai = nullptr)
-      : AIBase(id, frame_skip, receiver, ai_comm), _backup_ai_tick_thres(0) {
+    TrainedAI2(PlayerId id, int frame_skip, bool respect_fow, CmdReceiver *receiver, AIComm *ai_comm, AI *backup_ai = nullptr)
+      : AIBase(id, frame_skip, respect_fow, receiver, ai_comm), _backup_ai_tick_thres(0) {
           if (ai_comm == nullptr) {
               throw std::range_error("TrainedAI2: ai_comm cannot be nullptr!");
           }
@@ -96,7 +98,7 @@ public:
     SimpleAI() {
     }
     SimpleAI(PlayerId id, int frame_skip, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
-        : AIBase(id, frame_skip, receiver, ai_comm)  {
+        : AIBase(id, frame_skip, true, receiver, ai_comm)  {
     }
 
     SERIALIZER_DERIVED(SimpleAI, AIBase, _state);
@@ -113,7 +115,7 @@ public:
     HitAndRunAI() {
     }
     HitAndRunAI(PlayerId id, int frame_skip, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
-        : AIBase(id, frame_skip, receiver, ai_comm) {
+        : AIBase(id, frame_skip, true, receiver, ai_comm) {
     }
 
     SERIALIZER_DERIVED(HitAndRunAI, AIBase, _state);

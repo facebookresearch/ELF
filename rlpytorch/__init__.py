@@ -10,7 +10,8 @@ from .rlmethod_common import ActorCritic
 from .rlmethod_base import LearningMethod
 from .model_base import Model
 from .model_loader import ModelLoader
-from .utils import EvalCount, RewardCount, WinRate, load_module
+from .utils import load_module
+from .stats import EvalCount, RewardCount, WinRate, Stats
 from .model_interface import ModelInterface
 from .trainer import Sampler, Trainer, SingleProcessRun, EvaluationProcess, MultiProcessRun
 
@@ -20,5 +21,6 @@ del rlmethod_base
 del model_base
 del model_loader
 del utils
+del stats
 del model_interface
 del trainer

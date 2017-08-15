@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'elf'))
 import utils_elf
 from .args_utils import ArgsProvider
 from .parameter_server import SharedData, ParameterServer
+from .stats import Stats
 
 import threading
 import tqdm
@@ -51,6 +52,7 @@ class Trainer:
     def __init__(self):
         self.timer = RLTimer()
         self.last_time = None
+        self.stats = Stats("trainer")
         self.args = ArgsProvider(
             call_from = self,
             define_args = [
@@ -60,7 +62,8 @@ class Trainer:
                 ("save_dir", dict(type=str, default=None)),
             ],
             more_args = ["num_games", "batchsize", "num_minibatch"],
-            on_get_args = self._on_get_args
+            on_get_args = self._on_get_args,
+            child_providers = [ self.stats.args ],
         )
         self.just_update = False
 
@@ -73,6 +76,8 @@ class Trainer:
         # Use environment variable "save" if there is any.
         if args.save_dir is None:
             args.save_dir = os.environ.get("save", "./")
+
+        self.stats.reset()
 
     def train(self, sel, sel_gpu):
         # training procedure.
@@ -101,6 +106,7 @@ class Trainer:
         state_curr = self.mi.forward("actor", sel_gpu.hist(0))
         action = self.sampler.sample(state_curr)
 
+        self.stats.feed_batch(sel)
         reply_msg = dict(pi=state_curr["pi"].data, a=action, V=state_curr["V"].data, rv=self.mi["actor"].step)
 
         self.timer.Record("compute_actor")
@@ -132,6 +138,9 @@ class Trainer:
         print("Command arguments " + str(args.command_line))
         self.rl_method.print_stats(global_counter=i)
         print("")
+        self.stats.print_summary()
+        if self.stats.count_completed() > 10000:
+            self.stats.reset()
 
         self.timer.Restart()
 

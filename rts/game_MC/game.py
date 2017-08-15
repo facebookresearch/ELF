@@ -30,10 +30,12 @@ class Loader:
                 ("max_tick", dict(type=int, default=30000, help="Maximal tick")),
                 ("mcts_threads", 64),
                 ("seed", 0),
+                ("without_fow", dict(action="store_true")),
                 ("simple_ratio", -1),
                 ("ratio_change", 0),
                 ("actor_only", dict(action="store_true")),
                 ("additional_labels", dict(type=str, default=None, help="Add additional labels in the batch. E.g., id,seq,last_terminal")),
+                ("model_no_spatial", dict(action="store_true")) # TODO, put it to model
             ],
             more_args = ["batchsize", "T"],
             child_providers = [ self.context_args.args ]
@@ -64,6 +66,7 @@ class Loader:
         opt.handicap_level = args.handicap_level
         opt.simple_ratio = args.simple_ratio
         opt.ratio_change = args.ratio_change
+        opt.with_fow = not args.without_fow
         # opt.output_filename = b"simulators.txt"
         # opt.cmd_dumper_prefix = b"cmd-dump"
         # opt.save_replay_prefix = b"replay"
@@ -101,7 +104,8 @@ class Loader:
             num_group = 1 if args.actor_only else 2,
             action_batchsize = int(desc["actor"]["batchsize"]),
             train_batchsize = int(desc["train"]["batchsize"]) if not args.actor_only else None,
-            T = args.T
+            T = args.T,
+            model_no_spatial = args.model_no_spatial
         ))
 
         return GCWrapper(GC, co, desc, use_numpy=False, params=params)

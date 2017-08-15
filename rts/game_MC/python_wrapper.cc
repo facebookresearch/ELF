@@ -38,10 +38,9 @@ public:
 
     void Start() {
         auto data_init = [&](int game_idx, HistT<GameState> &hstate) {
-            (void)game_idx;
             hstate.InitHist(_T);
             for (auto &item : hstate.v()) {
-                item.Init(GameDef::GetNumAction());
+                item.Init(game_idx, GameDef::GetNumAction());
             }
         };
         _context->Start(data_init, thread_main<WrapperCallbacks, GC::AIComm, PythonOptions>);
@@ -71,7 +70,7 @@ public:
         std::string type_name = mm->type();
 
         if (key == "s") return EntryInfo(key, type_name, {GameDef::GetNumUnitType() + 7, 20, 20});
-        else if (key == "last_r" || key == "terminal" || key == "id" || key == "seq" || key == "game_counter") return EntryInfo(key, type_name);
+        else if (key == "last_r" || key == "terminal" || key == "last_terminal" || key == "id" || key == "seq" || key == "game_counter") return EntryInfo(key, type_name);
         else if (key == "pi") return EntryInfo(key, type_name, {GameDef::GetNumAction()});
         else if (key == "a" || key == "rv" || key == "V") return EntryInfo(key, type_name);
         else if (key == "res") return EntryInfo(key, type_name, {2, NUM_RES_SLOT});

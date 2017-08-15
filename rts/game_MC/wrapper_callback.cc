@@ -25,7 +25,7 @@ static AI *get_ai(int game_idx, int frame_skip, int ai_type, int backup_ai_type,
        case AI_HIT_AND_RUN:
            return new HitAndRunAI(INVALID, frame_skip, nullptr, ai_comm);
        case AI_NN:
-           return new TrainAIType(INVALID, frame_skip, nullptr, ai_comm, get_ai(game_idx, frame_skip, backup_ai_type, AI_INVALID, options, input_ai_comm));
+           return new TrainAIType(INVALID, frame_skip, options.with_fow, nullptr, ai_comm, get_ai(game_idx, frame_skip, backup_ai_type, AI_INVALID, options, input_ai_comm));
        /*case AI_MCTS_VALUE:
        {
            AI *ai = new MCTS_VALUE_AI(INVALID, frame_skip, nullptr, ai_comm, options.mcts_threads, options.mcts_rollout_per_thread);
