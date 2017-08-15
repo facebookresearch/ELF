@@ -41,7 +41,7 @@ class Loader:
             child_providers = [ self.context_args.args ]
         )
 
-    def initialize(self):
+    def _init_gc(self):
         args = self.args
 
         co = minirts.ContextOptions()
@@ -78,27 +78,75 @@ class Loader:
         print("Num Actions: ", params["num_action"])
         print("Num unittype: ", params["num_unit_type"])
 
-        desc = {}
-        # For actor model, no reward needed, we only want to get input and return distribution of actions.
-        # sampled action and and value will be filled from the reply.
-        desc["actor"] = dict(
-            batchsize=args.batchsize,
+        return GC, params
+
+    def _add_more_labels(self, desc):
+        args = self.args
+        if args.additional_labels is None: return
+
+        extra = args.additional_labels.split(",")
+        for _, v in desc.items():
+            v["input"]["keys"].update(extra)
+
+    def _add_player_id(self, desc, player_id):
+        desc["filters"] = dict(player_id=player_id)
+
+    def _get_actor_spec(self):
+        desc = dict(
+            batchsize=self.args.batchsize,
             input=dict(T=1, keys=set(["s", "res", "last_r", "terminal"])),
             reply=dict(T=1, keys=set(["rv", "pi", "V", "a"]))
         )
 
+    def _get_train_spec(self):
+        return dict(
+            batchsize=self.args.batchsize,
+            input=dict(T=self.args.T, keys=set(["rv", "pi", "s", "res", "a", "last_r", "V", "terminal"])),
+            reply=None
+        )
+
+    def initialize(self):
+        GC, params = self._init_gc()
+
+        desc = {}
+        # For actor model, no reward needed, we only want to get input and return distribution of actions.
+        # sampled action and and value will be filled from the reply.
+        desc["actor"] = self._get_actor_spec()
+
         if not args.actor_only:
             # For training, we want input, action (filled by actor models), value (filled by actor models) and reward.
-            desc["train"] = dict(
-                batchsize=args.batchsize,
-                input=dict(T=args.T, keys=set(["rv", "pi", "s", "res", "a", "last_r", "V", "terminal"])),
-                reply=None
-            )
+            desc["train"] = self._get_train_spec()
 
-        if args.additional_labels is not None:
-            extra = args.additional_labels.split(",")
-            for _, v in desc.items():
-                v["input"]["keys"].update(extra)
+        self._add_more_labels(desc)
+
+        params.update(dict(
+            num_group = 1 if args.actor_only else 2,
+            action_batchsize = int(desc["actor"]["batchsize"]),
+            train_batchsize = int(desc["train"]["batchsize"]) if not args.actor_only else None,
+            T = args.T,
+            model_no_spatial = args.model_no_spatial
+        ))
+
+        return GCWrapper(GC, co, desc, use_numpy=False, params=params)
+
+    def initialize_selfplay(self):
+        GC, params = self._init_gc()
+
+        desc = {}
+        # For actor model, no reward needed, we only want to get input and return distribution of actions.
+        # sampled action and and value will be filled from the reply.
+        desc["actor0"] = self._get_actor_spec()
+        desc["actor1"] = self._get_actor_spec()
+
+        self._add_player_id(desc["actor0"], 0)
+        self._add_player_id(desc["actor1"], 1)
+
+        if not args.actor_only:
+            # For training, we want input, action (filled by actor models), value (filled by actor models) and reward.
+            desc["train"] = self._get_train_spec()
+            self._add_player_id(desc["train"], 0)
+
+        self._add_more_labels(desc)
 
         params.update(dict(
             num_group = 1 if args.actor_only else 2,
