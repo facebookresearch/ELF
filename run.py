@@ -62,7 +62,8 @@ class Eval:
         self.args = ArgsProvider(
             call_from = self,
             define_args = [
-                ("num_eval", 500)
+                ("num_eval", 500),
+                ("eval_multinomial", dict(action="store_true"))
             ],
             child_providers = [ self.stats.args ]
         )
@@ -81,7 +82,7 @@ class Eval:
         self.GC.setup_gpu(self.gpu)
 
         self.sampler = Sampler()
-        self.sampler.args.set(all_args, greedy=True)
+        self.sampler.args.set(all_args, greedy=not self.args.eval_multinomial)
 
         self.trainer = Trainer()
         self.trainer.args.set(all_args)
