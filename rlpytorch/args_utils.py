@@ -37,8 +37,12 @@ class ArgsProvider:
 
         self._define_args = define_args
         self._more_args = more_args
+        self.override_args = dict()
         self._on_get_args = on_get_args
-        self._arg_keys = list(list(zip(*self._define_args))[0])
+        if len(self._define_args) == 0:
+            self._arg_keys = []
+        else:
+            self._arg_keys = list(list(zip(*self._define_args))[0])
         self._child_providers = child_providers
         self._call_from = call_from
 

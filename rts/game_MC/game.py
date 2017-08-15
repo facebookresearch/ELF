@@ -78,7 +78,7 @@ class Loader:
         print("Num Actions: ", params["num_action"])
         print("Num unittype: ", params["num_unit_type"])
 
-        return GC, params
+        return co, GC, params
 
     def _add_more_labels(self, desc):
         args = self.args
@@ -92,7 +92,7 @@ class Loader:
         desc["filters"] = dict(player_id=player_id)
 
     def _get_actor_spec(self):
-        desc = dict(
+        return dict(
             batchsize=self.args.batchsize,
             input=dict(T=1, keys=set(["s", "res", "last_r", "terminal"])),
             reply=dict(T=1, keys=set(["rv", "pi", "V", "a"]))
@@ -106,7 +106,8 @@ class Loader:
         )
 
     def initialize(self):
-        GC, params = self._init_gc()
+        co, GC, params = self._init_gc()
+        args = self.args
 
         desc = {}
         # For actor model, no reward needed, we only want to get input and return distribution of actions.
@@ -130,7 +131,8 @@ class Loader:
         return GCWrapper(GC, co, desc, use_numpy=False, params=params)
 
     def initialize_selfplay(self):
-        GC, params = self._init_gc()
+        co, GC, params = self._init_gc()
+        args = self.args
 
         desc = {}
         # For actor model, no reward needed, we only want to get input and return distribution of actions.

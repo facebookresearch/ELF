@@ -108,7 +108,7 @@ class Trainer:
             ],
             more_args = ["num_games", "batchsize", "num_minibatch"],
             on_get_args = self._on_get_args,
-            child_providers = [ self.stats.args, self.evaluator.args ],
+            child_providers = [ self.evaluator.args ],
         )
         self.just_update = False
 
@@ -123,7 +123,7 @@ class Trainer:
             args.save_dir = os.environ.get("save", "./")
 
     def actor(self, sel, sel_gpu):
-        return self.evaluator(sel, sel_gpu)
+        return self.evaluator.actor(sel, sel_gpu)
 
     def train(self, sel, sel_gpu):
         # training procedure.
@@ -141,14 +141,15 @@ class Trainer:
             # Update actor model
             # print("Update actor model")
             # Save the current model.
-            self.mi.update_model("actor", self.mi["model"])
+            mi = self.evaluator.mi
+            mi.update_model("actor", mi["model"])
             self.just_updated = True
 
         self.just_updated = False
 
     def episode_start(self, i):
         self.train_count = 0
-        self.evaluator.episode_start()
+        self.evaluator.episode_start(i)
 
     def episode_summary(self, i):
         args = self.args
@@ -171,7 +172,7 @@ class Trainer:
         self.rl_method.print_stats(global_counter=i)
         print("")
 
-        self.evaluator.episode_summary()
+        self.evaluator.episode_summary(i)
         self.timer.Restart()
 
     def setup(self, rl_method=None, mi=None, sampler=None):

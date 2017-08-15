@@ -57,9 +57,9 @@ if __name__ == '__main__':
         trainer.episode_summary(i)
         evaluator.episode_summary(i)
 
-    def start():
-        trainer.episode_start()
-        evaluator.episode_start()
+    def start(i):
+        trainer.episode_start(i)
+        evaluator.episode_start(i)
 
     runner.setup(GC, episode_summary=summary, episode_start=start)
     runner.run()
