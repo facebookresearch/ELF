@@ -40,8 +40,7 @@ void AIBase::save_structured_state(const GameEnv &env, Data *data) const {
     // Extra data.
     game->ai_start_tick = 0;
 
-    PlayerId visibility_check = _player_id;
-    // PlayerId visibility_check = INVALID;
+    PlayerId visibility_check = _respect_fow ? _player_id : INVALID;
 
     auto unit_iter = env.GetUnitIterator(visibility_check);
     float total_hp_ratio = 0.0;

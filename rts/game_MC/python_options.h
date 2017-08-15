@@ -76,6 +76,8 @@ struct PythonOptions {
     // of PythonOption.seed and the thread id.
     int seed;
 
+    bool with_fow;
+
     int mcts_threads;
     int mcts_rollout_per_thread;
     int game_name;
@@ -84,7 +86,7 @@ struct PythonOptions {
     PythonOptions()
       : simulation_type(ST_NORMAL), ai_type(AI_SIMPLE), backup_ai_type(AI_SIMPLE), opponent_ai_type(AI_SIMPLE),
         frame_skip_ai(1), frame_skip_opponent(1), simple_ratio(1.0), ratio_change(0.0), latest_start(0),
-        latest_start_decay(0.9), max_tick(30000), seed(0), mcts_threads(1), mcts_rollout_per_thread(1),
+        latest_start_decay(0.9), max_tick(30000), seed(0), with_fow(true), mcts_threads(1), mcts_rollout_per_thread(1),
         game_name(0), handicap_level(0) {
     }
 
@@ -97,13 +99,14 @@ struct PythonOptions {
         std::cout << "Max tick: " << max_tick << std::endl;
         std::cout << "Latest_start: " << latest_start << " decay: " << latest_start_decay << std::endl;
         std::cout << "Seed: " << seed << std::endl;
+        std::cout << "With FoW: " << with_fow << std::endl;
         std::cout << "MCTS #threads: " << mcts_threads << " #rollout/thread: " << mcts_rollout_per_thread << std::endl;
         std::cout << "Output_prompt_filename: \"" << output_filename << "\"" << std::endl;
         std::cout << "Cmd_dumper_prefix: \"" << cmd_dumper_prefix << "\"" << std::endl;
         std::cout << "Save_replay_prefix: \"" << save_replay_prefix << "\"" << std::endl;
     }
 
-    REGISTER_PYBIND_FIELDS(simulation_type, ai_type, backup_ai_type, opponent_ai_type, frame_skip_ai, frame_skip_opponent, output_filename, cmd_dumper_prefix, save_replay_prefix, simple_ratio, ratio_change, latest_start, latest_start_decay, max_tick, seed, mcts_threads, mcts_rollout_per_thread, game_name, handicap_level);
+    REGISTER_PYBIND_FIELDS(simulation_type, ai_type, backup_ai_type, opponent_ai_type, frame_skip_ai, frame_skip_opponent, output_filename, cmd_dumper_prefix, save_replay_prefix, simple_ratio, ratio_change, latest_start, latest_start_decay, max_tick, seed, with_fow, mcts_threads, mcts_rollout_per_thread, game_name, handicap_level);
 };
 
 struct GameState {
