@@ -76,6 +76,8 @@ struct PythonOptions {
     // of PythonOption.seed and the thread id.
     int seed;
 
+    bool with_fow;
+
     int mcts_threads;
     int mcts_rollout_per_thread;
     int game_name;
@@ -84,7 +86,7 @@ struct PythonOptions {
     PythonOptions()
       : simulation_type(ST_NORMAL), ai_type(AI_SIMPLE), backup_ai_type(AI_SIMPLE), opponent_ai_type(AI_SIMPLE),
         frame_skip_ai(1), frame_skip_opponent(1), simple_ratio(1.0), ratio_change(0.0), latest_start(0),
-        latest_start_decay(0.9), max_tick(30000), seed(0), mcts_threads(1), mcts_rollout_per_thread(1),
+        latest_start_decay(0.9), max_tick(30000), seed(0), with_fow(true), mcts_threads(1), mcts_rollout_per_thread(1),
         game_name(0), handicap_level(0) {
     }
 
@@ -97,22 +99,25 @@ struct PythonOptions {
         std::cout << "Max tick: " << max_tick << std::endl;
         std::cout << "Latest_start: " << latest_start << " decay: " << latest_start_decay << std::endl;
         std::cout << "Seed: " << seed << std::endl;
+        std::cout << "With FoW: " << with_fow << std::endl;
         std::cout << "MCTS #threads: " << mcts_threads << " #rollout/thread: " << mcts_rollout_per_thread << std::endl;
         std::cout << "Output_prompt_filename: \"" << output_filename << "\"" << std::endl;
         std::cout << "Cmd_dumper_prefix: \"" << cmd_dumper_prefix << "\"" << std::endl;
         std::cout << "Save_replay_prefix: \"" << save_replay_prefix << "\"" << std::endl;
     }
 
-    REGISTER_PYBIND_FIELDS(simulation_type, ai_type, backup_ai_type, opponent_ai_type, frame_skip_ai, frame_skip_opponent, output_filename, cmd_dumper_prefix, save_replay_prefix, simple_ratio, ratio_change, latest_start, latest_start_decay, max_tick, seed, mcts_threads, mcts_rollout_per_thread, game_name, handicap_level);
+    REGISTER_PYBIND_FIELDS(simulation_type, ai_type, backup_ai_type, opponent_ai_type, frame_skip_ai, frame_skip_opponent, output_filename, cmd_dumper_prefix, save_replay_prefix, simple_ratio, ratio_change, latest_start, latest_start_decay, max_tick, seed, with_fow, mcts_threads, mcts_rollout_per_thread, game_name, handicap_level);
 };
 
 struct GameState {
     using State = GameState;
     using Data = GameState;
 
+    int32_t id;
     int32_t seq;
     int32_t game_counter;
     char terminal;
+    char last_terminal;
 
     int32_t tick;
     int32_t winner;
@@ -144,7 +149,7 @@ struct GameState {
     GameState &Prepare(const SeqInfo &seq_info) {
         seq = seq_info.seq;
         game_counter = seq_info.game_counter;
-        // last_terminal = seq_info.last_terminal;
+        last_terminal = seq_info.last_terminal;
         Clear();
         return *this;
     }
@@ -153,7 +158,8 @@ struct GameState {
 
     }
 
-    void Init(int num_action) {
+    void Init(int iid, int num_action) {
+        id = iid;
         pi.resize(num_action, 0.0);
     }
 
@@ -175,8 +181,8 @@ struct GameState {
         */
     }
 
-    DECLARE_FIELD(GameState, a, V, pi, action_type, last_r, s, res, rv, terminal, seq, game_counter);
-    REGISTER_PYBIND_FIELDS(a, V, pi, action_type, last_r, s, res, tick, winner, player_id, ai_start_tick);
+    DECLARE_FIELD(GameState, id, a, V, pi, action_type, last_r, s, res, rv, terminal, seq, game_counter, last_terminal);
+    REGISTER_PYBIND_FIELDS(id, a, V, pi, action_type, last_r, s, res, tick, winner, player_id, ai_start_tick, last_terminal);
 };
 
 using Context = ContextT<PythonOptions, HistT<GameState>>;

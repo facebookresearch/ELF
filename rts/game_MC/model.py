@@ -69,14 +69,28 @@ class Model_ActorCritic(Model):
         assert isinstance(params["num_action"], int), "num_action has to be a number. action = " + str(params["num_action"])
         self.params = params
         self.net = MiniRTSNet(args)
-        linear_in_dim = (params["num_unit_type"] + 7) * 25
+
+        if self.params.get("model_no_spatial", False):
+            self.num_unit = params["num_unit_type"]
+            linear_in_dim = (params["num_unit_type"] + 7)
+        else:
+            linear_in_dim = (params["num_unit_type"] + 7) * 25
+
         self.linear_policy = nn.Linear(linear_in_dim, params["num_action"])
         self.linear_value = nn.Linear(linear_in_dim, 1)
         self.softmax = nn.Softmax()
 
     def forward(self, x):
-        s, res = x["s"], x["res"]
-        output = self.net(self._var(s), self._var(res))
+        if self.params.get("model_no_spatial", False):
+            # Replace a complicated network with a simple retraction.
+            # Input: batchsize, channel, height, width
+            xreduced = x["s"].sum(2).sum(3).squeeze()
+            xreduced[:, self.num_unit:] /= 20 * 20
+            output = self._var(xreduced)
+        else:
+            s, res = x["s"], x["res"]
+            output = self.net(self._var(s), self._var(res))
+
         policy = self.softmax(self.linear_policy(output))
         value = self.linear_value(output)
         return value, dict(V=value, pi=policy)
