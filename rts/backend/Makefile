@@ -61,7 +61,7 @@ $(OBJ_DIR)/%.d: %.cc Makefile
 
 $(TARGET): $(OBJS) $(GAME_OBJS)
 	@echo "Linking ..."
-	$(CXX) $^ -o $@ $(LDFLAGS) $(CXXFLAGS)
+	@$(CXX) $^ -o $@ $(LDFLAGS) $(CXXFLAGS)
 	@echo "done."
 
 clean:
