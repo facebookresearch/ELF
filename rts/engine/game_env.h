@@ -126,7 +126,7 @@ public:
 
     // Initialize different units for this game.
     void InitGameDef() {
-        _gamedef.InitUnits();
+        _gamedef.Init();
     }
     const GameDef &GetGameDef() const { return _gamedef; }
 

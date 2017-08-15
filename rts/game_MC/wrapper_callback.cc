@@ -26,19 +26,6 @@ static AI *get_ai(int game_idx, int frame_skip, int ai_type, int backup_ai_type,
            return new HitAndRunAI(INVALID, frame_skip, nullptr, ai_comm);
        case AI_NN:
            return new TrainAIType(INVALID, frame_skip, options.with_fow, nullptr, ai_comm, get_ai(game_idx, frame_skip, backup_ai_type, AI_INVALID, options, input_ai_comm));
-       /*case AI_MCTS_VALUE:
-       {
-           AI *ai = new MCTS_VALUE_AI(INVALID, frame_skip, nullptr, ai_comm, options.mcts_threads, options.mcts_rollout_per_thread);
-           switch (opponent_ai_type) {
-               case AI_SIMPLE:
-                   ai->SetFactory([&](int r) -> AI* { return new SimpleAI(INVALID, r, nullptr, nullptr);});
-                   break;
-               case AI_HIT_AND_RUN:
-                   ai->SetFactory([&](int r) -> AI* { return new HitAndRunAI(INVALID, r, nullptr, nullptr);});
-                   break;
-           }
-           return ai;
-       }*/
        default:
            throw std::range_error("Unknown ai_type! ai_type: " + std::to_string(ai_type) +
                    " backup_ai_type: " + std::to_string(backup_ai_type) + " use_ai_comm: " + std::to_string(use_ai_comm));

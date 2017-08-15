@@ -17,6 +17,9 @@
 #include <algorithm>
 
 class AI {
+public:
+    using RegFunc = std::function<AI *(const std::string &spec)>;
+
 protected:
     PlayerId _player_id;
     CmdReceiver *_receiver;
@@ -42,6 +45,8 @@ protected:
     }
     void actual_send_cmds(const GameEnv &env, AssignedCmds &assigned_cmds);
     bool gather_decide(const GameEnv &env, std::function<bool (const GameEnv&, string *, AssignedCmds *)> func);
+
+    static std::map<std::string, RegFunc> _factories;
 
 public:
     AI() : _player_id(INVALID), _receiver(nullptr), _frame_skip(1) { }
@@ -79,7 +84,6 @@ public:
     }
 
     virtual bool NeedAct(Tick tick) const { return tick % _frame_skip == 0; }
-    virtual void SetFactory(std::function<AI* (int)> factory) { (void)factory; }
 
     // Get internal state.
     // [TODO]: Not a good interface..
@@ -89,6 +93,16 @@ public:
     // This is for visualization.
     virtual bool IsUnitSelected(UnitId) const { return false; }
     virtual vector<int> GetAllSelectedUnits() const { return vector<int>(); }
+
+    // Factory method given specification. 
+    static AI *CreateAI(const std::string &name, const std::string& spec) {
+        auto it = _factories.find(name);
+        if (it == _factories.end()) return nullptr;
+        return it->second(spec);
+    }
+    static void RegisterAI(const std::string &name, RegFunc reg_func) {
+        _factories.insert(std::make_pair(name, reg_func));
+    } 
 
     SERIALIZER_BASE(AI, _player_id);
     SERIALIZER_ANCHOR(AI);
@@ -132,7 +146,6 @@ public:
 
     // Save game state to communicate with python wrapper.
     string PlotStructuredState(const GameEnv &env) const override;
-    void SetFactory(std::function<AI* (int)> factory) override { _factory = factory; }
 
     void SetState(vector<int> state) { _state = state; }
     vector<int> GetState() const override { return _state; }

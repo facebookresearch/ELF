@@ -34,7 +34,7 @@ bool GameDef::CheckAddUnit(RTSMap *_map, UnitType, const PointF& p) const{
     return _map->CanPass(p, INVALID);
 }
 
-void GameDef::InitUnits() {
+void GameDef::Init() {
     _units.assign(GetNumUnitType(), UnitTemplate());
     _units[FLAG_BASE] = _C(0, 1, 0, 0.0, 0, 0, 5, {0, 0, 0, 1}, vector<CmdType>{BUILD}, ATTR_INVULNERABLE);
     _units[FLAG] = _C(0, 1, 0, 0, 0, 0, 0, vector<int>{0, 0, 0, 0}, vector<CmdType>{}, ATTR_INVULNERABLE);
