@@ -58,12 +58,13 @@ def remote_run(context, batch_gpu):
 
 class Eval:
     def __init__(self):
+        self.stats = Stats("eval")
         self.args = ArgsProvider(
             call_from = self,
             define_args = [
-                ("stats", dict(type=str, choices=["rewards", "winrate"], default="rewards")),
                 ("num_eval", 500)
-            ]
+            ],
+            child_providers = [ self.stats.args ]
         )
 
     def setup(self, all_args):
@@ -85,22 +86,9 @@ class Eval:
         self.trainer = Trainer()
         self.trainer.args.set(all_args)
 
-        if self.args.stats == "rewards":
-            self.collector = RewardCount()
-        elif self.args.stats == "winrate":
-            self.collector = WinRate()
-
         def actor(sel, sel_gpu):
             reply = self.trainer.actor(sel, sel_gpu)
-            ids = sel["id"][0]
-            last_terminals = sel["last_terminal"][0]
-            last_r = sel["last_r"][0]
-
-            for batch_idx, (id, last_terminal) in enumerate(zip(ids, last_terminals)):
-                self.collector.feed(id, last_r[batch_idx])
-                if last_terminal:
-                    self.collector.terminal(id)
-
+            self.stats.feed_batch(sel)
             return reply
 
         self.GC.reg_callback("actor", actor)
@@ -108,7 +96,7 @@ class Eval:
         self.GC.Start()
 
     def step(self, k, mi):
-        c = self.collector
+        c = self.stats
 
         c.reset_on_new_model()
 
@@ -128,9 +116,7 @@ class Eval:
             while c.count_completed() < self.args.num_eval:
                 self.GC.Run()
 
-        summary = c.summary()
-        for k, v in summary.items():
-            print("%s: %s" % (str(k), str(v)))
+        c.print_summary()
 
     def __del__(self):
         self.GC.Stop()
