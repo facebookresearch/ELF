@@ -28,6 +28,18 @@
 #include "ai_comm.h"
 #include "stats.h"
 
+struct GroupStat {
+    int gid;
+    int hist_len;
+    int player_id;
+
+    GroupStat() : gid(-1), hist_len(1), player_id(-1) { }
+
+    // Note that gid will be set by C++ side.
+    REGISTER_PYBIND_FIELDS(hist_len, player_id);
+};
+
+
 template <typename T>
 struct CondPerGroupT {
     int last_used_seq, last_seq;
@@ -38,7 +50,7 @@ struct CondPerGroupT {
 
     CondPerGroupT() : last_used_seq(0), last_seq(0), game_counter(0), freq_send(0) { }
 
-    bool Check(int hist_len, const T &info) {
+    bool Check(const GroupStat &gstat, const T &info) {
         // Update game counter.
         int new_game_counter = info.data.newest().game_counter;
         if (new_game_counter > game_counter) {
@@ -48,7 +60,7 @@ struct CondPerGroupT {
         }
         int curr_seq = info.data.newest().seq;
         last_seq = curr_seq;
-        if (info.data.size() < hist_len || curr_seq - last_used_seq < hist_len - hist_overlap) return false;
+        if (info.data.size() < gstat.hist_len || curr_seq - last_used_seq < gstat.hist_len - hist_overlap) return false;
         last_used_seq = curr_seq;
         return true;
     }
@@ -82,18 +94,13 @@ private:
         }
     };
 
-    struct GroupStat {
-        std::vector<int> hist_lens;
-        std::vector<int> subgroup;
-    };
-
     ContextOptions _context_options;
 
     std::random_device _rd;
     std::mt19937 _g;
 
     std::vector<Key> _keys;
-    std::vector<GroupStat> _exclusive_groups;
+    std::vector<std::vector<GroupStat>> _exclusive_groups;
 
     std::vector<std::unique_ptr<CollectorGroup> > _groups;
     ctpl::thread_pool _pool;
@@ -133,16 +140,15 @@ public:
         init_stats();
     }
 
-    int AddCollectors(int batchsize, int hist_len, int exclusive_id) {
+    int AddCollectors(int batchsize, int exclusive_id, const GroupStat &gstat) {
         _groups.emplace_back(new CollectorGroup(_groups.size(), _keys, batchsize, _signal.get(), _context_options.verbose_collector));
         int gid = _groups.size() - 1;
 
         if ((int)_exclusive_groups.size() <= exclusive_id) {
             _exclusive_groups.emplace_back();
         }
-        _exclusive_groups[exclusive_id].subgroup.push_back(gid);
-        _exclusive_groups[exclusive_id].hist_lens.push_back(hist_len);
-
+        _exclusive_groups[exclusive_id].push_back(gstat);
+        _exclusive_groups[exclusive_id].back().gid = gid;
         return gid;
     }
 
@@ -179,19 +185,16 @@ public:
 
         // For each exclusive group, randomly select one.
         for (size_t i = 0; i < _exclusive_groups.size(); ++i) {
-            const auto& subgroup = _exclusive_groups[i].subgroup;
-            const auto& hist_lens = _exclusive_groups[i].hist_lens;
-            int idx = _g() % subgroup.size();
-            int gid = subgroup[idx];
-            int hist_len = hist_lens[idx];
+            int idx = _g() % _exclusive_groups[i].size();
+            const GroupStat &gstat = _exclusive_groups[i][idx];
 
-            if (stats.conds[i].Check(hist_len, info)) {
-                V_PRINT(_verbose, "[k=" << key << "] Pass test for group " << gid << " hist_len = " << hist_len);
+            if (stats.conds[i].Check(gstat, info)) {
+                V_PRINT(_verbose, "[k=" << key << "] Pass test for group " << gstat.gid << " hist_len = " << gstat.hist_len);
                 stats.conds[i].freq_send ++;
 
-                _groups[gid]->SendData(key, &info);
-                str_selected_groups += std::to_string(gid) + ",";
-                selected_groups.push_back(gid);
+                _groups[gstat.gid]->SendData(key, &info);
+                str_selected_groups += std::to_string(gstat.gid) + ",";
+                selected_groups.push_back(gstat.gid);
             }
         }
 

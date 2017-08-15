@@ -177,10 +177,12 @@ class GCWrapper:
             T = input["T"]
             if reply is not None and reply["T"] > T:
                 T = reply["T"]
+            gstat = GC.CreateGroupStat()
+            gstat.hist_len = T
 
             gpu2gid.append(list())
             for i in range(num_recv_thread):
-                group_id = GC.AddCollectors(batchsize, T, len(gpu2gid) - 1)
+                group_id = GC.AddCollectors(batchsize, len(gpu2gid) - 1, gstat)
 
                 inputs.append(Batch.load(GC, "input", input, group_id, use_gpu=use_gpu, use_numpy=use_numpy))
                 if reply is not None:

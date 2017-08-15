@@ -31,6 +31,9 @@ void register_common_func(py::module &m) {
   PYCLASS_WITH_FIELDS(m, EntryInfo)
     .def(py::init<>());
 
+  PYCLASS_WITH_FIELDS(m, GroupStat)
+    .def(py::init<>());
+
   PYCLASS_WITH_FIELDS(m, Infos);
 
   PYCLASS_WITH_FIELDS(m, State);
@@ -55,8 +58,9 @@ void register_common_func(py::module &m) {
   void Steps(const Infos& infos) { context->Steps(infos); } \
   std::string Version() const { return context->Version(); } \
   void PrintSummary() const { context->PrintSummary(); } \
-  int AddCollectors(int batchsize, int hist_len, int exclusive_id) { \
-    return context->comm().AddCollectors(batchsize, hist_len, exclusive_id); \
+  GroupStat CreateGroupStat() const { return GroupStat(); } \
+  int AddCollectors(int batchsize, int exclusive_id, const GroupStat &gstat) { \
+    return context->comm().AddCollectors(batchsize, exclusive_id, gstat); \
   } \
   const MetaInfo &meta(int i) const { return context->meta(i); } \
   const typename GC::Data &env(int i) const { return context->env(i); } \
@@ -79,13 +83,14 @@ void register_common_func(py::module &m) {
     .def("Steps", &GameContext::Steps, py::call_guard<py::gil_scoped_release>()) \
     .def("Version", &GameContext::Version) \
     .def("PrintSummary", &GameContext::PrintSummary) \
+    .def("CreateGroupStat", &GameContext::CreateGroupStat, py::return_value_policy::copy) \
     .def("AddCollectors", &GameContext::AddCollectors) \
     .def("Start", &GameContext::Start) \
     .def("Stop", &GameContext::Stop) \
     .def("__getitem__", &GameContext::meta) \
     .def("__len__", &GameContext::size) \
     .def("AddTensor", &GameContext::AddTensor) \
-    .def("GetTensorSpec", &GameContext::GetTensorSpec) \
+    .def("GetTensorSpec", &GameContext::GetTensorSpec, py::return_value_policy::copy) \
     .def("meta", &GameContext::meta, py::return_value_policy::reference) \
     .def("env", &GameContext::env, py::return_value_policy::reference) \
 
