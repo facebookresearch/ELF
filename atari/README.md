@@ -14,7 +14,7 @@ Then `mkdir build && cd build && cmake .. && make`
 Run `python game.py --rom_file [your game rom file]` to test whether you can run the environment alone.
 You can find roms at [atari_py](https://github.com/openai/atari-py/tree/master/atari_py/atari_roms)
 
-To select the Python version, use cmake flags `-DPYTHON_LIBRARY=/path/to/libpythonX.Y.so -DPYTHON_INCLUDE_DIR=/dir/with/python/headers/`
+To select the Python installation to compile with, use cmake flags `-DPYTHON_EXECUTABLE=/path/to/your/python`
 The training code in this repo has to use Python3.
 
 Performance

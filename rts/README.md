@@ -13,7 +13,9 @@ A backend runs in the terminal and communicates with the front-end webpage to dr
 How to compile
 ============
 
-Run the command: `mkdir build && cd build && cmake .. -DGAME_DIR=../game_MC && make`
+In directory `rts`, run the command: `mkdir build && cd build && cmake .. -DGAME_DIR=../game_MC && make`
+
+To select the Python installation to compile with, use cmake flags `-DPYTHON_EXECUTABLE=/path/to/your/python`
 
 You will see a dynamic library `minirts.so` to be loaded by Python.
 You need to copy this dynamic library to where you'll run your python scripts.
