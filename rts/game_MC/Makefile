@@ -20,7 +20,7 @@ PYTHON_CONFIG ?= python3-config
 OPTFLAGS ?= -O3 -msse3
 # OPTFLAGS ?= -g3 -fsanitize=address,undefined,leak -O2 -lasan
 # OPTFLAGS ?= -g3 -fsanitize=leak -O2 -lubsan
-DEFINES = -DDEBUG #-DUSE_PYBIND11
+DEFINES = -DDEBUG -DUSE_PYBIND11
 
 # generated files
 GENERATE_DEF_FILES := ../engine/cmd.def ../engine/cmd_specific.def cmd_specific.def
@@ -34,7 +34,8 @@ LIBS = zlib
 INCLUDE_DIR += -I. $(shell pkg-config --cflags $(LIBS)) -isystem ../../vendor
 INCLUDE_DIR += $(shell $(PYTHON_CONFIG) --cflags | cut -d ' ' -f 1)
 LDFLAGS += $(shell pkg-config $(LIBS) --libs)
-LDFLAGS += $(shell $(PYTHON_CONFIG) --ldflags)
+# LDFLAGS += $(shell $(PYTHON_CONFIG) --ldflags)
+LDFLAGS += $(shell $(PYTHON_CONFIG) --libs)
 
 CXXFLAGS ?=
 CXXFLAGS += $(INCLUDE_DIR)

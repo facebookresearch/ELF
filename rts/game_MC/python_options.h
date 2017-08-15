@@ -121,6 +121,8 @@ struct GameState {
 
     int32_t tick;
     int32_t winner;
+
+    // Used for self-play.
     int32_t player_id;
 
     // Extra data.

@@ -51,6 +51,11 @@ struct CondPerGroupT {
     CondPerGroupT() : last_used_seq(0), last_seq(0), game_counter(0), freq_send(0) { }
 
     bool Check(const GroupStat &gstat, const T &info) {
+        // Check whether this record is even relevant. 
+        // If we have specified player id and the player id from the info is irrelevant 
+        // from what is specified, then we skip. 
+        if (gstat.player_id != -1 && gstat.player_id != info.player_id) return false;
+
         // Update game counter.
         int new_game_counter = info.data.newest().game_counter;
         if (new_game_counter > game_counter) {
@@ -60,6 +65,8 @@ struct CondPerGroupT {
         }
         int curr_seq = info.data.newest().seq;
         last_seq = curr_seq;
+
+        // Check whether we want to put this record in. 
         if (info.data.size() < gstat.hist_len || curr_seq - last_used_seq < gstat.hist_len - hist_overlap) return false;
         last_used_seq = curr_seq;
         return true;

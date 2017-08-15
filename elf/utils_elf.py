@@ -180,6 +180,10 @@ class GCWrapper:
             gstat = GC.CreateGroupStat()
             gstat.hist_len = T
 
+            # If we specifiy filters, we need to put the info into gstat.
+            filters = v.get("filters", {})
+            gstat.player_id = filters.get("id", -1)
+
             gpu2gid.append(list())
             for i in range(num_recv_thread):
                 group_id = GC.AddCollectors(batchsize, len(gpu2gid) - 1, gstat)

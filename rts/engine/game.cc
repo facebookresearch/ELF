@@ -53,6 +53,7 @@ void RTSGame::AddBot(AI *bot) {
 }
 
 void RTSGame::RemoveBot() {
+    // WARNING: [TODO] Memory leak!!
     _bots.pop_back();
     _env.RemovePlayer();
 }
