@@ -68,7 +68,7 @@ bool add_players(const string &args, int frame_skip, RTSGame *game) {
         //else if (player == "td_simple") bots.push_back(new TDSimpleAI(INVALID, frame_skip, nullptr));
         //else if (player == "td_built_in") bots.push_back(new TDBuiltInAI(INVALID, frame_skip, nullptr));
         else {
-            AI *ai = AI::CreateAI(std::to_string(frame_skip));
+            AI *ai = AI::CreateAI(player, std::to_string(frame_skip));
             if (ai != nullptr) {
                 bots.push_back(ai);
             } else {
@@ -409,8 +409,8 @@ int main(int argc, char *argv[]) {
                 RTSGame game(options);
                 //game.AddBot(new SimpleAI(INVALID, frame_skip, nullptr));
                 //game.AddBot(new SimpleAI(INVALID, frame_skip, nullptr));
-                game.AddBot(PlayerSelector::GetPlayer("simple", frame_skip));
-                game.AddBot(PlayerSelector::GetPlayer("simple", frame_skip));
+                game.AddBot(AI::CreateAI("simple", std::to_string(frame_skip)));
+                game.AddBot(AI::CreateAI("simple", std::to_string(frame_skip)));
                 bool infinite = (games == 0);
                 for (int j = 0; j < games || infinite; ++j) {
                     push_q(q, game.MainLoop());

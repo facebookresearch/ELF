@@ -23,14 +23,6 @@ bool CmdGenerateMap::run(GameEnv *env, CmdReceiver*) {
 #define _CREATE(...) receiver->SendCmd(CmdIPtr(new CmdCreate(INVALID, __VA_ARGS__)))
 #define _CHANGE_RES(...) receiver->SendCmd(CmdIPtr(new CmdChangePlayerResource(INVALID, __VA_ARGS__)))
 
-bool CmdGameStart::run(GameEnv *env, CmdReceiver *receiver) {
-    for (const auto &info : env->GetMap().GetPlayerMapInfo()) {
-        _CREATE(BASE, PointF(info.base_coord), info.player_id);
-        _CREATE(RESOURCE, PointF(info.resource_coord), info.player_id);
-        _CHANGE_RES(info.player_id, info.initial_resource);
-    }
-    return true;
-}
 
 bool CmdGameStartSpecific::run(GameEnv*, CmdReceiver* receiver) {
     const PlayerId player_id = 0;
@@ -57,6 +49,13 @@ bool CmdGameStartSpecific::run(GameEnv*, CmdReceiver* receiver) {
 
 bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
     auto f = env->GetRandomFunc();
+    bool shuffle = (f(2) == 0);
+    for (const auto &info : env->GetMap().GetPlayerMapInfo()) {
+        PlayerId id = shuffle ? info.player_id : 1 - info.player_id;
+        _CREATE(BASE, PointF(info.base_coord), id);
+        _CREATE(RESOURCE, PointF(info.resource_coord), id);
+        _CHANGE_RES(id, info.initial_resource);
+    }
     auto gen_loc = [&] (int player_id) -> PointF {
         // Note that we could not write
         //    PointF( f(8) + ...,  f(8) + ...)
@@ -68,18 +67,19 @@ bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
         return PointF(x, y);
     };
     for (PlayerId player_id = 0; player_id < 2; player_id++) {
+        PlayerId id = shuffle ? player_id : 1 - player_id;
         // Generate workers (up to three).
         for (int i = 0; i < 3; i++) {
             if (f(10) >= 5) {
-                _CREATE(WORKER, gen_loc(player_id), player_id);
+                _CREATE(WORKER, gen_loc(player_id), id);
             }
         }
         if (f(10) >= 8)
-            _CREATE(BARRACKS, gen_loc(player_id), player_id);
+            _CREATE(BARRACKS, gen_loc(player_id), id);
         if (f(10) >= 5)
-            _CREATE(MELEE_ATTACKER, gen_loc(player_id), player_id);
+            _CREATE(MELEE_ATTACKER, gen_loc(player_id), id);
         if (f(10) >= 5)
-            _CREATE(RANGE_ATTACKER, gen_loc(player_id), player_id);
+            _CREATE(RANGE_ATTACKER, gen_loc(player_id), id);
     }
     return true;
 }
