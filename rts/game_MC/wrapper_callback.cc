@@ -40,18 +40,24 @@ void WrapperCallbacks::GlobalInit() {
     reg_minirts_specific();
 }
 
+void WrapperCallbacks::initialize_ai_comm(Context::AIComm &ai_comm) {
+    auto &hstate = ai_comm.info().data;
+    hstate.InitHist(_context_options.T);
+    for (auto &item : hstate.v()) {
+        item.Init(_game_idx, GameDef::GetNumAction());
+    }
+}
+
 void WrapperCallbacks::OnGameOptions(RTSGameOptions *rts_options) {
     rts_options->handicap_level = _options.handicap_level;
 }
 
 void WrapperCallbacks::OnGameInit(RTSGame *game) {
     // std::cout << "Initialize opponent" << std::endl;
-    Context::AIComm * ai_comm = _ai_comms[0];
-    Context::AIComm *ai_comm_oppo = _ai_comms.size() >= 2 ? _ai_comms[1] : nullptr;
-    _opponent = get_ai(_game_idx, _options.frame_skip_opponent, _options.opponent_ai_type, _options.backup_opponent_ai_type, _options, ai_comm_oppo);
+    _opponent = get_ai(_game_idx, _options.frame_skip_opponent, _options.opponent_ai_type, _options.backup_opponent_ai_type, _options, &_opponent_comm);
 
     // std::cout << "Initialize ai" << std::endl;
-    _ai = get_ai(_game_idx, _options.frame_skip_ai, _options.ai_type, _options.backup_ai_type, _options, ai_comm);
+    _ai = get_ai(_game_idx, _options.frame_skip_ai, _options.ai_type, _options.backup_ai_type, _options, &_ai_comm);
 
     // AI at position 0
     // std::cout << "Add AI at position 0" << std::endl;
@@ -85,12 +91,10 @@ void WrapperCallbacks::OnEpisodeStart(int k, std::mt19937 *rng, RTSGame *game) {
         bool use_simple = int((*rng)() % 100) < _simple_ratio;
         game->RemoveBot();
 
-        Context::AIComm *ai_comm_oppo = _ai_comms.size() >= 2 ? _ai_comms[1] : nullptr;
-
         if (use_simple) {
-            _opponent = get_ai(INVALID, _options.frame_skip_opponent, AI_SIMPLE, AI_INVALID, _options, ai_comm_oppo);
+            _opponent = get_ai(INVALID, _options.frame_skip_opponent, AI_SIMPLE, AI_INVALID, _options, &_opponent_comm);
         } else {
-            _opponent = get_ai(INVALID, _options.frame_skip_opponent, AI_HIT_AND_RUN, AI_INVALID, _options, ai_comm_oppo);
+            _opponent = get_ai(INVALID, _options.frame_skip_opponent, AI_HIT_AND_RUN, AI_INVALID, _options, &_opponent_comm);
         }
         game->AddBot(_opponent);
     }

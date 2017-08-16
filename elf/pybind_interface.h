@@ -62,8 +62,6 @@ void register_common_func(py::module &m) {
   int AddCollectors(int batchsize, int exclusive_id, const GroupStat &gstat) { \
     return context->comm().AddCollectors(batchsize, exclusive_id, gstat); \
   } \
-  const MetaInfo &meta(int i) const { return context->meta(i); } \
-  const typename GC::Data &env(int i) const { return context->env(i); } \
   int size() const { return context->size(); } \
 \
   EntryInfo GetTensorSpec(int gid, const std::string &key, int T) { \
@@ -87,10 +85,7 @@ void register_common_func(py::module &m) {
     .def("AddCollectors", &GameContext::AddCollectors) \
     .def("Start", &GameContext::Start) \
     .def("Stop", &GameContext::Stop) \
-    .def("__getitem__", &GameContext::meta) \
     .def("__len__", &GameContext::size) \
     .def("AddTensor", &GameContext::AddTensor) \
     .def("GetTensorSpec", &GameContext::GetTensorSpec, py::return_value_policy::copy) \
-    .def("meta", &GameContext::meta, py::return_value_policy::reference) \
-    .def("env", &GameContext::env, py::return_value_policy::reference) \
 

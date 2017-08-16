@@ -8,9 +8,10 @@
 */
 
 #include "game.h"
+#include "../elf/python_options_utils_cpp.h"
 
-template <typename WrapperCB, typename AIComm, typename PythonOptions>
-void thread_main(int game_idx, const PythonOptions &options, const std::atomic_bool &done, const std::vector<std::unique_ptr<AIComm>> &ai_comms) {
+template <typename WrapperCB, typename Comm, typename PythonOptions>
+void thread_main(int game_idx, const ContextOptions &context_options, const PythonOptions &options, const std::atomic_bool &done, Comm *comm) {
     const string& replay_prefix = options.save_replay_prefix;
 
     // Create a game.
@@ -25,7 +26,7 @@ void thread_main(int game_idx, const PythonOptions &options, const std::atomic_b
 
     // std::cout << "before running wrapper" << std::endl;
 
-    WrapperCB wrapper(game_idx, options, ai_comms);
+    WrapperCB wrapper(game_idx, context_options, options, comm);
     wrapper.OnGameOptions(&op);
 
     // std::cout << "before initializing the game" << std::endl;

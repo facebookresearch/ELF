@@ -292,12 +292,11 @@ public:
     using Comm = CommT<Info>;
     using AIComm = AICommT<Comm>;
 
-    using GameStartFunc = std::function<void (int game_idx, const Options& options, const std::atomic_bool &done, const std::vector<std::unique_ptr<AIComm>> &ai_comms)>;
+    using GameStartFunc = std::function<void (int game_idx, const ContextOptions &context_options, const Options& options, const std::atomic_bool &done, Comm *comm)>;
     using DataInitFunc = std::function<void (int, Data &)>;
 
 private:
     Comm _comm;
-    std::vector<std::vector<std::unique_ptr<AIComm>>> _ai_comms;
     Options _options;
     ContextOptions _context_options;
 
@@ -313,28 +312,15 @@ public:
 
     Comm &comm() { return _comm; }
     const Comm &comm() const { return _comm; }
-    const Data& env(int i) const { return _ai_comms[i][0]->info().data; }
 
-    void Start(DataInitFunc data_init, GameStartFunc game_start_func) {
+    void Start(GameStartFunc game_start_func) {
         _comm.CollectorsReady();
-
-        const int num_ai_comm = _context_options.num_ai_comms_per_game;
-
-        _ai_comms.resize(_pool.size());
-        for (size_t i = 0; i < _ai_comms.size(); ++i) {
-            _ai_comms[i].resize(num_ai_comm);
-            for (int j = 0; j < _context_options.num_ai_comms_per_game; ++j) {
-                _ai_comms[i][j].reset(new AIComm{i, &_comm});
-                // Initialize Data
-                data_init(i, _ai_comms[i][j]->info().data);
-            }
-        }
 
         // Now we start all jobs.
         for (int i = 0; i < _pool.size(); ++i) {
             _pool.push([i, this, &game_start_func](int){
                 const std::atomic_bool &done = _done.flag();
-                game_start_func(i, _options, done, _ai_comms[i]);
+                game_start_func(i, _context_options, _options, done, &_comm);
                 // std::cout << "G[" << i << "] is ending" << std::endl;
                 _done.notify();
             });
@@ -349,8 +335,7 @@ public:
     Infos WaitGroup(int group_id, int timeout_usec) { return _comm.WaitGroupBatchData(group_id, timeout_usec); }
     void Steps(const Infos& infos) { _comm.Steps(infos); }
 
-    const MetaInfo &meta(int i) const { return _ai_comms[i][0]->info().meta; }
-    int size() const { return _ai_comms.size(); }
+    int size() const { return _pool.size(); }
 
     void PrintSummary() const { _comm.PrintSummary(); }
 
