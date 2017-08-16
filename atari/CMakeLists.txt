@@ -21,12 +21,11 @@ link_directories(${ALE_LIBRARY_DIRS})
 
 
 # the python lib
-find_package(PythonLibs REQUIRED)
 file(GLOB SOURCES *.cc)
-add_library(atari_game SHARED ${SOURCES})
-target_link_libraries(atari_game elf pybind11 ale)
+pybind11_add_module(atari_game ${SOURCES})
+target_link_libraries(atari_game PRIVATE elf ale)
 set_target_properties(atari_game
-	PROPERTIES PREFIX ""
+	PROPERTIES
 	LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 
 

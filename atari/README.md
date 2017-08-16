@@ -9,7 +9,7 @@ Compilation
 ===================
 First, install Arcade Learning Environment ([ALE](https://github.com/mgbellemare/Arcade-Learning-Environment)).
 
-Then `mkdir build && cd build && cmake .. && make`
+Then `mkdir build && cd build && cmake .. && make`. This should build a dynamic libraries under `ELF/atari/`.
 
 Run `python game.py --rom_file [your game rom file]` to test whether you can run the environment alone.
 You can find roms at [atari_py](https://github.com/openai/atari-py/tree/master/atari_py/atari_roms)

@@ -10,14 +10,7 @@ target_include_directories(websocketpp SYSTEM INTERFACE
 )
 target_link_libraries(websocketpp INTERFACE asio)
 
-find_package(PythonLibs REQUIRED)
-message("-- Found Python Include Dirs: ${PYTHON_INCLUDE_DIRS}")
-add_library(pybind11 INTERFACE)
-target_include_directories(pybind11 SYSTEM INTERFACE
-	 $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>
-	 ${PYTHON_INCLUDE_DIRS}
-)
-target_link_libraries(pybind11 INTERFACE ${PYTHON_LIBRARIES})
+add_subdirectory(pybind11)
 
 find_package(Threads)
 add_library(concurrentqueue INTERFACE)
