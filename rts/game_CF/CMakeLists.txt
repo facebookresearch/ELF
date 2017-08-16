@@ -1,4 +1,6 @@
 add_rts_command_gen(${CMAKE_CURRENT_SOURCE_DIR}/cmd_specific cf_specific)
+add_rts_command_gen(${CMAKE_CURRENT_SOURCE_DIR}/../engine/cmd engine)
+add_rts_command_gen(${CMAKE_CURRENT_SOURCE_DIR}/../engine/cmd_specific engine_specific)
 
 set(SOURCES ai.cc cmd_specific.cc gamedef.cc cf_rule_actor.cc)
 # add the generated file to be an explicit dependency
