@@ -34,6 +34,9 @@ struct GroupStat {
     int player_id;
 
     GroupStat() : gid(-1), hist_len(1), player_id(-1) { }
+    std::string info() const {
+        return "[gid=" + std::to_string(gid) + "][T=" + std::to_string(hist_len) + "][player_id=" + std::to_string(player_id);
+    }
 
     // Note that gid will be set by C++ side.
     REGISTER_PYBIND_FIELDS(hist_len, player_id);
@@ -56,6 +59,7 @@ struct CondPerGroupT {
         // from what is specified, then we skip.
         const auto &record = info.data.newest();
         if (gstat.player_id != -1 && gstat.player_id != record.player_id) return false;
+        // std::cout << "Check " << gstat.info() << " record.player_id = " << record.player_id << std::endl;
 
         // Update game counter.
         int new_game_counter = record.game_counter;
@@ -288,12 +292,12 @@ public:
     using Comm = CommT<Info>;
     using AIComm = AICommT<Comm>;
 
-    using GameStartFunc = std::function<void (int game_idx, const Options& options, const std::atomic_bool &done, AIComm *)>;
+    using GameStartFunc = std::function<void (int game_idx, const Options& options, const std::atomic_bool &done, const std::vector<std::unique_ptr<AIComm>> &ai_comms)>;
     using DataInitFunc = std::function<void (int, Data &)>;
 
 private:
     Comm _comm;
-    std::vector<std::unique_ptr<AIComm>> _ai_comms;
+    std::vector<std::vector<std::unique_ptr<AIComm>>> _ai_comms;
     Options _options;
     ContextOptions _context_options;
 
@@ -309,23 +313,28 @@ public:
 
     Comm &comm() { return _comm; }
     const Comm &comm() const { return _comm; }
-    const Data& env(int i) const { return _ai_comms[i]->info().data; }
+    const Data& env(int i) const { return _ai_comms[i][0]->info().data; }
 
     void Start(DataInitFunc data_init, GameStartFunc game_start_func) {
         _comm.CollectorsReady();
 
+        const int num_ai_comm = _context_options.num_ai_comms_per_game;
+
         _ai_comms.resize(_pool.size());
-        for (int i = 0; i < _pool.size(); ++i) {
-            _ai_comms[i].reset(new AIComm{i, &_comm});
-            // Initialize Data
-            data_init(i, _ai_comms[i]->info().data);
+        for (size_t i = 0; i < _ai_comms.size(); ++i) {
+            _ai_comms[i].resize(num_ai_comm);
+            for (int j = 0; j < _context_options.num_ai_comms_per_game; ++j) {
+                _ai_comms[i][j].reset(new AIComm{i, &_comm});
+                // Initialize Data
+                data_init(i, _ai_comms[i][j]->info().data);
+            }
         }
 
         // Now we start all jobs.
         for (int i = 0; i < _pool.size(); ++i) {
             _pool.push([i, this, &game_start_func](int){
                 const std::atomic_bool &done = _done.flag();
-                game_start_func(i, _options, done, _ai_comms[i].get());
+                game_start_func(i, _options, done, _ai_comms[i]);
                 // std::cout << "G[" << i << "] is ending" << std::endl;
                 _done.notify();
             });
@@ -340,7 +349,7 @@ public:
     Infos WaitGroup(int group_id, int timeout_usec) { return _comm.WaitGroupBatchData(group_id, timeout_usec); }
     void Steps(const Infos& infos) { _comm.Steps(infos); }
 
-    const MetaInfo &meta(int i) const { return _ai_comms[i]->info().meta; }
+    const MetaInfo &meta(int i) const { return _ai_comms[i][0]->info().meta; }
     int size() const { return _ai_comms.size(); }
 
     void PrintSummary() const { _comm.PrintSummary(); }

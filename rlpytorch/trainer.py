@@ -136,6 +136,8 @@ class Trainer:
         return self.evaluator.actor(sel, sel_gpu)
 
     def train(self, sel, sel_gpu):
+        # import pdb
+        # pdb.set_trace()
         # training procedure.
         self.timer.Record("batch_train")
         self.rl_method.run(sel_gpu)

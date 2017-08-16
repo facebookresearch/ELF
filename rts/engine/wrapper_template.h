@@ -10,7 +10,7 @@
 #include "game.h"
 
 template <typename WrapperCB, typename AIComm, typename PythonOptions>
-void thread_main(int game_idx, const PythonOptions &options, const std::atomic_bool &done, AIComm *ai_comm) {
+void thread_main(int game_idx, const PythonOptions &options, const std::atomic_bool &done, const std::vector<std::unique_ptr<AIComm>> &ai_comms) {
     const string& replay_prefix = options.save_replay_prefix;
 
     // Create a game.
@@ -25,7 +25,7 @@ void thread_main(int game_idx, const PythonOptions &options, const std::atomic_b
 
     // std::cout << "before running wrapper" << std::endl;
 
-    WrapperCB wrapper(game_idx, options, ai_comm);
+    WrapperCB wrapper(game_idx, options, ai_comms);
     wrapper.OnGameOptions(&op);
 
     // std::cout << "before initializing the game" << std::endl;

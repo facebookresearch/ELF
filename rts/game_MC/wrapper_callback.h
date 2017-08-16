@@ -19,7 +19,7 @@ class WrapperCallbacks {
 private:
     int _game_idx;
     const PythonOptions &_options;
-    Context::AIComm *_ai_comm;
+    std::vector<Context::AIComm *> _ai_comms;
 
     AI *_opponent;
     AI *_ai;
@@ -28,8 +28,12 @@ private:
     int _simple_ratio;
 
 public:
-    explicit WrapperCallbacks(int game_idx, const PythonOptions &options, Context::AIComm *ai_comm)
-        : _game_idx(game_idx), _options(options), _ai_comm(ai_comm), _opponent(nullptr), _ai(nullptr) { }
+    explicit WrapperCallbacks(int game_idx, const PythonOptions &options, const std::vector<std::unique_ptr<Context::AIComm>> &ai_comms)
+        : _game_idx(game_idx), _options(options), _opponent(nullptr), _ai(nullptr) {
+          for (size_t i = 0; i < ai_comms.size(); ++i) {
+              _ai_comms.push_back(ai_comms[i].get());
+          }
+    }
 
     static void GlobalInit();
     void OnGameOptions(RTSGameOptions *rts_options);

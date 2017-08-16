@@ -183,7 +183,7 @@ struct GameState {
         */
     }
 
-    DECLARE_FIELD(GameState, id, a, V, pi, action_type, last_r, s, res, rv, terminal, seq, game_counter, last_terminal);
+    DECLARE_FIELD(GameState, id, a, V, pi, action_type, last_r, s, res, rv, terminal, seq, game_counter, last_terminal, player_id);
     REGISTER_PYBIND_FIELDS(id, a, V, pi, action_type, last_r, s, res, tick, winner, player_id, ai_start_tick, last_terminal);
 };
 

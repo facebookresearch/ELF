@@ -41,11 +41,12 @@ class Loader:
             child_providers = [ self.context_args.args ]
         )
 
-    def _init_gc(self):
+    def _init_gc(self, selfplay=False):
         args = self.args
 
         co = minirts.ContextOptions()
         self.context_args.initialize(co)
+        co.num_ai_comms_per_game = 2 if selfplay else 1
 
         opt = minirts.Options()
         opt.seed = args.seed
@@ -90,6 +91,7 @@ class Loader:
             v["input"]["keys"].update(extra)
 
     def _add_player_id(self, desc, player_id):
+        desc["input"]["keys"].add("player_id")
         desc["filters"] = dict(player_id=player_id)
 
     def _get_actor_spec(self):
@@ -135,7 +137,7 @@ class Loader:
         args = self.args
         args.ai_type = "AI_NN"
         args.opponent_type = "AI_NN"
-        co, GC, params = self._init_gc()
+        co, GC, params = self._init_gc(selfplay=True)
 
         desc = {}
         # For actor model, no reward needed, we only want to get input and return distribution of actions.

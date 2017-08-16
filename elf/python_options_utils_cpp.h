@@ -26,6 +26,9 @@ struct ContextOptions {
     // History length. How long we should keep the history.
     int T = 1;
 
+    // Decide how many ai_comms will be used in the game.
+    int num_ai_comms_per_game = 1;
+
     // verbose options.
     bool verbose_comm = false;
     bool verbose_collector = false;
@@ -37,6 +40,7 @@ struct ContextOptions {
 
     void print() const {
       std::cout << "#Game: " << num_games << std::endl;
+      std::cout << "#AIComms/Game: " << num_ai_comms_per_game << std::endl;
       std::cout << "#Max_thread: " << max_num_threads << std::endl;
       std::cout << "T: " << T << std::endl;
       if (verbose_comm) std::cout << "Comm Verbose On" << std::endl;
@@ -44,7 +48,7 @@ struct ContextOptions {
       std::cout << "Wait per group: " << (wait_per_group ? "True" : "False") << std::endl;
     }
 
-    REGISTER_PYBIND_FIELDS(num_games, max_num_threads, T, verbose_comm, verbose_collector, wait_per_group);
+    REGISTER_PYBIND_FIELDS(num_games, max_num_threads, T, num_ai_comms_per_game, verbose_comm, verbose_collector, wait_per_group);
 };
 
 inline constexpr int get_query_id(int game_id, int thread_id) {
