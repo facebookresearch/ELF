@@ -18,8 +18,10 @@
 class WrapperCallbacks {
 private:
     int _game_idx;
+    const ContextOptions &_context_options;
     const PythonOptions &_options;
-    std::vector<Context::AIComm *> _ai_comms;
+    Context::AIComm _ai_comm;
+    Context::AIComm _opponent_comm;
 
     AI *_opponent;
     AI *_ai;
@@ -27,12 +29,14 @@ private:
     float _latest_start;
     int _simple_ratio;
 
+    void initialize_ai_comm(Context::AIComm &ai_comm);
+
 public:
-    explicit WrapperCallbacks(int game_idx, const PythonOptions &options, const std::vector<std::unique_ptr<Context::AIComm>> &ai_comms)
-        : _game_idx(game_idx), _options(options), _opponent(nullptr), _ai(nullptr) {
-          for (size_t i = 0; i < ai_comms.size(); ++i) {
-              _ai_comms.push_back(ai_comms[i].get());
-          }
+    explicit WrapperCallbacks(int game_idx, const ContextOptions &context_options, const PythonOptions &options, Context::Comm *comm)
+        : _game_idx(game_idx), _context_options(context_options), _options(options), _ai_comm(game_idx, comm), _opponent_comm(game_idx, comm), _opponent(nullptr), _ai(nullptr) {
+            // Initialize the data in ai_comms.
+            initialize_ai_comm(_ai_comm);
+            initialize_ai_comm(_opponent_comm);
     }
 
     static void GlobalInit();
