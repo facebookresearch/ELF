@@ -28,8 +28,9 @@ if __name__ == '__main__':
 
     model_loader = ModelLoader(model_class)
     method = method_class()
+    evaluator = Evaluator(stats=False)
 
-    args_providers = [sampler, trainer, game, runner, model_loader, method]
+    args_providers = [sampler, trainer, game, runner, model_loader, method, evaluator]
 
     all_args = ArgsProvider.Load(parser, args_providers)
 
@@ -40,18 +41,16 @@ if __name__ == '__main__':
     model = model_loader.load_model(GC.params)
     mi = ModelInterface()
     mi.add_model("model", model, optim_params={ "lr" : 0.001})
-    mi.add_model("actor", model, copy=True, cuda=True, gpu_id=all_args.gpu)
+    mi.add_model("actor", model, copy=True, cuda=all_args.gpu is not None, gpu_id=all_args.gpu)
     method.set_model_interface(mi)
 
     trainer.setup(sampler=sampler, mi=mi, rl_method=method)
+    evaluator.setup(sampler=sampler, mi=mi.clone(gpu=all_args.gpu))
 
-    evaluator = Evaluator()
-    evalator.set(all_args)
-    evaluator.setup(sampler=sampler, mi=mi.clone())
-
-    GC.reg_callback("train0", trainer.train)
-    GC.reg_callback("actor0", trainer.actor)
-    GC.reg_callback("actor1", evaluator.actor)
+    if not all_args.actor_only:
+        GC.reg_callback("train1", trainer.train)
+    GC.reg_callback("actor1", trainer.actor)
+    GC.reg_callback("actor0", evaluator.actor)
 
     def summary(i):
         trainer.episode_summary(i)

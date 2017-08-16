@@ -52,7 +52,7 @@ class Evaluator:
     def __init__(self, name="eval", stats=True):
         if stats:
             self.stats = Stats(name)
-            child_providers = [ self.stats ]
+            child_providers = [ self.stats.args ]
         else:
             self.stats = None
             child_providers = []

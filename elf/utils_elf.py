@@ -184,6 +184,8 @@ class GCWrapper:
             filters = v.get("filters", {})
             gstat.player_id = filters.get("player_id", -1)
 
+            print("Deal with connector. key = %s, hist_len = %d, player_id = %d" % (key, gstat.hist_len, gstat.player_id))
+
             gpu2gid.append(list())
             for i in range(num_recv_thread):
                 group_id = GC.AddCollectors(batchsize, len(gpu2gid) - 1, gstat)
@@ -214,8 +216,9 @@ class GCWrapper:
 
     def setup_gpu(self, gpu):
         '''Setup the gpu used in the wrapper'''
-        self.gpu = gpu
-        self.inputs_gpu = [ self.inputs[gids[0]].cpu2gpu(gpu=gpu) for gids in self.gpu2gid ]
+        if gpu is not None:
+            self.gpu = gpu
+            self.inputs_gpu = [ self.inputs[gids[0]].cpu2gpu(gpu=gpu) for gids in self.gpu2gid ]
 
     def reg_callback(self, key, cb):
         '''Set callback function for key
@@ -256,8 +259,11 @@ class GCWrapper:
 
     def Run(self):
         '''Wait group of an arbitrary collector key. Samples in a returned batch are always from the same group, but the group key of the batch may be arbitrary.'''
+        # print("before wait")
         self.infos = self.GC.Wait(0)
+        # print("before calling")
         res = self._call(self.infos)
+        # print("before_step")
         self.GC.Steps(self.infos)
         return res
 

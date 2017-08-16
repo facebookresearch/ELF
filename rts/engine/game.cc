@@ -46,6 +46,10 @@ RTSGame::~RTSGame() {
 }
 
 void RTSGame::AddBot(AI *bot) {
+    if (bot == nullptr) {
+        std::cout << "Bot at " << _bots.size() << " cannot be nullptr" << std::endl;
+        return;
+    }
     bot->SetId(_bots.size());
     bot->SetCmdReceiver(&_cmd_receiver);
     _bots.push_back(unique_ptr<AI>(bot));
@@ -325,8 +329,10 @@ PlayerId RTSGame::MainLoop(const std::atomic_bool *done) {
           for (const auto &bot : _bots) {
               *_output_stream << bot->PlotStructuredState(_env);
           }
-          *_output_stream << _env.PrintDebugInfo() << flush;
-          *_output_stream << "Acting ... " << flush << endl;
+          if (_output_stream) {
+              *_output_stream << _env.PrintDebugInfo() << flush;
+              *_output_stream << "Acting ... " << flush << endl;
+          }
       }
       /*
       if (_output_stream) {

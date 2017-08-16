@@ -23,8 +23,12 @@ void thread_main(int game_idx, const PythonOptions &options, const std::atomic_b
     op.output_file = options.output_filename;
     op.cmd_dumper_prefix = options.cmd_dumper_prefix;
 
+    // std::cout << "before running wrapper" << std::endl;
+
     WrapperCB wrapper(game_idx, options, ai_comm);
     wrapper.OnGameOptions(&op);
+
+    // std::cout << "before initializing the game" << std::endl;
 
     // Note that all the bots created here will be owned by game.
     // Note that AddBot() will set its receiver. So there is no need to specify it here.
@@ -36,6 +40,7 @@ void thread_main(int game_idx, const PythonOptions &options, const std::atomic_b
     rng.seed(seed);
 
     int iter = 0;
+    // std::cout << "Start the main loop" << std::endl;
     while (! done) {
         wrapper.OnEpisodeStart(iter, &rng, &game);
         game.MainLoop(&done);

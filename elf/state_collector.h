@@ -153,8 +153,6 @@ private:
     CCQueue2<int> _batchsize_q;
     Semaphore<int> _batchsize_back;
 
-    int _hist_len;
-
     // Current batch.
     std::vector<In *> _batch;
     std::vector<Data *> _batch_data;
@@ -235,7 +233,7 @@ public:
 
     // Main Loop
     void MainLoop() {
-        V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Starting MainLoop of collector, hist_len = " << _hist_len << " batchsize = " << _batchsize);
+        V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Starting MainLoop of collector, batchsize = " << _batchsize);
         while (true) {
             // Wait until we have a complete batch.
             int new_batchsize;
@@ -298,7 +296,7 @@ public:
 
     void PrintSummary() const {
         /*
-        std::cout << "Group[" << _gid << "]: HistLen = " << _hist_len << std::endl;
+        std::cout << "Group[" << _gid << "]: " << std::endl;
         std::cout << "[" << _gid << "]: #Enqueue: " << _num_enqueue << std::endl;
         for (const auto& p : _conds) {
             std::cout << "[" << _gid << "][" << p.first << "]: #Send[" << p.second.freq_send << "/"

@@ -26,7 +26,7 @@ class Loader:
                 ("fs_ai", 50),
                 ("fs_opponent", 50),
                 ("ai_type", dict(type=str, choices=["AI_SIMPLE", "AI_HIT_AND_RUN", "AI_NN", "AI_FLAG_NN", "AI_TD_NN"], default="AI_NN")),
-                ("opponent_type", dict(type=str, choices=["AI_SIMPLE", "AI_HIT_AND_RUN", "AI_FLAG_SIMPLE", "AI_TD_BUILT_IN"], default="AI_SIMPLE")),
+                ("opponent_type", dict(type=str, choices=["AI_SIMPLE", "AI_HIT_AND_RUN", "AI_FLAG_SIMPLE", "AI_TD_BUILT_IN", "AI_NN"], default="AI_SIMPLE")),
                 ("max_tick", dict(type=int, default=30000, help="Maximal tick")),
                 ("mcts_threads", 64),
                 ("seed", 0),
@@ -68,6 +68,7 @@ class Loader:
         opt.ratio_change = args.ratio_change
         opt.with_fow = not args.without_fow
         # opt.output_filename = b"simulators.txt"
+        # opt.output_filename = b"cout"
         # opt.cmd_dumper_prefix = b"cmd-dump"
         # opt.save_replay_prefix = b"replay"
 
@@ -131,8 +132,10 @@ class Loader:
         return GCWrapper(GC, co, desc, use_numpy=False, params=params)
 
     def initialize_selfplay(self):
-        co, GC, params = self._init_gc()
         args = self.args
+        args.ai_type = "AI_NN"
+        args.opponent_type = "AI_NN"
+        co, GC, params = self._init_gc()
 
         desc = {}
         # For actor model, no reward needed, we only want to get input and return distribution of actions.
@@ -145,15 +148,15 @@ class Loader:
 
         if not args.actor_only:
             # For training, we want input, action (filled by actor models), value (filled by actor models) and reward.
-            desc["train"] = self._get_train_spec()
-            self._add_player_id(desc["train"], 0)
+            desc["train1"] = self._get_train_spec()
+            self._add_player_id(desc["train1"], 1)
 
         self._add_more_labels(desc)
 
         params.update(dict(
             num_group = 1 if args.actor_only else 2,
-            action_batchsize = int(desc["actor"]["batchsize"]),
-            train_batchsize = int(desc["train"]["batchsize"]) if not args.actor_only else None,
+            action_batchsize = int(desc["actor0"]["batchsize"]),
+            train_batchsize = int(desc["train1"]["batchsize"]) if not args.actor_only else None,
             T = args.T,
             model_no_spatial = args.model_no_spatial
         ))

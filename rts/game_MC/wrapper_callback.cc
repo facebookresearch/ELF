@@ -15,20 +15,22 @@
 #include "ai.h"
 
 typedef TrainedAI2 TrainAIType;
-static AI *get_ai(int game_idx, int frame_skip, int ai_type, int backup_ai_type,
-    const PythonOptions &options, Context::AIComm *input_ai_comm, bool use_ai_comm = false /*, int *opponent_ai_type = INVALID*/) {
-    AIComm *ai_comm = use_ai_comm ? input_ai_comm : nullptr;
-
+static AI *get_ai(int game_idx, int frame_skip, int ai_type, int backup_ai_type, const PythonOptions &options, Context::AIComm *ai_comm) {
+    // std::cout << "AI type = " << ai_type << " Backup AI type = " << backup_ai_type << std::endl;
     switch (ai_type) {
        case AI_SIMPLE:
-           return new SimpleAI(INVALID, frame_skip, nullptr, ai_comm);
+           return new SimpleAI(INVALID, frame_skip, nullptr);
        case AI_HIT_AND_RUN:
-           return new HitAndRunAI(INVALID, frame_skip, nullptr, ai_comm);
+           return new HitAndRunAI(INVALID, frame_skip, nullptr);
        case AI_NN:
-           return new TrainAIType(INVALID, frame_skip, options.with_fow, nullptr, ai_comm, get_ai(game_idx, frame_skip, backup_ai_type, AI_INVALID, options, input_ai_comm));
+           return new TrainAIType(INVALID, frame_skip, options.with_fow, nullptr, ai_comm, get_ai(game_idx, frame_skip, backup_ai_type, AI_INVALID, options, ai_comm));
        default:
-           throw std::range_error("Unknown ai_type! ai_type: " + std::to_string(ai_type) +
-                   " backup_ai_type: " + std::to_string(backup_ai_type) + " use_ai_comm: " + std::to_string(use_ai_comm));
+           return nullptr;
+           /*
+           std::string prompt = "Unknown ai_type! ai_type: " + std::to_string(ai_type) + " backup_ai_type: " + std::to_string(backup_ai_type);
+           std::cout << prompt << std::endl;
+           throw std::range_error(prompt);
+           */
     }
 }
 
@@ -43,12 +45,17 @@ void WrapperCallbacks::OnGameOptions(RTSGameOptions *rts_options) {
 }
 
 void WrapperCallbacks::OnGameInit(RTSGame *game) {
-    _opponent = get_ai(INVALID, _options.frame_skip_opponent, _options.opponent_ai_type, AI_INVALID, _options, _ai_comm);
-    _ai = get_ai(_game_idx, _options.frame_skip_ai, _options.ai_type, _options.backup_ai_type, _options, _ai_comm, true/*, _options.opponent_ai_type*/);
+    // std::cout << "Initialize opponent" << std::endl;
+    _opponent = get_ai(_game_idx, _options.frame_skip_opponent, _options.opponent_ai_type, _options.backup_opponent_ai_type, _options, _ai_comm);
+
+    // std::cout << "Initialize ai" << std::endl;
+    _ai = get_ai(_game_idx, _options.frame_skip_ai, _options.ai_type, _options.backup_ai_type, _options, _ai_comm);
 
     // AI at position 0
+    // std::cout << "Add AI at position 0" << std::endl;
     game->AddBot(_ai);
     // Opponent at position 1
+    // std::cout << "Add AI at position 1" << std::endl;
     game->AddBot(_opponent);
 
     _latest_start = _options.latest_start;
