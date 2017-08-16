@@ -5,8 +5,11 @@ set(SOURCES ai.cc cmd_specific.cc gamedef.cc cf_rule_actor.cc)
 list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmd_specific.gen.h)
 
 # don't build python stuff together with the game
-add_library(minirts-game SHARED ${SOURCES})
-target_link_libraries(minirts-game PUBLIC elf rts_engine)
+add_library(minirts-game SHARED ${SOURCES} ${RTS_ENGINE_SOURCES})
+target_link_libraries(minirts-game PUBLIC elf)
+
+# this is a hack. engine and game depend on each other. We let game include engine sources
+target_include_directories(minirts-game PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../)
 
 # python libraries
 pybind11_add_module(minirts python_wrapper.cc wrapper_callback.cc)
