@@ -1,4 +1,5 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.2)
+project(rts)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 if(NOT CMAKE_BUILD_TYPE)
@@ -14,7 +15,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../vendor/ ${CMAKE_BINARY_DIR}/vend
 add_subdirectory(engine)
 
 # compile the game itself
-set(GAME_DIR "" CACHE PATH "Directory to the game implementation, e.g. ../game_MC")
+set(GAME_DIR "${CMAKE_CURRENT_SOURCE_DIR}/game_MC" CACHE PATH "Directory to the game implementation, e.g. ../game_MC")
 add_subdirectory(${GAME_DIR} ${CMAKE_BINARY_DIR}/minirts)
 set_target_properties(minirts PROPERTIES
 	LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
