@@ -362,6 +362,8 @@ public:
 #else
       return "";
 #endif
+#undef STRINGIFY
+#undef TOSTRING
     }
 
     void Stop() {

@@ -22,9 +22,8 @@ CXXFLAGS += -D GIT_COMMIT_HASH=${GIT_COMMIT_HASH} -D GIT_UNSTAGED=${GIT_UNSTAGED
 CXXFLAGS += $(DEFINES) -std=c++11 $(OPTFLAGS) -fPIC
 
 LDFLAGS += $(shell pkg-config $(LIBS) --libs)
-LDFLAGS += $(shell $(PYTHON_CONFIG) --ldflags)
 LDFLAGS += $(OPTFLAGS)
-LDFLAGS += -lm -ltbb
+LDFLAGS += -lm -ltbb -pthread
 
 # rts_engine
 ccSOURCES += $(shell find . -name "*.cc"  |  sed 's/^\.\///g')
@@ -34,8 +33,9 @@ ccSOURCES += $(shell find ../../elf/lib -name "*.cc"  |  sed 's/^\.\///g')
 OBJ_DIR = obj
 OBJS = $(addprefix $(OBJ_DIR)/,$(ccSOURCES:.cc=.o))
 GAME_OBJ_DIR = $(GAME_DIR)/obj
+GAME_OBJS = $(filter-out %python_wrapper.o,$(wildcard $(GAME_OBJ_DIR)/*.o))
 ENGINE_OBJ_DIR = $(GAME_DIR)/engine
-GAME_OBJS = $(wildcard $(GAME_OBJ_DIR)/*.o $(ENGINE_OBJ_DIR)/*.o)
+GAME_OBJS += $(wildcard $(ENGINE_OBJ_DIR)/*.o)
 DEPFILES = $(OBJS:.o=.d)
 GAME_DEPFILES = $(GAME_OBJS:.o=.d)
 
