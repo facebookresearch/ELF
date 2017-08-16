@@ -58,7 +58,7 @@ struct CondPerGroupT {
         if (gstat.player_id != -1 && gstat.player_id != record.player_id) return false;
 
         // Update game counter.
-        int new_game_counter = game_counter;
+        int new_game_counter = record.game_counter;
         if (new_game_counter > game_counter) {
             game_counter = new_game_counter;
             // Make sure no frame is missed. seq starts from 0.

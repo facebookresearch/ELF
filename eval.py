@@ -21,58 +21,62 @@ class Eval:
         self.stats = Stats("eval")
 
         self.model_file = load_module(os.environ["model_file"])
-        model_class, method_class = model_file.Models[os.environ["model"]]
+        model_class, method_class = self.model_file.Models[os.environ["model"]]
         self.model_loader = ModelLoader(model_class)
 
         self.game = load_module(os.environ["game"]).Loader()
         self.game.args.set_override(actor_only=True, game_multi=2)
         self.sampler = Sampler()
-        self.trainer = Trainer()
+        self.evaluator = Evaluator(stats=False)
 
         self.args = ArgsProvider(
             call_from = self,
             define_args = [
                 ("num_eval", 500),
+                ("tqdm", dict(action="store_true"))
             ],
-            more_args = [ "tqdm" ],
+            more_args = [ "gpu" ],
             child_providers = [
                 self.stats.args, self.game.args,
-                self.sampler.args, self.trainer.args,
-                self.stats.args, self.model_loader.args
+                self.sampler.args, self.evaluator.args,
+                self.model_loader.args
             ]
         )
 
     def run(self):
         self.GC = self.game.initialize()
-        self.GC.setup_gpu(self.gpu)
+        self.GC.setup_gpu(self.args.gpu)
 
         self.stats.reset()
 
-        model = model_loader.load_model(GC.params)
+        model = self.model_loader.load_model(self.GC.params)
         mi = ModelInterface()
         mi.add_model("model", model, optim_params={ "lr" : 0.001})
-        mi.add_model("actor", model, copy=True, cuda=True, gpu_id=all_args.gpu)
-        method.set_model_interface(mi)
+        mi.add_model("actor", model, copy=True, cuda=True, gpu_id=self.args.gpu)
 
-        self.GC.reg_callback("actor", self.trainer.actor)
+        def actor(sel, sel_gpu):
+            reply = self.evaluator.actor(sel, sel_gpu)
+            self.stats.feed_batch(sel)
+            return reply
+
+        self.GC.reg_callback("actor", actor)
         self.GC.Start()
 
-        self.trainer.setup(sampler=self.sampler, mi=mi, rl_method=None)
-        self.trainer.episode_start(k)
+        self.evaluator.setup(sampler=self.sampler, mi=mi)
+        self.evaluator.episode_start(0)
 
-        while True:
-            if self.args.tqdm:
-                import tqdm
-                tq = tqdm.tqdm(total=self.args.num_eval)
-                while self.stats.count_completed() < self.args.num_eval:
-                    old_n = self.stats.count_completed()
-                    self.GC.Run()
-                    diff = self.stats.count_completed() - old_n
-                    tq.update(diff)
-                tq.close()
-            else:
-                while self.stats.count_completed() < self.args.num_eval:
-                    self.GC.Run()
+        if self.args.tqdm:
+            import tqdm
+            tq = tqdm.tqdm(total=self.args.num_eval)
+            while self.stats.count_completed() < self.args.num_eval:
+                old_n = self.stats.count_completed()
+                self.GC.Run()
+                diff = self.stats.count_completed() - old_n
+                tq.update(diff)
+            tq.close()
+        else:
+            while self.stats.count_completed() < self.args.num_eval:
+                self.GC.Run()
 
         self.stats.print_summary()
         self.GC.Stop()

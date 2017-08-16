@@ -49,19 +49,27 @@ class Sampler:
 
 
 class Evaluator:
-    def __init__(self, name="eval"):
-        self.stats = Stats(name)
+    def __init__(self, name="eval", stats=True):
+        if stats:
+            self.stats = Stats(name)
+            child_providers = [ self.stats ]
+        else:
+            self.stats = None
+            child_providers = []
+
         self.name = name
         self.args = ArgsProvider(
             call_from = self,
             define_args = [
             ],
+            more_args = ["num_games", "batchsize", "num_minibatch"],
             on_get_args = self._on_get_args,
-            child_providers = [ self.stats.args ],
+            child_providers = child_providers
         )
 
     def _on_get_args(self, _):
-        pass
+        if self.stats is not None and not self.stats.is_valid():
+            self.stats = None
 
     def episode_start(self, i):
         self.actor_count = 0
@@ -71,7 +79,7 @@ class Evaluator:
         state_curr = self.mi.forward("actor", sel_gpu.hist(0))
         action = self.sampler.sample(state_curr)
 
-        if self.stats.is_valid():
+        if self.stats is not None:
             self.stats.feed_batch(sel)
         reply_msg = dict(pi=state_curr["pi"].data, a=action, V=state_curr["V"].data, rv=self.mi["actor"].step)
         self.actor_count += 1
@@ -79,8 +87,9 @@ class Evaluator:
         return reply_msg
 
     def episode_summary(self, i):
-        print("[%s] actor count: %d/%d" % (self.name, self.args.actor_count, self.args.num_minibatch))
-        if self.stats.is_valid():
+        print("[%s] actor count: %d/%d" % (self.name, self.actor_count, self.args.num_minibatch))
+
+        if self.stats is not None:
             self.stats.print_summary()
             if self.stats.count_completed() > 10000:
                 self.stats.reset()
@@ -88,7 +97,8 @@ class Evaluator:
     def setup(self, mi=None, sampler=None):
         self.mi = mi
         self.sampler = sampler
-        if self.stats.is_valid():
+
+        if self.stats is not None:
             self.stats.reset()
 
 
@@ -164,9 +174,10 @@ class Trainer:
         print("Train count: %d/%d" % (self.train_count, args.num_minibatch))
         print("Save to " + args.save_dir)
         if self.train_count > 0:
-            filename = os.path.join(args.save_dir, args.save_prefix + "-%d.bin" % self.mi["model"].step)
+            mi = self.evaluator.mi
+            filename = os.path.join(args.save_dir, args.save_prefix + "-%d.bin" % mi["model"].step)
             print("Filename = " + filename)
-            self.mi["model"].save(filename)
+            mi["model"].save(filename)
 
         print("Command arguments " + str(args.command_line))
         self.rl_method.print_stats(global_counter=i)
