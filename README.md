@@ -162,6 +162,13 @@ str_win_rate: [0] Win rate: 0.735 [7295/2628/9923], Best win rate: 0.735 [0]
 Stop all game threads ...
 ```
 
+SelfPlay
+=============
+Try the following script if you want to do self-play in Minirts:
+```
+sh ./selfplay_minirts.sh [your pre-trained model] 
+```
+
 Reference  
 =============
 
