@@ -1,5 +1,3 @@
-set(CMAKE_CXX_STANDARD 11)
-
 # find sources
 file(GLOB SOURCES lib/*.cc)
 
