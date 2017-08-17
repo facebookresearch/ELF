@@ -18,7 +18,7 @@ add_subdirectory(engine)
 set(GAME_DIR "${CMAKE_CURRENT_SOURCE_DIR}/game_MC" CACHE PATH "Directory to the game implementation, e.g. ../game_MC")
 add_subdirectory(${GAME_DIR} ${CMAKE_BINARY_DIR}/minirts)
 set_target_properties(minirts PROPERTIES
-	LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+	LIBRARY_OUTPUT_DIRECTORY "${GAME_DIR}"
 )
 
 # compile the backend with this game
