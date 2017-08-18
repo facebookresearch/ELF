@@ -79,11 +79,11 @@ How to train
 ===============
 To train a model for MiniRTS, please first compile `./rts/game_MC` (See the instruction in `./rts/game_MC` and `./rts`). Note that a compilation of `./rts/backend` is not necessary for training, unless you want to see visualization. 
 
-Then please run the following commands in the current directory:
+Then please run the following commands in the current directory (you can also reference `train_minirts.sh`):
 
 ```bash
 game=./rts/game_MC/game model=actor_critic model_file=./rts/game_MC/model \ 
-python3 run.py 
+python3 train.py 
     --num_games 1024 --batchsize 128              # Set number of games to be 1024 and batchsize to be 128.  
     --freq_update 50                              # Update behavior policy after 50 updates of the model.
     --fs_opponent 20                              # How often your opponent makes a decision (every 20 ticks)
@@ -91,6 +91,8 @@ python3 run.py
     --opponent_type AI_SIMPLE                     # Use AI_SIMPLE as rule-based AI
     --tqdm                                        # Show progress bar.
     --gpu 0                                       # Use first gpu. 
+    --additional_labels id,last_terminal         
+    --trainer_stats winrate                       # If you want to see the winrate over iterations.
     --T 20                                        # 20 step actor-critic
 ```
 
@@ -124,10 +126,10 @@ Command arguments run.py --batchsize 128 --freq_update 50 --fs_opponent 20 --lat
  86%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████▉                    | 4287/5000 [01:23<00:15, 46.97it/s]
 ```
 
-To evaluate a model for MiniRTS, try the following command:
+To evaluate a model for MiniRTS, try the following command (you can also reference `eval_minirts.sh`):
 ```bash
 eval_only=1 game=./rts/game_MC/game model=actor_critic model_file=./rts/game_MC/model \ 
-python3 run.py 
+python3 eval.py 
     --load [your model]
     --batchsize 128 
     --fs_opponent 20
@@ -135,10 +137,10 @@ python3 run.py
     --latest_start_decay 0.99 
     --num_games 1024 
     --opponent_type AI_SIMPLE
-    --stats winrate
+    --eval_stats winrate
     --num_eval 10000
-    --tqdm
-    --eval_gpu 0                    # Use GPU 0 as the evaluation gpu.
+    --tqdm                          # Nice progress bar
+    --gpu 0                         # Use GPU 0 as the evaluation gpu.
     --additional_labels id          # Tell the game environment to output additional dict entries.
 ```
 
