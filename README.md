@@ -91,9 +91,11 @@ python3 train.py
     --opponent_type AI_SIMPLE                     # Use AI_SIMPLE as rule-based AI
     --tqdm                                        # Show progress bar.
     --gpu 0                                       # Use first gpu. 
-    --additional_labels id,last_terminal         
-    --trainer_stats winrate                       # If you want to see the winrate over iterations.
     --T 20                                        # 20 step actor-critic
+    --additional_labels id,last_terminal         
+    --trainer_stats winrate                       # If you want to see the winrate over iterations. 
+                                                  # Note that the winrate is computed when the action is sampled from the multinomial distribution (not greedy policy). 
+                                                  # To evaluate your model more accurately, please use eval.py.
 ```
 
 Note that long horizon (e.g., `--T 20`) could make the training much faster and (at the same time) stable. With long horizon, you should be able to train it to 70% winrate within 12 hours with 16CPU and 1GPU.  You can control the number of CPUs used in the training using `taskset -c`. 
@@ -137,11 +139,11 @@ python3 eval.py
     --latest_start_decay 0.99 
     --num_games 1024 
     --opponent_type AI_SIMPLE
-    --eval_stats winrate
     --num_eval 10000
     --tqdm                          # Nice progress bar
     --gpu 0                         # Use GPU 0 as the evaluation gpu.
     --additional_labels id          # Tell the game environment to output additional dict entries.
+    --greedy                        # Use greedy policy to evaluate your model. If not specified, then it will sample from the action distributions. 
 ```
 
 Here is an example output (it takes 1 min 40 seconds to evaluate 10k games with 12 CPUs):
