@@ -21,7 +21,11 @@ class MiniRTSNet(Model):
 
         # self.arch = "ccpccp"
         # self.arch = "ccccpccccp"
-        self.arch, channels = self.args.arch.split(";")
+        if self.args.arch[0] == "\"" and self.args.arch[-1] == "\"":
+            self.arch = self.args.arch[1:-1]
+        else:
+            self.arch = self.args.arch
+        self.arch, channels = self.arch.split(";")
 
         self.num_channels = []
         for v in channels.split(","):
