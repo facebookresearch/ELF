@@ -64,7 +64,6 @@ class Model(nn.Module):
 
     def load_from(self, model):
         if hasattr(model, "args"):
-            self._init(model.args)
             self.args = deepcopy(model.args)
 
         self.load_state_dict(model.state_dict())

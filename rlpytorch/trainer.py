@@ -49,7 +49,7 @@ class Sampler:
 
 
 class Evaluator:
-    def __init__(self, name="eval", stats=True):
+    def __init__(self, name="eval", stats=True, verbose=False):
         if stats:
             self.stats = Stats(name)
             child_providers = [ self.stats.args ]
@@ -58,6 +58,7 @@ class Evaluator:
             child_providers = []
 
         self.name = name
+        self.verbose = verbose
         self.args = ArgsProvider(
             call_from = self,
             define_args = [
@@ -75,6 +76,8 @@ class Evaluator:
         self.actor_count = 0
 
     def actor(self, sel, sel_gpu):
+        if self.verbose: print("In Evaluator[%s]::actor" % self.name)
+
         # actor model.
         state_curr = self.mi.forward("actor", sel_gpu.hist(0))
         action = self.sampler.sample(state_curr)
@@ -103,10 +106,11 @@ class Evaluator:
 
 
 class Trainer:
-    def __init__(self):
+    def __init__(self, verbose=False):
         self.timer = RLTimer()
+        self.verbose = verbose
         self.last_time = None
-        self.evaluator = Evaluator("trainer")
+        self.evaluator = Evaluator("trainer", verbose=verbose)
 
         self.args = ArgsProvider(
             call_from = self,
@@ -133,12 +137,14 @@ class Trainer:
             args.save_dir = os.environ.get("save", "./")
 
     def actor(self, sel, sel_gpu):
+        if self.verbose: print("In Trainer::actor")
         return self.evaluator.actor(sel, sel_gpu)
 
     def train(self, sel, sel_gpu):
         # import pdb
         # pdb.set_trace()
         # training procedure.
+        if self.verbose: print("In trainer::train")
         self.timer.Record("batch_train")
         self.rl_method.run(sel_gpu)
         self.timer.Record("compute_train")
