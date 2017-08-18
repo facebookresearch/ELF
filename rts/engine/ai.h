@@ -46,6 +46,7 @@ protected:
 public:
     AI() : _player_id(INVALID), _receiver(nullptr), _frame_skip(1) { }
     AI(PlayerId player_id, int frameskip, CmdReceiver *receiver) : _player_id(player_id), _receiver(receiver), _frame_skip(frameskip) { }
+    virtual ~AI() {}
     PlayerId GetId() const { return _player_id; }
 
     void SetId(PlayerId id) {
