@@ -16,6 +16,9 @@ class MiniRTSNet(Model):
         # this is the place where you instantiate all your modules
         # you can later access them using the same names you've given them in here
         super(MiniRTSNet, self).__init__(args)
+        self._init(args)
+
+    def _init(self, args):
         self.m = args.params["num_unit_type"] + 7
         self.pool = nn.MaxPool2d(2, 2)
 
@@ -72,7 +75,9 @@ class MiniRTSNet(Model):
 class Model_ActorCritic(Model):
     def __init__(self, args):
         super(Model_ActorCritic, self).__init__(args)
+        self._init(args)
 
+    def _init(self, args):
         params = args.params
         assert isinstance(params["num_action"], int), "num_action has to be a number. action = " + str(params["num_action"])
         self.params = params
