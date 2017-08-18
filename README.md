@@ -130,7 +130,7 @@ Command arguments run.py --batchsize 128 --freq_update 50 --fs_opponent 20 --lat
 
 To evaluate a model for MiniRTS, try the following command (you can also reference `eval_minirts.sh`):
 ```bash
-eval_only=1 game=./rts/game_MC/game model=actor_critic model_file=./rts/game_MC/model \ 
+game=./rts/game_MC/game model=actor_critic model_file=./rts/game_MC/model \ 
 python3 eval.py 
     --load [your model]
     --batchsize 128 
