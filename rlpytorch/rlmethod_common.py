@@ -34,7 +34,9 @@ class ActorCritic(LearningMethod):
         def _policy_backward(layer, grad_input, grad_output):
             if self.policy_gradient_weights is None: return
             # Multiply gradient weights
-            grad_input[0].data.mul_(self.policy_gradient_weights.expand_as(grad_input[0]))
+
+            # This works only on pytorch 0.2.0
+            grad_input[0].data.mul_(self.policy_gradient_weights.view(-1, 1))
             if grad_clip_norm is not None:
                 average_norm_clip(grad_input[0], grad_clip_norm)
 
@@ -79,7 +81,7 @@ class ActorCritic(LearningMethod):
         T = batch["a"].size(0)
 
         state_curr = model_interface.forward("model", batch.hist(T - 1))
-        R = state_curr["V"].data
+        R = state_curr["V"].squeeze().data
         batchsize = R.size(0)
 
         self.stats["init_reward"].feed(R.mean())
@@ -102,7 +104,7 @@ class ActorCritic(LearningMethod):
 
             pi = state_curr["pi"]
             old_pi = batch["pi"][t]
-            V = state_curr["V"]
+            V = state_curr["V"].squeeze()
 
             # We need to set it beforehand.
             # Note that the samples we collect might be off-policy, so we need
@@ -110,7 +112,7 @@ class ActorCritic(LearningMethod):
             self.policy_gradient_weights = R - V.data
 
             # Cap it.
-            coeff = torch.clamp(pi.data.div(old_pi), max=ratio_clamp).gather(1, a.view(-1, 1))
+            coeff = torch.clamp(pi.data.div(old_pi), max=ratio_clamp).gather(1, a.view(-1, 1)).squeeze()
             self.policy_gradient_weights.mul_(coeff)
             # There is another term (to compensate clamping), but we omit it for
             # now.
@@ -128,7 +130,7 @@ class ActorCritic(LearningMethod):
 
             self.stats["rms_advantage"].feed(self.policy_gradient_weights.norm() / math.sqrt(batchsize))
             self.stats["cost"].feed(overall_err.data[0])
-            self.stats["predict_reward"].feed(V.data[0].mean())
+            self.stats["predict_reward"].feed(V.data[0])
             self.stats["reward"].feed(r.mean())
             self.stats["acc_reward"].feed(R.mean())
             self.stats["value_err"].feed(value_err.data[0])
