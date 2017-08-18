@@ -22,7 +22,7 @@ def sample_with_check(probs, greedy=False):
     num_action = probs.size(1)
     if greedy:
         _, actions = probs.max(1)
-        return actions[:,0]
+        return actions
     while True:
         actions = probs.multinomial(1)[:,0]
         cond1 = (actions < 0).sum()

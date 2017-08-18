@@ -51,18 +51,27 @@ class Model(nn.Module):
 
     def load(self, filename):
         data = torch.load(filename)
+        if "args" in data:
+            # Reload the structure of the model.
+            self._init(data["args"])
+            self.args = deepcopy(data["args"])
+
         if isinstance(data, OrderedDict):
             self.load_state_dict(data)
         else:
             self.load_state_dict(data["stats_dict"])
         self.step = data.get("step", 0)
-        if hasattr(data, "args"):
-            self.args = data.args
 
     def load_from(self, model):
+        if hasattr(model, "args"):
+            self._init(model.args)
+            self.args = deepcopy(model.args)
+
         self.load_state_dict(model.state_dict())
         self.step = model.step
-        self.args = deepcopy(model.args)
+
+    def _init(self, args):
+        pass
 
     def inc_step(self):
         self.step += 1

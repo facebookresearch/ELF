@@ -1,0 +1,1 @@
+game=./rts/game_MC/game model=actor_critic model_file=./rts/game_MC/model python3 train.py --batchsize 128 --freq_update 50 --fs_opponent 20 --latest_start 500 --latest_start_decay 0.99 --num_games 1024 --opponent_type AI_SIMPLE --tqdm --gpu 4 --T 20 --additional_labels id,last_terminal --trainer_stats winrate
