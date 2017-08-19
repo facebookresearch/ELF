@@ -394,7 +394,11 @@ int main(int argc, char *argv[]) {
         int games = parser.GetItem<int>("games");
         int seed0 = parser.GetItem<int>("seed");
         ctpl::thread_pool p(threads + 1);
-        CCQueue<int> q;
+        struct Stats {
+            PlayerId winner;
+            int base_loc;
+        };
+        CCQueue<Stats> q;
         const int kEndSignal = -0xff;
 
         for (int i = 0; i < threads; i++) {
@@ -413,37 +417,46 @@ int main(int argc, char *argv[]) {
                 game.AddBot(AI::CreateAI("simple", std::to_string(frame_skip)));
                 bool infinite = (games == 0);
                 for (int j = 0; j < games || infinite; ++j) {
-                    push_q(q, game.MainLoop());
+                    Stats stats;
+                    stats.winner = game.MainLoop();
+                    stats.base_loc = game.GetCmdReceiver()->GetGameStats().GetBaseChoice();
+                    push_q(q, stats);
                     game.Reset();
                 }
-                push_q(q, kEndSignal);
+                Stats stats;
+                stats.winner = kEndSignal;
+                push_q(q, stats);
             });
             this_thread::sleep_for(std::chrono::milliseconds(10));
         }
         // Last thread for checking the win rate
         p.push([=, &q](int /*thread_id*/) {
           int total_games = 0, player0won = 0, player1won = 0;
+          int base_loc0_count = 0;
           int done_thread = 0;
           while (true) {
-              int result;
+              Stats result;
               pop_wait(q, result);
-              if (result == kEndSignal) {
+              if (result.winner == kEndSignal) {
                   done_thread ++;
                   if (done_thread == threads) break;
                   else continue;
               }
-              if (result == 0) player0won ++;
-              if (result == 1) player1won ++;
+              if (result.winner == 0) player0won ++;
+              if (result.winner == 1) player1won ++;
+              if (result.base_loc == 0) base_loc0_count ++;
               total_games ++;
               if (total_games % 5000 == 0) {
                   cout << "Result:" << player0won << "/"<< player1won << "/" << total_games << endl;
                   cout << "Player 0 win rate: " << (float)player0won / total_games << " " << player0won << "/" << total_games << endl;
                   cout << "Player 1 win rate: " << (float)player1won / total_games << " " << player1won << "/" << total_games << endl;
+                  cout << "Base loc0 rate: " << (float)base_loc0_count / total_games << " " << base_loc0_count << "/" << total_games << endl;
               }
           }
           cout << "Final result:" << player0won << "/"<< player1won << "/" << total_games << endl;
           cout << "Final player 0 win rate: " << (float)player0won / total_games << " " << player0won << "/" << total_games << endl;
           cout << "Final player 1 win rate: " << (float)player1won / total_games << " " << player1won << "/" << total_games << endl;
+          cout << "Final base loc0 rate: " << (float)base_loc0_count / total_games << " " << base_loc0_count << "/" << total_games << endl;
         });
 
         p.stop(true);

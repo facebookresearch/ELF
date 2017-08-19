@@ -378,7 +378,8 @@ PlayerId RTSGame::MainLoop(const std::atomic_bool *done) {
       _env.SetWinnerId(winner_id);
 
       // Check winning condition
-      if (winner_id != INVALID || _cmd_receiver.GetTick() >= _options.max_tick || ! _cmd_receiver.CheckGameSmooth(_output_stream)) {
+      Tick tick = _cmd_receiver.GetTick();
+      if (winner_id != INVALID || tick >= _options.max_tick || ! _cmd_receiver.GetGameStats().CheckGameSmooth(tick, _output_stream)) {
           _env.SetTermination();
           if (winner_id != INVALID) {
               _bots[winner_id]->SendComment("Won");

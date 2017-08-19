@@ -50,12 +50,20 @@ bool CmdGameStartSpecific::run(GameEnv*, CmdReceiver* receiver) {
 bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
     auto f = env->GetRandomFunc();
     bool shuffle = (f(2) == 0);
+    //std::vector<PointF> base_locs(2);
+    //
+    receiver->GetGameStats().PickBase(shuffle ? 1 : 0);
+    
     for (const auto &info : env->GetMap().GetPlayerMapInfo()) {
         PlayerId id = shuffle ? info.player_id : 1 - info.player_id;
         _CREATE(BASE, PointF(info.base_coord), id);
         _CREATE(RESOURCE, PointF(info.resource_coord), id);
         _CHANGE_RES(id, info.initial_resource);
+        //base_locs[id] = PointF(info.base_coord);
     }
+    // for (size_t i = 0; i < base_locs.size(); ++i) {
+    //    std::cout << "[" << i << "] Baseloc: " << base_locs[i].x << ", " << base_locs[i].y << std::endl;
+    //}
     auto gen_loc = [&] (int player_id) -> PointF {
         // Note that we could not write
         //    PointF( f(8) + ...,  f(8) + ...)

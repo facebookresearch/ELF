@@ -34,8 +34,8 @@ LIBS = zlib
 INCLUDE_DIR += -I. $(shell pkg-config --cflags $(LIBS)) -isystem ../../vendor
 INCLUDE_DIR += $(shell $(PYTHON_CONFIG) --cflags | cut -d ' ' -f 1)
 LDFLAGS += $(shell pkg-config $(LIBS) --libs)
-LDFLAGS += $(shell $(PYTHON_CONFIG) --ldflags)
-# LDFLAGS += $(shell $(PYTHON_CONFIG) --libs)
+# LDFLAGS += $(shell $(PYTHON_CONFIG) --ldflags)
+LDFLAGS += $(shell $(PYTHON_CONFIG) --libs)
 
 CXXFLAGS ?=
 CXXFLAGS += $(INCLUDE_DIR)
