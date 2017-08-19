@@ -390,6 +390,9 @@ PlayerId RTSGame::MainLoop(const std::atomic_bool *done) {
           for (const auto &bot : _bots) {
               bot->Act(_env, true);
           }
+          if (_spectator != nullptr) {
+            _spectator->Act(_env);
+          }
           break;
       }
 
