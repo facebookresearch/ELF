@@ -26,12 +26,21 @@ typedef Server::message_ptr message_ptr;
 // A simple websocket server with only one client
 class WSServer {
   public:
+    ~WSServer()
+    {
+      server_.close(*hdl_.get(), websocketpp::close::status::normal, "game's over");
+      server_.stop_listening();
+      th_.join();
+    }
+
     WSServer(int port, std::function<void(const std::string&)> callback):
       callback_{callback}
     {
       try {
         // Set logging settings -- no log
         server_.clear_access_channels(websocketpp::log::alevel::all);
+
+        server_.set_reuse_addr(true);
 
         // Initialize Asio
         server_.init_asio();
