@@ -38,8 +38,8 @@ public:
 
     void Start() {
         _context->Start(
-            [&](int game_idx, const ContextOptions &context_options, const PythonOptions &options, const std::atomic_bool &done, Comm *comm) { 
-                    _wrapper.thread_main(game_idx, context_options, options, done, comm); 
+            [&](int game_idx, const ContextOptions &context_options, const PythonOptions &options, const std::atomic_bool &done, Comm *comm) {
+                    _wrapper.thread_main(game_idx, context_options, options, done, comm);
             });
     }
 
@@ -76,9 +76,9 @@ public:
     }
 
     void Stop() {
-      _context.reset(nullptr); // first stop the threads, then destroy the games
       std::cout << "Final statistics: " << std::endl;
       std::cout << _wrapper.PrintInfo() << std::endl;
+      _context.reset(nullptr); // first stop the threads, then destroy the games
     }
 
 };

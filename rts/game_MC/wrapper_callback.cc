@@ -54,7 +54,7 @@ void WrapperCallbacks::OnGameOptions(RTSGameOptions *rts_options) {
 
 void WrapperCallbacks::OnGameInit(RTSGame *game) {
     // std::cout << "Initialize opponent" << std::endl;
-    _opponent = get_ai(_game_idx, _options.frame_skip_opponent, _options.opponent_ai_type, _options.backup_opponent_ai_type, _options, &_opponent_comm);
+    AI *opponent = get_ai(_game_idx, _options.frame_skip_opponent, _options.opponent_ai_type, _options.backup_opponent_ai_type, _options, &_opponent_comm);
 
     // std::cout << "Initialize ai" << std::endl;
     _ai = get_ai(_game_idx, _options.frame_skip_ai, _options.ai_type, _options.backup_ai_type, _options, &_ai_comm);
@@ -64,7 +64,7 @@ void WrapperCallbacks::OnGameInit(RTSGame *game) {
     game->AddBot(_ai);
     // Opponent at position 1
     // std::cout << "Add AI at position 1" << std::endl;
-    game->AddBot(_opponent);
+    game->AddBot(opponent);
 
     _latest_start = _options.latest_start;
     _simple_ratio = _options.simple_ratio;
@@ -91,11 +91,12 @@ void WrapperCallbacks::OnEpisodeStart(int k, std::mt19937 *rng, RTSGame *game) {
         bool use_simple = int((*rng)() % 100) < _simple_ratio;
         game->RemoveBot();
 
+        AI *opponent = nullptr;
         if (use_simple) {
-            _opponent = get_ai(INVALID, _options.frame_skip_opponent, AI_SIMPLE, AI_INVALID, _options, &_opponent_comm);
+            opponent = get_ai(INVALID, _options.frame_skip_opponent, AI_SIMPLE, AI_INVALID, _options, &_opponent_comm);
         } else {
-            _opponent = get_ai(INVALID, _options.frame_skip_opponent, AI_HIT_AND_RUN, AI_INVALID, _options, &_opponent_comm);
+            opponent = get_ai(INVALID, _options.frame_skip_opponent, AI_HIT_AND_RUN, AI_INVALID, _options, &_opponent_comm);
         }
-        game->AddBot(_opponent);
+        game->AddBot(opponent);
     }
 }

@@ -75,4 +75,3 @@ public:
     std::string PrintInfo() const { return _gstats.PrintInfo(); }
 };
 
-

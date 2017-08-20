@@ -95,7 +95,7 @@ public:
     virtual bool IsUnitSelected(UnitId) const { return false; }
     virtual vector<int> GetAllSelectedUnits() const { return vector<int>(); }
 
-    // Factory method given specification. 
+    // Factory method given specification.
     static AI *CreateAI(const std::string &name, const std::string& spec) {
         auto it = _factories.find(name);
         if (it == _factories.end()) return nullptr;
@@ -103,7 +103,7 @@ public:
     }
     static void RegisterAI(const std::string &name, RegFunc reg_func) {
         _factories.insert(std::make_pair(name, reg_func));
-    } 
+    }
 
     SERIALIZER_BASE(AI, _player_id);
     SERIALIZER_ANCHOR(AI);
@@ -116,7 +116,7 @@ public:
     using Data = typename AIComm::Data;
 
 protected:
-    std::unique_ptr<AIComm> _ai_comm;
+    AIComm *_ai_comm;
     std::function<AI* (int)> _factory;
 
     vector<int> _state;

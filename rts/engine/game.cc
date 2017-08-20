@@ -173,6 +173,7 @@ void RTSGame::Reset() {
    for (const auto &bot : _bots) {
        bot->Reset();
    }
+   _seed = 0;
 }
 
 PlayerId RTSGame::Step(int num_ticks, std::string *state) {
@@ -253,24 +254,24 @@ bool RTSGame::PrepareGame() {
   if (! situation_loaded) {
       // Generate map.
       // _cmd_receiver.SendCmd(Cmd(0, INVALID).SetRandomSeed(1480918688));
-      uint64_t seed = 0;
+      _seed = 0;
       if (_options.seed == 0) {
           auto now = system_clock::now();
           auto now_ms = time_point_cast<milliseconds>(now);
           auto value = now_ms.time_since_epoch();
           long duration = value.count();
-          seed = (time(NULL) * 1000 + duration) % 100000000;
+          _seed = (time(NULL) * 1000 + duration) % 100000000;
       } else {
-          seed = _options.seed;
+          _seed = _options.seed;
           if (game_counter > 0) {
-              uint64_t seed_ext = seed;
+              uint64_t seed_ext = _seed;
               serializer::hash_combine(seed_ext, (uint64_t)(25147 * game_counter + 251581));
-              seed = seed_ext;
+              _seed = seed_ext;
           }
       }
 
-      if (_output_stream) *_output_stream << "Generate from scratch, seed = " << seed << endl << flush;
-      _cmd_receiver.SendCmdWithTick(CmdBPtr(new CmdRandomSeed(INVALID, seed)), 0);
+      if (_output_stream) *_output_stream << "Generate from scratch, seed = " << _seed << endl << flush;
+      _cmd_receiver.SendCmdWithTick(CmdBPtr(new CmdRandomSeed(INVALID, _seed)), 0);
 
       for (auto&& cmd_pair : _env.GetGameDef().GetInitCmds(_options)) {
           _cmd_receiver.SendCmdWithTick(std::move(cmd_pair.first), cmd_pair.second);
@@ -343,7 +344,16 @@ PlayerId RTSGame::MainLoop(const std::atomic_bool *done) {
 
       if (! _paused) {
           if (!_options.bypass_bot_actions) {
-              for (const auto &bot : _bots) {
+              // shuffle the order.
+              std::vector<int> orders;
+              for (size_t i = 0; i < _bots.size(); ++i) orders.push_back(i);
+
+              std::mt19937 g(_seed + t);
+
+              std::shuffle(orders.begin(), orders.end(), g);
+              // for (const auto &bot : _bots) {
+              for (const int &bot_idx : orders) {
+                  auto *bot = _bots[bot_idx].get();
                   if (tick_prompt) *_output_stream << "Run bot " << bot->GetId() << endl << flush;
                   bot->Act(_env);
               }
