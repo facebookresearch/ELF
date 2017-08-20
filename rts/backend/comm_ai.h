@@ -10,7 +10,7 @@
 #pragma once
 #include <concurrentqueue.h>
 #include "ws_server.h"
-#include "../engine/ai.h"
+#include "engine/ai.h"
 #include "raw2cmd.h"
 
 
@@ -39,8 +39,8 @@ protected:
 
 public:
     // If player_id == INVALID, then it will send the full information.
-    TCPAI(PlayerId id, int vis_after, int port, CmdReceiver *receiver)
-        : AI(id, 1, receiver), _raw_converter(id), _vis_after(vis_after) {
+    TCPAI(const std::string &name, int vis_after, int port, CmdReceiver *receiver)
+        : AI(name, 1, receiver), _vis_after(vis_after) {
           server_.reset(
               new WSServer{port, [this](const std::string& msg) {
                 this->queue_.enqueue(msg);

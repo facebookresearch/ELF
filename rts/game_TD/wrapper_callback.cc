@@ -8,9 +8,9 @@
 */
 
 #include "wrapper_callback.h"
-#include "../engine/cmd.h"
-#include "../engine/cmd.gen.h"
-#include "../engine/cmd_specific.gen.h"
+#include "engine/cmd.h"
+#include "engine/cmd.gen.h"
+#include "engine/cmd_specific.gen.h"
 #include "cmd_specific.gen.h"
 #include "ai.h"
 

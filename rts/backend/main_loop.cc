@@ -10,11 +10,12 @@
 //File: main_loop.cc
 //Author: Yuandong Tian <yuandong.tian@gmail.com>
 //
-#include "../engine/common.h"
-#include "../engine/unit.h"
-#include "../engine/game.h"
-#include "../engine/cmd_util.h"
-#include "../engine/ai.h"
+#include "engine/common.h"
+#include "engine/unit.h"
+#include "engine/game.h"
+#include "engine/cmd_util.h"
+#include "engine/ai.h"
+#include "ai.h"
 #include "comm_ai.h"
 
 #include <iostream>
@@ -29,7 +30,6 @@
 #include <memory>
 #include <chrono>
 #include <thread>
-#include "../../elf/ctpl_stl.h"
 
 using Parser = CmdLineUtils::CmdLineParser;
 
@@ -41,7 +41,7 @@ bool add_players(const string &args, int frame_skip, RTSGame *game) {
         if (player.find("tcp") == 0) {
             vector<string> params = split(player, '=');
             int tick_start = (params.size() == 1 ? 0 : std::stoi(params[1]));
-            bots.push_back(new TCPAI(INVALID, tick_start, 8000, nullptr));
+            bots.push_back(new TCPAI("tcpai", tick_start, 8000, nullptr));
         }
         /*else if (player.find("mcts") == 0) {
             vector<string> params = split(player, '=');
@@ -57,9 +57,9 @@ bool add_players(const string &args, int frame_skip, RTSGame *game) {
         else if (player.find("spectator") == 0) {
             vector<string> params = split(player, '=');
             int tick_start = (params.size() == 1 ? 0 : std::stoi(params[1]));
-            game->AddSpectator(new TCPAI(INVALID, tick_start, 8000, game->GetCmdReceiver()));
+            game->AddSpectator(new TCPAI("spectator", tick_start, 8000, game->GetCmdReceiver()));
         }
-        else if (player == "dummy") bots.push_back(new AI(INVALID, frame_skip, nullptr));
+        else if (player == "dummy") bots.push_back(new AI("dummy", frame_skip, nullptr));
         /*
         else if (player == "flag_simple") {
             //if (mcts) bots[0]->SetFactory([&](int r) -> AI* { return new FlagSimpleAI(INVALID, r, nullptr, nullptr);});

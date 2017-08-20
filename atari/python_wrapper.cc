@@ -14,7 +14,7 @@
 #include <pybind11/stl_bind.h>
 #include <pybind11/stl.h>
 
-#include "../elf/pybind_helper.h"
+#include "elf/pybind_helper.h"
 
 #include "game_context.h"
 

@@ -14,7 +14,7 @@
 #include <string>
 #include <iostream>
 
-#include "../engine/wrapper_template.h"
+#include "engine/wrapper_template.h"
 #include "wrapper_callback.h"
 #include "ai.h"
 
@@ -93,6 +93,9 @@ PYBIND11_PLUGIN(minirts) {
 
   // Also register other objects.
   PYCLASS_WITH_FIELDS(m, AIOptions)
+    .def(py::init<>());
+
+  PYCLASS_WITH_FIELDS(m, PythonOptions)
     .def(py::init<>())
     .def("AddAIOptions", &PythonOptions::AddAIOptions);
 

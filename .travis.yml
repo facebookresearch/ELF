@@ -20,18 +20,10 @@ addons:
 
 install:
   # create deps dir if not existing
-  - DEPS_DIR="${TRAVIS_BUILD_DIR}/deps"
-  - mkdir -p ${DEPS_DIR} && cd ${DEPS_DIR}
   - python3-config --cflags --ldflags
-  - cd ..
 
 script:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-4.9" CC="gcc-4.9"; fi
-  - (cd rts/game_MC && make gen && make)
-  - (cd rts/game_CF && make gen && make)
-  - (cd rts/game_TD && make gen && make)
-  - cd rts/backend
-  - make clean && make GAME_DIR=../game_MC
-  - make clean && make GAME_DIR=../game_CF
-  - make clean && make GAME_DIR=../game_TD
-
+  - (mkdir rts/build_MC && cd rts/build_MC && cmake .. -DGAME_DIR=../game_MC && make)
+  - (mkdir rts/build_CF && cd rts/build_CF && cmake .. -DGAME_DIR=../game_CF && make)
+  - (mkdir rts/build_TD && cd rts/build_TD && cmake .. -DGAME_DIR=../game_TD && make)

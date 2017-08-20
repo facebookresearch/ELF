@@ -18,15 +18,11 @@ namespace py = pybind11;
 template <typename GameContext>
 void register_common_func(py::module &m) {
   using GC = typename GameContext::GC;
-  using Options = typename GC::Options;
   using State = typename GC::State;
 
   PYCLASS_WITH_FIELDS(m, ContextOptions)
     .def(py::init<>())
     .def("print", &ContextOptions::print);
-
-  PYCLASS_WITH_FIELDS(m, Options)
-    .def(py::init<>());
 
   PYCLASS_WITH_FIELDS(m, EntryInfo)
     .def(py::init<>());

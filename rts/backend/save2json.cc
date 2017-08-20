@@ -8,9 +8,9 @@
 */
 
 #include "save2json.h"
-#include "../engine/game_env.h"
-#include "../engine/ai.h"
-#include "../engine/cmd.h"
+#include "engine/game_env.h"
+#include "engine/ai.h"
+#include "engine/cmd.h"
 
 static inline void set_p(const PointF &p, json *location) {
     (*location)["x"] = p.x;
