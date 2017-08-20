@@ -25,6 +25,7 @@ class Loader:
                 ("latest_start_decay", 0.7),
                 ("players", dict(type=str, help=";-separated player infos. For example: type=AI_NN,fs=50,backup=AI_SIMPLE,fow=True;type=AI_SIMPLE,fs=50")),
                 ("max_tick", dict(type=int, default=30000, help="Maximal tick")),
+                ("shuffle_player", dict(action="store_true")),
                 ("mcts_threads", 64),
                 ("seed", 0),
                 ("simple_ratio", -1),
@@ -53,25 +54,28 @@ class Loader:
         else:
             setattr(ai_options, key, int(value))
 
-    def _parse_players(self, opt):
-        for player in self.args.players.split(";"):
+    def _parse_players(self, opt, player_names):
+        for i, player in enumerate(self.args.players.split(";")):
             ai_options = minirts.AIOptions()
             for item in player.split(","):
                 key, value = item.split("=")
                 self._set_key(ai_options, key, value)
+            if player_names is not None:
+                self._set_key(ai_options, "name", player_names[i])
             opt.AddAIOptions(ai_options)
 
-    def _init_gc(self):
+    def _init_gc(self, player_names=None):
         args = self.args
 
         co = minirts.ContextOptions()
         self.context_args.initialize(co)
 
-        opt = minirts.Options()
+        opt = minirts.PythonOptions()
         opt.seed = args.seed
         opt.simulation_type = minirts.ST_NORMAL
         opt.latest_start = args.latest_start
         opt.latest_start_decay = args.latest_start_decay
+        opt.shuffle_player = args.shuffle_player
         opt.mcts_threads = args.mcts_threads
         opt.mcts_rollout_per_thread = 50
         opt.max_tick = args.max_tick
@@ -79,12 +83,13 @@ class Loader:
         opt.simple_ratio = args.simple_ratio
         opt.ratio_change = args.ratio_change
 
-        self._parse_players(opt)
+        self._parse_players(opt, player_names)
 
         # opt.output_filename = b"simulators.txt"
         # opt.output_filename = b"cout"
         # opt.cmd_dumper_prefix = b"cmd-dump"
         # opt.save_replay_prefix = b"replay"
+        opt.Print()
 
         GC = minirts.GameContext(co, opt)
         params = GC.GetParams()
@@ -103,9 +108,9 @@ class Loader:
         for _, v in desc.items():
             v["input"]["keys"].update(extra)
 
-    def _add_player_id(self, desc, player_id):
-        desc["input"]["keys"].add("player_id")
-        desc["filters"] = dict(player_id=player_id)
+    def _add_player_id(self, desc, player_name):
+        desc["input"]["keys"].add("player_name")
+        desc["filters"] = dict(player_name=player_name)
 
     def _get_actor_spec(self):
         return dict(
@@ -148,9 +153,10 @@ class Loader:
 
     def initialize_selfplay(self):
         args = self.args
-        args.ai_type = "AI_NN"
-        args.opponent_type = "AI_NN"
-        co, GC, params = self._init_gc()
+        reference_name = "reference"
+        train_name = "train"
+
+        co, GC, params = self._init_gc(player_names=[train_name, reference_name])
 
         desc = {}
         # For actor model, no reward needed, we only want to get input and return distribution of actions.
@@ -158,13 +164,13 @@ class Loader:
         desc["actor0"] = self._get_actor_spec()
         desc["actor1"] = self._get_actor_spec()
 
-        self._add_player_id(desc["actor0"], "reference")
-        self._add_player_id(desc["actor1"], "train")
+        self._add_player_name(desc["actor0"], reference_name)
+        self._add_player_name(desc["actor1"], train_name)
 
         if not args.actor_only:
             # For training, we want input, action (filled by actor models), value (filled by actor models) and reward.
             desc["train1"] = self._get_train_spec()
-            self._add_player_id(desc["train1"], "train")
+            self._add_player_name(desc["train1"], train_name)
 
         self._add_more_labels(desc)
 

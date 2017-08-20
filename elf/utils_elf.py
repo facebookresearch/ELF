@@ -182,9 +182,9 @@ class GCWrapper:
 
             # If we specifiy filters, we need to put the info into gstat.
             filters = v.get("filters", {})
-            gstat.player_id = filters.get("player_id", -1)
+            gstat.player_name = filters.get("player_name", "")
 
-            print("Deal with connector. key = %s, hist_len = %d, player_id = %d" % (key, gstat.hist_len, gstat.player_id))
+            print("Deal with connector. key = %s, hist_len = %d, player_name = %s" % (key, gstat.hist_len, gstat.player_name))
 
             gpu2gid.append(list())
             for i in range(num_recv_thread):

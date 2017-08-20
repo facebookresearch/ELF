@@ -85,8 +85,7 @@ public:
 
 #define CONST(v) m.attr(#v) = py::int_(v)
 
-PYBIND11_PLUGIN(minirts) {
-  py::module m("minirts", "MiniRTS game");
+PYBIND11_MODULE(minirts, m) {
   register_common_func<GameContext>(m);
   CONTEXT_REGISTER(GameContext)
     .def("GetParams", &GameContext::GetParams);
@@ -97,6 +96,7 @@ PYBIND11_PLUGIN(minirts) {
 
   PYCLASS_WITH_FIELDS(m, PythonOptions)
     .def(py::init<>())
+    .def("Print", &PythonOptions::Print)
     .def("AddAIOptions", &PythonOptions::AddAIOptions);
 
   // Define symbols.
@@ -114,6 +114,4 @@ PYBIND11_PLUGIN(minirts) {
   CONST(ACTION_GLOBAL);
   CONST(ACTION_PROB);
   CONST(ACTION_REGIONAL);
-
-  return m.ptr();
 }

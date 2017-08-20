@@ -66,16 +66,18 @@ void WrapperCallbacks::OnGameInit(RTSGame *game) {
         Context::AIComm *ai_comm = new Context::AIComm(_game_idx, _comm);
         _ai_comms.emplace_back(ai_comm);
         initialize_ai_comm(*ai_comm);
-        ais.push_back(get_ai(ai_opt, ai_comm)); 
+        ais.push_back(get_ai(ai_opt, ai_comm));
     }
-    
+
     // std::cout << "Initialize ai" << std::endl;
-    // Used to pick the AI to change the parameters. 
+    // Used to pick the AI to change the parameters.
     _ai = ais[0];
 
     // Shuffle the bot.
-    std::mt19937 g(_game_idx);
-    std::shuffle(ais.begin(), ais.end(), g);
+    if (_options.shuffle_player) {
+        std::mt19937 g(_game_idx);
+        std::shuffle(ais.begin(), ais.end(), g);
+    }
     for (AI *ai : ais) game->AddBot(ai);
 
     _latest_start = _options.latest_start;
