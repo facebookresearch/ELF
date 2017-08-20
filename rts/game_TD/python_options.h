@@ -110,6 +110,7 @@ struct GameState {
     using State = GameState;
     using Data = GameState;
 
+    int32_t id;
     int32_t seq;
     int32_t game_counter;
     char terminal;
@@ -151,7 +152,8 @@ struct GameState {
 
     }
 
-    void Init(int num_action) {
+    void Init(int iid, int num_action) {
+        id = iid;
         pi.resize(num_action, 0.0);
     }
 

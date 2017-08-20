@@ -15,6 +15,7 @@
 #include "../engine/cmd.gen.h"
 #include "../engine/cmd_specific.gen.h"
 #include "cmd_specific.gen.h"
+#include "ai.h"
 
 int GameDef::GetNumUnitType() {
     return NUM_FLAG_UNITTYPE;
@@ -42,6 +43,9 @@ void GameDef::Init() {
     reg_engine();
     reg_engine_specific();
     reg_cf_specific();
+
+    // InitAI.
+    AI::RegisterAI("flag_simple", [](const std::string &spec) { return new FlagSimpleAI(INVALID, std::stoi(spec), nullptr); });
 }
 
 vector<pair<CmdBPtr, int> > GameDef::GetInitCmds(const RTSGameOptions& options) const{

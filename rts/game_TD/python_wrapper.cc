@@ -38,14 +38,7 @@ public:
     }
 
     void Start() {
-        auto data_init = [&](int game_idx, HistT<GameState> &hstate) {
-            (void)game_idx;
-            hstate.InitHist(_T);
-            for (auto &item : hstate.v()) {
-                item.Init(GameDef::GetNumAction());
-            }
-        };
-        _context->Start(data_init, thread_main<WrapperCallbacks, GC::AIComm, PythonOptions>);
+        _context->Start(thread_main<WrapperCallbacks, GC::Comm, PythonOptions>);
     }
 
     const std::string &game_unittype2str(int unit_type) const {

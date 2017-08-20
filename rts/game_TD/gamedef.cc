@@ -14,6 +14,7 @@
 #include "../engine/cmd.gen.h"
 #include "../engine/cmd_specific.gen.h"
 #include "cmd_specific.gen.h"
+#include "ai.h"
 
 int GameDef::GetNumUnitType() {
     return NUM_TD_UNITTYPE;
@@ -43,6 +44,10 @@ void GameDef::Init() {
     reg_engine();
     reg_engine_specific();
     reg_td_specific();
+
+    // InitAI.
+    AI::RegisterAI("td_simple", [](const std::string &spec) { return new TDSimpleAI(INVALID, std::stoi(spec), nullptr); });
+    AI::RegisterAI("td_built_in", [](const std::string &spec) { return new TDBuiltInAI(INVALID, std::stoi(spec), nullptr); });
 }
 
 vector<pair<CmdBPtr, int> > GameDef::GetInitCmds(const RTSGameOptions&) const{

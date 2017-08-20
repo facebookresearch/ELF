@@ -15,18 +15,17 @@
 #include "ai.h"
 
 typedef TDTrainedAI TrainAIType;
-static AI *get_ai(int /*game_idx*/, int frame_skip, int ai_type, int backup_ai_type,
-    const PythonOptions& /*options*/, Context::AIComm *input_ai_comm, bool use_ai_comm = false) {
-    AIComm *ai_comm = use_ai_comm ? input_ai_comm : nullptr;
-
+static AI *get_ai(int /*game_idx*/, int frame_skip, int ai_type, int /*backup_ai_type*/,
+    const PythonOptions& /*options*/, Context::AIComm *ai_comm) {
     switch (ai_type) {
        case AI_TD_BUILT_IN:
            return new TDBuiltInAI(INVALID, frame_skip, nullptr, ai_comm);
        case AI_TD_NN:
            return new TDTrainedAI(INVALID, frame_skip, nullptr, ai_comm);
        default:
-           throw std::range_error("Unknown ai_type! ai_type: " + std::to_string(ai_type) +
-                   " backup_ai_type: " + std::to_string(backup_ai_type) + " use_ai_comm: " + std::to_string(use_ai_comm));
+           return nullptr;
+        //    throw std::range_error("Unknown ai_type! ai_type: " + std::to_string(ai_type) +
+        //            " backup_ai_type: " + std::to_string(backup_ai_type) + " use_ai_comm: " + std::to_string(use_ai_comm));
     }
 }
 
@@ -36,13 +35,21 @@ void WrapperCallbacks::GlobalInit() {
     reg_td_specific();
 }
 
+void WrapperCallbacks::initialize_ai_comm(Context::AIComm &ai_comm) {
+    auto &hstate = ai_comm.info().data;
+    hstate.InitHist(_context_options.T);
+    for (auto &item : hstate.v()) {
+        item.Init(_game_idx, GameDef::GetNumAction());
+    }
+}
+
 void WrapperCallbacks::OnGameOptions(RTSGameOptions *rts_options) {
     rts_options->handicap_level = _options.handicap_level;
 }
 
 void WrapperCallbacks::OnGameInit(RTSGame *game) {
-    _opponent = get_ai(INVALID, _options.frame_skip_opponent, _options.opponent_ai_type, AI_INVALID, _options, _ai_comm);
-    _ai = get_ai(_game_idx, _options.frame_skip_ai, _options.ai_type, _options.backup_ai_type, _options, _ai_comm, true);
+    _opponent = get_ai(_game_idx, _options.frame_skip_opponent, _options.opponent_ai_type, AI_INVALID, _options, &_opponent_comm);
+    _ai = get_ai(_game_idx, _options.frame_skip_ai, _options.ai_type, _options.backup_ai_type, _options, &_ai_comm);
 
     // AI at position 0
     game->AddBot(_ai);
