@@ -394,15 +394,11 @@ int main(int argc, char *argv[]) {
         int games = parser.GetItem<int>("games");
         int seed0 = parser.GetItem<int>("seed");
         ctpl::thread_pool p(threads + 1);
-        struct Stats {
-            PlayerId winner;
-            int base_loc;
-        };
-        CCQueue<Stats> q;
-        const int kEndSignal = -0xff;
+        const int print_per_n = (games == 0 ? 5000 : games * threads / 10); 
+        GlobalStats gstats(print_per_n);
 
         for (int i = 0; i < threads; i++) {
-            p.push([=, &q](int /*thread_id*/){
+            p.push([=, &gstats](int /*thread_id*/){
                 RTSGameOptions options;
                 options.main_loop_quota = 0;
                 options.output_file = "";
@@ -415,51 +411,17 @@ int main(int argc, char *argv[]) {
                 //game.AddBot(new SimpleAI(INVALID, frame_skip, nullptr));
                 game.AddBot(AI::CreateAI("simple", std::to_string(frame_skip)));
                 game.AddBot(AI::CreateAI("simple", std::to_string(frame_skip)));
+                game.GetCmdReceiver()->GetGameStats().SetGlobalStats(&gstats);
                 bool infinite = (games == 0);
                 for (int j = 0; j < games || infinite; ++j) {
-                    Stats stats;
-                    stats.winner = game.MainLoop();
-                    stats.base_loc = game.GetCmdReceiver()->GetGameStats().GetBaseChoice();
-                    push_q(q, stats);
+                    game.MainLoop();
                     game.Reset();
                 }
-                Stats stats;
-                stats.winner = kEndSignal;
-                push_q(q, stats);
             });
             this_thread::sleep_for(std::chrono::milliseconds(10));
         }
-        // Last thread for checking the win rate
-        p.push([=, &q](int /*thread_id*/) {
-          int total_games = 0, player0won = 0, player1won = 0;
-          int base_loc0_count = 0;
-          int done_thread = 0;
-          while (true) {
-              Stats result;
-              pop_wait(q, result);
-              if (result.winner == kEndSignal) {
-                  done_thread ++;
-                  if (done_thread == threads) break;
-                  else continue;
-              }
-              if (result.winner == 0) player0won ++;
-              if (result.winner == 1) player1won ++;
-              if (result.base_loc == 0) base_loc0_count ++;
-              total_games ++;
-              if (total_games % 5000 == 0) {
-                  cout << "Result:" << player0won << "/"<< player1won << "/" << total_games << endl;
-                  cout << "Player 0 win rate: " << (float)player0won / total_games << " " << player0won << "/" << total_games << endl;
-                  cout << "Player 1 win rate: " << (float)player1won / total_games << " " << player1won << "/" << total_games << endl;
-                  cout << "Base loc0 rate: " << (float)base_loc0_count / total_games << " " << base_loc0_count << "/" << total_games << endl;
-              }
-          }
-          cout << "Final result:" << player0won << "/"<< player1won << "/" << total_games << endl;
-          cout << "Final player 0 win rate: " << (float)player0won / total_games << " " << player0won << "/" << total_games << endl;
-          cout << "Final player 1 win rate: " << (float)player1won / total_games << " " << player1won << "/" << total_games << endl;
-          cout << "Final base loc0 rate: " << (float)base_loc0_count / total_games << " " << base_loc0_count << "/" << total_games << endl;
-        });
-
         p.stop(true);
+        std::cout << gstats.PrintInfo() << std::endl;
     } else {
         RTSGame game(options);
         cout << "Players: " << players << endl;

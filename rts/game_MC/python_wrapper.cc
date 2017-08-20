@@ -21,23 +21,26 @@
 class GameContext {
 public:
     using GC = Context;
+    using Wrapper = WrapperT<WrapperCallbacks, GC::Comm, PythonOptions>;
 
 private:
     int _T;
     std::unique_ptr<GC> _context;
+    Wrapper _wrapper;
 
 public:
     GameContext(const ContextOptions& context_options, const PythonOptions& options) {
       _T = context_options.T;
-      // Initialize enums.
-      init_enums();
       WrapperCallbacks::GlobalInit();
 
       _context.reset(new GC{context_options, options});
     }
 
     void Start() {
-        _context->Start(thread_main<WrapperCallbacks, GC::Comm, PythonOptions>);
+        _context->Start(
+            [&](int game_idx, const ContextOptions &context_options, const PythonOptions &options, const std::atomic_bool &done, Comm *comm) { 
+                    _wrapper.thread_main(game_idx, context_options, options, done, comm); 
+            });
     }
 
     const std::string &game_unittype2str(int unit_type) const {
@@ -74,6 +77,8 @@ public:
 
     void Stop() {
       _context.reset(nullptr); // first stop the threads, then destroy the games
+      std::cout << "Final statistics: " << std::endl;
+      std::cout << _wrapper.PrintInfo() << std::endl;
     }
 
 };
