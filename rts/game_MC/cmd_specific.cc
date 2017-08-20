@@ -49,11 +49,17 @@ bool CmdGameStartSpecific::run(GameEnv*, CmdReceiver* receiver) {
 
 bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
     auto f = env->GetRandomFunc();
-    bool shuffle = (f(2) == 0);
+    bool shuffle_lr = (f(2) == 0);
+    bool shuffle_ud = (f(2) == 0);
+    auto shuffle_loc = [&] (PointF p, bool b1, bool b2) -> PointF {
+        int x = b1 ? 19 - p.x : p.x;
+        int y = b2 ? 19 - p.y : p.y;
+        return PointF(x, y);
+    };
     for (const auto &info : env->GetMap().GetPlayerMapInfo()) {
-        PlayerId id = shuffle ? info.player_id : 1 - info.player_id;
-        _CREATE(BASE, PointF(info.base_coord), id);
-        _CREATE(RESOURCE, PointF(info.resource_coord), id);
+        PlayerId id = info.player_id;
+        _CREATE(BASE, shuffle_loc(PointF(info.base_coord), shuffle_lr, shuffle_ud), id);
+        _CREATE(RESOURCE, shuffle_loc(PointF(info.resource_coord), shuffle_lr, shuffle_ud), id);
         _CHANGE_RES(id, info.initial_resource);
     }
     auto gen_loc = [&] (int player_id) -> PointF {
@@ -67,19 +73,19 @@ bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
         return PointF(x, y);
     };
     for (PlayerId player_id = 0; player_id < 2; player_id++) {
-        PlayerId id = shuffle ? player_id : 1 - player_id;
+        PlayerId id = player_id;
         // Generate workers (up to three).
         for (int i = 0; i < 3; i++) {
             if (f(10) >= 5) {
-                _CREATE(WORKER, gen_loc(player_id), id);
+                _CREATE(WORKER, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
             }
         }
         if (f(10) >= 8)
-            _CREATE(BARRACKS, gen_loc(player_id), id);
+            _CREATE(BARRACKS, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
         if (f(10) >= 5)
-            _CREATE(MELEE_ATTACKER, gen_loc(player_id), id);
+            _CREATE(MELEE_ATTACKER, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
         if (f(10) >= 5)
-            _CREATE(RANGE_ATTACKER, gen_loc(player_id), id);
+            _CREATE(RANGE_ATTACKER, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
     }
     return true;
 }
