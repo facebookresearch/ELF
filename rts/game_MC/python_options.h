@@ -8,6 +8,8 @@
 */
 
 #pragma once
+#include <sstream>
+
 #include "../../elf/python_options_utils_cpp.h"
 #include "../../elf/copier.hh"
 #include "../../elf/comm_template.h"
@@ -32,19 +34,41 @@
 #define ACTION_PROB 1
 #define ACTION_REGIONAL 2
 
+struct AIOptions {
+    // Type of ai.
+    int ai_type;
+
+    // Type of backup ai.
+    int backup_ai_type;
+
+    // How often does the player acts.
+    int frame_skip;
+
+    // Name of the player.
+    std::string player_name;
+
+    // Whether it respects FoW.
+    bool respect_fow;
+
+    AIOptions() : ai_type(AI_SIMPLE), backup_ai_type(AI_INVALID), frame_skip(1), respect_fow(true) {
+    }
+
+    std::string info() const {
+        std::stringstream ss;
+        ss << "[name=" << player_name << "][frameskip=" << frame_skip << "][type=" << ai_type << "][Backup=" << backup_ai_type << "][FoW=" << (respect_fow ? "True" : "False") << "]";
+        return ss.str();
+    }
+
+    REGISTER_PYBIND_FIELDS(ai_type, backup_ai_type, frame_skip, player_name, respect_fow);
+};
+
 struct PythonOptions {
     // What kind of simulations we are running.
     // For now there is only ST_NORMAL
     int simulation_type;
 
     // AI, backup_ai and its opponent type.
-    int ai_type;
-    int backup_ai_type;
-    int opponent_ai_type;
-    int backup_opponent_ai_type;
-
-    // How often does the engine act (every act_ticks ticks).
-    int frame_skip_ai, frame_skip_opponent;
+    std::vector<AIOptions> ai_options;
 
     // Send stdout to the following filename. If output_filename == "cout", send them to stdout.
     // If output_filename == "", disable the prompts.
@@ -77,36 +101,36 @@ struct PythonOptions {
     // of PythonOption.seed and the thread id.
     int seed;
 
-    bool with_fow;
-
     int mcts_threads;
     int mcts_rollout_per_thread;
     int game_name;
     int handicap_level;
 
     PythonOptions()
-      : simulation_type(ST_NORMAL), ai_type(AI_SIMPLE), backup_ai_type(AI_SIMPLE), opponent_ai_type(AI_SIMPLE), backup_opponent_ai_type(AI_INVALID),
-        frame_skip_ai(1), frame_skip_opponent(1), simple_ratio(1.0), ratio_change(0.0), latest_start(0),
-        latest_start_decay(0.9), max_tick(30000), seed(0), with_fow(true), mcts_threads(1), mcts_rollout_per_thread(1),
+      : simulation_type(ST_NORMAL), simple_ratio(1.0), ratio_change(0.0), latest_start(0),
+        latest_start_decay(0.9), max_tick(30000), seed(0), mcts_threads(1), mcts_rollout_per_thread(1),
         game_name(0), handicap_level(0) {
     }
 
+    void AddAIOptions(const AIOptions &ai) {
+        ai_options.push_back(ai);
+    }
+
     void Print() const {
-        std::cout << "Frame_skip_ai: " << frame_skip_ai << " Frame_skip_opponent: " << frame_skip_opponent << std::endl;
-        std::cout << "AI type: " << ai_type << "   Backup AI type: " << backup_ai_type << std::endl;
-        std::cout << "Opponent AI type: " << opponent_ai_type << "   Backup Opponent AI type: " << backup_opponent_ai_type << std::endl;
         std::cout << "Handicap: " << handicap_level << std::endl;
         std::cout << "Max tick: " << max_tick << std::endl;
         std::cout << "Latest_start: " << latest_start << " decay: " << latest_start_decay << std::endl;
         std::cout << "Seed: " << seed << std::endl;
-        std::cout << "With FoW: " << with_fow << std::endl;
+        for (const AIOptions& ai_option : ai_options) {
+            std::cout << ai_option.info() << std::endl;
+        }
         std::cout << "MCTS #threads: " << mcts_threads << " #rollout/thread: " << mcts_rollout_per_thread << std::endl;
         std::cout << "Output_prompt_filename: \"" << output_filename << "\"" << std::endl;
         std::cout << "Cmd_dumper_prefix: \"" << cmd_dumper_prefix << "\"" << std::endl;
         std::cout << "Save_replay_prefix: \"" << save_replay_prefix << "\"" << std::endl;
     }
 
-    REGISTER_PYBIND_FIELDS(simulation_type, ai_type, backup_ai_type, opponent_ai_type, backup_opponent_ai_type, frame_skip_ai, frame_skip_opponent, output_filename, cmd_dumper_prefix, save_replay_prefix, simple_ratio, ratio_change, latest_start, latest_start_decay, max_tick, seed, with_fow, mcts_threads, mcts_rollout_per_thread, game_name, handicap_level);
+    REGISTER_PYBIND_FIELDS(simulation_type, output_filename, cmd_dumper_prefix, save_replay_prefix, simple_ratio, ratio_change, latest_start, latest_start_decay, max_tick, seed, mcts_threads, mcts_rollout_per_thread, game_name, handicap_level);
 };
 
 struct GameState {
@@ -123,7 +147,8 @@ struct GameState {
     int32_t winner;
 
     // Used for self-play.
-    int32_t player_id;
+    uint32_t player_id;
+    std::string player_name;
 
     // Extra data.
     int ai_start_tick;
@@ -183,7 +208,7 @@ struct GameState {
         */
     }
 
-    DECLARE_FIELD(GameState, id, a, V, pi, action_type, last_r, s, res, rv, terminal, seq, game_counter, last_terminal, player_id);
+    DECLARE_FIELD(GameState, id, a, V, pi, action_type, last_r, s, res, rv, terminal, seq, game_counter, last_terminal);
     REGISTER_PYBIND_FIELDS(id, a, V, pi, action_type, last_r, s, res, tick, winner, player_id, ai_start_tick, last_terminal);
 };
 

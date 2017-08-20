@@ -57,7 +57,6 @@ void RTSGame::AddBot(AI *bot) {
 }
 
 void RTSGame::RemoveBot() {
-    // WARNING: [TODO] Memory leak!!
     _bots.pop_back();
     _env.RemovePlayer();
 }
@@ -344,16 +343,8 @@ PlayerId RTSGame::MainLoop(const std::atomic_bool *done) {
 
       if (! _paused) {
           if (!_options.bypass_bot_actions) {
-              // shuffle the order.
-              std::vector<int> orders;
-              for (size_t i = 0; i < _bots.size(); ++i) orders.push_back(i);
-
-              std::mt19937 g(_seed + t);
-
-              std::shuffle(orders.begin(), orders.end(), g);
               // for (const auto &bot : _bots) {
-              for (const int &bot_idx : orders) {
-                  auto *bot = _bots[bot_idx].get();
+              for (const auto &bot : _bots) {
                   if (tick_prompt) *_output_stream << "Run bot " << bot->GetId() << endl << flush;
                   bot->Act(_env);
               }

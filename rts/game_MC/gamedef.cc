@@ -47,8 +47,17 @@ void GameDef::Init() {
     reg_minirts_specific();
 
     // InitAI.
-    AI::RegisterAI("simple", [](const std::string &spec) { return new SimpleAI(INVALID, std::stoi(spec), nullptr); });
-    AI::RegisterAI("hit_and_run", [](const std::string &spec) { return new HitAndRunAI(INVALID, std::stoi(spec), nullptr); });
+    AI::RegisterAI("simple", [](const std::string &spec) { 
+        AIOptions ai_options;
+        ai_options.frame_skip = std::stoi(spec); 
+        return new SimpleAI(ai_options, nullptr); 
+    });
+
+    AI::RegisterAI("hit_and_run", [](const std::string &spec) { 
+        AIOptions ai_options;
+        ai_options.frame_skip = std::stoi(spec); 
+        return new HitAndRunAI(ai_options, nullptr); 
+    });
 }
 
 vector<pair<CmdBPtr, int> > GameDef::GetInitCmds(const RTSGameOptions&) const{

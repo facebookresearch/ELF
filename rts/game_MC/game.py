@@ -138,22 +138,19 @@ class Loader:
         args.opponent_type = "AI_NN"
         co, GC, params = self._init_gc()
 
-        reference_id = 0
-        train_id = 1
-
         desc = {}
         # For actor model, no reward needed, we only want to get input and return distribution of actions.
         # sampled action and and value will be filled from the reply.
         desc["actor0"] = self._get_actor_spec()
         desc["actor1"] = self._get_actor_spec()
 
-        self._add_player_id(desc["actor0"], reference_id)
-        self._add_player_id(desc["actor1"], train_id)
+        self._add_player_id(desc["actor0"], "reference")
+        self._add_player_id(desc["actor1"], "train")
 
         if not args.actor_only:
             # For training, we want input, action (filled by actor models), value (filled by actor models) and reward.
             desc["train1"] = self._get_train_spec()
-            self._add_player_id(desc["train1"], train_id)
+            self._add_player_id(desc["train1"], "train")
 
         self._add_more_labels(desc)
 

@@ -31,15 +31,15 @@
 struct GroupStat {
     int gid;
     int hist_len;
-    int player_id;
+    std::string player_name; 
 
-    GroupStat() : gid(-1), hist_len(1), player_id(-1) { }
+    GroupStat() : gid(-1), hist_len(1) { }
     std::string info() const {
-        return "[gid=" + std::to_string(gid) + "][T=" + std::to_string(hist_len) + "][player_id=" + std::to_string(player_id);
+        return "[gid=" + std::to_string(gid) + "][T=" + std::to_string(hist_len) + "][player_name=" + player_name + "]";
     }
 
     // Note that gid will be set by C++ side.
-    REGISTER_PYBIND_FIELDS(hist_len, player_id);
+    REGISTER_PYBIND_FIELDS(hist_len, player_name);
 };
 
 
@@ -58,8 +58,8 @@ struct CondPerGroupT {
         // If we have specified player id and the player id from the info is irrelevant
         // from what is specified, then we skip.
         const auto &record = info.data.newest();
-        if (gstat.player_id != -1 && gstat.player_id != record.player_id) return false;
-        // std::cout << "Check " << gstat.info() << " record.player_id = " << record.player_id << std::endl;
+        if (! gstat.player_name.empty() && gstat.player_name != record.player_name) return false;
+        // std::cout << "Check " << gstat.info() << " record.player_name = " << record.player_name << std::endl;
 
         // Update game counter.
         int new_game_counter = record.game_counter;

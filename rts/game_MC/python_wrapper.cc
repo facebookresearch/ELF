@@ -91,6 +91,11 @@ PYBIND11_PLUGIN(minirts) {
   CONTEXT_REGISTER(GameContext)
     .def("GetParams", &GameContext::GetParams);
 
+  // Also register other objects.
+  PYCLASS_WITH_FIELDS(m, AIOptions)
+    .def(py::init<>())
+    .def("AddAIOptions", &PythonOptions::AddAIOptions);
+
   // Define symbols.
   CONST(ST_INVALID);
   CONST(ST_NORMAL);
