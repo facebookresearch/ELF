@@ -28,7 +28,7 @@ protected:
 public:
     AIBase() { }
     AIBase(const AIOptions &opt, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
-        : AIWithComm<AIComm>(opt.player_name, opt.frame_skip, receiver, ai_comm), _respect_fow(opt.respect_fow) {
+        : AIWithComm<AIComm>(opt.name, opt.fs, receiver, ai_comm), _respect_fow(opt.fow) {
     }
 };
 

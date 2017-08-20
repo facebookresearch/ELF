@@ -23,14 +23,10 @@ class Loader:
                 ("handicap_level", 0),
                 ("latest_start", 1000),
                 ("latest_start_decay", 0.7),
-                ("fs_ai", 50),
-                ("fs_opponent", 50),
-                ("ai_type", dict(type=str, choices=["AI_SIMPLE", "AI_HIT_AND_RUN", "AI_NN", "AI_FLAG_NN", "AI_TD_NN"], default="AI_NN")),
-                ("opponent_type", dict(type=str, choices=["AI_SIMPLE", "AI_HIT_AND_RUN", "AI_FLAG_SIMPLE", "AI_TD_BUILT_IN", "AI_NN"], default="AI_SIMPLE")),
+                ("players", dict(type=str, help=";-separated player infos. For example: type=AI_NN,fs=50,backup=AI_SIMPLE,fow=True;type=AI_SIMPLE,fs=50")),
                 ("max_tick", dict(type=int, default=30000, help="Maximal tick")),
                 ("mcts_threads", 64),
                 ("seed", 0),
-                ("without_fow", dict(action="store_true")),
                 ("simple_ratio", -1),
                 ("ratio_change", 0),
                 ("actor_only", dict(action="store_true")),
@@ -41,6 +37,30 @@ class Loader:
             child_providers = [ self.context_args.args ]
         )
 
+    def _set_key(self, ai_options, key, value):
+        if not hasattr(ai_options, key):
+            print("AIOptions does not have key = " + key)
+            return
+
+        # Can we automate this?
+        type_convert = dict(ai_nn=minirts.AI_NN, ai_simple=minirts.AI_SIMPLE, ai_hit_and_run=minirts.AI_HIT_AND_RUN)
+        bool_convert = dict(t=True, true=True, f=False, false=False)
+
+        if key == "type" or key == "backup":
+            setattr(ai_options, key, type_convert[value.lower()])
+        elif key == "fow":
+            setattr(ai_options, key, bool_convert[value.lower()])
+        else:
+            setattr(ai_options, key, int(value))
+
+    def _parse_players(self, opt):
+        for player in self.args.players.split(";"):
+            ai_options = minirts.AIOptions()
+            for item in player.split(","):
+                key, value = item.split("=")
+                self._set_key(ai_options, key, value)
+            opt.AddAIOptions(ai_options)
+
     def _init_gc(self):
         args = self.args
 
@@ -49,15 +69,7 @@ class Loader:
 
         opt = minirts.Options()
         opt.seed = args.seed
-        opt.frame_skip_ai = args.fs_ai
-        opt.frame_skip_opponent = args.fs_opponent
         opt.simulation_type = minirts.ST_NORMAL
-        opt.ai_type = getattr(minirts, args.ai_type)
-        if args.ai_type == "AI_NN":
-            opt.backup_ai_type = minirts.AI_SIMPLE
-        if args.ai_type == "AI_FLAG_NN":
-            opt.backup_ai_type = minirts.AI_FLAG_SIMPLE
-        opt.opponent_ai_type = getattr(minirts, args.opponent_type)
         opt.latest_start = args.latest_start
         opt.latest_start_decay = args.latest_start_decay
         opt.mcts_threads = args.mcts_threads
@@ -66,7 +78,9 @@ class Loader:
         opt.handicap_level = args.handicap_level
         opt.simple_ratio = args.simple_ratio
         opt.ratio_change = args.ratio_change
-        opt.with_fow = not args.without_fow
+
+        self._parse_players(opt)
+
         # opt.output_filename = b"simulators.txt"
         # opt.output_filename = b"cout"
         # opt.cmd_dumper_prefix = b"cmd-dump"

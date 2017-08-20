@@ -49,13 +49,13 @@ void GameDef::Init() {
     // InitAI.
     AI::RegisterAI("simple", [](const std::string &spec) { 
         AIOptions ai_options;
-        ai_options.frame_skip = std::stoi(spec); 
+        ai_options.fs = std::stoi(spec); 
         return new SimpleAI(ai_options, nullptr); 
     });
 
     AI::RegisterAI("hit_and_run", [](const std::string &spec) { 
         AIOptions ai_options;
-        ai_options.frame_skip = std::stoi(spec); 
+        ai_options.fs = std::stoi(spec); 
         return new HitAndRunAI(ai_options, nullptr); 
     });
 }

@@ -17,7 +17,7 @@
 typedef TrainedAI2 TrainAIType;
 static AI *get_ai(const AIOptions &opt, Context::AIComm *ai_comm) {
     // std::cout << "AI type = " << ai_type << " Backup AI type = " << backup_ai_type << std::endl;
-    switch (opt.ai_type) {
+    switch (opt.type) {
        case AI_SIMPLE:
            return new SimpleAI(opt, nullptr);
        case AI_HIT_AND_RUN:
@@ -26,9 +26,9 @@ static AI *get_ai(const AIOptions &opt, Context::AIComm *ai_comm) {
            {
            AI *backup_ai = nullptr;
            AIOptions backup_ai_options;
-           backup_ai_options.frame_skip = opt.frame_skip;
-           if (opt.backup_ai_type == AI_SIMPLE) backup_ai = new SimpleAI(backup_ai_options, nullptr);
-           else if (opt.backup_ai_type == AI_HIT_AND_RUN) backup_ai = new HitAndRunAI(backup_ai_options, nullptr);
+           backup_ai_options.fs = opt.fs;
+           if (opt.backup == AI_SIMPLE) backup_ai = new SimpleAI(backup_ai_options, nullptr);
+           else if (opt.backup == AI_HIT_AND_RUN) backup_ai = new HitAndRunAI(backup_ai_options, nullptr);
            return new TrainAIType(opt, nullptr, ai_comm, backup_ai);
            }
        default:

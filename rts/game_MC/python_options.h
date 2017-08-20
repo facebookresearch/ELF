@@ -36,30 +36,30 @@
 
 struct AIOptions {
     // Type of ai.
-    int ai_type;
+    int type;
 
     // Type of backup ai.
-    int backup_ai_type;
+    int backup;
 
     // How often does the player acts.
-    int frame_skip;
+    int fs;
 
     // Name of the player.
-    std::string player_name;
+    std::string name;
 
     // Whether it respects FoW.
-    bool respect_fow;
+    bool fow;
 
-    AIOptions() : ai_type(AI_SIMPLE), backup_ai_type(AI_INVALID), frame_skip(1), respect_fow(true) {
+    AIOptions() : type(AI_SIMPLE), backup(AI_INVALID), fs(1), fow(true) {
     }
 
     std::string info() const {
         std::stringstream ss;
-        ss << "[name=" << player_name << "][frameskip=" << frame_skip << "][type=" << ai_type << "][Backup=" << backup_ai_type << "][FoW=" << (respect_fow ? "True" : "False") << "]";
+        ss << "[name=" << name << "][fs=" << fs << "][type=" << type << "][backup=" << backup << "][FoW=" << (fow ? "True" : "False") << "]";
         return ss.str();
     }
 
-    REGISTER_PYBIND_FIELDS(ai_type, backup_ai_type, frame_skip, player_name, respect_fow);
+    REGISTER_PYBIND_FIELDS(type, backup, fs, name, fow);
 };
 
 struct PythonOptions {
