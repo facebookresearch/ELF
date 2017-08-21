@@ -54,6 +54,8 @@ class Loader:
             setattr(ai_options, key, type_convert[value.lower()])
         elif key == "fow":
             setattr(ai_options, key, bool_convert[value.lower()])
+        elif key == "name":
+            setattr(ai_options, key, value)
         else:
             setattr(ai_options, key, int(value))
 
@@ -115,8 +117,7 @@ class Loader:
         for _, v in desc.items():
             v["input"]["keys"].update(extra)
 
-    def _add_player_id(self, desc, player_name):
-        desc["input"]["keys"].add("player_name")
+    def _add_player_name(self, desc, player_name):
         desc["filters"] = dict(player_name=player_name)
 
     def _get_actor_spec(self):

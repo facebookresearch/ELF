@@ -318,18 +318,6 @@ void test() {
 }
 
 int main(int argc, char *argv[]) {
-    // Load static variables.
-    //_init_CmdType();
-    _init_Terrain();
-    _init_UnitType();
-    _init_UnitAttr();
-    _init_BulletState();
-    _init_Level();
-    _init_AIState();
-    _init_PlayerPrivilege();
-    _init_RawMsgStatus();
-    _init_CDType();
-
     const map<string, function<RTSGameOptions (const Parser &, string *)> > func_mapping = {
         { "selfplay", ai_vs_ai },
         { "selfplay2", ai_vs_ai2 },
@@ -394,7 +382,7 @@ int main(int argc, char *argv[]) {
         int games = parser.GetItem<int>("games");
         int seed0 = parser.GetItem<int>("seed");
         ctpl::thread_pool p(threads + 1);
-        const int print_per_n = (games == 0 ? 5000 : games * threads / 10); 
+        const int print_per_n = (games == 0 ? 5000 : games * threads / 10);
         GlobalStats gstats(print_per_n);
 
         for (int i = 0; i < threads; i++) {

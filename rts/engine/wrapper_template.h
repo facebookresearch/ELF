@@ -22,14 +22,6 @@ private:
 
 public:
     WrapperT() {
-        _init_Terrain();
-        _init_UnitType();
-        _init_UnitAttr();
-        _init_BulletState();
-        _init_Level();
-        _init_AIState();
-        _init_PlayerPrivilege();
-        _init_CDType();
     }
 
     void thread_main(int game_idx, const ContextOptions &context_options, const PythonOptions &options, const std::atomic_bool &done, Comm *comm) {

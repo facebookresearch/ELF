@@ -43,13 +43,6 @@ public:
             });
     }
 
-    const std::string &game_unittype2str(int unit_type) const {
-        return _UnitType2string((UnitType)unit_type);
-    }
-    const std::string &game_aistate2str(int ai_state) const {
-        return _AIState2string((AIState)ai_state);
-    }
-
     std::map<std::string, int> GetParams() const {
         return std::map<std::string, int>{
             { "num_action", GameDef::GetNumAction() },
