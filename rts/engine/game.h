@@ -139,8 +139,6 @@ private:
     // Next snapshot to load.
     int _snapshot_to_load;
 
-    uint64_t _seed;
-
     // Whether we pause the system.
     bool _paused;
 

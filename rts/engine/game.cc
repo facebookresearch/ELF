@@ -37,7 +37,7 @@ RTSGame::RTSGame(const RTSGameOptions &options)
     _bots.clear();
     _env.InitGameDef();
     _env.ClearAllPlayers();
-    _env.SetReverseGenerator(options.reverse_terrain_generator);
+    // _env.SetReverseGenerator(options.reverse_terrain_generator);
 }
 
 RTSGame::~RTSGame() {
@@ -173,7 +173,6 @@ void RTSGame::Reset() {
    for (const auto &bot : _bots) {
        bot->Reset();
    }
-   _seed = 0;
 }
 
 PlayerId RTSGame::Step(int num_ticks, std::string *state) {
@@ -254,24 +253,24 @@ bool RTSGame::PrepareGame() {
   if (! situation_loaded) {
       // Generate map.
       // _cmd_receiver.SendCmd(Cmd(0, INVALID).SetRandomSeed(1480918688));
-      _seed = 0;
+      uint64_t seed = 0;
       if (_options.seed == 0) {
           auto now = system_clock::now();
           auto now_ms = time_point_cast<milliseconds>(now);
           auto value = now_ms.time_since_epoch();
           long duration = value.count();
-          _seed = (time(NULL) * 1000 + duration) % 100000000;
+          seed = (time(NULL) * 1000 + duration) % 100000000;
       } else {
-          _seed = _options.seed;
+          seed = _options.seed;
           if (game_counter > 0) {
-              uint64_t seed_ext = _seed;
+              uint64_t seed_ext = seed;
               serializer::hash_combine(seed_ext, (uint64_t)(25147 * game_counter + 251581));
-              _seed = seed_ext;
+              seed = seed_ext;
           }
       }
 
-      if (_output_stream) *_output_stream << "Generate from scratch, seed = " << _seed << endl << flush;
-      _cmd_receiver.SendCmdWithTick(CmdBPtr(new CmdRandomSeed(INVALID, _seed)), 0);
+      if (_output_stream) *_output_stream << "Generate from scratch, seed = " << seed << endl << flush;
+      _cmd_receiver.SendCmdWithTick(CmdBPtr(new CmdRandomSeed(INVALID, seed)), 0);
 
       for (auto&& cmd_pair : _env.GetGameDef().GetInitCmds(_options)) {
           _cmd_receiver.SendCmdWithTick(std::move(cmd_pair.first), cmd_pair.second);
@@ -345,12 +344,12 @@ PlayerId RTSGame::MainLoop(const std::atomic_bool *done) {
       if (! _paused) {
           if (!_options.bypass_bot_actions) {
               // shuffle the order.
+              /*
               std::vector<int> orders;
               for (size_t i = 0; i < _bots.size(); ++i) orders.push_back(i);
-              /*
-              std::mt19937 g(_seed + t);
-              std::shuffle(orders.begin(), orders.end(), g);
-              */
+              // std::mt19937 g(_seed + t);
+              // std::shuffle(orders.begin(), orders.end(), g);
+              //
               if (_options.reverse_terrain_generator) {
                 std::reverse(orders.begin(), orders.end());
               }
@@ -360,13 +359,12 @@ PlayerId RTSGame::MainLoop(const std::atomic_bool *done) {
                   if (tick_prompt) *_output_stream << "Run bot " << bot->GetId() << endl << flush;
                   bot->Act(_env);
               }
+              */
 
-              /*
               for (const auto &bot : _bots) {
                   if (tick_prompt) *_output_stream << "Run bot " << bot->GetId() << endl << flush;
                   bot->Act(_env);
               }
-              */
           } else {
               // Replace all actions with replays.
               _cmd_receiver.SendCurrentReplay();
@@ -398,13 +396,12 @@ PlayerId RTSGame::MainLoop(const std::atomic_bool *done) {
       _env.SetWinnerId(winner_id);
 
       // Check winning condition
-      Tick tick = _cmd_receiver.GetTick();
-      if (winner_id != INVALID || tick >= _options.max_tick || ! _cmd_receiver.GetGameStats().CheckGameSmooth(tick, _output_stream)) {
+      if (winner_id != INVALID || t >= _options.max_tick || ! _cmd_receiver.GetGameStats().CheckGameSmooth(t, _output_stream)) {
           _env.SetTermination();
           _cmd_receiver.GetGameStats().SetWinner(winner_id);
 
           if (winner_id != INVALID) {
-              _bots[winner_id]->SendComment("Won");
+              _bots[winner_id]->SendComment("Won at " + std::to_string(t));
               if (_output_stream) {
                   *_output_stream << "[" << t << "][" << game_counter << "] Player " << winner_id << " won!" << endl << flush;
               }
