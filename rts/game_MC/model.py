@@ -95,7 +95,7 @@ class Model_ActorCritic(Model):
 
     def get_define_args():
         return [
-            ("arch", "ccccpccccp;-,64,64,128,128,128,64,64,-")
+            ("arch", "ccpccp;-,64,64,64,-")
         ]
 
     def forward(self, x):
