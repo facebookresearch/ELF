@@ -49,11 +49,11 @@ bool CmdGameStartSpecific::run(GameEnv*, CmdReceiver* receiver) {
 
 bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
     auto f = env->GetRandomFunc();
-    bool shuffle = (f(2) == 0);
+    bool shuffle = (f(2) == 0) ^ env->ReverseGenerator();
     //std::vector<PointF> base_locs(2);
     //
     receiver->GetGameStats().PickBase(shuffle ? 1 : 0);
-    
+
     for (const auto &info : env->GetMap().GetPlayerMapInfo()) {
         PlayerId id = shuffle ? info.player_id : 1 - info.player_id;
         _CREATE(BASE, PointF(info.base_coord), id);

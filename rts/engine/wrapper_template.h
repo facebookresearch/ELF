@@ -44,6 +44,7 @@ public:
         op.snapshot_prefix = "";
         op.output_file = options.output_filename;
         op.cmd_dumper_prefix = options.cmd_dumper_prefix;
+        op.reverse_terrain_generator = options.reverse_player;
 
         // std::cout << "before running wrapper" << std::endl;
 

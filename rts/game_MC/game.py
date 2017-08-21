@@ -26,13 +26,16 @@ class Loader:
                 ("players", dict(type=str, help=";-separated player infos. For example: type=AI_NN,fs=50,backup=AI_SIMPLE,fow=True;type=AI_SIMPLE,fs=50")),
                 ("max_tick", dict(type=int, default=30000, help="Maximal tick")),
                 ("shuffle_player", dict(action="store_true")),
+                ("reverse_player", dict(action="store_true")),
                 ("mcts_threads", 64),
                 ("seed", 0),
                 ("simple_ratio", -1),
                 ("ratio_change", 0),
                 ("actor_only", dict(action="store_true")),
                 ("additional_labels", dict(type=str, default=None, help="Add additional labels in the batch. E.g., id,seq,last_terminal")),
-                ("model_no_spatial", dict(action="store_true")) # TODO, put it to model
+                ("model_no_spatial", dict(action="store_true")), # TODO, put it to model
+                ("save_replay_prefix", dict(type=str, default=None)),
+                ("output_file", dict(type=str, default=None))
             ],
             more_args = ["batchsize", "T"],
             child_providers = [ self.context_args.args ]
@@ -76,6 +79,7 @@ class Loader:
         opt.latest_start = args.latest_start
         opt.latest_start_decay = args.latest_start_decay
         opt.shuffle_player = args.shuffle_player
+        opt.reverse_player = args.reverse_player
         opt.mcts_threads = args.mcts_threads
         opt.mcts_rollout_per_thread = 50
         opt.max_tick = args.max_tick
@@ -88,7 +92,10 @@ class Loader:
         # opt.output_filename = b"simulators.txt"
         # opt.output_filename = b"cout"
         # opt.cmd_dumper_prefix = b"cmd-dump"
-        # opt.save_replay_prefix = b"replay"
+        if args.save_replay_prefix is not None:
+            opt.save_replay_prefix = args.save_replay_prefix.encode('ascii')
+        if args.output_file is not None:
+            opt.output_filename = args.output_file.encode("ascii")
         opt.Print()
 
         GC = minirts.GameContext(co, opt)

@@ -50,6 +50,8 @@ private:
     // This happens if the time tick exceeds max_tick, or there is anything wrong.
     bool _terminated;
 
+    bool _reverse_generator;
+
 public:
     class UnitIterator {
         private:
@@ -100,6 +102,9 @@ public:
     // Add and remove players.
     void AddPlayer(PlayerPrivilege pv);
     void RemovePlayer();
+
+    void SetReverseGenerator(bool rev) { _reverse_generator = rev; }
+    bool ReverseGenerator() const { return _reverse_generator; }
 
     int GetNumOfPlayers() const { return _players.size(); }
     int GetGameCounter() const { return _game_counter; }
@@ -152,7 +157,7 @@ public:
     UnitId FindClosestBase(PlayerId player_id) const;
 
     // Find empty place near a place, used by creating units.
-    bool FindEmptyPlaceNearby(const PointF &p, int l1_radius, PointF *res_p, PlayerId player_id) const;
+    bool FindEmptyPlaceNearby(const PointF &p, int l1_radius, PointF *res_p) const;
 
     // Find empty place near a place, used by creating buildings.
     bool FindBuildPlaceNearby(const PointF &p, int l1_radius, PointF *res_p) const;

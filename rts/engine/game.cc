@@ -37,6 +37,7 @@ RTSGame::RTSGame(const RTSGameOptions &options)
     _bots.clear();
     _env.InitGameDef();
     _env.ClearAllPlayers();
+    _env.SetReverseGenerator(options.reverse_terrain_generator);
 }
 
 RTSGame::~RTSGame() {
@@ -343,11 +344,29 @@ PlayerId RTSGame::MainLoop(const std::atomic_bool *done) {
 
       if (! _paused) {
           if (!_options.bypass_bot_actions) {
-              // for (const auto &bot : _bots) {
+              // shuffle the order.
+              std::vector<int> orders;
+              for (size_t i = 0; i < _bots.size(); ++i) orders.push_back(i);
+              /*
+              std::mt19937 g(_seed + t);
+              std::shuffle(orders.begin(), orders.end(), g);
+              */
+              if (_options.reverse_terrain_generator) {
+                std::reverse(orders.begin(), orders.end());
+              }
+
+              for (const int &bot_idx : orders) {
+                  auto *bot = _bots[bot_idx].get();
+                  if (tick_prompt) *_output_stream << "Run bot " << bot->GetId() << endl << flush;
+                  bot->Act(_env);
+              }
+
+              /*
               for (const auto &bot : _bots) {
                   if (tick_prompt) *_output_stream << "Run bot " << bot->GetId() << endl << flush;
                   bot->Act(_env);
               }
+              */
           } else {
               // Replace all actions with replays.
               _cmd_receiver.SendCurrentReplay();

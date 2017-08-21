@@ -77,7 +77,10 @@ void WrapperCallbacks::OnGameInit(RTSGame *game) {
     if (_options.shuffle_player) {
         std::mt19937 g(_game_idx);
         std::shuffle(ais.begin(), ais.end(), g);
+    } else if (_options.reverse_player) {
+        std::reverse(ais.begin(), ais.end());
     }
+
     for (AI *ai : ais) game->AddBot(ai);
 
     _latest_start = _options.latest_start;

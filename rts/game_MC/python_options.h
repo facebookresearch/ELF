@@ -101,6 +101,7 @@ struct PythonOptions {
     int seed;
 
     bool shuffle_player;
+    bool reverse_player;
 
     int mcts_threads;
     int mcts_rollout_per_thread;
@@ -109,7 +110,7 @@ struct PythonOptions {
 
     PythonOptions()
       : simulation_type(ST_NORMAL), simple_ratio(1.0), ratio_change(0.0), latest_start(0),
-        latest_start_decay(0.9), max_tick(30000), seed(0), shuffle_player(false), mcts_threads(1), mcts_rollout_per_thread(1),
+        latest_start_decay(0.9), max_tick(30000), seed(0), shuffle_player(false), reverse_player(false), mcts_threads(1), mcts_rollout_per_thread(1),
         game_name(0), handicap_level(0) {
     }
 
@@ -122,6 +123,7 @@ struct PythonOptions {
         std::cout << "Max tick: " << max_tick << std::endl;
         std::cout << "Latest_start: " << latest_start << " decay: " << latest_start_decay << std::endl;
         std::cout << "Seed: " << seed << std::endl;
+        std::cout << "Shuffled: " << (shuffle_player ? "True" : "False") << ", Reversed: " << (reverse_player ? "True" : "False") << std::endl;
         for (const AIOptions& ai_option : ai_options) {
             std::cout << ai_option.info() << std::endl;
         }
@@ -131,7 +133,7 @@ struct PythonOptions {
         std::cout << "Save_replay_prefix: \"" << save_replay_prefix << "\"" << std::endl;
     }
 
-    REGISTER_PYBIND_FIELDS(simulation_type, output_filename, cmd_dumper_prefix, save_replay_prefix, simple_ratio, ratio_change, latest_start, latest_start_decay, max_tick, seed, mcts_threads, mcts_rollout_per_thread, game_name, handicap_level, shuffle_player);
+    REGISTER_PYBIND_FIELDS(simulation_type, output_filename, cmd_dumper_prefix, save_replay_prefix, simple_ratio, ratio_change, latest_start, latest_start_decay, max_tick, seed, mcts_threads, mcts_rollout_per_thread, game_name, handicap_level, shuffle_player, reverse_player);
 };
 
 struct GameState {
