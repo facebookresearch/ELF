@@ -35,7 +35,8 @@ class Loader:
                 ("additional_labels", dict(type=str, default=None, help="Add additional labels in the batch. E.g., id,seq,last_terminal")),
                 ("model_no_spatial", dict(action="store_true")), # TODO, put it to model
                 ("save_replay_prefix", dict(type=str, default=None)),
-                ("output_file", dict(type=str, default=None))
+                ("output_file", dict(type=str, default=None)),
+                ("cmd_dumper_prefix", dict(type=str, default=None))
             ],
             more_args = ["batchsize", "T"],
             child_providers = [ self.context_args.args ]
@@ -93,11 +94,12 @@ class Loader:
 
         # opt.output_filename = b"simulators.txt"
         # opt.output_filename = b"cout"
-        # opt.cmd_dumper_prefix = b"cmd-dump"
         if args.save_replay_prefix is not None:
             opt.save_replay_prefix = args.save_replay_prefix.encode('ascii')
         if args.output_file is not None:
             opt.output_filename = args.output_file.encode("ascii")
+        if args.cmd_dumper_prefix is not None:
+            opt.cmd_dumper_prefix = args.cmd_dumper_prefix.encode("ascii")
         opt.Print()
 
         GC = minirts.GameContext(co, opt)

@@ -93,6 +93,8 @@ public:
 
     GameEnv();
 
+    void Visualize() const;
+
     // Remove all players.
     void ClearAllPlayers();
 

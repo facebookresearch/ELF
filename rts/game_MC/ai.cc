@@ -11,6 +11,16 @@
 #include "engine/game_env.h"
 #include "engine/unit.h"
 
+static inline void accu_value(int idx, float val, std::map<int, std::pair<int, float> > &idx2record) {
+    auto it = idx2record.find(idx);
+    if (it == idx2record.end()) {
+        idx2record.insert(make_pair(idx, make_pair(1, val)));
+    } else {
+        it->second.second += val;
+        it->second.first ++;
+    }
+}
+
 void AIBase::save_structured_state(const GameEnv &env, Data *data) const {
     GameState *game = &data->newest();
     game->tick = _receiver->GetTick();
@@ -32,12 +42,13 @@ void AIBase::save_structured_state(const GameEnv &env, Data *data) const {
     game->s.resize(sz);
     std::fill(game->s.begin(), game->s.end(), 0.0);
 
+    std::map<int, std::pair<int, float> > idx2record;
+
     // res is not used.
     game->res.resize(env.GetNumOfPlayers() * res_pt);
     std::fill(game->res.begin(), game->res.end(), 0.0);
 
 #define _OFFSET(_c, _x, _y) (((_c) * m.GetYSize() + (_y)) * m.GetXSize() + (_x))
-#define _F(_c, _x, _y) game->s[_OFFSET(_c, _x, _y)]
 
     // Extra data.
     game->ai_start_tick = 0;
@@ -62,11 +73,12 @@ void AIBase::save_structured_state(const GameEnv &env, Data *data) const {
 
         bool self_unit = (u.GetPlayerId() == _player_id);
 
-        _F(t, x, y) = 1.0;
+        accu_value(_OFFSET(t, x, y), 1.0, idx2record);
+
         // Self unit or enemy unit.
         // For historical reason, the flag of enemy unit = 2
-        _F(n_type, x, y) = self_unit ? 1 : 2;
-        _F(n_type + 1, x, y) = hp_level;
+        accu_value(_OFFSET(n_type, x, y), (self_unit ? 1 : 2), idx2record);
+        accu_value(_OFFSET(n_type + 1, x, y), hp_level, idx2record);
 
         total_hp_ratio += hp_level;
 
@@ -77,6 +89,10 @@ void AIBase::save_structured_state(const GameEnv &env, Data *data) const {
        }
 
         ++ unit_iter;
+    }
+
+    for (const auto &p : idx2record) {
+        game->s[p.first] = p.second.second / p.second.first;
     }
 
     myworker = min(myworker, 3);
