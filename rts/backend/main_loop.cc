@@ -10,11 +10,12 @@
 //File: main_loop.cc
 //Author: Yuandong Tian <yuandong.tian@gmail.com>
 //
-#include "../engine/common.h"
-#include "../engine/unit.h"
-#include "../engine/game.h"
-#include "../engine/cmd_util.h"
-#include "../engine/ai.h"
+#include "engine/common.h"
+#include "engine/unit.h"
+#include "engine/game.h"
+#include "engine/cmd_util.h"
+#include "engine/ai.h"
+#include "ai.h"
 #include "comm_ai.h"
 
 #include <iostream>
@@ -29,7 +30,6 @@
 #include <memory>
 #include <chrono>
 #include <thread>
-#include "../../elf/ctpl_stl.h"
 
 using Parser = CmdLineUtils::CmdLineParser;
 
@@ -41,7 +41,7 @@ bool add_players(const string &args, int frame_skip, RTSGame *game) {
         if (player.find("tcp") == 0) {
             vector<string> params = split(player, '=');
             int tick_start = (params.size() == 1 ? 0 : std::stoi(params[1]));
-            bots.push_back(new TCPAI(INVALID, tick_start, 8000, nullptr));
+            bots.push_back(new TCPAI("tcpai", tick_start, 8000, nullptr));
         }
         /*else if (player.find("mcts") == 0) {
             vector<string> params = split(player, '=');
@@ -57,9 +57,9 @@ bool add_players(const string &args, int frame_skip, RTSGame *game) {
         else if (player.find("spectator") == 0) {
             vector<string> params = split(player, '=');
             int tick_start = (params.size() == 1 ? 0 : std::stoi(params[1]));
-            game->AddSpectator(new TCPAI(INVALID, tick_start, 8000, game->GetCmdReceiver()));
+            game->AddSpectator(new TCPAI("spectator", tick_start, 8000, game->GetCmdReceiver()));
         }
-        else if (player == "dummy") bots.push_back(new AI(INVALID, frame_skip, nullptr));
+        else if (player == "dummy") bots.push_back(new AI("dummy", frame_skip, nullptr));
         /*
         else if (player == "flag_simple") {
             //if (mcts) bots[0]->SetFactory([&](int r) -> AI* { return new FlagSimpleAI(INVALID, r, nullptr, nullptr);});
@@ -318,18 +318,6 @@ void test() {
 }
 
 int main(int argc, char *argv[]) {
-    // Load static variables.
-    //_init_CmdType();
-    _init_Terrain();
-    _init_UnitType();
-    _init_UnitAttr();
-    _init_BulletState();
-    _init_Level();
-    _init_AIState();
-    _init_PlayerPrivilege();
-    _init_RawMsgStatus();
-    _init_CDType();
-
     const map<string, function<RTSGameOptions (const Parser &, string *)> > func_mapping = {
         { "selfplay", ai_vs_ai },
         { "selfplay2", ai_vs_ai2 },
@@ -394,11 +382,11 @@ int main(int argc, char *argv[]) {
         int games = parser.GetItem<int>("games");
         int seed0 = parser.GetItem<int>("seed");
         ctpl::thread_pool p(threads + 1);
-        CCQueue<int> q;
-        const int kEndSignal = -0xff;
+        const int print_per_n = (games == 0 ? 5000 : games * threads / 10);
+        GlobalStats gstats(print_per_n);
 
         for (int i = 0; i < threads; i++) {
-            p.push([=, &q](int /*thread_id*/){
+            p.push([=, &gstats](int /*thread_id*/){
                 RTSGameOptions options;
                 options.main_loop_quota = 0;
                 options.output_file = "";
@@ -411,42 +399,17 @@ int main(int argc, char *argv[]) {
                 //game.AddBot(new SimpleAI(INVALID, frame_skip, nullptr));
                 game.AddBot(AI::CreateAI("simple", std::to_string(frame_skip)));
                 game.AddBot(AI::CreateAI("simple", std::to_string(frame_skip)));
+                game.GetCmdReceiver()->GetGameStats().SetGlobalStats(&gstats);
                 bool infinite = (games == 0);
                 for (int j = 0; j < games || infinite; ++j) {
-                    push_q(q, game.MainLoop());
+                    game.MainLoop();
                     game.Reset();
                 }
-                push_q(q, kEndSignal);
             });
             this_thread::sleep_for(std::chrono::milliseconds(10));
         }
-        // Last thread for checking the win rate
-        p.push([=, &q](int /*thread_id*/) {
-          int total_games = 0, player0won = 0, player1won = 0;
-          int done_thread = 0;
-          while (true) {
-              int result;
-              pop_wait(q, result);
-              if (result == kEndSignal) {
-                  done_thread ++;
-                  if (done_thread == threads) break;
-                  else continue;
-              }
-              if (result == 0) player0won ++;
-              if (result == 1) player1won ++;
-              total_games ++;
-              if (total_games % 5000 == 0) {
-                  cout << "Result:" << player0won << "/"<< player1won << "/" << total_games << endl;
-                  cout << "Player 0 win rate: " << (float)player0won / total_games << " " << player0won << "/" << total_games << endl;
-                  cout << "Player 1 win rate: " << (float)player1won / total_games << " " << player1won << "/" << total_games << endl;
-              }
-          }
-          cout << "Final result:" << player0won << "/"<< player1won << "/" << total_games << endl;
-          cout << "Final player 0 win rate: " << (float)player0won / total_games << " " << player0won << "/" << total_games << endl;
-          cout << "Final player 1 win rate: " << (float)player1won / total_games << " " << player1won << "/" << total_games << endl;
-        });
-
         p.stop(true);
+        std::cout << gstats.PrintInfo() << std::endl;
     } else {
         RTSGame game(options);
         cout << "Players: " << players << endl;

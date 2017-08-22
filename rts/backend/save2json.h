@@ -10,7 +10,7 @@
 #ifndef _SAVE2JSON_H_
 #define _SAVE2JSON_H_
 
-#include "../engine/common.h"
+#include "engine/common.h"
 #include "json.hpp"
 
 using json = nlohmann::json;

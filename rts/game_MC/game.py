@@ -23,54 +23,82 @@ class Loader:
                 ("handicap_level", 0),
                 ("latest_start", 1000),
                 ("latest_start_decay", 0.7),
-                ("fs_ai", 50),
-                ("fs_opponent", 50),
-                ("ai_type", dict(type=str, choices=["AI_SIMPLE", "AI_HIT_AND_RUN", "AI_NN", "AI_FLAG_NN", "AI_TD_NN"], default="AI_NN")),
-                ("opponent_type", dict(type=str, choices=["AI_SIMPLE", "AI_HIT_AND_RUN", "AI_FLAG_SIMPLE", "AI_TD_BUILT_IN", "AI_NN"], default="AI_SIMPLE")),
+                ("players", dict(type=str, help=";-separated player infos. For example: type=AI_NN,fs=50,backup=AI_SIMPLE,fow=True;type=AI_SIMPLE,fs=50")),
                 ("max_tick", dict(type=int, default=30000, help="Maximal tick")),
+                ("shuffle_player", dict(action="store_true")),
+                ("reverse_player", dict(action="store_true")),
                 ("mcts_threads", 64),
                 ("seed", 0),
-                ("without_fow", dict(action="store_true")),
                 ("simple_ratio", -1),
                 ("ratio_change", 0),
                 ("actor_only", dict(action="store_true")),
                 ("additional_labels", dict(type=str, default=None, help="Add additional labels in the batch. E.g., id,seq,last_terminal")),
-                ("model_no_spatial", dict(action="store_true")) # TODO, put it to model
+                ("model_no_spatial", dict(action="store_true")), # TODO, put it to model
+                ("save_replay_prefix", dict(type=str, default=None)),
+                ("output_file", dict(type=str, default=None))
             ],
             more_args = ["batchsize", "T"],
             child_providers = [ self.context_args.args ]
         )
 
-    def _init_gc(self):
+    def _set_key(self, ai_options, key, value):
+        if not hasattr(ai_options, key):
+            print("AIOptions does not have key = " + key)
+            return
+
+        # Can we automate this?
+        type_convert = dict(ai_nn=minirts.AI_NN, ai_simple=minirts.AI_SIMPLE, ai_hit_and_run=minirts.AI_HIT_AND_RUN)
+        bool_convert = dict(t=True, true=True, f=False, false=False)
+
+        if key == "type" or key == "backup":
+            setattr(ai_options, key, type_convert[value.lower()])
+        elif key == "fow":
+            setattr(ai_options, key, bool_convert[value.lower()])
+        elif key == "name":
+            setattr(ai_options, key, value)
+        else:
+            setattr(ai_options, key, int(value))
+
+    def _parse_players(self, opt, player_names):
+        for i, player in enumerate(self.args.players.split(";")):
+            ai_options = minirts.AIOptions()
+            for item in player.split(","):
+                key, value = item.split("=")
+                self._set_key(ai_options, key, value)
+            if player_names is not None:
+                self._set_key(ai_options, "name", player_names[i])
+            opt.AddAIOptions(ai_options)
+
+    def _init_gc(self, player_names=None):
         args = self.args
 
         co = minirts.ContextOptions()
         self.context_args.initialize(co)
 
-        opt = minirts.Options()
+        opt = minirts.PythonOptions()
         opt.seed = args.seed
-        opt.frame_skip_ai = args.fs_ai
-        opt.frame_skip_opponent = args.fs_opponent
         opt.simulation_type = minirts.ST_NORMAL
-        opt.ai_type = getattr(minirts, args.ai_type)
-        if args.ai_type == "AI_NN":
-            opt.backup_ai_type = minirts.AI_SIMPLE
-        if args.ai_type == "AI_FLAG_NN":
-            opt.backup_ai_type = minirts.AI_FLAG_SIMPLE
-        opt.opponent_ai_type = getattr(minirts, args.opponent_type)
         opt.latest_start = args.latest_start
         opt.latest_start_decay = args.latest_start_decay
+        opt.shuffle_player = args.shuffle_player
+        opt.reverse_player = args.reverse_player
         opt.mcts_threads = args.mcts_threads
         opt.mcts_rollout_per_thread = 50
         opt.max_tick = args.max_tick
         opt.handicap_level = args.handicap_level
         opt.simple_ratio = args.simple_ratio
         opt.ratio_change = args.ratio_change
-        opt.with_fow = not args.without_fow
+
+        self._parse_players(opt, player_names)
+
         # opt.output_filename = b"simulators.txt"
         # opt.output_filename = b"cout"
         # opt.cmd_dumper_prefix = b"cmd-dump"
-        # opt.save_replay_prefix = b"replay"
+        if args.save_replay_prefix is not None:
+            opt.save_replay_prefix = args.save_replay_prefix.encode('ascii')
+        if args.output_file is not None:
+            opt.output_filename = args.output_file.encode("ascii")
+        opt.Print()
 
         GC = minirts.GameContext(co, opt)
         params = GC.GetParams()
@@ -89,9 +117,8 @@ class Loader:
         for _, v in desc.items():
             v["input"]["keys"].update(extra)
 
-    def _add_player_id(self, desc, player_id):
-        desc["input"]["keys"].add("player_id")
-        desc["filters"] = dict(player_id=player_id)
+    def _add_player_name(self, desc, player_name):
+        desc["filters"] = dict(player_name=player_name)
 
     def _get_actor_spec(self):
         return dict(
@@ -130,13 +157,14 @@ class Loader:
             model_no_spatial = args.model_no_spatial
         ))
 
-        return GCWrapper(GC, co, desc, use_numpy=False, params=params)
+        return GCWrapper(GC, co, desc, use_numpy=False, gpu=None, params=params)
 
     def initialize_selfplay(self):
         args = self.args
-        args.ai_type = "AI_NN"
-        args.opponent_type = "AI_NN"
-        co, GC, params = self._init_gc()
+        reference_name = "reference"
+        train_name = "train"
+
+        co, GC, params = self._init_gc(player_names=[train_name, reference_name])
 
         desc = {}
         # For actor model, no reward needed, we only want to get input and return distribution of actions.
@@ -144,13 +172,13 @@ class Loader:
         desc["actor0"] = self._get_actor_spec()
         desc["actor1"] = self._get_actor_spec()
 
-        self._add_player_id(desc["actor0"], 0)
-        self._add_player_id(desc["actor1"], 1)
+        self._add_player_name(desc["actor0"], reference_name)
+        self._add_player_name(desc["actor1"], train_name)
 
         if not args.actor_only:
             # For training, we want input, action (filled by actor models), value (filled by actor models) and reward.
             desc["train1"] = self._get_train_spec()
-            self._add_player_id(desc["train1"], 1)
+            self._add_player_name(desc["train1"], train_name)
 
         self._add_more_labels(desc)
 

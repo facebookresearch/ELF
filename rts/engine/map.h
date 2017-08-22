@@ -67,6 +67,8 @@ public:
   RTSMap();
   bool GenerateMap(const std::function<uint16_t (int)>& f, int nImpassable, int num_player, int init_resource);
   bool GenerateImpassable(const std::function<uint16_t(int)>& f, int nImpassable);
+
+  // TODO: move this to game_TD 
   bool GenerateTDMaze(const std::function<uint16_t(int)>& f);
 
 
@@ -80,18 +82,19 @@ public:
   int GetYSize() const { return _n; }
   int GetPlaneSize() const { return _m * _n; }
 
-bool CanBuildTower(const PointF &p, UnitId id_exclude) const {
-    Coord c = p.ToCoord();
-    if (! IsIn(c)) return false;
+  // TODO: move this to game_TD 
+  bool CanBuildTower(const PointF &p, UnitId id_exclude) const {
+      Coord c = p.ToCoord();
+      if (! IsIn(c)) return false;
 
-    Loc loc = GetLoc(c);
-    const MapSlot &s = _map[loc];
-    // cannot block the path
-    if (s.type == NORMAL) return false;
+      Loc loc = GetLoc(c);
+      const MapSlot &s = _map[loc];
+      // cannot block the path
+      if (s.type == NORMAL) return false;
 
-    // [TODO] Add object radius here.
-    return _locality.IsEmpty(p, kUnitRadius, id_exclude);
-}
+      // [TODO] Add object radius here.
+      return _locality.IsEmpty(p, kUnitRadius, id_exclude);
+  }
 
   bool CanPass(const PointF &p, UnitId id_exclude, bool check_locality = true) const {
       Coord c = p.ToCoord();

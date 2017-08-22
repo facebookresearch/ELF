@@ -56,6 +56,8 @@ class Eval:
 
         def actor(sel, sel_gpu):
             reply = self.evaluator.actor(sel, sel_gpu)
+            print("[%d]: %s" % (sel["seq"][0][0], str(reply["pi"][0])))
+            print("[%d]: %s" % (sel["seq"][0][0], str(reply["a"][0])))
             self.stats.feed_batch(sel)
             return reply
 

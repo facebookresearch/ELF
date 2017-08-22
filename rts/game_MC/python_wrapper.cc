@@ -14,37 +14,33 @@
 #include <string>
 #include <iostream>
 
-#include "../engine/wrapper_template.h"
+#include "engine/wrapper_template.h"
 #include "wrapper_callback.h"
 #include "ai.h"
 
 class GameContext {
 public:
     using GC = Context;
+    using Wrapper = WrapperT<WrapperCallbacks, GC::Comm, PythonOptions>;
 
 private:
     int _T;
     std::unique_ptr<GC> _context;
+    Wrapper _wrapper;
 
 public:
     GameContext(const ContextOptions& context_options, const PythonOptions& options) {
       _T = context_options.T;
-      // Initialize enums.
-      init_enums();
       WrapperCallbacks::GlobalInit();
 
       _context.reset(new GC{context_options, options});
     }
 
     void Start() {
-        _context->Start(thread_main<WrapperCallbacks, GC::Comm, PythonOptions>);
-    }
-
-    const std::string &game_unittype2str(int unit_type) const {
-        return _UnitType2string((UnitType)unit_type);
-    }
-    const std::string &game_aistate2str(int ai_state) const {
-        return _AIState2string((AIState)ai_state);
+        _context->Start(
+            [&](int game_idx, const ContextOptions &context_options, const PythonOptions &options, const std::atomic_bool &done, Comm *comm) {
+                    _wrapper.thread_main(game_idx, context_options, options, done, comm);
+            });
     }
 
     std::map<std::string, int> GetParams() const {
@@ -73,6 +69,8 @@ public:
     }
 
     void Stop() {
+      std::cout << "Final statistics: " << std::endl;
+      std::cout << _wrapper.PrintInfo() << std::endl;
       _context.reset(nullptr); // first stop the threads, then destroy the games
     }
 
@@ -80,11 +78,19 @@ public:
 
 #define CONST(v) m.attr(#v) = py::int_(v)
 
-PYBIND11_PLUGIN(minirts) {
-  py::module m("minirts", "MiniRTS game");
+PYBIND11_MODULE(minirts, m) {
   register_common_func<GameContext>(m);
   CONTEXT_REGISTER(GameContext)
     .def("GetParams", &GameContext::GetParams);
+
+  // Also register other objects.
+  PYCLASS_WITH_FIELDS(m, AIOptions)
+    .def(py::init<>());
+
+  PYCLASS_WITH_FIELDS(m, PythonOptions)
+    .def(py::init<>())
+    .def("Print", &PythonOptions::Print)
+    .def("AddAIOptions", &PythonOptions::AddAIOptions);
 
   // Define symbols.
   CONST(ST_INVALID);
@@ -101,6 +107,4 @@ PYBIND11_PLUGIN(minirts) {
   CONST(ACTION_GLOBAL);
   CONST(ACTION_PROB);
   CONST(ACTION_REGIONAL);
-
-  return m.ptr();
 }

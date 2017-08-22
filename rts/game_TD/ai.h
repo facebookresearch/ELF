@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "../engine/ai.h"
+#include "engine/ai.h"
 #include "python_options.h"
 #include "td_rule_actor.h"
 

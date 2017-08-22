@@ -37,6 +37,7 @@ RTSGame::RTSGame(const RTSGameOptions &options)
     _bots.clear();
     _env.InitGameDef();
     _env.ClearAllPlayers();
+    // _env.SetReverseGenerator(options.reverse_terrain_generator);
 }
 
 RTSGame::~RTSGame() {
@@ -57,7 +58,6 @@ void RTSGame::AddBot(AI *bot) {
 }
 
 void RTSGame::RemoveBot() {
-    // WARNING: [TODO] Memory leak!!
     _bots.pop_back();
     _env.RemovePlayer();
 }
@@ -343,6 +343,24 @@ PlayerId RTSGame::MainLoop(const std::atomic_bool *done) {
 
       if (! _paused) {
           if (!_options.bypass_bot_actions) {
+              // shuffle the order.
+              /*
+              std::vector<int> orders;
+              for (size_t i = 0; i < _bots.size(); ++i) orders.push_back(i);
+              // std::mt19937 g(_seed + t);
+              // std::shuffle(orders.begin(), orders.end(), g);
+              //
+              if (_options.reverse_terrain_generator) {
+                std::reverse(orders.begin(), orders.end());
+              }
+
+              for (const int &bot_idx : orders) {
+                  auto *bot = _bots[bot_idx].get();
+                  if (tick_prompt) *_output_stream << "Run bot " << bot->GetId() << endl << flush;
+                  bot->Act(_env);
+              }
+              */
+
               for (const auto &bot : _bots) {
                   if (tick_prompt) *_output_stream << "Run bot " << bot->GetId() << endl << flush;
                   bot->Act(_env);
@@ -378,10 +396,12 @@ PlayerId RTSGame::MainLoop(const std::atomic_bool *done) {
       _env.SetWinnerId(winner_id);
 
       // Check winning condition
-      if (winner_id != INVALID || _cmd_receiver.GetTick() >= _options.max_tick || ! _cmd_receiver.CheckGameSmooth(_output_stream)) {
+      if (winner_id != INVALID || t >= _options.max_tick || ! _cmd_receiver.GetGameStats().CheckGameSmooth(t, _output_stream)) {
           _env.SetTermination();
+          _cmd_receiver.GetGameStats().SetWinner(winner_id);
+
           if (winner_id != INVALID) {
-              _bots[winner_id]->SendComment("Won");
+              _bots[winner_id]->SendComment("Won at " + std::to_string(t));
               if (_output_stream) {
                   *_output_stream << "[" << t << "][" << game_counter << "] Player " << winner_id << " won!" << endl << flush;
               }
@@ -389,6 +409,9 @@ PlayerId RTSGame::MainLoop(const std::atomic_bool *done) {
 
           for (const auto &bot : _bots) {
               bot->Act(_env, true);
+          }
+          if (_spectator != nullptr) {
+            _spectator->Act(_env);
           }
           break;
       }

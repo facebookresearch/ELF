@@ -7,13 +7,13 @@
 * of patent rights can be found in the PATENTS file in the same directory.
 */
 
-#include "../engine/gamedef.h"
-#include "../engine/game.h"
-#include "../engine/game_env.h"
-#include "../engine/rule_actor.h"
+#include "engine/gamedef.h"
+#include "engine/game.h"
+#include "engine/game_env.h"
+#include "engine/rule_actor.h"
+#include "engine/cmd.gen.h"
+#include "engine/cmd_specific.gen.h"
 
-#include "../engine/cmd.gen.h"
-#include "../engine/cmd_specific.gen.h"
 #include "cmd_specific.gen.h"
 #include "ai.h"
 

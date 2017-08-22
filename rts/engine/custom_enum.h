@@ -16,6 +16,7 @@
 #include <map>
 #include <utility>
 #include <sstream>
+#include <mutex>
 
 static std::string trim(std::string& str) {
     str.erase(0, str.find_first_not_of(' '));       //prefixing spaces
@@ -55,34 +56,33 @@ static std::vector<std::pair<int, std::string> > get_enum_vals(const char *s) {
 // [TODO] This is definitely not a good design.
 #define custom_enum(TypeName, ...) \
     enum TypeName { __VA_ARGS__ }; \
-    inline const std::string &_## TypeName ## 2 ## string(TypeName t, bool is_init = false) { \
+    inline const std::string &_## TypeName ## 2 ## string(TypeName t) { \
         static const char *TypeName ## _definition = # __VA_ARGS__; \
         static std::map<TypeName, std::string> table;  \
-        if (is_init) { \
+        static std::mutex mutex; \
+        if (table.empty()) { \
+            std::lock_guard<std::mutex> lock(mutex); \
+            /* cout << "enum " << # TypeName << ": type2str is not initialized yet! " << endl; */ \
+            /* cout << "table.size() = " << table.size() << endl; */ \
             for (const auto& item : get_enum_vals(TypeName ## _definition)) { \
                 table.insert(std::make_pair((TypeName)item.first, item.second)); \
             } \
-        } else { \
-            if (table.empty()) cout << "enum " << # TypeName << ": type2str is not initialized yet! " << endl; \
+            /* cout << "table.size() = " << table.size() << endl; */ \
         } \
         return table[t]; \
     }\
-    inline TypeName _string ## 2 ## TypeName(const std::string &s, bool is_init = false) { \
+    inline TypeName _string ## 2 ## TypeName(const std::string &s) { \
         static const char *TypeName ## _definition = # __VA_ARGS__; \
         static std::map<std::string, TypeName> table;  \
-        if (is_init) { \
+        static std::mutex mutex; \
+        if (table.empty()) {\
+            std::lock_guard<std::mutex> lock(mutex); \
+            /* cout << "enum " << # TypeName << ": str2type not initialized yet! " << endl; */ \
             for (const auto& item : get_enum_vals(TypeName ## _definition)) { \
                 table.insert(std::make_pair(item.second, (TypeName)item.first)); \
             } \
-            return (TypeName)0; \
-        } else { \
-            if (table.empty()) {\
-                cout << "enum " << # TypeName << ": str2type not initialized yet! " << endl; \
-                return (TypeName)0; \
-            } else {\
-                return table[s]; \
-            } \
         } \
+        return table[s]; \
     }\
     template <typename Ar> \
     inline Ar &operator<<(Ar &oo, TypeName t) { \
@@ -95,10 +95,6 @@ static std::vector<std::pair<int, std::string> > get_enum_vals(const char *s) {
         ii >> value; \
         t = _string ## 2 ## TypeName(value); \
         return ii; \
-    } \
-    inline void _init_ ## TypeName() { \
-        _## TypeName ## 2 ## string((TypeName)0, true); \
-        _string ## 2 ## TypeName("", true); \
     } \
     namespace std  \
     { \

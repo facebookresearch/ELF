@@ -10,7 +10,7 @@
 #ifndef _MC_RULE_ACTOR_H_
 #define _MC_RULE_ACTOR_H_
 
-#include "../engine/rule_actor.h"
+#include "engine/rule_actor.h"
 
 class MCRuleActor : public RuleActor {
 public:

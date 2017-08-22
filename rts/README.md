@@ -13,52 +13,34 @@ A backend runs in the terminal and communicates with the front-end webpage to dr
 How to compile
 ============
 
-For simulators, simply run the following commands:
+In directory `rts`, run the command: `mkdir build && cd build && cmake .. -DGAME_DIR=../game_MC && make`
 
-```bash
-cd ./rts/game_MC
-make gen
-make
-```
-And you will see a dynamic link library `minirts.so`, which is used for training. Similarly you can compile the other two games in `./rts/game_TD` and `./rts/game_CF`.
+To select the Python installation to compile with, use cmake flags `-DPYTHON_EXECUTABLE=/path/to/your/python`
 
-Once you have compiled the simulator, run the following command to compile the standalone backend to enable visualization.
+You will see a dynamic library named `minirts` to be loaded by Python.
+You need to copy this dynamic library to where you'll run your python scripts.
+Similarly you can compile the other two games `./rts/game_TD` and `./rts/game_CF`.
 
-```bash
-cd ./rts/backend
-make GAME_DIR=../game_MC
-```
-
-And you will see an executable `minirts`. Similarly for `./rts/game_TD` and `./rts/game_CF`. When you make a new game, you need to first `make clean`.
+Also you will see an executable `minirts-backend`, which is used for visualizations.
 
 Usage of the standalone backend
 ============
-
-Help
------------
-Simply run `minirts` to see switches.
-
 Self-play
 -------------
 For game_MC:
-Run `./minirts selfplay` for a simple self-play between two identical rule-based AIs (SimpleAI). Use switch `--seed [num]` to change the initial game seed, which affects the initial quantities and locations of buildings and units for each player.
-Run `./minirts selfplay2` for a self-play between different AIs. Player 1 utilizes hit-and-run strategy and is significantly stronger than player 0(SimpleAI).
+Run `./minirts-backend selfplay` for a simple self-play between two identical rule-based AIs (SimpleAI). Use switch `--seed [num]` to change the initial game seed, which affects the initial quantities and locations of buildings and units for each player.
+Run `./minirts-backend selfplay2` for a self-play between different AIs. Player 1 utilizes hit-and-run strategy and is significantly stronger than player 0(SimpleAI).
 
 For game_CF:
-Run `./minirts flag_selfplay` for a simple selfplay of Capture the Flag game.
+Run `./minirts-backend flag_selfplay` for a simple selfplay of Capture the Flag game.
 
 For game_TD:
-Run `./minirts td_simple --max_tick 3000` for a simple Tower Defense game.
+Run `./minirts-backend td_simple --max_tick 3000` for a simple Tower Defense game.
 
 Visualization
 -------------
 
-In your terminal run `minirts` to open a server at port 8000:
-
-```bash
-cd ./rts/backend
-./minirts selfplay --vis_after 0
-```
+Open a server at port 8000: `./minirts-backend selfplay --vis_after 0`
 
 and then open `./rts/frontend/minirts.html` in your browser. You should be able to see two `SIMPLE_AI` competing with each other, as shown in the following figure:
 

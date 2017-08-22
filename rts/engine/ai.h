@@ -8,8 +8,6 @@
 */
 #pragma once
 
-#include "../../elf/comm_template.h"
-
 #include "cmd_receiver.h"
 #include "rule_actor.h"
 #include <atomic>
@@ -22,6 +20,7 @@ public:
 
 protected:
     PlayerId _player_id;
+    const std::string _name;
     CmdReceiver *_receiver;
 
     // Run Act() every _frame_skip
@@ -49,9 +48,11 @@ protected:
     static std::map<std::string, RegFunc> _factories;
 
 public:
-    AI() : _player_id(INVALID), _receiver(nullptr), _frame_skip(1) { }
-    AI(PlayerId player_id, int frameskip, CmdReceiver *receiver) : _player_id(player_id), _receiver(receiver), _frame_skip(frameskip) { }
+    AI() : _player_id(INVALID), _name("noname"), _receiver(nullptr), _frame_skip(1) { }
+    AI(const std::string &name, int frameskip, CmdReceiver *receiver) : _player_id(INVALID), _name(name), _receiver(receiver), _frame_skip(frameskip) { }
+    virtual ~AI() {}
     PlayerId GetId() const { return _player_id; }
+    const std::string &GetName() const { return _name; }
 
     void SetId(PlayerId id) {
         on_set_id(id);
@@ -94,7 +95,7 @@ public:
     virtual bool IsUnitSelected(UnitId) const { return false; }
     virtual vector<int> GetAllSelectedUnits() const { return vector<int>(); }
 
-    // Factory method given specification. 
+    // Factory method given specification.
     static AI *CreateAI(const std::string &name, const std::string& spec) {
         auto it = _factories.find(name);
         if (it == _factories.end()) return nullptr;
@@ -102,7 +103,7 @@ public:
     }
     static void RegisterAI(const std::string &name, RegFunc reg_func) {
         _factories.insert(std::make_pair(name, reg_func));
-    } 
+    }
 
     SERIALIZER_BASE(AI, _player_id);
     SERIALIZER_ANCHOR(AI);
@@ -115,7 +116,7 @@ public:
     using Data = typename AIComm::Data;
 
 protected:
-    std::unique_ptr<AIComm> _ai_comm;
+    AIComm *_ai_comm;
     std::function<AI* (int)> _factory;
 
     vector<int> _state;
@@ -136,8 +137,8 @@ protected:
 
 public:
     AIWithComm() { }
-    AIWithComm(PlayerId id, int frame_skip, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
-        : AI(id, frame_skip, receiver), _ai_comm(ai_comm) {
+    AIWithComm(const std::string &name, int frame_skip, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
+        : AI(name, frame_skip, receiver), _ai_comm(ai_comm) {
     }
     bool Act(const GameEnv &env, bool must_act = false) override;
 

@@ -11,26 +11,6 @@
 #include "game_env.h"
 #include <initializer_list>
 
-bool CmdReceiver::CheckGameSmooth(ostream *output_stream) const {
-    // Check if the game goes smoothly.
-    if (_ratio_failed_moves[_tick] < 1.0) return true;
-    float failed_summation = 0.0;
-
-    // Check last 30 ticks, if there is a lot of congestion, return false;
-    for (int i = 0; i < min(_tick, 30); ++i) {
-        failed_summation += _ratio_failed_moves[_tick - i];
-    }
-    if (failed_summation >= 250.0) {
-        if (output_stream) {
-          *output_stream << "[" << _tick << "]: The game is not in good shape! sum_failed = " << failed_summation << endl;
-          for (int i = 0; i < min(_tick, 30); ++i) {
-              *output_stream << "  [" << _tick - i << "]: " << _ratio_failed_moves[_tick - i] << endl;
-          }
-        }
-        return false;
-    } else return true;
-}
-
 bool CmdReceiver::StartDurativeCmd(CmdDurative *cmd) {
     UnitId id = cmd->id();
     if (id == INVALID) return false;
@@ -266,7 +246,7 @@ void CmdReceiver::LoadCmdReceiver(serializer::loader &loader) {
     loader >> _tick >> _immediate_cmd_queue >> _durative_cmd_queue >> _verbose_player_id >> _verbose_choice;
 
     // Set the failed_moves.
-    _ratio_failed_moves.resize(_tick + 1, 0);
+    _stats.SetTick(_tick);
 
     // load durative cmd queue. Note that the priority queue is opaque so we need some hacks.
     int size = _durative_cmd_queue.size();

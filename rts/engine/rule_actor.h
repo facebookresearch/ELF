@@ -116,7 +116,7 @@ public:
     CmdBPtr GetAttackEnemyBaseCmd() const { return _A(_opponent_base_id); }
     CmdBPtr GetBuildBarracksCmd(const GameEnv &env) const {
         PointF p;
-        if (env.FindEmptyPlaceNearby(_base_loc, 3, &p, _player_id) && ! p.IsInvalid()) return _B(BARRACKS, p);
+        if (env.FindEmptyPlaceNearby(_base_loc, 3, &p) && ! p.IsInvalid()) return _B(BARRACKS, p);
         else return CmdBPtr();
     }
 

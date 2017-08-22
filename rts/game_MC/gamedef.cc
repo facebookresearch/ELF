@@ -7,12 +7,12 @@
 * of patent rights can be found in the PATENTS file in the same directory.
 */
 
-#include "../engine/gamedef.h"
-#include "../engine/game_env.h"
-#include "../engine/rule_actor.h"
+#include "engine/gamedef.h"
+#include "engine/game_env.h"
+#include "engine/rule_actor.h"
 
-#include "../engine/cmd.gen.h"
-#include "../engine/cmd_specific.gen.h"
+#include "engine/cmd.gen.h"
+#include "engine/cmd_specific.gen.h"
 #include "cmd_specific.gen.h"
 #include "ai.h"
 
@@ -47,8 +47,17 @@ void GameDef::Init() {
     reg_minirts_specific();
 
     // InitAI.
-    AI::RegisterAI("simple", [](const std::string &spec) { return new SimpleAI(INVALID, std::stoi(spec), nullptr); });
-    AI::RegisterAI("hit_and_run", [](const std::string &spec) { return new HitAndRunAI(INVALID, std::stoi(spec), nullptr); });
+    AI::RegisterAI("simple", [](const std::string &spec) { 
+        AIOptions ai_options;
+        ai_options.fs = std::stoi(spec); 
+        return new SimpleAI(ai_options, nullptr); 
+    });
+
+    AI::RegisterAI("hit_and_run", [](const std::string &spec) { 
+        AIOptions ai_options;
+        ai_options.fs = std::stoi(spec); 
+        return new HitAndRunAI(ai_options, nullptr); 
+    });
 }
 
 vector<pair<CmdBPtr, int> > GameDef::GetInitCmds(const RTSGameOptions&) const{

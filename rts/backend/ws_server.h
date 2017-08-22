@@ -9,8 +9,6 @@
 #include "websocketpp/config/asio_no_tls.hpp"
 #include "websocketpp/server.hpp"
 
-#include "../../elf/lib/debugutils.hh"
-
 namespace {
 
 using websocketpp::lib::placeholders::_1;
@@ -26,12 +24,21 @@ typedef Server::message_ptr message_ptr;
 // A simple websocket server with only one client
 class WSServer {
   public:
+    ~WSServer()
+    {
+      server_.close(*hdl_.get(), websocketpp::close::status::normal, "game's over");
+      server_.stop_listening();
+      th_.join();
+    }
+
     WSServer(int port, std::function<void(const std::string&)> callback):
       callback_{callback}
     {
       try {
         // Set logging settings -- no log
         server_.clear_access_channels(websocketpp::log::alevel::all);
+
+        server_.set_reuse_addr(true);
 
         // Initialize Asio
         server_.init_asio();
@@ -69,7 +76,7 @@ class WSServer {
     };
 
     void on_open(websocketpp::connection_hdl hdl) {
-      m_assert(!hdl_);  // we only allow single client
+      assert(!hdl_);  // we only allow single client
       hdl_.reset(new websocketpp::connection_hdl{hdl});
     }
 

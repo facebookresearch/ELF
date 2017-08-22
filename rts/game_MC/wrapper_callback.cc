@@ -8,22 +8,29 @@
 */
 
 #include "wrapper_callback.h"
-#include "../engine/cmd.h"
-#include "../engine/cmd.gen.h"
-#include "../engine/cmd_specific.gen.h"
+#include "engine/cmd.h"
+#include "engine/cmd.gen.h"
+#include "engine/cmd_specific.gen.h"
 #include "cmd_specific.gen.h"
 #include "ai.h"
 
 typedef TrainedAI2 TrainAIType;
-static AI *get_ai(int game_idx, int frame_skip, int ai_type, int backup_ai_type, const PythonOptions &options, Context::AIComm *ai_comm) {
+static AI *get_ai(const AIOptions &opt, Context::AIComm *ai_comm) {
     // std::cout << "AI type = " << ai_type << " Backup AI type = " << backup_ai_type << std::endl;
-    switch (ai_type) {
+    switch (opt.type) {
        case AI_SIMPLE:
-           return new SimpleAI(INVALID, frame_skip, nullptr);
+           return new SimpleAI(opt, nullptr);
        case AI_HIT_AND_RUN:
-           return new HitAndRunAI(INVALID, frame_skip, nullptr);
+           return new HitAndRunAI(opt, nullptr);
        case AI_NN:
-           return new TrainAIType(INVALID, frame_skip, options.with_fow, nullptr, ai_comm, get_ai(game_idx, frame_skip, backup_ai_type, AI_INVALID, options, ai_comm));
+           {
+           AI *backup_ai = nullptr;
+           AIOptions backup_ai_options;
+           backup_ai_options.fs = opt.fs;
+           if (opt.backup == AI_SIMPLE) backup_ai = new SimpleAI(backup_ai_options, nullptr);
+           else if (opt.backup == AI_HIT_AND_RUN) backup_ai = new HitAndRunAI(backup_ai_options, nullptr);
+           return new TrainAIType(opt, nullptr, ai_comm, backup_ai);
+           }
        default:
            return nullptr;
            /*
@@ -54,17 +61,27 @@ void WrapperCallbacks::OnGameOptions(RTSGameOptions *rts_options) {
 
 void WrapperCallbacks::OnGameInit(RTSGame *game) {
     // std::cout << "Initialize opponent" << std::endl;
-    _opponent = get_ai(_game_idx, _options.frame_skip_opponent, _options.opponent_ai_type, _options.backup_opponent_ai_type, _options, &_opponent_comm);
+    std::vector<AI *> ais;
+    for (const AIOptions &ai_opt : _options.ai_options) {
+        Context::AIComm *ai_comm = new Context::AIComm(_game_idx, _comm);
+        _ai_comms.emplace_back(ai_comm);
+        initialize_ai_comm(*ai_comm);
+        ais.push_back(get_ai(ai_opt, ai_comm));
+    }
 
     // std::cout << "Initialize ai" << std::endl;
-    _ai = get_ai(_game_idx, _options.frame_skip_ai, _options.ai_type, _options.backup_ai_type, _options, &_ai_comm);
+    // Used to pick the AI to change the parameters.
+    _ai = ais[0];
 
-    // AI at position 0
-    // std::cout << "Add AI at position 0" << std::endl;
-    game->AddBot(_ai);
-    // Opponent at position 1
-    // std::cout << "Add AI at position 1" << std::endl;
-    game->AddBot(_opponent);
+    // Shuffle the bot.
+    if (_options.shuffle_player) {
+        std::mt19937 g(_game_idx);
+        std::shuffle(ais.begin(), ais.end(), g);
+    } else if (_options.reverse_player) {
+        std::reverse(ais.begin(), ais.end());
+    }
+
+    for (AI *ai : ais) game->AddBot(ai);
 
     _latest_start = _options.latest_start;
     _simple_ratio = _options.simple_ratio;
@@ -79,23 +96,12 @@ void WrapperCallbacks::OnEpisodeStart(int k, std::mt19937 *rng, RTSGame *game) {
         _latest_start *= _options.latest_start_decay;
     }
 
-    // [TODO]: Not a good design.
-    if (_options.ai_type != AI_NN) return;
+    TrainAIType *ai_dyn = dynamic_cast<TrainAIType *>(_ai);
+    if (ai_dyn == nullptr) return;
 
     // Random tick, max 1000
     Tick default_ai_end_tick = (*rng)() % (int(_latest_start + 0.5) + 1);
-    TrainAIType *ai_dyn = dynamic_cast<TrainAIType *>(_ai);
-    if (ai_dyn == nullptr) throw std::range_error("The type of AI is wrong!");
     ai_dyn->SetBackupAIEndTick(default_ai_end_tick);
-    if (_options.simple_ratio != -1) {
-        bool use_simple = int((*rng)() % 100) < _simple_ratio;
-        game->RemoveBot();
 
-        if (use_simple) {
-            _opponent = get_ai(INVALID, _options.frame_skip_opponent, AI_SIMPLE, AI_INVALID, _options, &_opponent_comm);
-        } else {
-            _opponent = get_ai(INVALID, _options.frame_skip_opponent, AI_HIT_AND_RUN, AI_INVALID, _options, &_opponent_comm);
-        }
-        game->AddBot(_opponent);
-    }
+    (void)game;
 }

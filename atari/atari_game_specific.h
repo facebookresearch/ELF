@@ -11,10 +11,10 @@
 
 #include <ale/ale_interface.hpp>
 
-#include "../elf/pybind_helper.h"
-#include "../elf/comm_template.h"
-#include "../elf/hist.h"
-#include "../elf/copier.hh"
+#include "elf/pybind_helper.h"
+#include "elf/comm_template.h"
+#include "elf/hist.h"
+#include "elf/copier.hh"
 
 static constexpr int kWidth = 160;
 static constexpr int kHeight = 210;
