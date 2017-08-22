@@ -18,7 +18,12 @@ PlayerId Unit::GetPlayerId() const {
 string Unit::PrintInfo(const RTSMap&) const {
     // Print the information for the unit.
     stringstream ss;
-    ss << _type << " " << _p << " HP: " << _property.PrintInfo();
+    ss << "U[" << Player::ExtractPlayerId(_id) << ":" << _id << "], @(" << _p.x << ", " << _p.y << "), ";
+    ss << _type << ", H " << _property._hp << "/" << _property._max_hp << ", B " << _built_since << " A" << _property._att << " D" << _property._def << " | ";
+    for (int j = 0; j < NUM_COOLDOWN; j++) {
+        const auto &cd = _property.CD((CDType)j);
+        ss << (CDType)j << ": " << cd._cd << "/" << cd._last << "  ";
+    }
     return ss.str();
 }
 

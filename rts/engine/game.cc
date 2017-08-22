@@ -37,7 +37,6 @@ RTSGame::RTSGame(const RTSGameOptions &options)
     _bots.clear();
     _env.InitGameDef();
     _env.ClearAllPlayers();
-    // _env.SetReverseGenerator(options.reverse_terrain_generator);
 }
 
 RTSGame::~RTSGame() {
@@ -326,9 +325,7 @@ PlayerId RTSGame::MainLoop(const std::atomic_bool *done) {
       // Check bots input.
       // Check if we want to peek a specific tick, if so, we print them out.
       if (tick_prompt) {
-          for (const auto &bot : _bots) {
-              *_output_stream << bot->PlotStructuredState(_env);
-          }
+          _env.Visualize();
           if (_output_stream) {
               *_output_stream << _env.PrintDebugInfo() << flush;
               *_output_stream << "Acting ... " << flush << endl;
@@ -343,24 +340,6 @@ PlayerId RTSGame::MainLoop(const std::atomic_bool *done) {
 
       if (! _paused) {
           if (!_options.bypass_bot_actions) {
-              // shuffle the order.
-              /*
-              std::vector<int> orders;
-              for (size_t i = 0; i < _bots.size(); ++i) orders.push_back(i);
-              // std::mt19937 g(_seed + t);
-              // std::shuffle(orders.begin(), orders.end(), g);
-              //
-              if (_options.reverse_terrain_generator) {
-                std::reverse(orders.begin(), orders.end());
-              }
-
-              for (const int &bot_idx : orders) {
-                  auto *bot = _bots[bot_idx].get();
-                  if (tick_prompt) *_output_stream << "Run bot " << bot->GetId() << endl << flush;
-                  bot->Act(_env);
-              }
-              */
-
               for (const auto &bot : _bots) {
                   if (tick_prompt) *_output_stream << "Run bot " << bot->GetId() << endl << flush;
                   bot->Act(_env);

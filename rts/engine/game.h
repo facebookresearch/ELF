@@ -63,8 +63,6 @@ struct RTSGameOptions {
     // Whether we show command during simulation.
     int cmd_verbose = 0;
 
-    bool reverse_terrain_generator = false;
-
     // Which file the intermediate prompt will be sent to.
     // if output_file == "cout", then it will send to stdout.
     // otherwise open a file and send the prompts to the file.

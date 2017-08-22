@@ -50,8 +50,6 @@ private:
     // This happens if the time tick exceeds max_tick, or there is anything wrong.
     bool _terminated;
 
-    bool _reverse_generator;
-
 public:
     class UnitIterator {
         private:
@@ -93,6 +91,8 @@ public:
 
     GameEnv();
 
+    void Visualize() const;
+
     // Remove all players.
     void ClearAllPlayers();
 
@@ -102,9 +102,6 @@ public:
     // Add and remove players.
     void AddPlayer(PlayerPrivilege pv);
     void RemovePlayer();
-
-    void SetReverseGenerator(bool rev) { _reverse_generator = rev; }
-    bool ReverseGenerator() const { return _reverse_generator; }
 
     int GetNumOfPlayers() const { return _players.size(); }
     int GetGameCounter() const { return _game_counter; }

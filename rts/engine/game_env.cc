@@ -17,6 +17,19 @@ GameEnv::GameEnv() {
     Reset();
 }
 
+void GameEnv::Visualize() const {
+    for (const auto &player : _players) {
+        std::cout << player.PrintInfo() << std::endl;
+    }
+    // No FoW, everything.
+    auto unit_iter = GetUnitIterator(INVALID);
+    while (! unit_iter.end()) {
+        const Unit &u = *unit_iter;
+        std::cout << u.PrintInfo(*_map) << std::endl;
+        ++ unit_iter;
+    }
+}
+
 void GameEnv::ClearAllPlayers() {
     _players.clear();
 }
