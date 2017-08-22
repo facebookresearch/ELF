@@ -19,7 +19,7 @@ private:
     int _games, _player0win, _player1win;
     std::vector<int> _base_choices;
     int _print_per_n_game;
-    const NUM_BASE_CHOICES = 4;
+    const int NUM_BASE_CHOICES = 4;
 
 public:
     GlobalStats(int print_per_n_game = 0) : _games(0), _player0win(0), _player1win(0), _print_per_n_game(print_per_n_game) {
@@ -46,7 +46,7 @@ public:
         ss << "Result:" << _player0win << "/"<< _player1win << "/" << _games << endl;
         ss << "Player 0 win rate: " << (float)_player0win / _games << " " << _player0win << "/" << _games << endl;
         ss << "Player 1 win rate: " << (float)_player1win / _games << " " << _player1win << "/" << _games << endl;
-        for (size_t i = 0; i < NUM_BASE_CHOICES; i++) {
+        for (int i = 0; i < NUM_BASE_CHOICES; i++) {
             ss << "Base loc" << i << " rate: " << (float)_base_choices[i] / _games << " " << _base_choices[i] << "/" << _games << endl;
         }
         return ss.str();

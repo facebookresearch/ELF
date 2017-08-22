@@ -45,7 +45,11 @@ void GameDef::Init() {
     reg_cf_specific();
 
     // InitAI.
-    AI::RegisterAI("flag_simple", [](const std::string &spec) { return new FlagSimpleAI(INVALID, std::stoi(spec), nullptr); });
+    AI::RegisterAI("flag_simple", [](const std::string &spec) {
+        AIOptions ai_options;
+        ai_options.fs = std::stoi(spec);
+        return new FlagSimpleAI(ai_options, nullptr);
+    });
 }
 
 vector<pair<CmdBPtr, int> > GameDef::GetInitCmds(const RTSGameOptions& options) const{

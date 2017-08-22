@@ -20,6 +20,8 @@ using Data = typename AIComm::Data;
 
 class AIBase : public AIWithComm<AIComm> {
 protected:
+    bool _respect_fow;
+
     int last_r0 = 0;
     int last_r1 = 0;
     int last_x = 9;
@@ -46,8 +48,8 @@ protected:
 
 public:
     AIBase() { }
-    AIBase(PlayerId id, int frameskip, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
-        : AIWithComm<AIComm>(id, frameskip, receiver, ai_comm) {
+    AIBase(const AIOptions &opt, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
+        : AIWithComm<AIComm>(opt.name, opt.fs, receiver, ai_comm), _respect_fow(opt.fow) {
     }
 };
 
@@ -89,8 +91,8 @@ private:
     RuleActor *rule_actor() override { return &_cf_rule_actor; }
 
 public:
-    FlagTrainedAI(PlayerId id, int frame_skip, CmdReceiver *receiver, AIComm *ai_comm, AI *backup_ai = nullptr)
-      : AIBase(id, frame_skip, receiver, ai_comm), _backup_ai_tick_thres(0) {
+    FlagTrainedAI(const AIOptions &opt, CmdReceiver *receiver, AIComm *ai_comm, AI *backup_ai = nullptr)
+      : AIBase(opt, receiver, ai_comm), _backup_ai_tick_thres(0) {
           if (ai_comm == nullptr) {
               throw std::range_error("FlagTrainedAI: ai_comm cannot be nullptr!");
           }
@@ -116,8 +118,8 @@ private:
 public:
     FlagSimpleAI() {
     }
-    FlagSimpleAI(PlayerId id, int frame_skip, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
-        : AIBase(id, frame_skip, receiver, ai_comm) {
+    FlagSimpleAI(const AIOptions &opt, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
+      : AIBase(opt, receiver, ai_comm) {
     }
 
     SERIALIZER_DERIVED(FlagSimpleAI, AI, _state);

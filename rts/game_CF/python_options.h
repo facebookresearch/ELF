@@ -32,18 +32,41 @@
 #define ACTION_PROB 1
 #define ACTION_REGIONAL 2
 
+struct AIOptions {
+    // Type of ai.
+    int type;
+
+    // Type of backup ai.
+    int backup;
+
+    // How often does the player acts.
+    int fs;
+
+    // Name of the player.
+    std::string name;
+
+    // Whether it respects FoW.
+    bool fow;
+
+    AIOptions() : type(AI_FLAG_SIMPLE), backup(AI_INVALID), fs(1), fow(true) {
+    }
+
+    std::string info() const {
+        std::stringstream ss;
+        ss << "[name=" << name << "][fs=" << fs << "][type=" << type << "][backup=" << backup << "][FoW=" << (fow ? "True" : "False") << "]";
+        return ss.str();
+    }
+
+    REGISTER_PYBIND_FIELDS(type, backup, fs, name, fow);
+};
+
 struct PythonOptions {
     // What kind of simulations we are running.
     // For now there is only ST_NORMAL
     int simulation_type;
 
     // AI, backup_ai and its opponent type.
-    int ai_type;
-    int backup_ai_type;
-    int opponent_ai_type;
-
-    // How often does the engine act (every act_ticks ticks).
-    int frame_skip_ai, frame_skip_opponent;
+    std::vector<AIOptions> ai_options;
 
     // Send stdout to the following filename. If output_filename == "cout", send them to stdout.
     // If output_filename == "", disable the prompts.
@@ -54,10 +77,6 @@ struct PythonOptions {
 
     // When not empty, save replays to the files.
     std::string save_replay_prefix;
-
-    // Two ratios to control mixture (by Qucheng?)
-    float simple_ratio;
-    float ratio_change;
 
     // Latest start of backup AI. When training, before each game starts,
     // we will sample a tick ~ Uniform(0, latest_start) and run backup AI
@@ -76,23 +95,25 @@ struct PythonOptions {
     // of PythonOption.seed and the thread id.
     int seed;
 
+    bool shuffle_player;
+    bool reverse_player;
+
     int mcts_threads;
     int mcts_rollout_per_thread;
     int game_name;
     int handicap_level;
 
     PythonOptions()
-      : simulation_type(ST_NORMAL), ai_type(AI_SIMPLE), backup_ai_type(AI_SIMPLE), opponent_ai_type(AI_SIMPLE),
-        frame_skip_ai(1), frame_skip_opponent(1), simple_ratio(1.0), ratio_change(0.0), latest_start(0),
-        latest_start_decay(0.9), max_tick(30000), seed(0), mcts_threads(1), mcts_rollout_per_thread(1),
-        game_name(0), handicap_level(0) {
+          : simulation_type(ST_NORMAL), latest_start(0),
+          latest_start_decay(0.9), max_tick(30000), seed(0), shuffle_player(false), reverse_player(false), mcts_threads(1), mcts_rollout_per_thread(1),
+          game_name(0), handicap_level(0) {
+    }
+
+    void AddAIOptions(const AIOptions &ai) {
+        ai_options.push_back(ai);
     }
 
     void Print() const {
-        std::cout << "Frame_skip_ai: " << frame_skip_ai << " Frame_skip_opponent: " << frame_skip_opponent << std::endl;
-        std::cout << "AI type: " << ai_type << std::endl;
-        std::cout << "Opponent AI type: " << opponent_ai_type << std::endl;
-        std::cout << "Backup AI type: " << backup_ai_type << std::endl;
         std::cout << "Handicap: " << handicap_level << std::endl;
         std::cout << "Max tick: " << max_tick << std::endl;
         std::cout << "Latest_start: " << latest_start << " decay: " << latest_start_decay << std::endl;
@@ -103,7 +124,7 @@ struct PythonOptions {
         std::cout << "Save_replay_prefix: \"" << save_replay_prefix << "\"" << std::endl;
     }
 
-    REGISTER_PYBIND_FIELDS(simulation_type, ai_type, backup_ai_type, opponent_ai_type, frame_skip_ai, frame_skip_opponent, output_filename, cmd_dumper_prefix, save_replay_prefix, simple_ratio, ratio_change, latest_start, latest_start_decay, max_tick, seed, mcts_threads, mcts_rollout_per_thread, game_name, handicap_level);
+    REGISTER_PYBIND_FIELDS(simulation_type, output_filename, cmd_dumper_prefix, save_replay_prefix, latest_start, latest_start_decay, max_tick, seed, mcts_threads, mcts_rollout_per_thread, game_name, handicap_level, shuffle_player, reverse_player);
 };
 
 struct GameState {
@@ -118,6 +139,7 @@ struct GameState {
     int32_t tick;
     int32_t winner;
     int32_t player_id;
+    std::string player_name;
 
     // Extra data.
     int ai_start_tick;

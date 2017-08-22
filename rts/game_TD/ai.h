@@ -36,8 +36,8 @@ protected:
 
 public:
     AIBase() { }
-    AIBase(PlayerId id, int frameskip, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
-        : AIWithComm<AIComm>(id, frameskip, receiver, ai_comm) {
+    AIBase(const AIOptions &opt, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
+        : AIWithComm<AIComm>(opt.name, opt.fs, receiver, ai_comm) {
     }
 };
 
@@ -74,8 +74,8 @@ private:
     }
 public:
     TDTrainedAI() {}
-    TDTrainedAI(PlayerId id, int frame_skip, CmdReceiver *receiver, AIComm *ai_comm, AI *backup_ai = nullptr)
-      : AIBase(id, frame_skip, receiver, ai_comm),  _backup_ai_tick_thres(0){
+    TDTrainedAI(const AIOptions &opt, CmdReceiver *receiver, AIComm *ai_comm, AI *backup_ai = nullptr)
+      : AIBase(opt, receiver, ai_comm), _backup_ai_tick_thres(0) {
         if (ai_comm == nullptr) {
             throw std::range_error("TDTrainedAI: ai_comm cannot be nullptr!");
         }
@@ -100,8 +100,8 @@ private:
 public:
     TDSimpleAI() {
     }
-    TDSimpleAI(PlayerId id, int frame_skip, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
-        : AIBase(id, frame_skip, receiver, ai_comm) {
+    TDSimpleAI(const AIOptions &opt, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
+      : AIBase(opt, receiver, ai_comm) {
     }
 
     SERIALIZER_DERIVED(TDSimpleAI, AI, _state);
@@ -116,8 +116,8 @@ private:
 public:
     TDBuiltInAI() {
     }
-    TDBuiltInAI(PlayerId id, int frame_skip, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
-        : AIBase(id, frame_skip, receiver, ai_comm) {
+    TDBuiltInAI(const AIOptions &opt, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
+      : AIBase(opt, receiver, ai_comm) {
     }
 
     SERIALIZER_DERIVED(TDBuiltInAI, AI, _state);

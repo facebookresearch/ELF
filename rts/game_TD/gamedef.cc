@@ -46,8 +46,16 @@ void GameDef::Init() {
     reg_td_specific();
 
     // InitAI.
-    AI::RegisterAI("td_simple", [](const std::string &spec) { return new TDSimpleAI(INVALID, std::stoi(spec), nullptr); });
-    AI::RegisterAI("td_built_in", [](const std::string &spec) { return new TDBuiltInAI(INVALID, std::stoi(spec), nullptr); });
+    AI::RegisterAI("td_simple", [](const std::string &spec) {
+        AIOptions ai_options;
+        ai_options.fs = std::stoi(spec);
+        return new TDSimpleAI(ai_options, nullptr);
+    });
+    AI::RegisterAI("td_built_in", [](const std::string &spec) {
+        AIOptions ai_options;
+        ai_options.fs = std::stoi(spec);
+        return new TDBuiltInAI(ai_options, nullptr);
+    });
 }
 
 vector<pair<CmdBPtr, int> > GameDef::GetInitCmds(const RTSGameOptions&) const{
