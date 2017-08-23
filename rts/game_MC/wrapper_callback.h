@@ -25,16 +25,11 @@ private:
 
     std::vector<std::unique_ptr<Context::AIComm>> _ai_comms;
 
-    AI *_ai;
-
-    float _latest_start;
-    int _simple_ratio;
-
     void initialize_ai_comm(Context::AIComm &ai_comm);
 
 public:
     explicit WrapperCallbacks(int game_idx, const ContextOptions &context_options, const PythonOptions &options, Context::Comm *comm)
-        : _game_idx(game_idx), _context_options(context_options), _options(options), _comm(comm), _ai(nullptr) {
+        : _game_idx(game_idx), _context_options(context_options), _options(options), _comm(comm) {
     }
 
     static void GlobalInit();
