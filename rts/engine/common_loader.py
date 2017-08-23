@@ -46,7 +46,7 @@ class CommonLoader:
         if players_str[0] == "\"" and players_str[-1] == "\"":
             players_str = players_str[1:-1]
 
-        for i, player in enumerate(players_str):
+        for i, player in enumerate(players_str.split(";")):
             ai_options = self.module.AIOptions()
             for item in player.split(","):
                 key, value = item.split("=")
