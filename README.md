@@ -88,7 +88,7 @@ game=./rts/game_MC/game model=actor_critic model_file=./rts/game_MC/model \
 python3 train.py 
     --num_games 1024 --batchsize 128                                                                  # Set number of games to be 1024 and batchsize to be 128.  
     --freq_update 50                                                                                  # Update behavior policy after 50 updates of the model.
-    --players "fs=50,type=AI_NN,args=backup/AI_SIMPLE|delay=0.99|start=500;fs=20,type=AI_SIMPLE"      # Specify AI and its opponent, separated by semicolon. `fs` is frameskip that specifies How often your opponent makes a decision (e.g., fs=20 means it acts every 20 ticks)
+    --players "fs=50,type=AI_NN,args=backup/AI_SIMPLE|delay/0.99|start/500;fs=20,type=AI_SIMPLE"      # Specify AI and its opponent, separated by semicolon. `fs` is frameskip that specifies How often your opponent makes a decision (e.g., fs=20 means it acts every 20 ticks)
                                                                                                       # If `backup` is specified in `args`, then we use rule-based AI for the first `start` ticks, then trained AI takes over. `start` decays with rate `decay`. 
     --tqdm                                                                  # Show progress bar.
     --gpu 0                                                                 # Use first gpu. If you don't specify gpu, it will run on CPUs. 
