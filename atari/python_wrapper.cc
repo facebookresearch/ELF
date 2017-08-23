@@ -14,18 +14,16 @@
 #include <pybind11/stl_bind.h>
 #include <pybind11/stl.h>
 
-#include "../elf/pybind_helper.h"
+#include "elf/pybind_helper.h"
 
 #include "game_context.h"
 
 namespace py = pybind11;
 
-PYBIND11_PLUGIN(atari_game) {
-  py::module m("atari_game", "Atari game bindings.");
+PYBIND11_MODULE(atari_game, m) {
   register_common_func<GameContext>(m);
 
   CONTEXT_REGISTER(GameContext)
-    .def("get_num_actions", &GameContext::get_num_actions);
+      .def("GetParams", &GameContext::GetParams);
 
-  return m.ptr();
 }

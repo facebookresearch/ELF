@@ -7,14 +7,15 @@
 * of patent rights can be found in the PATENTS file in the same directory.
 */
 
-#include "../engine/gamedef.h"
-#include "../engine/game.h"
-#include "../engine/game_env.h"
-#include "../engine/rule_actor.h"
+#include "engine/gamedef.h"
+#include "engine/game.h"
+#include "engine/game_env.h"
+#include "engine/rule_actor.h"
+#include "engine/cmd.gen.h"
+#include "engine/cmd_specific.gen.h"
 
-#include "../engine/cmd.gen.h"
-#include "../engine/cmd_specific.gen.h"
 #include "cmd_specific.gen.h"
+#include "ai.h"
 
 int GameDef::GetNumUnitType() {
     return NUM_FLAG_UNITTYPE;
@@ -34,11 +35,21 @@ bool GameDef::CheckAddUnit(RTSMap *_map, UnitType, const PointF& p) const{
     return _map->CanPass(p, INVALID);
 }
 
-void GameDef::InitUnits() {
+void GameDef::Init() {
     _units.assign(GetNumUnitType(), UnitTemplate());
     _units[FLAG_BASE] = _C(0, 1, 0, 0.0, 0, 0, 5, {0, 0, 0, 1}, vector<CmdType>{BUILD}, ATTR_INVULNERABLE);
     _units[FLAG] = _C(0, 1, 0, 0, 0, 0, 0, vector<int>{0, 0, 0, 0}, vector<CmdType>{}, ATTR_INVULNERABLE);
     _units[FLAG_ATHLETE] = _C(0, 100, 0, 0.1, 10, 1, 3, vector<int>{0, 15, 0, 0}, vector<CmdType>{MOVE, ATTACK, GET_FLAG, ESCORT_FLAG_TO_BASE});
+    reg_engine();
+    reg_engine_specific();
+    reg_cf_specific();
+
+    // InitAI.
+    AI::RegisterAI("flag_simple", [](const std::string &spec) {
+        AIOptions ai_options;
+        ai_options.fs = std::stoi(spec);
+        return new FlagSimpleAI(ai_options, nullptr);
+    });
 }
 
 vector<pair<CmdBPtr, int> > GameDef::GetInitCmds(const RTSGameOptions& options) const{

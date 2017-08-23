@@ -87,6 +87,9 @@ class GameDef {
 public:
     std::vector<UnitTemplate> _units;
 
+    // Initialize everything.
+    void Init();
+
     // Get the number of unit type in this game
     static int GetNumUnitType();
 
@@ -99,8 +102,6 @@ public:
     // Check if the unit can be added at current location p.
     bool CheckAddUnit(RTSMap* _map, UnitType type, const PointF& p) const;
 
-    // Initialize available units for each game
-    void InitUnits();
     const UnitTemplate &unit(UnitType t) const {
         return _units[t];
     }

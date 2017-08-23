@@ -9,33 +9,35 @@
 
 #pragma once
 
-#include "../engine/ai.h"
+#include "engine/ai.h"
 #include "python_options.h"
 #include "td_rule_actor.h"
 
-using Context = ContextT<PythonOptions, ExtGame, Reply>;
-using AIComm = AICommT<Context>;
+using Comm = Context::Comm;
+using AIComm = AICommT<Comm>;
+using Data = typename AIComm::Data;
 
-class AIBase : public AIWithComm<AIComm, ExtGame> {
+class AIBase : public AIWithComm<AIComm> {
 protected:
     float last_hp_level = 1.0;
 
-    void on_save_data(ExtGame *game) override {
+    void on_save_data(Data *data) override {
+        GameState *game = &data->newest();
         if (game->winner != INVALID) return;
 
         // assign partial rewards
         if (game->base_hp_level < last_hp_level) {
-            game->last_reward = game->base_hp_level - last_hp_level;
-            game->base_hp_level = last_hp_level;
+            game->last_r = game->base_hp_level - last_hp_level;
+            last_hp_level = game->base_hp_level;
         }
     }
     // Feature extraction.
-    void save_structured_state(const GameEnv &env, ExtGame *game) const override;
+    void save_structured_state(const GameEnv &env, Data *data) const override;
 
 public:
     AIBase() { }
-    AIBase(PlayerId id, int frameskip, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
-        : AIWithComm<AIComm, ExtGame>(id, frameskip, receiver, ai_comm) {
+    AIBase(const AIOptions &opt, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
+        : AIWithComm<AIComm>(opt.name, opt.fs, receiver, ai_comm) {
     }
 };
 
@@ -57,9 +59,9 @@ private:
         if (_backup_ai != nullptr) _backup_ai->SetCmdReceiver(receiver);
     }
 
-    void on_save_data(ExtGame *game) override {
-        this->AIBase::on_save_data(game);
-        game->ai_start_tick = _backup_ai_tick_thres;
+    void on_save_data(Data *data) override {
+        this->AIBase::on_save_data(data);
+        data->newest().ai_start_tick = _backup_ai_tick_thres;
     }
 
     bool need_structured_state(Tick tick) const override {
@@ -72,19 +74,15 @@ private:
     }
 public:
     TDTrainedAI() {}
-    TDTrainedAI(PlayerId id, int frame_skip, CmdReceiver *receiver, AIComm *ai_comm, AI *backup_ai = nullptr)
-      : AIBase(id, frame_skip, receiver, ai_comm),  _backup_ai_tick_thres(0){
+    TDTrainedAI(const AIOptions &opt, CmdReceiver *receiver, AIComm *ai_comm)
+      : AIBase(opt, receiver, ai_comm) {
         if (ai_comm == nullptr) {
             throw std::range_error("TDTrainedAI: ai_comm cannot be nullptr!");
         }
-        if (backup_ai != nullptr) {
-            backup_ai->SetId(GetId());
-            backup_ai->SetCmdReceiver(_receiver);
-            _backup_ai.reset(backup_ai);
-        }
+
     }
-    void SetBackupAIEndTick(Tick thres) {
-        _backup_ai_tick_thres = thres;
+    void Reset() override {
+        AIWithComm::Reset();
     }
     SERIALIZER_DERIVED(TDTrainedAI, AI, _state);
 };
@@ -98,8 +96,8 @@ private:
 public:
     TDSimpleAI() {
     }
-    TDSimpleAI(PlayerId id, int frame_skip, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
-        : AIBase(id, frame_skip, receiver, ai_comm) {
+    TDSimpleAI(const AIOptions &opt, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
+      : AIBase(opt, receiver, ai_comm) {
     }
 
     SERIALIZER_DERIVED(TDSimpleAI, AI, _state);
@@ -114,8 +112,8 @@ private:
 public:
     TDBuiltInAI() {
     }
-    TDBuiltInAI(PlayerId id, int frame_skip, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
-        : AIBase(id, frame_skip, receiver, ai_comm) {
+    TDBuiltInAI(const AIOptions &opt, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
+      : AIBase(opt, receiver, ai_comm) {
     }
 
     SERIALIZER_DERIVED(TDBuiltInAI, AI, _state);

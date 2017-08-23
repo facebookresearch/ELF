@@ -21,7 +21,7 @@ class Model_ActorCritic(Model):
         # relu_func = nn.ReLU
 
         self.trunk = nn.Sequential(
-            nn.Conv2d(12, 32, 5, padding = 2),
+            nn.Conv2d(3 * params["hist_len"], 32, 5, padding = 2),
             relu_func(),
             nn.MaxPool2d(2, 2),
             nn.Conv2d(32, 32, 5, padding = 2),
@@ -45,6 +45,7 @@ class Model_ActorCritic(Model):
         self.softmax = nn.Softmax()
 
     def forward(self, x):
+        # Get the last hist_len frames.
         s = self._var(x["s"])
         # print("input size = " + str(s.size()))
         rep = self.trunk(s)

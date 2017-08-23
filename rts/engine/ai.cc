@@ -13,6 +13,8 @@
 //#include "minirts2_state.h"
 //#include "minirts3_state.h"
 
+std::map<std::string, std::function<AI *(const std::string &spec)>> AI::_factories;
+
 bool AI::gather_decide(const GameEnv &env, std::function<bool (const GameEnv&, string *, AssignedCmds *)> func) {
     string state_string;
     AssignedCmds assigned_cmds;

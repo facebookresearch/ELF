@@ -10,6 +10,7 @@
 #pragma once
 
 #include "comm_template.h"
+#include "hist.h"
 #include <pybind11/pybind11.h>
 
 namespace py = pybind11;
@@ -17,20 +18,26 @@ namespace py = pybind11;
 template <typename GameContext>
 void register_common_func(py::module &m) {
   using GC = typename GameContext::GC;
-  using Options = typename GC::Options;
-  using Infos = typename GC::Infos;
+  using State = typename GC::State;
 
   PYCLASS_WITH_FIELDS(m, ContextOptions)
     .def(py::init<>())
     .def("print", &ContextOptions::print);
 
-  PYCLASS_WITH_FIELDS(m, Options)
-    .def(py::init<>());
-
   PYCLASS_WITH_FIELDS(m, EntryInfo)
     .def(py::init<>());
 
+  PYCLASS_WITH_FIELDS(m, GroupStat)
+    .def(py::init<>());
+
   PYCLASS_WITH_FIELDS(m, Infos);
+
+  PYCLASS_WITH_FIELDS(m, State);
+
+  using HistState = HistT<State>;
+  PYCLASS_WITH_FIELDS(m, HistState)
+    .def("newest", [](const HistState &hstate, int i) { return hstate.newest(i); })
+    .def("size", &HistState::size);
 
   PYCLASS_WITH_FIELDS(m, MetaInfo);
 }
@@ -42,35 +49,24 @@ void register_common_func(py::module &m) {
 #endif
 
 #define CONTEXT_CALLS(GC, context) \
-  GC::Infos Wait(int timeout) { return context->Wait(timeout); } \
-  GC::Infos WaitGroup(int group_id, int timeout) { return context->WaitGroup(group_id, timeout); } \
-  void Steps(const GC::Infos& infos) { context->Steps(infos); } \
+  Infos Wait(int timeout) { return context->Wait(timeout); } \
+  Infos WaitGroup(int group_id, int timeout) { return context->WaitGroup(group_id, timeout); } \
+  void Steps(const Infos& infos) { context->Steps(infos); } \
   std::string Version() const { return context->Version(); } \
   void PrintSummary() const { context->PrintSummary(); } \
-  int AddCollectors(int batchsize, int hist_len, int num_collectors) { return context->AddCollectors(batchsize, hist_len, num_collectors); } \
-  const MetaInfo &meta(int i) const { return context->meta(i); } \
+  GroupStat CreateGroupStat() const { return GroupStat(); } \
+  int AddCollectors(int batchsize, int exclusive_id, const GroupStat &gstat) { \
+    return context->comm().AddCollectors(batchsize, exclusive_id, gstat); \
+  } \
   int size() const { return context->size(); } \
-  int CreateTensor(int gid, int id_within_group, const std::string &key, const std::map<std::string, std::string> &desc) {\
-      if (key == "input") \
-         return context->GetDataAddr(gid, id_within_group).GetInputService().Create(desc); \
-      else if (key == "reply") \
-         return context->GetDataAddr(gid, id_within_group).GetReplyService().Create(desc); \
-      else throw std::range_error("Invalid key " + key); \
+\
+  EntryInfo GetTensorSpec(int gid, const std::string &key, int T) { \
+      return context->comm().GetCollectorGroup(gid).GetEntry(key, T, [&](const std::string &key) { return EntryFunc(key); }); \
   } \
-  EntryInfo GetTensorInfo(int gid, int id_within_group, const std::string &key, int k) { \
-      if (key == "input") \
-         return context->GetDataAddr(gid, id_within_group).GetInputService().entries()[k].entry_info;\
-      else if (key == "reply") \
-        return context->GetDataAddr(gid, id_within_group).GetReplyService().entries()[k].entry_info;\
-      else throw std::range_error("Invalid key " + key); \
+  void AddTensor(int gid, const std::string &input_reply, const EntryInfo &e) { \
+      context->comm().GetCollectorGroup(gid).AddEntry(input_reply, e); \
   } \
-  void SetTensorAddr(int gid, int id_within_group, const std::string &key, int k, int64_t p, int stride) { \
-      if (key == "input") \
-         context->GetDataAddr(gid, id_within_group).GetInputService().entries()[k].Set(p, stride);\
-      else if (key == "reply") \
-         context->GetDataAddr(gid, id_within_group).GetReplyService().entries()[k].Set(p, stride);\
-      else throw std::range_error("Invalid key " + key); \
-  } \
+
 
 #define CONTEXT_REGISTER(GameContext) \
   using GC = typename GameContext::GC; \
@@ -81,12 +77,11 @@ void register_common_func(py::module &m) {
     .def("Steps", &GameContext::Steps, py::call_guard<py::gil_scoped_release>()) \
     .def("Version", &GameContext::Version) \
     .def("PrintSummary", &GameContext::PrintSummary) \
+    .def("CreateGroupStat", &GameContext::CreateGroupStat, py::return_value_policy::copy) \
     .def("AddCollectors", &GameContext::AddCollectors) \
     .def("Start", &GameContext::Start) \
     .def("Stop", &GameContext::Stop) \
-    .def("__getitem__", &GameContext::meta) \
     .def("__len__", &GameContext::size) \
-    .def("CreateTensor", &GameContext::CreateTensor) \
-    .def("GetTensorInfo", &GameContext::GetTensorInfo) \
-    .def("SetTensorAddr", &GameContext::SetTensorAddr) \
+    .def("AddTensor", &GameContext::AddTensor) \
+    .def("GetTensorSpec", &GameContext::GetTensorSpec, py::return_value_policy::copy) \
 

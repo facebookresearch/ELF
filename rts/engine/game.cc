@@ -46,6 +46,10 @@ RTSGame::~RTSGame() {
 }
 
 void RTSGame::AddBot(AI *bot) {
+    if (bot == nullptr) {
+        std::cout << "Bot at " << _bots.size() << " cannot be nullptr" << std::endl;
+        return;
+    }
     bot->SetId(_bots.size());
     bot->SetCmdReceiver(&_cmd_receiver);
     _bots.push_back(unique_ptr<AI>(bot));
@@ -321,11 +325,11 @@ PlayerId RTSGame::MainLoop(const std::atomic_bool *done) {
       // Check bots input.
       // Check if we want to peek a specific tick, if so, we print them out.
       if (tick_prompt) {
-          for (const auto &bot : _bots) {
-              *_output_stream << bot->PlotStructuredState(_env);
+          _env.Visualize();
+          if (_output_stream) {
+              *_output_stream << _env.PrintDebugInfo() << flush;
+              *_output_stream << "Acting ... " << flush << endl;
           }
-          *_output_stream << _env.PrintDebugInfo() << flush;
-          *_output_stream << "Acting ... " << flush << endl;
       }
       /*
       if (_output_stream) {
@@ -371,10 +375,12 @@ PlayerId RTSGame::MainLoop(const std::atomic_bool *done) {
       _env.SetWinnerId(winner_id);
 
       // Check winning condition
-      if (winner_id != INVALID || _cmd_receiver.GetTick() >= _options.max_tick || ! _cmd_receiver.CheckGameSmooth(_output_stream)) {
+      if (winner_id != INVALID || t >= _options.max_tick || ! _cmd_receiver.GetGameStats().CheckGameSmooth(t, _output_stream)) {
           _env.SetTermination();
+          _cmd_receiver.GetGameStats().SetWinner(winner_id);
+
           if (winner_id != INVALID) {
-              _bots[winner_id]->SendComment("Won");
+              _bots[winner_id]->SendComment("Won at " + std::to_string(t));
               if (_output_stream) {
                   *_output_stream << "[" << t << "][" << game_counter << "] Player " << winner_id << " won!" << endl << flush;
               }
@@ -382,6 +388,9 @@ PlayerId RTSGame::MainLoop(const std::atomic_bool *done) {
 
           for (const auto &bot : _bots) {
               bot->Act(_env, true);
+          }
+          if (_spectator != nullptr) {
+            _spectator->Act(_env);
           }
           break;
       }

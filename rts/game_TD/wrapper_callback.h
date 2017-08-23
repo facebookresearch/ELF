@@ -9,27 +9,32 @@
 
 #pragma once
 
-#include "../../elf/comm_template.h"
-#include "../../elf/pybind_interface.h"
+#include "elf/comm_template.h"
+#include "elf/pybind_interface.h"
 
-#include "../engine/game.h"
+#include "engine/game.h"
 #include "python_options.h"
-
-using GC = ContextT<PythonOptions, ExtGame, Reply>;
 
 class WrapperCallbacks {
 private:
     int _game_idx;
+    const ContextOptions &_context_options;
     const PythonOptions &_options;
-    GC::AIComm *_ai_comm;
 
-    AI *_opponent;
+    Context::Comm *_comm;
+
+    std::vector<std::unique_ptr<Context::AIComm>> _ai_comms;
+
     AI *_ai;
 
+
     float _latest_start;
+    void initialize_ai_comm(Context::AIComm &ai_comm);
+
 public:
-    explicit WrapperCallbacks(int game_idx, const PythonOptions &options, GC::AIComm *ai_comm)
-        : _game_idx(game_idx), _options(options), _ai_comm(ai_comm), _opponent(nullptr), _ai(nullptr) { }
+    explicit WrapperCallbacks(int game_idx, const ContextOptions &context_options, const PythonOptions &options, Context::Comm *comm)
+        : _game_idx(game_idx), _context_options(context_options), _options(options), _comm(comm), _ai(nullptr) {
+    }
 
     static void GlobalInit();
     void OnGameOptions(RTSGameOptions *rts_options);

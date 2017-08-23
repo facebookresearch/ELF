@@ -8,8 +8,6 @@
 */
 #pragma once
 
-#include "../elf/comm_template.h"
-
 #include "cmd_receiver.h"
 #include "rule_actor.h"
 #include <atomic>
@@ -17,8 +15,12 @@
 #include <algorithm>
 
 class AI {
+public:
+    using RegFunc = std::function<AI *(const std::string &spec)>;
+
 protected:
     PlayerId _player_id;
+    const std::string _name;
     CmdReceiver *_receiver;
 
     // Run Act() every _frame_skip
@@ -43,10 +45,14 @@ protected:
     void actual_send_cmds(const GameEnv &env, AssignedCmds &assigned_cmds);
     bool gather_decide(const GameEnv &env, std::function<bool (const GameEnv&, string *, AssignedCmds *)> func);
 
+    static std::map<std::string, RegFunc> _factories;
+
 public:
-    AI() : _player_id(INVALID), _receiver(nullptr), _frame_skip(1) { }
-    AI(PlayerId player_id, int frameskip, CmdReceiver *receiver) : _player_id(player_id), _receiver(receiver), _frame_skip(frameskip) { }
+    AI() : _player_id(INVALID), _name("noname"), _receiver(nullptr), _frame_skip(1) { }
+    AI(const std::string &name, int frameskip, CmdReceiver *receiver) : _player_id(INVALID), _name(name), _receiver(receiver), _frame_skip(frameskip) { }
+    virtual ~AI() {}
     PlayerId GetId() const { return _player_id; }
+    const std::string &GetName() const { return _name; }
 
     void SetId(PlayerId id) {
         on_set_id(id);
@@ -79,7 +85,6 @@ public:
     }
 
     virtual bool NeedAct(Tick tick) const { return tick % _frame_skip == 0; }
-    virtual void SetFactory(std::function<AI* (int)> factory) { (void)factory; }
 
     // Get internal state.
     // [TODO]: Not a good interface..
@@ -90,15 +95,28 @@ public:
     virtual bool IsUnitSelected(UnitId) const { return false; }
     virtual vector<int> GetAllSelectedUnits() const { return vector<int>(); }
 
+    // Factory method given specification.
+    static AI *CreateAI(const std::string &name, const std::string& spec) {
+        auto it = _factories.find(name);
+        if (it == _factories.end()) return nullptr;
+        return it->second(spec);
+    }
+    static void RegisterAI(const std::string &name, RegFunc reg_func) {
+        _factories.insert(std::make_pair(name, reg_func));
+    }
+
     SERIALIZER_BASE(AI, _player_id);
     SERIALIZER_ANCHOR(AI);
 };
 
 // A simple AI with AIComm
-template <typename AIComm, typename ExtGame>
+template <typename AIComm>
 class AIWithComm : public AI {
+public:
+    using Data = typename AIComm::Data;
+
 protected:
-    std::unique_ptr<AIComm> _ai_comm;
+    AIComm *_ai_comm;
     std::function<AI* (int)> _factory;
 
     vector<int> _state;
@@ -107,20 +125,20 @@ protected:
     // In specific situations (e.g., MCTS), it is used separately to get the value of the current situation.
     bool send_data_wait_reply(const GameEnv& env);
 
-    string plot_structured_state(const ExtGame &game) const;
+    string plot_structured_state(const Data &data) const;
 
-    virtual void on_save_data(ExtGame *game) { (void)game; }
+    virtual void on_save_data(Data *data) { (void)data; }
 
     virtual bool need_structured_state(Tick) const { return _ai_comm != nullptr; }
-    virtual void save_structured_state(const GameEnv &env, ExtGame *game) const {
+    virtual void save_structured_state(const GameEnv &env, Data *data) const {
         (void)env;
-        (void)game;
+        (void)data;
     }
 
 public:
     AIWithComm() { }
-    AIWithComm(PlayerId id, int frame_skip, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
-        : AI(id, frame_skip, receiver), _ai_comm(ai_comm) {
+    AIWithComm(const std::string &name, int frame_skip, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
+        : AI(name, frame_skip, receiver), _ai_comm(ai_comm) {
     }
     bool Act(const GameEnv &env, bool must_act = false) override;
 
@@ -129,15 +147,14 @@ public:
 
     // Save game state to communicate with python wrapper.
     string PlotStructuredState(const GameEnv &env) const override;
-    void SetFactory(std::function<AI* (int)> factory) override { _factory = factory; }
 
     void SetState(vector<int> state) { _state = state; }
     vector<int> GetState() const override { return _state; }
 };
 
 ///////////////////////// AIWithComm //////////////////////
-template <typename AIComm, typename ExtGame>
-bool AIWithComm<AIComm, ExtGame>::Act(const GameEnv &env, bool must_act) {
+template <typename AIComm>
+bool AIWithComm<AIComm>::Act(const GameEnv &env, bool must_act) {
     Tick t = _receiver->GetTick();
     if (! must_act && ! NeedAct(t)) return false;
 
@@ -157,30 +174,30 @@ bool AIWithComm<AIComm, ExtGame>::Act(const GameEnv &env, bool must_act) {
     else return false;
 }
 
-template <typename AIComm, typename ExtGame>
-bool AIWithComm<AIComm, ExtGame>::send_data_wait_reply(const GameEnv& env) {
+template <typename AIComm>
+bool AIWithComm<AIComm>::send_data_wait_reply(const GameEnv& env) {
     _ai_comm->Prepare();
-    ExtGame *data = _ai_comm->GetData();
+    Data *data = &_ai_comm->info().data;
     save_structured_state(env, data);
     on_save_data(data);
     // cout << PlotStructuredState(*_ai_comm->GetData()) << endl;
     return _ai_comm->SendDataWaitReply();
 }
 
-template <typename AIComm, typename ExtGame>
-string AIWithComm<AIComm, ExtGame>::plot_structured_state(const ExtGame &game) const {
+template <typename AIComm>
+string AIWithComm<AIComm>::plot_structured_state(const Data &data) const {
     std::stringstream ss;
     ss << "BotId: " << _player_id << endl;
     // TODO: Need to implement.
-    (void)game;
+    (void)data;
     ss << "Not implemented " << endl;
     return ss.str();
 }
 
-template <typename AIComm, typename ExtGame>
-string AIWithComm<AIComm, ExtGame>::PlotStructuredState(const GameEnv &env) const {
-    ExtGame game;
-    save_structured_state(env, &game);
+template <typename AIComm>
+string AIWithComm<AIComm>::PlotStructuredState(const GameEnv &env) const {
+    Data data;
+    save_structured_state(env, &data);
     // Then we plot it.
-    return plot_structured_state(game);
+    return plot_structured_state(data);
 }

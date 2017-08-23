@@ -71,10 +71,14 @@ private:
         }
 
         friend bool operator<(const Item &m1, const Item &m2) {
-            if (m1.cost > m2.cost) return true; if (m1.cost < m2.cost) return false;
-            if (m1.g > m2.g) return true; if (m1.g < m2.g) return false;
-            if (m1.loc < m2.loc) return true; if (m1.loc > m2.loc) return false;
-            if (m1.loc_from < m2.loc_from) return true; if (m1.loc_from > m2.loc_from) return false;
+            if (m1.cost > m2.cost) return true;
+            if (m1.cost < m2.cost) return false;
+            if (m1.g > m2.g) return true;
+            if (m1.g < m2.g) return false;
+            if (m1.loc < m2.loc) return true;
+            if (m1.loc > m2.loc) return false;
+            if (m1.loc_from < m2.loc_from) return true;
+            if (m1.loc_from > m2.loc_from) return false;
             return true;
         }
 

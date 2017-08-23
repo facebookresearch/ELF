@@ -6,9 +6,5 @@ CMD_IMMEDIATE(GenerateMap, int, num_obstacles, int, init_resource);
 # Generate some units randomly on the map.
 CMD_IMMEDIATE(GenerateUnit);
 
-# Generate some units randomly on the map.
-CMD_IMMEDIATE(GameStart);
-
 # Start the game from a predefined setup. Should be called after GenerateMap and GenerateUnit
 CMD_IMMEDIATE(GameStartSpecific);
-

@@ -37,7 +37,8 @@ int main() {
   GameContext GC{co, go};
 
   int batchsize = 16;
-  GC.AddCollectors(batchsize, 1, 1);
+  GroupStat stat;
+  GC.AddCollectors(batchsize, 1, stat);
 
   cout << "Start timing ..." << endl;
   int N = 30000;
@@ -50,6 +51,7 @@ int main() {
       tm.restart();
     }
   }
+  GC.Stop();
   cout << "tm duration" << tm.duration() << endl;
   cout << "seconds per iter:" << tm.duration() / N << endl;
   cout << N / tm.duration() * batchsize * go.frame_skip << endl;

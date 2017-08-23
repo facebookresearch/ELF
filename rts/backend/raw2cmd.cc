@@ -8,7 +8,7 @@
 */
 
 #include "raw2cmd.h"
-#include "../engine/cmd_specific.gen.h"
+#include "engine/cmd_specific.gen.h"
 
 /////////// RawToCmd /////////////////
 //

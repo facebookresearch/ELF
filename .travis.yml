@@ -1,0 +1,29 @@
+#########################
+# project configuration #
+#########################
+
+# C++ project
+language: cpp
+compiler:
+  - gcc
+  - clang
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - gcc-4.9
+    - g++-4.9
+    - clang
+    - libpython3-dev
+    - libtbb-dev
+
+install:
+  # create deps dir if not existing
+  - python3-config --cflags --ldflags
+
+script:
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-4.9" CC="gcc-4.9"; fi
+  - (mkdir rts/build_MC && cd rts/build_MC && cmake .. -DGAME_DIR=../game_MC && make)
+  - (mkdir rts/build_CF && cd rts/build_CF && cmake .. -DGAME_DIR=../game_CF && make)
+  - (mkdir rts/build_TD && cd rts/build_TD && cmake .. -DGAME_DIR=../game_TD && make)

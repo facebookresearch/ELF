@@ -10,12 +10,16 @@ from .args_utils import ArgsProvider
 class ModelLoader:
     def __init__(self, model_class):
         self.model_class = model_class
+        define_args =[
+            ("gpu", dict(type=int, help="gpu to use", default=None)),
+            ("load", dict(type=str, help="load model", default=None))
+        ]
+        if hasattr(model_class, "get_define_args"):
+            define_args += model_class.get_define_args()
+
         self.args = ArgsProvider(
             call_from = self,
-            define_args = [
-                ("gpu", dict(type=str, help="gpu to use", default=None)),
-                ("load", dict(type=str, help="load model", default=None))
-            ]
+            define_args = define_args
         )
 
     def load_model(self, params):
@@ -28,7 +32,7 @@ class ModelLoader:
             print("Load from " + args.load)
             model.load(args.load)
 
-        if not getattr(args, "cpu", False):
-            model.cuda()
+        if args.gpu is not None and args.gpu >= 0:
+            model.cuda(device_id=args.gpu)
 
         return model

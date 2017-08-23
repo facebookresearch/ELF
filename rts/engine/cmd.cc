@@ -116,7 +116,7 @@ float micro_move(Tick tick, const Unit& u, const GameEnv &env, const PointF& tar
             // Unable to move. This is usually due to PathPlanning issues.
             // Too many such commands will leads to early termination of game.
             // [TODO]: Make PathPlanning better.
-            receiver->RecordFailedMove(1.0);
+            receiver->GetGameStats().RecordFailedMove(tick, 1.0);
         }
     }
     return dist_sqr;
