@@ -8,133 +8,14 @@
 */
 
 #pragma once
-#include <sstream>
-#include "elf/python_options_utils_cpp.h"
 #include "elf/copier.hh"
 #include "elf/comm_template.h"
 #include "elf/hist.h"
-
-// Simulation type
-#define ST_INVALID 0
-#define ST_NORMAL 1
-
-// AI type
-#define AI_INVALID 0
-#define AI_SIMPLE 1
-#define AI_HIT_AND_RUN 2
-#define AI_NN 3
-#define AI_MCTS_VALUE 4
-#define AI_FLAG_NN 5
-#define AI_FLAG_SIMPLE 6
-#define AI_TD_BUILT_IN 7
-#define AI_TD_NN 8
+#include "engine/python_common_options.h"
 
 #define ACTION_GLOBAL 0
 #define ACTION_PROB 1
 #define ACTION_REGIONAL 2
-
-struct AIOptions {
-    // Type of ai.
-    int type;
-
-    // Type of backup ai.
-    int backup;
-
-    // How often does the player acts.
-    int fs;
-
-    // Name of the player.
-    std::string name;
-
-    // Whether it respects FoW.
-    bool fow;
-
-    AIOptions() : type(AI_SIMPLE), backup(AI_INVALID), fs(1), fow(true) {
-    }
-
-    std::string info() const {
-        std::stringstream ss;
-        ss << "[name=" << name << "][fs=" << fs << "][type=" << type << "][backup=" << backup << "][FoW=" << (fow ? "True" : "False") << "]";
-        return ss.str();
-    }
-
-    REGISTER_PYBIND_FIELDS(type, backup, fs, name, fow);
-};
-
-struct PythonOptions {
-    // What kind of simulations we are running.
-    // For now there is only ST_NORMAL
-    int simulation_type;
-
-    // AI, backup_ai and its opponent type.
-    std::vector<AIOptions> ai_options;
-
-    // Send stdout to the following filename. If output_filename == "cout", send them to stdout.
-    // If output_filename == "", disable the prompts.
-    std::string output_filename;
-
-    // When not empty string, set the prefix of the file used to dump each executing command (used for debugging).
-    std::string cmd_dumper_prefix;
-
-    // When not empty, save replays to the files.
-    std::string save_replay_prefix;
-
-    // Two ratios to control mixture (by Qucheng?)
-    float simple_ratio;
-    float ratio_change;
-
-    // Latest start of backup AI. When training, before each game starts,
-    // we will sample a tick ~ Uniform(0, latest_start) and run backup AI
-    // until that tick, then switch to NN-AI.
-    int latest_start;
-
-    // Decay of latest_start after each game.
-    // After each game, latest_start is decayed by latest_start_decay.
-    float latest_start_decay;
-
-    // Max tick.
-    int max_tick;
-
-    // Random seed to use. seed = 0 mean uses time(NULL).
-    // If seed != 0, then each simulation thread will use a seed which is a deterministic function
-    // of PythonOption.seed and the thread id.
-    int seed;
-
-    bool shuffle_player;
-    bool reverse_player;
-
-    int mcts_threads;
-    int mcts_rollout_per_thread;
-    int game_name;
-    int handicap_level;
-
-    PythonOptions()
-      : simulation_type(ST_NORMAL), simple_ratio(1.0), ratio_change(0.0), latest_start(0),
-        latest_start_decay(0.9), max_tick(30000), seed(0), shuffle_player(false), reverse_player(false), mcts_threads(1), mcts_rollout_per_thread(1),
-        game_name(0), handicap_level(0) {
-    }
-
-    void AddAIOptions(const AIOptions &ai) {
-        ai_options.push_back(ai);
-    }
-
-    void Print() const {
-        std::cout << "Handicap: " << handicap_level << std::endl;
-        std::cout << "Max tick: " << max_tick << std::endl;
-        std::cout << "Latest_start: " << latest_start << " decay: " << latest_start_decay << std::endl;
-        std::cout << "Seed: " << seed << std::endl;
-        std::cout << "Shuffled: " << (shuffle_player ? "True" : "False") << ", Reversed: " << (reverse_player ? "True" : "False") << std::endl;
-        for (const AIOptions& ai_option : ai_options) {
-            std::cout << ai_option.info() << std::endl;
-        }
-        std::cout << "MCTS #threads: " << mcts_threads << " #rollout/thread: " << mcts_rollout_per_thread << std::endl;
-        std::cout << "Output_prompt_filename: \"" << output_filename << "\"" << std::endl;
-        std::cout << "Cmd_dumper_prefix: \"" << cmd_dumper_prefix << "\"" << std::endl;
-        std::cout << "Save_replay_prefix: \"" << save_replay_prefix << "\"" << std::endl;
-    }
-
-    REGISTER_PYBIND_FIELDS(simulation_type, output_filename, cmd_dumper_prefix, save_replay_prefix, simple_ratio, ratio_change, latest_start, latest_start_decay, max_tick, seed, mcts_threads, mcts_rollout_per_thread, game_name, handicap_level, shuffle_player, reverse_player);
-};
 
 struct GameState {
     using State = GameState;

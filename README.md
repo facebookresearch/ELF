@@ -69,33 +69,34 @@ while True:
 context.Stop()  
 ```
 
+Please check `train.py` and `eval.py` for actual runnable codes.
+
 Dependency    
 ===============
-C++ compiler with C++11 support (e.g., gcc >= 4.9) is required. The following libraries are required `tbb`.
+C++ compiler with C++11 support (e.g., gcc >= 4.9) is required. The following libraries are required `tbb`. CMake is also required.
 
-Python 3.x is required. In addition, you need to install following package: [PyTorch](http://pytorch.org/), `tqdm`, `zmq`, `msgpack`, `msgpack_numpy`
+Python 3.x is required. In addition, you need to install following package: [PyTorch](http://pytorch.org/) version 0.2.0+, `tqdm`, `zmq`, `msgpack`, `msgpack_numpy`
 
 How to train    
 ===============
-To train a model for MiniRTS, please first compile `./rts/game_MC` (See the instruction in `./rts/game_MC` and `./rts`). Note that a compilation of `./rts/backend` is not necessary for training, unless you want to see visualization. 
+To train a model for MiniRTS, please first compile `./rts/game_MC` (See the instruction in `./rts/` using `cmake`). Note that a compilation of `./rts/backend` is not necessary for training, unless you want to see visualization. 
 
 Then please run the following commands in the current directory (you can also reference `train_minirts.sh`):
 
 ```bash
 game=./rts/game_MC/game model=actor_critic model_file=./rts/game_MC/model \ 
 python3 train.py 
-    --num_games 1024 --batchsize 128              # Set number of games to be 1024 and batchsize to be 128.  
-    --freq_update 50                              # Update behavior policy after 50 updates of the model.
-    --fs_opponent 20                              # How often your opponent makes a decision (every 20 ticks)
-    --latest_start 500  --latest_start_decay 0.99 # Use rule-based AI for the first 500 ticks, then trained AI takes over. latest_start decays with rate latest_start_decay. 
-    --opponent_type AI_SIMPLE                     # Use AI_SIMPLE as rule-based AI
-    --tqdm                                        # Show progress bar.
-    --gpu 0                                       # Use first gpu. 
-    --T 20                                        # 20 step actor-critic
+    --num_games 1024 --batchsize 128                                                                  # Set number of games to be 1024 and batchsize to be 128.  
+    --freq_update 50                                                                                  # Update behavior policy after 50 updates of the model.
+    --players "fs=50,type=AI_NN,args=backup/AI_SIMPLE|delay/0.99|start/500;fs=20,type=AI_SIMPLE"      # Specify AI and its opponent, separated by semicolon. `fs` is frameskip that specifies How often your opponent makes a decision (e.g., fs=20 means it acts every 20 ticks)
+                                                                                                      # If `backup` is specified in `args`, then we use rule-based AI for the first `start` ticks, then trained AI takes over. `start` decays with rate `decay`. 
+    --tqdm                                                                  # Show progress bar.
+    --gpu 0                                                                 # Use first gpu. If you don't specify gpu, it will run on CPUs. 
+    --T 20                                                                  # 20 step actor-critic
     --additional_labels id,last_terminal         
-    --trainer_stats winrate                       # If you want to see the winrate over iterations. 
-                                                  # Note that the winrate is computed when the action is sampled from the multinomial distribution (not greedy policy). 
-                                                  # To evaluate your model more accurately, please use eval.py.
+    --trainer_stats winrate                                                 # If you want to see the winrate over iterations. 
+                                                                            # Note that the winrate is computed when the action is sampled from the multinomial distribution (not greedy policy). 
+                                                                            # To evaluate your model more accurately, please use eval.py.
 ```
 
 Note that long horizon (e.g., `--T 20`) could make the training much faster and (at the same time) stable. With long horizon, you should be able to train it to 70% winrate within 12 hours with 16CPU and 1GPU.  You can control the number of CPUs used in the training using `taskset -c`. 
@@ -104,8 +105,6 @@ Here is one [trained model](http://yuandong-tian.com/model-minirts-212808.bin) w
 
 The following is a sample output during training:
 ```
-$ game=./rts/game_MC/game model=actor_critic model_file=./rts/game_MC/model taskset -c 0-9 python3 run.py --batchsize 128 --freq_update 50 --fs_opponent 20 --latest_start 500 --latest_start_decay 0.99 --num_games 1024 --opponent_type AI_SIMPLE --tqdm
-Namespace(T=6, actor_only=False, ai_type='AI_NN', batchsize=128, discount=0.99, entropy_ratio=0.01, epsilon=0.0, eval=False, freq_update=50, fs_ai=50, fs_opponent=20, game_multi=None, gpu=None, grad_clip_norm=None, greedy=False, handicap_level=0, latest_start=500, latest_start_decay=0.99, load=None, max_tick=30000, mcts_threads=64, min_prob=1e-06, num_episode=10000, num_games=1024, num_minibatch=5000, opponent_type='AI_SIMPLE', ratio_change=0, record_dir='./record', sample_node='pi', sample_policy='epsilon-greedy', save_dir=None, save_prefix='save', seed=0, simple_ratio=-1, tqdm=True, verbose_collector=False, verbose_comm=False, wait_per_group=False)
 Version:  bf1304010f9609b2114a1adff4aa2eb338695b9d_staged
 Num Actions:  9
 Num unittype:  6
@@ -134,11 +133,8 @@ game=./rts/game_MC/game model=actor_critic model_file=./rts/game_MC/model \
 python3 eval.py 
     --load [your model]
     --batchsize 128 
-    --fs_opponent 20
-    --latest_start 500 
-    --latest_start_decay 0.99 
+    --players "fs=50,type=AI_NN;fs=20,type=AI_SIMPLE"  
     --num_games 1024 
-    --opponent_type AI_SIMPLE
     --num_eval 10000
     --tqdm                          # Nice progress bar
     --gpu 0                         # Use GPU 0 as the evaluation gpu.
@@ -148,8 +144,6 @@ python3 eval.py
 
 Here is an example output (it takes 1 min 40 seconds to evaluate 10k games with 12 CPUs):
 ```
-$ eval_only=1 game=./rts/game_MC/game model_file=./rts/game_MC/model model=actor_critic taskset -c 12-23 python3 run.py  --num_games 128 --batchsize 32 --tqdm --load model-minirts-212808.bin --eval_gpu 4 --fs_opponent 50 --latest_start 0 --opponent_type AI_SIMPLE --stats winrate --num_eval 10000 --additional_labels id
-Namespace(T=6, actor_only=False, additional_labels='id', ai_type='AI_NN', batchsize=32, discount=0.99, entropy_ratio=0.01, epsilon=0.0, eval=False, eval_freq=10, eval_gpu=4, freq_update=1, fs_ai=50, fs_opponent=50, game_multi=None, gpu=None, grad_clip_norm=None, greedy=False, handicap_level=0, latest_start=0, latest_start_decay=0.7, load='./save-212808.bin', max_tick=30000, mcts_threads=64, min_prob=1e-06, num_episode=10000, num_eval=10000, num_games=128, num_minibatch=5000, opponent_type='AI_SIMPLE', ratio_change=0, record_dir='./record', sample_node='pi', sample_policy='epsilon-greedy', save_dir=None, save_prefix='save', seed=0, simple_ratio=-1, stats='winrate', tqdm=True, verbose_collector=False, verbose_comm=False, wait_per_group=False)
 Version:  dc895b8ea7df8ef7f98a1a031c3224ce878d52f0_
 Num Actions:  9
 Num unittype:  6
