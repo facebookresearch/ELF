@@ -25,14 +25,12 @@ class GameContext {
     std::unique_ptr<GC> _context;
     std::vector<AtariGame> games;
 
-    int _T;
     int _hist_len;
     int _width, _height, _num_action;
 
   public:
     GameContext(const ContextOptions& context_options, const GameOptions& options) {
       _context.reset(new GC{context_options, options});
-      _T = context_options.T;
       _hist_len = options.hist_len;
 
       for (int i = 0; i < context_options.num_games; ++i) {
@@ -52,19 +50,19 @@ class GameContext {
     }
 
     void Start() {
-        auto f = [this](int game_idx, const GameOptions&,
-                const std::atomic_bool& done, GC::AIComm* ai_comm) {
+        auto f = [this](int game_idx, const ContextOptions &context_options, const GameOptions&,
+                const std::atomic_bool& done, GC::Comm* comm) {
+            GC::AIComm ai_comm(game_idx, comm);
+            auto &state = ai_comm.info().data;
+            state.InitHist(context_options.T);
+            for (auto &s : state.v()) {
+                s.Init(game_idx, _num_action);
+            }
             auto& game = games[game_idx];
-            game.initialize_comm(game_idx, ai_comm);
+            game.initialize_comm(game_idx, &ai_comm);
             game.MainLoop(done);
         };
-        auto init = [this](int id, HistT<GameState> &state) {
-            state.InitHist(_T);
-            for (auto &s : state.v()) {
-                s.Init(id, _num_action);
-            }
-        };
-        _context->Start(init, f);
+        _context->Start(f);
     }
 
     std::map<std::string, int> GetParams() const {

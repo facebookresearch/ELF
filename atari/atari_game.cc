@@ -115,7 +115,7 @@ void AtariGame::MainLoop(const std::atomic_bool& done) {
       // Illegal action.
       // std::cout << "[" << _game_idx << "][" << gs.seq.game_counter << "][" << gs.seq.seq << "] act: "
       //          << act << "[a=" << gs.reply.action << "][V=" << gs.reply.value << "]" << std::endl;
-      if (act < 0 || act >= _action_set.size() || _ale->game_over()) break;
+      if (act < 0 || act >= (int)_action_set.size() || _ale->game_over()) break;
       if (_eval_only) {
           act = _prevent_stuck(g, act);
           gs.a = act;
