@@ -42,7 +42,11 @@ class CommonLoader:
             setattr(ai_options, key, int(value))
 
     def _parse_players(self, opt, player_names):
-        for i, player in enumerate(self.args.players.split(";")):
+        players_str = str(self.args.players)
+        if players_str[0] == "\"" and players_str[-1] == "\"":
+            players_str = players_str[1:-1]
+
+        for i, player in enumerate(players_str):
             ai_options = self.module.AIOptions()
             for item in player.split(","):
                 key, value = item.split("=")
