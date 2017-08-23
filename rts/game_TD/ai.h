@@ -74,19 +74,15 @@ private:
     }
 public:
     TDTrainedAI() {}
-    TDTrainedAI(const AIOptions &opt, CmdReceiver *receiver, AIComm *ai_comm, AI *backup_ai = nullptr)
-      : AIBase(opt, receiver, ai_comm), _backup_ai_tick_thres(0) {
+    TDTrainedAI(const AIOptions &opt, CmdReceiver *receiver, AIComm *ai_comm)
+      : AIBase(opt, receiver, ai_comm) {
         if (ai_comm == nullptr) {
             throw std::range_error("TDTrainedAI: ai_comm cannot be nullptr!");
         }
-        if (backup_ai != nullptr) {
-            backup_ai->SetId(GetId());
-            backup_ai->SetCmdReceiver(_receiver);
-            _backup_ai.reset(backup_ai);
-        }
+
     }
-    void SetBackupAIEndTick(Tick thres) {
-        _backup_ai_tick_thres = thres;
+    void Reset() override {
+        AIWithComm::Reset();
     }
     SERIALIZER_DERIVED(TDTrainedAI, AI, _state);
 };

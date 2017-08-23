@@ -17,19 +17,9 @@
 typedef TDTrainedAI TrainAIType;
 static AI *get_ai(const AIOptions &opt, Context::AIComm *ai_comm) {
     // std::cout << "AI type = " << ai_type << " Backup AI type = " << backup_ai_type << std::endl;
-    switch (opt.type) {
-       case AI_TD_BUILT_IN:
-           return new TDBuiltInAI(opt, nullptr);
-       case AI_TD_NN:
-           {
-           AI *backup_ai = nullptr;
-           AIOptions backup_ai_options;
-           backup_ai_options.fs = opt.fs;
-           return new TrainAIType(opt, nullptr, ai_comm, backup_ai);
-           }
-       default:
-           return nullptr;
-    }
+    if (opt.type == "AI_TD_BUILT_IN") return new TDBuiltInAI(opt, nullptr);
+    else if (opt.type == "AI_TD_NN") return new TrainAIType(opt, nullptr, ai_comm);
+    else return nullptr;
 }
 
 void WrapperCallbacks::GlobalInit() {
@@ -67,23 +57,13 @@ void WrapperCallbacks::OnGameInit(RTSGame *game) {
     if (_options.shuffle_player) {
         std::mt19937 g(_game_idx);
         std::shuffle(ais.begin(), ais.end(), g);
-    } else if (_options.reverse_player) {
-        std::reverse(ais.begin(), ais.end());
-    }
+    } 
 
     for (AI *ai : ais) game->AddBot(ai);
 
 }
 
 void WrapperCallbacks::OnEpisodeStart(int k, std::mt19937 *rng, RTSGame*) {
-    if (k > 0) {
-        // Decay latest_start.
-        _latest_start *= _options.latest_start_decay;
-    }
-
-    // Random tick, max 1000
-    Tick default_ai_end_tick = (*rng)() % (int(_latest_start + 0.5) + 1);
-    TrainAIType *ai_dyn = dynamic_cast<TrainAIType *>(_ai);
-    if (ai_dyn == nullptr) throw std::range_error("The type of AI is wrong!");
-    ai_dyn->SetBackupAIEndTick(default_ai_end_tick);
+    (void)k;
+    (void)rng;
 }

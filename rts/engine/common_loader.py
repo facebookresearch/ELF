@@ -102,20 +102,6 @@ class CommonLoader:
     def _add_player_name(self, desc, player_name):
         desc["filters"] = dict(player_name=player_name)
 
-    def _get_actor_spec(self):
-        return dict(
-            batchsize=self.args.batchsize,
-            input=dict(T=1, keys=set(["s", "res", "last_r", "terminal"])),
-            reply=dict(T=1, keys=set(["rv", "pi", "V", "a"]))
-        )
-
-    def _get_train_spec(self):
-        return dict(
-            batchsize=self.args.batchsize,
-            input=dict(T=self.args.T, keys=set(["rv", "pi", "s", "res", "a", "last_r", "V", "terminal"])),
-            reply=None
-        )
-
     def initialize(self):
         co, GC, params = self._init_gc()
         args = self.args
@@ -173,5 +159,3 @@ class CommonLoader:
         ))
 
         return GCWrapper(GC, co, desc, gpu=args.gpu, use_numpy=False, params=params)
-
-

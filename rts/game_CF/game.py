@@ -17,6 +17,20 @@ class Loader(CommonLoader):
     def __init__(self):
         super(Loader, self).__init__(minirts)
 
+    def _get_actor_spec(self):
+        return dict(
+            batchsize=self.args.batchsize,
+            input=dict(T=1, keys=set(["s", "res", "last_r", "r0", "r1", "terminal"])),
+            reply=dict(T=1, keys=set(["rv", "pi", "V", "a"]))
+        )
+
+    def _get_train_spec(self):
+        return dict(
+            batchsize=self.args.batchsize,
+            input=dict(T=self.args.T, keys=set(["rv", "pi", "s", "res", "a", "last_r", "r0", "r1", "V", "terminal"])),
+            reply=None
+        )
+
 nIter = 5000
 elapsed_wait_only = 0
 
