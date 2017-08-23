@@ -20,12 +20,10 @@
 
 namespace py = pybind11;
 
-PYBIND11_PLUGIN(atari_game) {
-  py::module m("atari_game", "Atari game bindings.");
+PYBIND11_MODULE(atari_game, m) {
   register_common_func<GameContext>(m);
 
   CONTEXT_REGISTER(GameContext)
       .def("GetParams", &GameContext::GetParams);
 
-  return m.ptr();
 }

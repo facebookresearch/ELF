@@ -31,7 +31,7 @@
 struct GroupStat {
     int gid;
     int hist_len;
-    std::string player_name; 
+    std::string player_name;
 
     GroupStat() : gid(-1), hist_len(1) { }
     std::string info() const {
@@ -293,7 +293,6 @@ public:
     using AIComm = AICommT<Comm>;
 
     using GameStartFunc = std::function<void (int game_idx, const ContextOptions &context_options, const Options& options, const std::atomic_bool &done, Comm *comm)>;
-    using DataInitFunc = std::function<void (int, Data &)>;
 
 private:
     Comm _comm;

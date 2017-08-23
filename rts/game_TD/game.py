@@ -35,7 +35,7 @@ class Loader:
                 ("output_file", dict(type=str, default=None)),
                 ("cmd_dumper_prefix", dict(type=str, default=None))
             ],
-            more_args = ["batchsize", "T"],
+            more_args = ["batchsize", "T", "gpu"],
             child_providers = [ self.context_args.args ]
         )
 
@@ -153,7 +153,7 @@ class Loader:
             model_no_spatial = args.model_no_spatial
         ))
 
-        return GCWrapper(GC, co, desc, use_numpy=False, gpu=None, params=params)
+        return GCWrapper(GC, co, desc, use_numpy=False, gpu=args.gpu, params=params)
 
     def initialize_selfplay(self):
         args = self.args
@@ -186,7 +186,7 @@ class Loader:
             model_no_spatial = args.model_no_spatial
         ))
 
-        return GCWrapper(GC, co, desc, use_numpy=False, params=params)
+        return GCWrapper(GC, co, desc, use_numpy=False, gpu=args.gpu, params=params)
 
 nIter = 5000
 elapsed_wait_only = 0
@@ -200,13 +200,13 @@ if __name__ == '__main__':
     loader = Loader()
     args = ArgsProvider.Load(parser, [loader])
 
-    def actor(sel, sel_gpu):
+    def actor(batch):
         '''
         import pdb
         pdb.set_trace()
         pickle.dump(utils_elf.to_numpy(sel), open("tmp%d.bin" % k, "wb"), protocol=2)
         '''
-        return dict(a=[0]*sel["s"].size(1))
+        return dict(a=[0]*batch["s"].size(1))
 
     GC = loader.initialize()
     GC.reg_callback("actor", actor)

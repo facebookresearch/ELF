@@ -147,8 +147,9 @@ class GCWrapper:
         '''
 
         self._init_collectors(GC, co, descriptions, use_gpu=gpu is not None, use_numpy=use_numpy)
-        self.gpu = gpu
+        self.gpu = None
         self.inputs_gpu = None
+        self.setup_gpu(gpu)
         self.params = params
         self._cb = { }
 
@@ -216,7 +217,7 @@ class GCWrapper:
 
     def setup_gpu(self, gpu):
         '''Setup the gpu used in the wrapper'''
-        if gpu is not None:
+        if gpu is not None and self.gpu != gpu:
             self.gpu = gpu
             self.inputs_gpu = [ self.inputs[gids[0]].cpu2gpu(gpu=gpu) for gids in self.gpu2gid ]
 
@@ -240,8 +241,9 @@ class GCWrapper:
         if self.inputs_gpu is not None:
             sel_gpu = self.inputs_gpu[self.gid2gpu[infos.gid]]
             sel.transfer_cpu2gpu(sel_gpu)
+            picked = sel_gpu
         else:
-            sel_gpu = None
+            picked = sel
 
         # Get the reply array
         if len(self.replies) > infos.gid and self.replies[infos.gid] is not None:
@@ -251,7 +253,7 @@ class GCWrapper:
 
         # Call
         if infos.gid in self._cb:
-            reply = self._cb[infos.gid](sel, sel_gpu)
+            reply = self._cb[infos.gid](picked)
             # If reply is meaningful, send them back.
             if isinstance(reply, dict) and sel_reply is not None:
                 # Current we only support reply to the most recent history.
