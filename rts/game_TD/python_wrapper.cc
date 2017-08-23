@@ -96,20 +96,4 @@ PYBIND11_MODULE(minirts, m) {
     .def(py::init<>())
     .def("Print", &PythonOptions::Print)
     .def("AddAIOptions", &PythonOptions::AddAIOptions);
-
-  // Define symbols.
-  CONST(ST_INVALID);
-  CONST(ST_NORMAL);
-  CONST(AI_INVALID);
-  CONST(AI_SIMPLE);
-  CONST(AI_HIT_AND_RUN);
-  CONST(AI_NN);
-  CONST(AI_MCTS_VALUE);
-  CONST(AI_FLAG_NN);
-  CONST(AI_FLAG_SIMPLE);
-  CONST(AI_TD_BUILT_IN);
-  CONST(AI_TD_NN);
-  CONST(ACTION_GLOBAL);
-  CONST(ACTION_PROB);
-  CONST(ACTION_REGIONAL);
 }
