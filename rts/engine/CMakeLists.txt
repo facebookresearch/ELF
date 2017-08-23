@@ -11,13 +11,25 @@ function(add_rts_command_gen DEF NAME)
 		)
 	set_source_files_properties(${DEF}.gen.h PROPERTIES GENERATED TRUE)
 endfunction()
-#add_rts_command_gen(${CMAKE_CURRENT_SOURCE_DIR}/cmd engine)
-#add_rts_command_gen(${CMAKE_CURRENT_SOURCE_DIR}/cmd_specific engine_specific)
 
-# XXX this is a hack
-# Because engine and games depend on each other..
-# We let game include sources from engine
+function(prepend_each OUTPUT PREFIX)
+	set(ret "")
+	foreach(f ${ARGN})
+		list(APPEND ret "${PREFIX}/${f}")
+	endforeach()
+	set(${OUTPUT} "${ret}" PARENT_SCOPE)
+endfunction()
+add_rts_command_gen(${CMAKE_CURRENT_SOURCE_DIR}/cmd engine)
+add_rts_command_gen(${CMAKE_CURRENT_SOURCE_DIR}/cmd_specific engine_specific)
+
+# Engine and game depend on each other
+# But we're using INTERFACE target, sources will be built together in the end, so it can work
 file(GLOB RTS_ENGINE_SOURCES *.cc)
-list(APPEND RTS_ENGINE_SOURCES
-	${CMAKE_CURRENT_SOURCE_DIR}/cmd.gen.h ${CMAKE_CURRENT_SOURCE_DIR}/cmd_specific.gen.h)
-set(RTS_ENGINE_SOURCES ${RTS_ENGINE_SOURCES} PARENT_SCOPE)
+add_library(minirts-engine INTERFACE)
+target_sources(minirts-engine INTERFACE ${RTS_ENGINE_SOURCES})
+target_include_directories(minirts-engine INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/../)
+
+add_custom_target(minirts-engine-headers DEPENDS
+	${CMAKE_CURRENT_SOURCE_DIR}/cmd.gen.h
+	${CMAKE_CURRENT_SOURCE_DIR}/cmd_specific.gen.h)
+add_dependencies(minirts-engine minirts-engine-headers)
