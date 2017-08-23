@@ -75,15 +75,15 @@ class Evaluator:
     def episode_start(self, i):
         self.actor_count = 0
 
-    def actor(self, sel, sel_gpu):
+    def actor(self, batch):
         if self.verbose: print("In Evaluator[%s]::actor" % self.name)
 
         # actor model.
-        state_curr = self.mi.forward("actor", sel_gpu.hist(0))
+        state_curr = self.mi.forward("actor", batch.hist(0))
         action = self.sampler.sample(state_curr)
 
         if self.stats is not None:
-            self.stats.feed_batch(sel)
+            self.stats.feed_batch(batch)
         reply_msg = dict(pi=state_curr["pi"].data, a=action, V=state_curr["V"].data, rv=self.mi["actor"].step)
         self.actor_count += 1
 
@@ -136,17 +136,17 @@ class Trainer:
         if args.save_dir is None:
             args.save_dir = os.environ.get("save", "./")
 
-    def actor(self, sel, sel_gpu):
+    def actor(self, batch):
         if self.verbose: print("In Trainer::actor")
-        return self.evaluator.actor(sel, sel_gpu)
+        return self.evaluator.actor(batch)
 
-    def train(self, sel, sel_gpu):
+    def train(self, batch):
         # import pdb
         # pdb.set_trace()
         # training procedure.
         if self.verbose: print("In trainer::train")
         self.timer.Record("batch_train")
-        self.rl_method.run(sel_gpu)
+        self.rl_method.run(batch)
         self.timer.Record("compute_train")
         if self.args.save:
             pickle.dump(
@@ -335,10 +335,11 @@ class MultiProcessRun:
         self.total_train_count = 0
         self.success_train_count = 0
 
-    def _train(self, sel, sel_gpu):
+    def _train(self, batch):
         # Send to remote for remote processing.
+        # TODO Might have issues when batch is on GPU.
         self.total_train_count += 1
-        success = self.shared_data.send_batch(sel)
+        success = self.shared_data.send_batch(batch)
         if success: self.success_train_count += 1
 
     def run(self):

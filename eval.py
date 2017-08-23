@@ -54,17 +54,17 @@ class Eval:
         mi.add_model("model", model, optim_params={ "lr" : 0.001})
         mi.add_model("actor", model, copy=True, cuda=True, gpu_id=self.args.gpu)
 
-        def actor(sel, sel_gpu):
-            reply = self.evaluator.actor(sel, sel_gpu)
+        def actor(batch):
+            reply = self.evaluator.actor(batch)
             '''
-            s = sel["s"][0][0]
-            seq = sel["seq"][0][0]
+            s = batch["s"][0][0]
+            seq = batch["seq"][0][0]
             for i in range(s.size(0)):
                 print("[seq=%d][c=%d]: %s" % (seq, i, str(s[i])))
             print("[seq=%d]: %s" % (seq, str(reply["pi"][0])))
             print("[seq=%d]: %s" % (seq, str(reply["a"][0])))
             '''
-            self.stats.feed_batch(sel)
+            self.stats.feed_batch(batch)
             return reply
 
         self.GC.reg_callback("actor", actor)
