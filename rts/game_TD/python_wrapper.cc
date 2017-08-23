@@ -73,7 +73,7 @@ public:
         std::string type_name = mm->type();
 
         if (key == "s") return EntryInfo(key, type_name, {2, 20, 20});
-        else if (key == "last_r" || key == "terminal" || key == "base_hp_level" || key == "id" || key == "seq" || key == "game_counter") return EntryInfo(key, type_name);
+        else if (key == "last_r" || key == "terminal" || key == "last_terminal" || key == "base_hp_level" || key == "id" || key == "seq" || key == "game_counter") return EntryInfo(key, type_name);
         else if (key == "pi") return EntryInfo(key, type_name, {GameDef::GetNumAction()});
         else if (key == "a" || key == "rv" || key == "V") return EntryInfo(key, type_name);
 

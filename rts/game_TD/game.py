@@ -119,14 +119,14 @@ class Loader:
     def _get_actor_spec(self):
         return dict(
             batchsize=self.args.batchsize,
-            input=dict(T=1, keys=set(["s", "res", "last_r", "base_hp_level", "terminal"])),
+            input=dict(T=1, keys=set(["s", "last_r", "base_hp_level", "terminal"])),
             reply=dict(T=1, keys=set(["rv", "pi", "V", "a"]))
         )
 
     def _get_train_spec(self):
         return dict(
             batchsize=self.args.batchsize,
-            input=dict(T=self.args.T, keys=set(["rv", "pi", "s", "res", "a", "last_r", "base_hp_level", "V", "terminal"])),
+            input=dict(T=self.args.T, keys=set(["rv", "pi", "s", "a", "last_r", "base_hp_level", "V", "terminal"])),
             reply=None
         )
 

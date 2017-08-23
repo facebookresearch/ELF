@@ -132,6 +132,7 @@ struct GameState {
     int32_t seq;
     int32_t game_counter;
     char terminal;
+    char last_terminal;
 
     int32_t tick;
     int32_t winner;
@@ -162,7 +163,7 @@ struct GameState {
     GameState &Prepare(const SeqInfo &seq_info) {
         seq = seq_info.seq;
         game_counter = seq_info.game_counter;
-        // last_terminal = seq_info.last_terminal;
+        last_terminal = seq_info.last_terminal;
         Clear();
         return *this;
     }
@@ -183,8 +184,8 @@ struct GameState {
         action_type = ACTION_GLOBAL;
     }
 
-    DECLARE_FIELD(GameState, a, V, pi, action_type, last_r, base_hp_level, s, rv, terminal, seq, game_counter);
-    REGISTER_PYBIND_FIELDS(a, V, pi, action_type, last_r, base_hp_level, s, tick, winner, player_id, ai_start_tick);
+    DECLARE_FIELD(GameState, id, a, V, pi, action_type, last_r, base_hp_level, s, rv, terminal, seq, game_counter, last_terminal);
+    REGISTER_PYBIND_FIELDS(id, a, V, pi, action_type, last_r, base_hp_level, s, tick, winner, player_id, ai_start_tick, last_terminal);
 };
 
 using Context = ContextT<PythonOptions, HistT<GameState>>;

@@ -186,7 +186,7 @@ class Loader:
             model_no_spatial = args.model_no_spatial
         ))
 
-        return GCWrapper(GC, co, desc, gpu=None, use_numpy=False, params=params)
+        return GCWrapper(GC, co, desc, use_numpy=False, params=params)
 
 nIter = 5000
 elapsed_wait_only = 0
