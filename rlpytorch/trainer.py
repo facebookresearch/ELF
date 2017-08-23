@@ -150,7 +150,7 @@ class Trainer:
         self.timer.Record("compute_train")
         if self.args.save:
             pickle.dump(
-                sel.to_numpy(),
+                batch.to_numpy(),
                 open(os.path.join(self.args.record_dir, "record-train-%d.bin" % self.train_count), "wb"),
                 protocol=2
             )
