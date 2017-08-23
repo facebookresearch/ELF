@@ -15,19 +15,11 @@
 #include "ai.h"
 
 typedef TDTrainedAI TrainAIType;
-static AI *get_ai(int /*game_idx*/, int frame_skip, int ai_type, int backup_ai_type,
-    const PythonOptions& /*options*/, Context::AIComm *input_ai_comm, bool use_ai_comm = false) {
-    AIComm *ai_comm = use_ai_comm ? input_ai_comm : nullptr;
-
-    switch (ai_type) {
-       case AI_TD_BUILT_IN:
-           return new TDBuiltInAI(INVALID, frame_skip, nullptr, ai_comm);
-       case AI_TD_NN:
-           return new TDTrainedAI(INVALID, frame_skip, nullptr, ai_comm);
-       default:
-           throw std::range_error("Unknown ai_type! ai_type: " + std::to_string(ai_type) +
-                   " backup_ai_type: " + std::to_string(backup_ai_type) + " use_ai_comm: " + std::to_string(use_ai_comm));
-    }
+static AI *get_ai(const AIOptions &opt, Context::AIComm *ai_comm) {
+    // std::cout << "AI type = " << ai_type << " Backup AI type = " << backup_ai_type << std::endl;
+    if (opt.type == "AI_TD_BUILT_IN") return new TDBuiltInAI(opt, nullptr);
+    else if (opt.type == "AI_TD_NN") return new TrainAIType(opt, nullptr, ai_comm);
+    else return nullptr;
 }
 
 void WrapperCallbacks::GlobalInit() {
@@ -36,32 +28,42 @@ void WrapperCallbacks::GlobalInit() {
     reg_td_specific();
 }
 
+void WrapperCallbacks::initialize_ai_comm(Context::AIComm &ai_comm) {
+    auto &hstate = ai_comm.info().data;
+    hstate.InitHist(_context_options.T);
+    for (auto &item : hstate.v()) {
+        item.Init(_game_idx, GameDef::GetNumAction());
+    }
+}
+
 void WrapperCallbacks::OnGameOptions(RTSGameOptions *rts_options) {
     rts_options->handicap_level = _options.handicap_level;
 }
 
 void WrapperCallbacks::OnGameInit(RTSGame *game) {
-    _opponent = get_ai(INVALID, _options.frame_skip_opponent, _options.opponent_ai_type, AI_INVALID, _options, _ai_comm);
-    _ai = get_ai(_game_idx, _options.frame_skip_ai, _options.ai_type, _options.backup_ai_type, _options, _ai_comm, true);
+    std::vector<AI *> ais;
+    for (const AIOptions &ai_opt : _options.ai_options) {
+        Context::AIComm *ai_comm = new Context::AIComm(_game_idx, _comm);
+        _ai_comms.emplace_back(ai_comm);
+        initialize_ai_comm(*ai_comm);
+        ais.push_back(get_ai(ai_opt, ai_comm));
+    }
 
-    // AI at position 0
-    game->AddBot(_ai);
-    // Opponent at position 1
-    game->AddBot(_opponent);
+    // std::cout << "Initialize ai" << std::endl;
+    // Used to pick the AI to change the parameters.
+    _ai = ais[0];
+
+    // Shuffle the bot.
+    if (_options.shuffle_player) {
+        std::mt19937 g(_game_idx);
+        std::shuffle(ais.begin(), ais.end(), g);
+    } 
+
+    for (AI *ai : ais) game->AddBot(ai);
+
 }
 
 void WrapperCallbacks::OnEpisodeStart(int k, std::mt19937 *rng, RTSGame*) {
-    if (k > 0) {
-        // Decay latest_start.
-        _latest_start *= _options.latest_start_decay;
-    }
-
-    // [TODO]: Not a good design.
-    if (_options.ai_type != AI_TD_NN) return;
-
-    // Random tick, max 1000
-    Tick default_ai_end_tick = (*rng)() % (int(_latest_start + 0.5) + 1);
-    TrainAIType *ai_dyn = dynamic_cast<TrainAIType *>(_ai);
-    if (ai_dyn == nullptr) throw std::range_error("The type of AI is wrong!");
-    ai_dyn->SetBackupAIEndTick(default_ai_end_tick);
+    (void)k;
+    (void)rng;
 }

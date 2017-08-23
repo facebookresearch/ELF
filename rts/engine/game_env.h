@@ -91,6 +91,8 @@ public:
 
     GameEnv();
 
+    void Visualize() const;
+
     // Remove all players.
     void ClearAllPlayers();
 
@@ -126,7 +128,7 @@ public:
 
     // Initialize different units for this game.
     void InitGameDef() {
-        _gamedef.InitUnits();
+        _gamedef.Init();
     }
     const GameDef &GetGameDef() const { return _gamedef; }
 
@@ -152,7 +154,7 @@ public:
     UnitId FindClosestBase(PlayerId player_id) const;
 
     // Find empty place near a place, used by creating units.
-    bool FindEmptyPlaceNearby(const PointF &p, int l1_radius, PointF *res_p, PlayerId player_id) const;
+    bool FindEmptyPlaceNearby(const PointF &p, int l1_radius, PointF *res_p) const;
 
     // Find empty place near a place, used by creating buildings.
     bool FindBuildPlaceNearby(const PointF &p, int l1_radius, PointF *res_p) const;

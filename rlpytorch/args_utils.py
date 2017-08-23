@@ -37,8 +37,12 @@ class ArgsProvider:
 
         self._define_args = define_args
         self._more_args = more_args
+        self.override_args = dict()
         self._on_get_args = on_get_args
-        self._arg_keys = list(list(zip(*self._define_args))[0])
+        if len(self._define_args) == 0:
+            self._arg_keys = []
+        else:
+            self._arg_keys = list(list(zip(*self._define_args))[0])
         self._child_providers = child_providers
         self._call_from = call_from
 
@@ -71,6 +75,11 @@ class ArgsProvider:
                     else:
                         print("Warning: key = %s cannot be found from either args or environment!" % key)
 
+        # Set predefined override
+        for k, v in self.override_args.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+
         # Override.
         for k, v in kwargs.items():
             if hasattr(self, k):
@@ -79,6 +88,10 @@ class ArgsProvider:
         setattr(self, "command_line", " ".join(sys.argv))
         if self._on_get_args is not None:
             self._on_get_args(args)
+
+    def set_override(self, **kwargs):
+        ''' set the override before we parse any command line '''
+        self.override_args = kwargs
 
     def get_define_keys(self):
         return [ k for k, _ in self._define_args ]

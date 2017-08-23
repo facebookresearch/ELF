@@ -17,6 +17,19 @@ GameEnv::GameEnv() {
     Reset();
 }
 
+void GameEnv::Visualize() const {
+    for (const auto &player : _players) {
+        std::cout << player.PrintInfo() << std::endl;
+    }
+    // No FoW, everything.
+    auto unit_iter = GetUnitIterator(INVALID);
+    while (! unit_iter.end()) {
+        const Unit &u = *unit_iter;
+        std::cout << u.PrintInfo(*_map) << std::endl;
+        ++ unit_iter;
+    }
+}
+
 void GameEnv::ClearAllPlayers() {
     _players.clear();
 }
@@ -136,12 +149,16 @@ PlayerId GameEnv::CheckBase(UnitType base_type) const{
     return last_player_has_base;
 }
 
-bool GameEnv::FindEmptyPlaceNearby(const PointF &p, int l1_radius, PointF *res_p, PlayerId player_id) const {
+bool GameEnv::FindEmptyPlaceNearby(const PointF &p, int l1_radius, PointF *res_p) const {
     // Find an empty place by simple local grid search.
     const int margin = 2;
-    int k = player_id == 0 ? -1 : 1;
-    for (int dx = -k * l1_radius; dx != k * l1_radius + k; dx += k) {
-        for (int dy = -k * l1_radius; dy != k * l1_radius + k; dy += k) {
+    const int cx = _map->GetXSize() / 2;
+    const int cy = _map->GetYSize() / 2;
+    int sx = p.x < cx ? -1 : 1;
+    int sy = p.y < cy ? -1 : 1;
+
+    for (int dx = -sx * l1_radius; dx != sx * l1_radius + sx; dx += sx) {
+        for (int dy = -sy * l1_radius; dy != sy * l1_radius + sy; dy += sy) {
             PointF new_p(p.x + dx, p.y + dy);
             if (_map->CanPass(new_p, INVALID) && _map->IsIn(new_p, margin)) {
                 // It may not be a good strategy, though.

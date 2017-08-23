@@ -15,14 +15,13 @@
 
 namespace CmdLineUtils {
 
-/*
-static std::string trim(std::string& str) {
+std::string trim(std::string& str) {
     str.erase(0, str.find_first_not_of(' '));       //prefixing spaces
     str.erase(str.find_last_not_of(' ')+1);         //surfixing spaces
     return str;
 }
-*/
-static std::vector<std::string> split(const std::string &s, char delim) {
+
+std::vector<std::string> split(const std::string &s, char delim) {
     std::stringstream ss(s);
     std::string item;
     std::vector<std::string> elems;

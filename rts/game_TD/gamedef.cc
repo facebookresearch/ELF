@@ -14,6 +14,7 @@
 #include "engine/cmd.gen.h"
 #include "engine/cmd_specific.gen.h"
 #include "cmd_specific.gen.h"
+#include "ai.h"
 
 int GameDef::GetNumUnitType() {
     return NUM_TD_UNITTYPE;
@@ -35,7 +36,7 @@ bool GameDef::CheckAddUnit(RTSMap *_map, UnitType type, const PointF& p) const{
     return _map->CanPass(p, INVALID);
 }
 
-void GameDef::InitUnits() {
+void GameDef::Init() {
     _units.assign(GetNumUnitType(), UnitTemplate());
     _units[TOWER_BASE] = _C(0, 100, 0, 0.0, 9999, 1, 9999, {0, 0, 0, 0}, vector<CmdType>{ATTACK, BUILD_TOWER, TOWER_DEFENSE_WAVE_START});
     _units[TOWER] = _C(50, 100, 0, 0.0, 50, 3, 5, {0, 15, 0, 0}, vector<CmdType>{ATTACK}, ATTR_INVULNERABLE);
@@ -43,6 +44,18 @@ void GameDef::InitUnits() {
     reg_engine();
     reg_engine_specific();
     reg_td_specific();
+
+    // InitAI.
+    AI::RegisterAI("td_simple", [](const std::string &spec) {
+        AIOptions ai_options;
+        ai_options.fs = std::stoi(spec);
+        return new TDSimpleAI(ai_options, nullptr);
+    });
+    AI::RegisterAI("td_built_in", [](const std::string &spec) {
+        AIOptions ai_options;
+        ai_options.fs = std::stoi(spec);
+        return new TDBuiltInAI(ai_options, nullptr);
+    });
 }
 
 vector<pair<CmdBPtr, int> > GameDef::GetInitCmds(const RTSGameOptions&) const{

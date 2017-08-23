@@ -48,11 +48,70 @@ class Sampler:
         return action
 
 
+class Evaluator:
+    def __init__(self, name="eval", stats=True, verbose=False):
+        if stats:
+            self.stats = Stats(name)
+            child_providers = [ self.stats.args ]
+        else:
+            self.stats = None
+            child_providers = []
+
+        self.name = name
+        self.verbose = verbose
+        self.args = ArgsProvider(
+            call_from = self,
+            define_args = [
+            ],
+            more_args = ["num_games", "batchsize", "num_minibatch"],
+            on_get_args = self._on_get_args,
+            child_providers = child_providers
+        )
+
+    def _on_get_args(self, _):
+        if self.stats is not None and not self.stats.is_valid():
+            self.stats = None
+
+    def episode_start(self, i):
+        self.actor_count = 0
+
+    def actor(self, batch):
+        if self.verbose: print("In Evaluator[%s]::actor" % self.name)
+
+        # actor model.
+        state_curr = self.mi.forward("actor", batch.hist(0))
+        action = self.sampler.sample(state_curr)
+
+        if self.stats is not None:
+            self.stats.feed_batch(batch)
+        reply_msg = dict(pi=state_curr["pi"].data, a=action, V=state_curr["V"].data, rv=self.mi["actor"].step)
+        self.actor_count += 1
+
+        return reply_msg
+
+    def episode_summary(self, i):
+        print("[%s] actor count: %d/%d" % (self.name, self.actor_count, self.args.num_minibatch))
+
+        if self.stats is not None:
+            self.stats.print_summary()
+            if self.stats.count_completed() > 10000:
+                self.stats.reset()
+
+    def setup(self, mi=None, sampler=None):
+        self.mi = mi
+        self.sampler = sampler
+
+        if self.stats is not None:
+            self.stats.reset()
+
+
 class Trainer:
-    def __init__(self):
+    def __init__(self, verbose=False):
         self.timer = RLTimer()
+        self.verbose = verbose
         self.last_time = None
-        self.stats = Stats("trainer")
+        self.evaluator = Evaluator("trainer", verbose=verbose)
+
         self.args = ArgsProvider(
             call_from = self,
             define_args = [
@@ -63,7 +122,7 @@ class Trainer:
             ],
             more_args = ["num_games", "batchsize", "num_minibatch"],
             on_get_args = self._on_get_args,
-            child_providers = [ self.stats.args ],
+            child_providers = [ self.evaluator.args ],
         )
         self.just_update = False
 
@@ -77,16 +136,21 @@ class Trainer:
         if args.save_dir is None:
             args.save_dir = os.environ.get("save", "./")
 
-        self.stats.reset()
+    def actor(self, batch):
+        if self.verbose: print("In Trainer::actor")
+        return self.evaluator.actor(batch)
 
-    def train(self, sel, sel_gpu):
+    def train(self, batch):
+        # import pdb
+        # pdb.set_trace()
         # training procedure.
+        if self.verbose: print("In trainer::train")
         self.timer.Record("batch_train")
-        self.rl_method.run(sel_gpu)
+        self.rl_method.run(batch)
         self.timer.Record("compute_train")
         if self.args.save:
             pickle.dump(
-                sel.to_numpy(),
+                batch.to_numpy(),
                 open(os.path.join(self.args.record_dir, "record-train-%d.bin" % self.train_count), "wb"),
                 protocol=2
             )
@@ -95,28 +159,15 @@ class Trainer:
             # Update actor model
             # print("Update actor model")
             # Save the current model.
-            self.mi.update_model("actor", self.mi["model"])
+            mi = self.evaluator.mi
+            mi.update_model("actor", mi["model"])
             self.just_updated = True
 
         self.just_updated = False
 
-    def actor(self, sel, sel_gpu):
-        # actor model.
-        self.timer.Record("batch_actor")
-        state_curr = self.mi.forward("actor", sel_gpu.hist(0))
-        action = self.sampler.sample(state_curr)
-
-        self.stats.feed_batch(sel)
-        reply_msg = dict(pi=state_curr["pi"].data, a=action, V=state_curr["V"].data, rv=self.mi["actor"].step)
-
-        self.timer.Record("compute_actor")
-        self.actor_count += 1
-
-        return reply_msg
-
     def episode_start(self, i):
         self.train_count = 0
-        self.actor_count = 0
+        self.evaluator.episode_start(i)
 
     def episode_summary(self, i):
         args = self.args
@@ -128,26 +179,24 @@ class Trainer:
 
         prefix = "[%s][%d] Iter" % (str(datetime.now()), args.batchsize) + "[%d]: " % i
         print(prefix)
-        print("Train count: %d/%d, actor count: %d/%d" % (self.train_count, args.num_minibatch, self.actor_count, args.num_minibatch))
+        print("Train count: %d/%d" % (self.train_count, args.num_minibatch))
         print("Save to " + args.save_dir)
         if self.train_count > 0:
-            filename = os.path.join(args.save_dir, args.save_prefix + "-%d.bin" % self.mi["model"].step)
+            mi = self.evaluator.mi
+            filename = os.path.join(args.save_dir, args.save_prefix + "-%d.bin" % mi["model"].step)
             print("Filename = " + filename)
-            self.mi["model"].save(filename)
+            mi["model"].save(filename)
 
         print("Command arguments " + str(args.command_line))
         self.rl_method.print_stats(global_counter=i)
         print("")
-        self.stats.print_summary()
-        if self.stats.count_completed() > 10000:
-            self.stats.reset()
 
+        self.evaluator.episode_summary(i)
         self.timer.Restart()
 
     def setup(self, rl_method=None, mi=None, sampler=None):
         self.rl_method = rl_method
-        self.mi = mi
-        self.sampler = sampler
+        self.evaluator.setup(mi=mi, sampler=sampler)
 
 
 class SingleProcessRun:
@@ -286,10 +335,11 @@ class MultiProcessRun:
         self.total_train_count = 0
         self.success_train_count = 0
 
-    def _train(self, sel, sel_gpu):
+    def _train(self, batch):
         # Send to remote for remote processing.
+        # TODO Might have issues when batch is on GPU.
         self.total_train_count += 1
-        success = self.shared_data.send_batch(sel)
+        success = self.shared_data.send_batch(batch)
         if success: self.success_train_count += 1
 
     def run(self):

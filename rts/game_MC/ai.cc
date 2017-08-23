@@ -11,12 +11,23 @@
 #include "engine/game_env.h"
 #include "engine/unit.h"
 
+static inline void accu_value(int idx, float val, std::map<int, std::pair<int, float> > &idx2record) {
+    auto it = idx2record.find(idx);
+    if (it == idx2record.end()) {
+        idx2record.insert(make_pair(idx, make_pair(1, val)));
+    } else {
+        it->second.second += val;
+        it->second.first ++;
+    }
+}
+
 void AIBase::save_structured_state(const GameEnv &env, Data *data) const {
     GameState *game = &data->newest();
     game->tick = _receiver->GetTick();
     game->winner = env.GetWinnerId();
     game->terminal = env.GetTermination() ? 1 : 0;
     game->player_id = _player_id;
+    game->player_name = _name;
 
     const int n_type = env.GetGameDef().GetNumUnitType();
     const int n_additional = 2;
@@ -31,11 +42,13 @@ void AIBase::save_structured_state(const GameEnv &env, Data *data) const {
     game->s.resize(sz);
     std::fill(game->s.begin(), game->s.end(), 0.0);
 
+    std::map<int, std::pair<int, float> > idx2record;
+
+    // res is not used.
     game->res.resize(env.GetNumOfPlayers() * res_pt);
     std::fill(game->res.begin(), game->res.end(), 0.0);
 
 #define _OFFSET(_c, _x, _y) (((_c) * m.GetYSize() + (_y)) * m.GetXSize() + (_x))
-#define _F(_c, _x, _y) game->s[_OFFSET(_c, _x, _y)]
 
     // Extra data.
     game->ai_start_tick = 0;
@@ -58,19 +71,28 @@ void AIBase::save_structured_state(const GameEnv &env, Data *data) const {
         float hp_level = u.GetProperty()._hp / (u.GetProperty()._max_hp + 1e-6);
         UnitType t = u.GetUnitType();
 
-        _F(t, x, y) = 1.0;
-        _F(n_type, x, y) = u.GetPlayerId() + 1;
-        _F(n_type + 1, x, y) = hp_level;
+        bool self_unit = (u.GetPlayerId() == _player_id);
+
+        accu_value(_OFFSET(t, x, y), 1.0, idx2record);
+
+        // Self unit or enemy unit.
+        // For historical reason, the flag of enemy unit = 2
+        accu_value(_OFFSET(n_type, x, y), (self_unit ? 1 : 2), idx2record);
+        accu_value(_OFFSET(n_type + 1, x, y), hp_level, idx2record);
 
         total_hp_ratio += hp_level;
 
-        if (u.GetPlayerId() == _player_id) {
+        if (self_unit) {
             if (t == WORKER) myworker += 1;
             else if (t == MELEE_ATTACKER || t == RANGE_ATTACKER) mytroop += 1;
             else if (t == BARRACKS) mybarrack += 1;
        }
 
         ++ unit_iter;
+    }
+
+    for (const auto &p : idx2record) {
+        game->s[p.first] = p.second.second / p.second.first;
     }
 
     myworker = min(myworker, 3);
@@ -82,7 +104,7 @@ void AIBase::save_structured_state(const GameEnv &env, Data *data) const {
         if (visibility_check != INVALID && visibility_check != i) continue;
         const auto &player = env.GetPlayer(i);
         quantized_r[i] = min(int(player.GetResource() / resource_grid), res_pt - 1);
-        game->res[i * res_pt + quantized_r[i]] = 1.0;
+        // game->res[i * res_pt + quantized_r[i]] = 1.0;
     }
 
     if (_player_id != INVALID) {

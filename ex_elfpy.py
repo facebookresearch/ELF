@@ -1,5 +1,5 @@
-from elf_python import GCWrapper, Simulator
 import torch
+from elf_python import GCWrapper, Simulator
 import random
 import tqdm
 

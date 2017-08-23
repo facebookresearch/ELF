@@ -44,6 +44,8 @@ struct GameState {
     std::vector<float> pi;
     int32_t rv;
 
+    std::string player_name;
+
     void Clear() { a = 0; V = 0.0; fill(pi.begin(), pi.end(), 0.0); rv = 0; }
 
     void Init(int iid, int num_action) {

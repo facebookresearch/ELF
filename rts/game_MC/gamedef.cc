@@ -14,6 +14,7 @@
 #include "engine/cmd.gen.h"
 #include "engine/cmd_specific.gen.h"
 #include "cmd_specific.gen.h"
+#include "ai.h"
 
 int GameDef::GetNumUnitType() {
     return NUM_MINIRTS_UNITTYPE;
@@ -33,7 +34,7 @@ bool GameDef::CheckAddUnit(RTSMap *_map, UnitType, const PointF& p) const{
     return _map->CanPass(p, INVALID);
 }
 
-void GameDef::InitUnits() {
+void GameDef::Init() {
     _units.assign(GetNumUnitType(), UnitTemplate());
     _units[RESOURCE] = _C(0, 1000, 1000, 0, 0, 0, 0, vector<int>{0, 0, 0, 0}, vector<CmdType>{}, ATTR_INVULNERABLE);
     _units[WORKER] = _C(50, 50, 0, 0.1, 2, 1, 3, vector<int>{0, 10, 40, 40}, vector<CmdType>{MOVE, ATTACK, BUILD, GATHER});
@@ -44,13 +45,25 @@ void GameDef::InitUnits() {
     reg_engine();
     reg_engine_specific();
     reg_minirts_specific();
+
+    // InitAI.
+    AI::RegisterAI("simple", [](const std::string &spec) {
+        AIOptions ai_options;
+        ai_options.fs = std::stoi(spec);
+        return new SimpleAI(ai_options, nullptr);
+    });
+
+    AI::RegisterAI("hit_and_run", [](const std::string &spec) {
+        AIOptions ai_options;
+        ai_options.fs = std::stoi(spec);
+        return new HitAndRunAI(ai_options, nullptr); 
+    });
 }
 
 vector<pair<CmdBPtr, int> > GameDef::GetInitCmds(const RTSGameOptions&) const{
       vector<pair<CmdBPtr, int> > init_cmds;
       init_cmds.push_back(make_pair(CmdBPtr(new CmdGenerateMap(INVALID, 0, 200)), 1));
-      init_cmds.push_back(make_pair(CmdBPtr(new CmdGameStart(INVALID)), 2));
-      init_cmds.push_back(make_pair(CmdBPtr(new CmdGenerateUnit(INVALID)), 3));
+      init_cmds.push_back(make_pair(CmdBPtr(new CmdGenerateUnit(INVALID)), 2));
       return init_cmds;
 }
 
@@ -63,9 +76,3 @@ void GameDef::CmdOnDeadUnitImpl(GameEnv* env, CmdReceiver* receiver, UnitId /*_i
     if (target == nullptr) return;
     receiver->SendCmd(CmdIPtr(new CmdRemove(_target)));
 }
-
-/*
-bool GameDef::ActByStateFunc(RuleActor rule_actor, const GameEnv& env, const vector<int>& state, string *s, AssignedCmds *cmds) const {
-    return rule_actor.ActByState(env, state, s, cmds);
-}
-*/

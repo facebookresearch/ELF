@@ -146,10 +146,11 @@ class WinRate(EvalCount):
 class Stats(EvalCount):
     def __init__(self, stats_name=""):
         self.name = stats_name + "_stats"
+        self.collector = None
         self.args = ArgsProvider(
             call_from = self,
             define_args = [
-                (self.name, dict(type=str, choices=["rewards", "winrate"], default="rewards")),
+                (self.name, dict(type=str, choices=["rewards", "winrate"], default=None)),
             ],
             on_get_args = self._on_get_args
         )
@@ -160,8 +161,9 @@ class Stats(EvalCount):
             self.collector = RewardCount()
         elif stats_name == "winrate":
             self.collector = WinRate()
-        else:
-            self.collector = EvalCount()
+
+    def is_valid(self):
+        return self.collector is not None
 
     def feed(self, id, *args, **kwargs):
         self.collector.feed(id, *args, **kwargs)

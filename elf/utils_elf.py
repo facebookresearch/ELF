@@ -147,8 +147,9 @@ class GCWrapper:
         '''
 
         self._init_collectors(GC, co, descriptions, use_gpu=gpu is not None, use_numpy=use_numpy)
-        self.gpu = gpu
+        self.gpu = None
         self.inputs_gpu = None
+        self.setup_gpu(gpu)
         self.params = params
         self._cb = { }
 
@@ -177,10 +178,18 @@ class GCWrapper:
             T = input["T"]
             if reply is not None and reply["T"] > T:
                 T = reply["T"]
+            gstat = GC.CreateGroupStat()
+            gstat.hist_len = T
+
+            # If we specifiy filters, we need to put the info into gstat.
+            filters = v.get("filters", {})
+            gstat.player_name = filters.get("player_name", "")
+
+            print("Deal with connector. key = %s, hist_len = %d, player_name = %s" % (key, gstat.hist_len, gstat.player_name))
 
             gpu2gid.append(list())
             for i in range(num_recv_thread):
-                group_id = GC.AddCollectors(batchsize, T, len(gpu2gid) - 1)
+                group_id = GC.AddCollectors(batchsize, len(gpu2gid) - 1, gstat)
 
                 inputs.append(Batch.load(GC, "input", input, group_id, use_gpu=use_gpu, use_numpy=use_numpy))
                 if reply is not None:
@@ -208,8 +217,9 @@ class GCWrapper:
 
     def setup_gpu(self, gpu):
         '''Setup the gpu used in the wrapper'''
-        self.gpu = gpu
-        self.inputs_gpu = [ self.inputs[gids[0]].cpu2gpu(gpu=gpu) for gids in self.gpu2gid ]
+        if gpu is not None and self.gpu != gpu:
+            self.gpu = gpu
+            self.inputs_gpu = [ self.inputs[gids[0]].cpu2gpu(gpu=gpu) for gids in self.gpu2gid ]
 
     def reg_callback(self, key, cb):
         '''Set callback function for key
@@ -231,8 +241,9 @@ class GCWrapper:
         if self.inputs_gpu is not None:
             sel_gpu = self.inputs_gpu[self.gid2gpu[infos.gid]]
             sel.transfer_cpu2gpu(sel_gpu)
+            picked = sel_gpu
         else:
-            sel_gpu = None
+            picked = sel
 
         # Get the reply array
         if len(self.replies) > infos.gid and self.replies[infos.gid] is not None:
@@ -242,7 +253,7 @@ class GCWrapper:
 
         # Call
         if infos.gid in self._cb:
-            reply = self._cb[infos.gid](sel, sel_gpu)
+            reply = self._cb[infos.gid](picked)
             # If reply is meaningful, send them back.
             if isinstance(reply, dict) and sel_reply is not None:
                 # Current we only support reply to the most recent history.
@@ -250,8 +261,11 @@ class GCWrapper:
 
     def Run(self):
         '''Wait group of an arbitrary collector key. Samples in a returned batch are always from the same group, but the group key of the batch may be arbitrary.'''
+        # print("before wait")
         self.infos = self.GC.Wait(0)
+        # print("before calling")
         res = self._call(self.infos)
+        # print("before_step")
         self.GC.Steps(self.infos)
         return res
 

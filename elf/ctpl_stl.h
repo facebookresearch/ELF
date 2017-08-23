@@ -90,7 +90,7 @@ namespace ctpl {
         }
 
         // get the number of running threads in the pool
-        int size() { return static_cast<int>(this->threads.size()); }
+        int size() const { return static_cast<int>(this->threads.size()); }
 
         // number of idle threads
         int n_idle() { return this->nWaiting; }

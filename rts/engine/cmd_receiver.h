@@ -11,6 +11,7 @@
 #define _CMD_RECEIVER_H_
 
 #include "cmd.h"
+#include "game_stats.h"
 
 #include "pq_extend.h"
 #include <map>
@@ -42,14 +43,13 @@ private:
     Tick _tick;
     int _cmd_next_id;
 
+    GameStats _stats;
+
     p_queue<CmdIPtr> _immediate_cmd_queue;
     p_queue<CmdDPtr> _durative_cmd_queue;
     std::queue<UICmd> _ui_cmd_queue;
 
     vector<CmdBPtr> _cmd_history;
-
-    // Count of failed moves.
-    vector<float> _ratio_failed_moves;
 
     // Idx for the next replay to send to the queue.
     unsigned int _next_replay_idx;
@@ -94,14 +94,15 @@ public:
         : _tick(0), _cmd_next_id(0), _next_replay_idx(-1),
           _cmd_dumper(nullptr), _save_to_history(true),
           _verbose_player_id(INVALID), _verbose_choice(CR_NO_VERBOSE), _path_planning_verbose(false), _use_cmd_comment(false)  {
-              _ratio_failed_moves.resize(1, 0.0);
     }
+
+    const GameStats &GetGameStats() const { return _stats; }
+    GameStats &GetGameStats() { return _stats; }
 
     Tick GetTick() const { return _tick; }
     Tick GetNextTick() const { return _tick + 1; }
-    bool CheckGameSmooth(ostream *output_stream = nullptr) const;
-    inline void IncTick() { _tick ++; _ratio_failed_moves.push_back(0.0); }
-    inline void ResetTick() { _tick = 0; _ratio_failed_moves.resize(1, 0.0); }
+    inline void IncTick() { _tick ++; _stats.IncTick(); }
+    inline void ResetTick() { _tick = 0; _stats.Reset(); }
 
     void SetCmdDumper(const string &cmd_dumper_filename);
 
@@ -139,9 +140,6 @@ public:
     // Finish the durative command for unit id.
     bool FinishDurativeCmd(UnitId id);
     bool FinishDurativeCmdIfDone(UnitId id);
-
-    // Called by the move command, record #failed moves.
-    void RecordFailedMove(float ratio_unit_failed) { _ratio_failed_moves[_tick] += ratio_unit_failed; }
 
     const CmdDurative *GetUnitDurativeCmd(UnitId id) const;
     int GetLoadedReplaySize() const { return _loaded_replay.size(); }

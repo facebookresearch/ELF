@@ -28,6 +28,21 @@
 #include "ai_comm.h"
 #include "stats.h"
 
+struct GroupStat {
+    int gid;
+    int hist_len;
+    std::string player_name;
+
+    GroupStat() : gid(-1), hist_len(1) { }
+    std::string info() const {
+        return "[gid=" + std::to_string(gid) + "][T=" + std::to_string(hist_len) + "][player_name=" + player_name + "]";
+    }
+
+    // Note that gid will be set by C++ side.
+    REGISTER_PYBIND_FIELDS(hist_len, player_name);
+};
+
+
 template <typename T>
 struct CondPerGroupT {
     int last_used_seq, last_seq;
@@ -38,17 +53,26 @@ struct CondPerGroupT {
 
     CondPerGroupT() : last_used_seq(0), last_seq(0), game_counter(0), freq_send(0) { }
 
-    bool Check(int hist_len, const T &info) {
+    bool Check(const GroupStat &gstat, const T &info) {
+        // Check whether this record is even relevant.
+        // If we have specified player id and the player id from the info is irrelevant
+        // from what is specified, then we skip.
+        const auto &record = info.data.newest();
+        if (! gstat.player_name.empty() && gstat.player_name != record.player_name) return false;
+        // std::cout << "Check " << gstat.info() << " record.player_name = " << record.player_name << std::endl;
+
         // Update game counter.
-        int new_game_counter = info.data.newest().game_counter;
+        int new_game_counter = record.game_counter;
         if (new_game_counter > game_counter) {
             game_counter = new_game_counter;
             // Make sure no frame is missed. seq starts from 0.
             last_used_seq -= last_seq + 1;
         }
-        int curr_seq = info.data.newest().seq;
+        int curr_seq = record.seq;
         last_seq = curr_seq;
-        if (info.data.size() < hist_len || curr_seq - last_used_seq < hist_len - hist_overlap) return false;
+
+        // Check whether we want to put this record in.
+        if (info.data.size() < gstat.hist_len || curr_seq - last_used_seq < gstat.hist_len - hist_overlap) return false;
         last_used_seq = curr_seq;
         return true;
     }
@@ -82,18 +106,13 @@ private:
         }
     };
 
-    struct GroupStat {
-        std::vector<int> hist_lens;
-        std::vector<int> subgroup;
-    };
-
     ContextOptions _context_options;
 
     std::random_device _rd;
     std::mt19937 _g;
 
     std::vector<Key> _keys;
-    std::vector<GroupStat> _exclusive_groups;
+    std::vector<std::vector<GroupStat>> _exclusive_groups;
 
     std::vector<std::unique_ptr<CollectorGroup> > _groups;
     ctpl::thread_pool _pool;
@@ -133,16 +152,15 @@ public:
         init_stats();
     }
 
-    int AddCollectors(int batchsize, int hist_len, int exclusive_id) {
+    int AddCollectors(int batchsize, int exclusive_id, const GroupStat &gstat) {
         _groups.emplace_back(new CollectorGroup(_groups.size(), _keys, batchsize, _signal.get(), _context_options.verbose_collector));
         int gid = _groups.size() - 1;
 
         if ((int)_exclusive_groups.size() <= exclusive_id) {
             _exclusive_groups.emplace_back();
         }
-        _exclusive_groups[exclusive_id].subgroup.push_back(gid);
-        _exclusive_groups[exclusive_id].hist_lens.push_back(hist_len);
-
+        _exclusive_groups[exclusive_id].push_back(gstat);
+        _exclusive_groups[exclusive_id].back().gid = gid;
         return gid;
     }
 
@@ -179,19 +197,16 @@ public:
 
         // For each exclusive group, randomly select one.
         for (size_t i = 0; i < _exclusive_groups.size(); ++i) {
-            const auto& subgroup = _exclusive_groups[i].subgroup;
-            const auto& hist_lens = _exclusive_groups[i].hist_lens;
-            int idx = _g() % subgroup.size();
-            int gid = subgroup[idx];
-            int hist_len = hist_lens[idx];
+            int idx = _g() % _exclusive_groups[i].size();
+            const GroupStat &gstat = _exclusive_groups[i][idx];
 
-            if (stats.conds[i].Check(hist_len, info)) {
-                V_PRINT(_verbose, "[k=" << key << "] Pass test for group " << gid << " hist_len = " << hist_len);
+            if (stats.conds[i].Check(gstat, info)) {
+                V_PRINT(_verbose, "[k=" << key << "] Pass test for group " << gstat.gid << " hist_len = " << gstat.hist_len);
                 stats.conds[i].freq_send ++;
 
-                _groups[gid]->SendData(key, &info);
-                str_selected_groups += std::to_string(gid) + ",";
-                selected_groups.push_back(gid);
+                _groups[gstat.gid]->SendData(key, &info);
+                str_selected_groups += std::to_string(gstat.gid) + ",";
+                selected_groups.push_back(gstat.gid);
             }
         }
 
@@ -277,12 +292,10 @@ public:
     using Comm = CommT<Info>;
     using AIComm = AICommT<Comm>;
 
-    using GameStartFunc = std::function<void (int game_idx, const Options& options, const std::atomic_bool &done, AIComm *)>;
-    using DataInitFunc = std::function<void (int, Data &)>;
+    using GameStartFunc = std::function<void (int game_idx, const ContextOptions &context_options, const Options& options, const std::atomic_bool &done, Comm *comm)>;
 
 private:
     Comm _comm;
-    std::vector<std::unique_ptr<AIComm>> _ai_comms;
     Options _options;
     ContextOptions _context_options;
 
@@ -298,23 +311,15 @@ public:
 
     Comm &comm() { return _comm; }
     const Comm &comm() const { return _comm; }
-    const Data& env(int i) const { return _ai_comms[i]->info().data; }
 
-    void Start(DataInitFunc data_init, GameStartFunc game_start_func) {
+    void Start(GameStartFunc game_start_func) {
         _comm.CollectorsReady();
-
-        _ai_comms.resize(_pool.size());
-        for (int i = 0; i < _pool.size(); ++i) {
-            _ai_comms[i].reset(new AIComm{i, &_comm});
-            // Initialize Data
-            data_init(i, _ai_comms[i]->info().data);
-        }
 
         // Now we start all jobs.
         for (int i = 0; i < _pool.size(); ++i) {
             _pool.push([i, this, &game_start_func](int){
                 const std::atomic_bool &done = _done.flag();
-                game_start_func(i, _options, done, _ai_comms[i].get());
+                game_start_func(i, _context_options, _options, done, &_comm);
                 // std::cout << "G[" << i << "] is ending" << std::endl;
                 _done.notify();
             });
@@ -329,8 +334,7 @@ public:
     Infos WaitGroup(int group_id, int timeout_usec) { return _comm.WaitGroupBatchData(group_id, timeout_usec); }
     void Steps(const Infos& infos) { _comm.Steps(infos); }
 
-    const MetaInfo &meta(int i) const { return _ai_comms[i]->info().meta; }
-    int size() const { return _ai_comms.size(); }
+    int size() const { return _pool.size(); }
 
     void PrintSummary() const { _comm.PrintSummary(); }
 
