@@ -162,9 +162,23 @@ Stop all game threads ...
 
 SelfPlay
 =============
-Try the following script if you want to do self-play in Minirts:
+Try the following script if you want to do self-play in Minirts. It will start with two bots, both starting with the pre-trained model. One bot will be trained over time, while the other is held fixed. If you just want to check their winrate without training, try `--actor_only`.
 ```
 sh ./selfplay_minirts.sh [your pre-trained model] 
+```
+
+Visualization  
+==============
+
+To visualize a trained bot, you can specify `--save_replay_prefix [replay_file_prefix]` whn running `eval.py` to save (lots of) replays. Note that the same flag can also be applied to training/selfplay. 
+
+All replay files contain action sequences, are in `.rep` and should reproduce the exact same game when loaded. To load the replay in the command line, using the following:
+```bash
+./minirts-backend replay --load_replay [your replay] --vis_after 0
+```
+and open the webpage `./rts/frontend/minirts.html` to check the game. To load and run the replay in the command line only (e.g, if you just want to quickly see who win the game), try:
+```bash
+./minirts-backend replay_cmd --load_replay [your replay]
 ```
 
 Reference  
