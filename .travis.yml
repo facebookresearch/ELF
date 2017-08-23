@@ -2,6 +2,11 @@
 # project configuration #
 #########################
 
+cache:
+  apt: true
+  directories:
+    - $HOME/deps
+
 # C++ project
 language: cpp
 compiler:
@@ -20,13 +25,14 @@ addons:
 
 install:
   # create deps dir if not existing
-  - mkdir $HOME/deps
-  - export DEPS_DIR=$HOME/deps
+  - DEPS_DIR=${HOME}/deps
+  - mkdir -p ${DEPS_DIR} && cd ${DEPS_DIR}
   - python3-config --cflags --ldflags
   - |
     CMAKE_URL="http://www.cmake.org/files/v3.3/cmake-3.3.2-Linux-x86_64.tar.gz"
     mkdir cmake && travis_retry wget --no-check-certificate --quiet -O - ${CMAKE_URL} | tar --strip-components=1 -xz -C cmake
     export PATH=${DEPS_DIR}/cmake/bin:${PATH}
+  - cd -
 
 script:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-4.9" CC="gcc-4.9"; fi
