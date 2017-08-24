@@ -17,6 +17,8 @@ In directory `rts`, run the command: `mkdir build && cd build && cmake .. -DGAME
 
 To select the Python installation to compile with, use cmake flags `-DPYTHON_EXECUTABLE=/path/to/your/python`
 
+To compile a debug version, try `cmake .. -DCMAKE_BUILD_TYPE=debug -DCMAKE_CXX_FLAGS=-fsanitize=address`.
+
 You will see a dynamic library named `minirts` to be loaded by Python.
 You need to copy this dynamic library to where you'll run your python scripts.
 Similarly you can compile the other two games `./rts/game_TD` and `./rts/game_CF`.

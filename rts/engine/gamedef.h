@@ -90,6 +90,8 @@ public:
     // Initialize everything.
     void Init();
 
+    static void GlobalInit();
+
     // Get the number of unit type in this game
     static int GetNumUnitType();
 

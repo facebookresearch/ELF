@@ -28,12 +28,6 @@ static AI *get_ai(const AIOptions &opt, Context::AIComm *ai_comm) {
        */
 }
 
-void WrapperCallbacks::GlobalInit() {
-    reg_engine();
-    reg_engine_specific();
-    reg_minirts_specific();
-}
-
 void WrapperCallbacks::initialize_ai_comm(Context::AIComm &ai_comm) {
     auto &hstate = ai_comm.info().data;
     hstate.InitHist(_context_options.T);

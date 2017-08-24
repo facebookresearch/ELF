@@ -33,7 +33,6 @@ public:
         : _game_idx(game_idx), _context_options(context_options), _options(options), _comm(comm), _ai(nullptr) {
     }
 
-    static void GlobalInit();
     void OnGameOptions(RTSGameOptions *rts_options);
     void OnGameInit(RTSGame *game);
     void OnEpisodeStart(int k, std::mt19937 *rng, RTSGame *game);

@@ -21,6 +21,7 @@ SERIALIZER_ANCHOR_INIT(CmdDurative);
 std::map<std::string, int> CmdTypeLookup::_name2idx;
 std::map<int, std::string> CmdTypeLookup::_idx2name;
 std::string CmdTypeLookup::_null;
+std::mutex CmdTypeLookup::_mutex;
 
 /*
 static float trunc(float v, float b) {
