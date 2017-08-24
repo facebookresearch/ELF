@@ -74,7 +74,6 @@ class AtariGame {
     AtariGame(const GameOptions&);
 
     void initialize_comm(int game_idx, AIComm* ai_comm) {
-      assert(!_ai_comm);
       _ai_comm = ai_comm;
       _game_idx = game_idx;
     }

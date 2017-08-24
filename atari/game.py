@@ -47,7 +47,7 @@ class Loader:
         co = atari.ContextOptions()
         self.context_args.initialize(co)
 
-        opt = atari.Options()
+        opt = atari.GameOptions()
         opt.frame_skip = args.frame_skip
         opt.rom_file = os.path.join(args.rom_dir, args.rom_file)
         opt.seed = 42
