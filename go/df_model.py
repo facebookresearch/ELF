@@ -31,7 +31,7 @@ class Model_Policy(Model):
         self.relu = nn.ReLU()
 
     def forward(self, x):
-        s = self._var(x["s"])
+        s = self._var(x["features"])
         for conv in self.convs:
             s = self.relu(conv(s))
 

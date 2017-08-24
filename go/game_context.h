@@ -10,7 +10,7 @@
 
 class GameContext {
   public:
-    using GC = ContextT<GameOptions, GameState, Reply>;
+    using GC = Context;
 
   private:
     std::unique_ptr<GC> _context;
@@ -20,34 +20,54 @@ class GameContext {
 
   public:
     GameContext(const ContextOptions& context_options, const GameOptions& options) {
-      _context.reset(new GC{context_options, options, CustomFieldFunc});
+      _context.reset(new GC{context_options, options});
       for (int i = 0; i < context_options.num_games; ++i) {
         games.emplace_back(options);
       }
     }
 
     void Start() {
-        auto f = [this](int game_idx, const GameOptions&,
-                const std::atomic_bool& done, GC::AIComm* ai_comm) {
+        auto f = [this](int game_idx, const ContextOptions &context_options, const GameOptions&,
+                const std::atomic_bool& done, GC::Comm* comm) {
+            GC::AIComm ai_comm(game_idx, comm);
+            auto &state = ai_comm.info().data;
+            state.InitHist(context_options.T);
+            for (auto &s : state.v()) {
+                s.Init(game_idx, _num_action);
+            }
             auto& game = games[game_idx];
-            game.initialize_comm(game_idx, ai_comm);
-            game.MainLoop(&done);
+            game.initialize_comm(game_idx, &ai_comm);
+            game.MainLoop(done);
         };
         _context->Start(f);
     }
 
-    int get_num_actions() const { return _num_action; }
+    std::map<std::string, int> GetParams() const {
+        return std::map<std::string, int>{
+          { "num_action", _num_action },
+          { "board_size", BOARD_SIZE },
+          { "num_planes", MAX_NUM_FEATURE },
+          { "num_future_actions", NUM_FUTURE_ACTIONS}
+        };
+    }
+    EntryInfo EntryFunc(const std::string &key) {
+        auto *mm = GameState::get_mm(key);
+        if (mm == nullptr) return EntryInfo();
+
+        std::string type_name = mm->type();
+
+        if (key == "features") return EntryInfo(key, type_name, {MAX_NUM_FEATURE, BOARD_DIM, BOARD_DIM});
+        else if (key == "actions") return EntryInfo(key, type_name, {NUM_FUTURE_ACTIONS});
+        else if (key == "last_r" || key == "last_terminal" || key == "id" || key == "seq" || key == "game_counter") return EntryInfo(key, type_name);
+        else if (key == "pi") return EntryInfo(key, type_name, {_num_action});
+        else if (key == "a" || key == "rv" || key == "V") return EntryInfo(key, type_name);
+
+        return EntryInfo();
+    }
 
     CONTEXT_CALLS(GC, _context);
 
     void Stop() {
-      _context.reset(nullptr); // first stop the threads, then destroy the games
-      /*
-      AtariGameSummary summary;
-      for (const auto& game : games) {
-          summary.Feed(game.summary());
-      }
-      std::cout << "Overall reward per game: ";
-      summary.Print();*/
+      _context.reset(nullptr);
     }
 };

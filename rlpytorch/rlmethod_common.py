@@ -151,17 +151,16 @@ class MultiplePrediction(LearningMethod):
     def update(self, batch):
         ''' Update given batch '''
         # Current timestep.
-        state_curr = self.model_interface.forward("model", batch[0])
+        state_curr = self.model_interface.forward("model", batch.hist(0))
         total_loss = None
         eps = 1e-6
-        targets = batch[0]["actions"]
+        targets = batch.hist(0)["actions"]
         for i, pred in enumerate(state_curr["actions"]):
             # backward.
             loss = self.policy_loss((pred + eps).log(), Variable(targets[:, i]))
             self.stats["loss" + str(i)].feed(loss.data[0])
             if total_loss is None: total_loss = loss
             else: total_loss += loss / (i + 1)
-
         self.stats["total_loss"].feed(total_loss.data[0])
         total_loss.backward()
 

@@ -11,12 +11,13 @@
 
 namespace py = pybind11;
 
-PYBIND11_PLUGIN(go_game) {
-  py::module m("go_game", "Go game bindings.");
+PYBIND11_MODULE(go_game, m) {
   register_common_func<GameContext>(m);
 
   CONTEXT_REGISTER(GameContext)
-    .def("get_num_actions", &GameContext::get_num_actions);
+      .def("GetParams", &GameContext::GetParams);
+  // Also register other objects.
+  PYCLASS_WITH_FIELDS(m, GameOptions)
+    .def(py::init<>());
 
-  return m.ptr();
 }

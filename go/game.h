@@ -1,13 +1,19 @@
 #ifndef _GAME_H_
 #define _GAME_H_
 
-#include "../elf/comm_template.h"
+#include "elf/pybind_helper.h"
+#include "elf/comm_template.h"
+#include "elf/ai_comm.h"
 #include "go_game_specific.h"
 #include "board.h"
 #include "sgf.h"
 #include <random>
 #include <map>
 #include <sstream>
+
+using Context = ContextT<GameOptions, HistT<GameState>>;
+using Comm = typename Context::Comm;
+using AIComm = AICommT<Comm>;
 
 // Game interface for Go.
 class GoGame {
@@ -36,11 +42,11 @@ private:
 
 public:
     GoGame(const GameOptions& options);
-    void MainLoop(const std::atomic_bool *done) {
+    void MainLoop(const std::atomic_bool& done) {
         // Main loop of the game.
         while (true) {
             Act(done);
-            if (done && done->load()) break;
+            if (done.load()) break;
         }
     }
 
@@ -50,8 +56,8 @@ public:
       _game_idx = game_idx;
     }
 
-    void Act(const std::atomic_bool *done);
-    void SaveTo(GameState *state, const vector<pair<Stone, Coord>> &future_moves) const;
+    void Act(const std::atomic_bool& done);
+    void SaveTo(GameState &state, const vector<pair<Stone, Coord>> &future_moves) const;
 };
 
 #endif

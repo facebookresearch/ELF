@@ -37,20 +37,22 @@ GoGame::GoGame(const GameOptions& options) {
     _path = _path.substr(0, i + 1);
 }
 
-void GoGame::Act(const std::atomic_bool *done) {
+void GoGame::Act(const std::atomic_bool& done) {
   // Act on the current game.
-  while (_sgf.StepLeft() < NUM_FUTURE_ACTIONS && (done == nullptr || ! done->load()) )
+  while ((_sgf.StepLeft() < NUM_FUTURE_ACTIONS) && !done.load() )
       reload();
-  if (done != nullptr && done->load()) return;
+  if (done.load()) {
+      return;
+  }
   vector<pair<Stone, Coord> > future_moves = _sgf.GetForwardMoves(NUM_FUTURE_ACTIONS);
   //bool terminal = (_sgf.StepLeft() == NUM_FUTURE_ACTIONS);
 
   // Send the current board situation.
-  _ai_comm->Prepare();
+  auto& gs = _ai_comm->Prepare();
   //meta->tick = _board._ply;
   //meta->terminated = terminal;
   //if (terminal) meta->winner = _sgf.GetWinner();
-  SaveTo(_ai_comm->GetData(), future_moves);
+  SaveTo(gs, future_moves);
 
   // There is always only 1 player.
   _ai_comm->SendDataWaitReply();
@@ -84,8 +86,6 @@ extended = {
 #define BORDER           12
 #define POSITION_MARK    13
 #define CLOSEST_COLOR    14
-
-#define LAYER(idx) reinterpret_cast<float *>(state->features[idx])
 
 static std::vector<std::string> split(const std::string &s, char delim) {
     std::stringstream ss(s);
@@ -161,32 +161,12 @@ void GoGame::reload() {
     for (int i = 0; i < pre_moves; ++i) _sgf.Next();
 }
 
-bool CustomFieldFunc(int batchsize, const std::string& key,
-    const std::string& /*v*/, SizeType *sz, FieldBase<AIComm> **p) {
-    // Note that ptr and stride will be set after the memory are initialized in the Python side.
-    if (key == "s") {
-        *sz = SizeType{batchsize, MAX_NUM_FEATURE, BOARD_DIM, BOARD_DIM};
-        *p = new FieldState();
-    } else if (key == "actions") {
-        *sz = SizeType{batchsize, NUM_FUTURE_ACTIONS};
-        *p = new FieldActions();
-    } else if (key == "pi") {
-        *sz = SizeType{batchsize, BOARD_DIM * BOARD_DIM};
-        *p = new FieldPolicy();
-    } else if (key == "a") {
-        *sz = SizeType{batchsize};
-        *p = new FieldAction();
-    } else if (key == "V") {
-        *sz = SizeType{batchsize};
-        *p = new FieldValue();
-    } else {
-        return false;
-    }
-    return true;
-}
+#define LAYER(idx) reinterpret_cast<float *>(features[idx])
 
-void GoGame::SaveTo(GameState *state, const vector<pair<Stone, Coord>> &future_moves) const {
+void GoGame::SaveTo(GameState& state, const vector<pair<Stone, Coord>> &future_moves) const {
   Stone player = _board._next_player;
+
+  float features[MAX_NUM_FEATURE][BOARD_DIM][BOARD_DIM];
 
   // Save the current board state to game state.
   GetLibertyMap3(&_board, player, LAYER(OUR_LIB));
@@ -196,7 +176,11 @@ void GoGame::SaveTo(GameState *state, const vector<pair<Stone, Coord>> &future_m
   GetStones(&_board, OPPONENT(player), LAYER(OPPONENT_STONES));
   GetStones(&_board, S_EMPTY, LAYER(EMPTY_STONES));
 
+  const float* start = (const float*) features;
+  state.features.resize(MAX_NUM_FEATURE * BOARD_DIM * BOARD_DIM);
+  state.actions.resize(NUM_FUTURE_ACTIONS);
+  std::copy(start, start + MAX_NUM_FEATURE * BOARD_DIM * BOARD_DIM, &(state.features[0]));
   for (int i = 0; i < min((int)future_moves.size(), NUM_FUTURE_ACTIONS); ++i) {
-      state->actions[i] = future_moves[i].second;
+      state.actions[i] = future_moves[i].second;
   }
 }

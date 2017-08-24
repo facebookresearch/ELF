@@ -1,23 +1,14 @@
 #pragma once
 
-#include "../elf/pybind_helper.h"
-#include "../elf/comm_template.h"
-#include "../elf/fields_common.h"
-
+#include "elf/pybind_helper.h"
+#include "elf/comm_template.h"
+#include "elf/hist.h"
+#include "elf/copier.hh"
 
 #define BOARD_DIM 19
 #define MAX_NUM_FEATURE 25
 #define NUM_FUTURE_ACTIONS 3
 #define NUM_PLANES 10
-
-// Reply function, action/value.
-struct Reply {
-    int action;
-    float value;
-    std::vector<float> prob;
-    Reply(int action = 0, float value = 0.0) : action(action), value(value) { }
-    void Clear() { action = 0; value = 0.0; fill(prob.begin(), prob.end(), 0.0);}
-};
 
 struct GameOptions {
     // Seed.
@@ -30,51 +21,54 @@ struct GameOptions {
 };
 
 struct GameState {
+    using State = GameState;
     // Board state 19x19
     // temp state.
-    float features[MAX_NUM_FEATURE][BOARD_DIM][BOARD_DIM];
+    std::vector<float> features;
 
     // Next k actions.
-    long actions[NUM_FUTURE_ACTIONS];
-};
+    std::vector<long> actions;
+    // Seq information.
+    int32_t id = -1;
+    int32_t seq = 0;
+    int32_t game_counter = 0;
+    char last_terminal = 0;
 
-using GameInfo = InfoT<GameState, Reply>;
-using Context = ContextT<GameOptions, GameState, Reply>;
+    // Reply
+    int64_t a;
+    float V;
+    std::vector<float> pi;
+    int32_t rv;
 
-using DataAddr = typename Context::DataAddr;
-using AIComm = typename Context::AIComm;
-using Comm = typename Context::Comm;
+    std::string player_name;
 
+    void Clear() { a = 0; V = 0.0; fill(pi.begin(), pi.end(), 0.0); rv = 0; }
 
-class FieldState : public FieldT<AIComm, float> {
-public:
-    void ToPtr(int batch_idx, const AIComm& ai_comm) override {
-        const auto &info = ai_comm.newest(this->_hist_loc);
-        const float *start = (const float *) info.data.features;
-        std::copy(start, start + MAX_NUM_FEATURE * BOARD_DIM * BOARD_DIM, this->addr(batch_idx));
+    void Init(int iid, int num_action) {
+        id = iid;
+        pi.resize(num_action, 0.0);
     }
-};
 
-class FieldActions : public FieldT<AIComm, long> {
-public:
-    void ToPtr(int batch_idx, const AIComm& ai_comm) override {
-        const auto &info = ai_comm.newest(this->_hist_loc);
-        const long *start = (const long *) info.data.actions;
-        std::copy(start, start + NUM_FUTURE_ACTIONS, this->addr(batch_idx));
+    GameState &Prepare(const SeqInfo &seq_info) {
+        seq = seq_info.seq;
+        game_counter = seq_info.game_counter;
+        last_terminal = seq_info.last_terminal;
+
+        Clear();
+        return *this;
     }
+
+    std::string PrintInfo() const {
+        std::stringstream ss;
+        ss << "[id:" << id << "][seq:" << seq << "][game_counter:" << game_counter << "][last_terminal:" << last_terminal << "]";
+        return ss.str();
+    }
+
+    void Restart() {
+        seq = 0;
+        game_counter = 0;
+        last_terminal = 0;
+    }
+    DECLARE_FIELD(GameState, id, seq, game_counter, last_terminal, features, actions, a, V, pi, rv);
+    REGISTER_PYBIND_FIELDS(id, seq, game_counter, last_terminal, features, actions, a, V, pi, rv);
 };
-
-// DEFINE_LAST_REWARD(AIComm, float, data.last_reward);
-// DEFINE_REWARD(AIComm, float, data.last_reward);
-DEFINE_POLICY_DISTR(AIComm, float, reply.prob);
-//
-// DEFINE_TERMINAL(AIComm, unsigned char);
-// DEFINE_LAST_TERMINAL(AIComm, unsigned char);
-
-FIELD_SIMPLE(AIComm, Value, float, reply.value);
-FIELD_SIMPLE(AIComm, Action, int64_t, reply.action);
-
-using DataAddr = DataAddrT<AIComm>;
-using DataAddrService = DataAddrServiceT<AIComm>;
-
-bool CustomFieldFunc(int batchsize, const std::string& key, const std::string& v, SizeType *sz, FieldBase<AIComm> **p);

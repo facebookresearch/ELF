@@ -75,7 +75,7 @@ bool CompareBoard(const Board *b1, const Board *b2) {
   unsigned char *p1 = (unsigned char *)b1;
   unsigned char *p2 = (unsigned char *)b2;
 
-  for (int i = 0; i < sizeof(Board); ++i) {
+  for (size_t i = 0; i < sizeof(Board); ++i) {
     if (p1[i] != p2[i]) return false;
   }
   return true;
