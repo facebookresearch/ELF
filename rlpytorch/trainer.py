@@ -6,7 +6,6 @@
 # of patent rights can be found in the PATENTS file in the same directory.
 
 from .rltimer import RLTimer
-from .rlsampler import sample_multinomial, epsilon_greedy
 
 import os
 import sys
@@ -25,28 +24,6 @@ from datetime import datetime
 
 import torch.multiprocessing as _mp
 mp = _mp.get_context('spawn')
-
-class Sampler:
-    def __init__(self):
-        self.args = ArgsProvider(
-            call_from = self,
-            define_args = [
-                ("sample_policy", dict(type=str, choices=["epsilon-greedy", "multinomial", "uniform"], help="Sample policy", default="epsilon-greedy")),
-                ("sample_node", dict(type=str, default="pi")),
-                ("greedy", dict(action="store_true")),
-                ("epsilon", dict(type=float, help="Used in epsilon-greedy approach", default=0.00))
-            ]
-        )
-
-    def sample(self, state_curr):
-        if self.args.greedy:
-            # print("Use greedy approach")
-            action = epsilon_greedy(state_curr, self.args, node="pi")
-        else:
-            # print("Use multinomial approach")
-            action = sample_multinomial(state_curr, self.args, node="pi")
-        return action
-
 
 class Evaluator:
     def __init__(self, name="eval", stats=True, verbose=False):
