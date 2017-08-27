@@ -12,52 +12,28 @@
 
 /////////// RawToCmd /////////////////
 //
-CmdBPtr move_event(const Unit &u, char /*hotkey*/, const PointF& p, const UnitId &target_id, const GameEnv&) {
+CmdInput move_event(const Unit &u, char /*hotkey*/, const PointF& p, const UnitId &target_id, const GameEnv&) {
     // Don't need to check hotkey since there is only one type of action.
     // cout << "In move command [" << hotkey << "] @" << p << " target: " << target_id << endl;
-    if (target_id == INVALID && ! p.IsInvalid()) {
-        // Move to a space.
-        return CmdBPtr(new CmdMove(u.GetId(), p));
-    } else {
-        // [TODO] Following (Not implemented yet)
-        return CmdBPtr();
-    }
+    if (target_id == INVALID && ! p.IsInvalid())
+        return CmdInput(CmdInput::CI_MOVE, u.GetId(), p, target_id); 
+    else return CmdInput();
 }
 
-CmdBPtr attack_event(const Unit &u, char /*hotkey*/, const PointF&, const UnitId &target_id, const GameEnv&) {
+CmdInput attack_event(const Unit &u, char /*hotkey*/, const PointF& p, const UnitId &target_id, const GameEnv&) {
     // Don't need to check hotkey since there is only one type of action.
     // cout << "In attack command [" << hotkey << "] @" << p << " target: " << target_id << endl;
-    if (target_id != INVALID) {
-        // Attack a particular unit.
-        if (Player::ExtractPlayerId(target_id) != Player::ExtractPlayerId(u.GetId())) {
-            // Forbid friendly fire.
-            return CmdBPtr(new CmdAttack(u.GetId(), target_id));
-        }
-    } else {
-        // [TODO] Attack on an empty location.
-    }
-    return CmdBPtr();
+    return CmdInput(CmdInput::CI_ATTACK, u.GetId(), p, target_id); 
 }
 
-CmdBPtr gather_event(const Unit &u, char /*hotkey*/, const PointF&, const UnitId &target_id, const GameEnv& env) {
+CmdInput gather_event(const Unit &u, char /*hotkey*/, const PointF& p, const UnitId &target_id, const GameEnv& env) {
     // Don't need to check hotkey since there is only one type of action.
-    if (target_id == INVALID) return CmdBPtr();
     // cout << "In gather command [" << hotkey << "] @" << p << " target: " << target_id << endl;
-
-    const Unit *target = env.GetUnit(target_id);
-    if (target == nullptr) return CmdBPtr();
-
-    // Only gather from resource.
-    if (target->GetUnitType() != RESOURCE) return CmdBPtr();
-
     UnitId base = env.FindClosestBase(u.GetPlayerId());
-    if (base != INVALID) {
-        return CmdBPtr(new CmdGather(u.GetId(), base, target_id));
-    }
-    return CmdBPtr();
+    return CmdInput(CmdInput::CI_GATHER, u.GetId(), p, target_id, base); 
 }
 
-CmdBPtr build_event(const Unit &u, char hotkey, const PointF& p, const UnitId& /*target_id*/, const GameEnv&) {
+CmdInput build_event(const Unit &u, char hotkey, const PointF& p, const UnitId& /*target_id*/, const GameEnv&) {
     // Send the build command.
     // cout << "In build command [" << hotkey << "] @" << p << " target: " << target_id << endl;
     UnitType t = u.GetUnitType();
@@ -71,29 +47,29 @@ CmdBPtr build_event(const Unit &u, char hotkey, const PointF& p, const UnitId& /
     // [TODO]: Make it more flexible and print corresponding prompts in GUI.
     switch(t) {
         case WORKER:
-            if (p.IsInvalid()) return CmdBPtr();
+            if (p.IsInvalid()) return CmdInput();
             // Set the location.
             build_p = p;
             if (hotkey == 'c') build_type = BASE;
             else if (hotkey == 'b') build_type = BARRACKS;
-            else return CmdBPtr();
+            else return CmdInput();
             break;
         case BASE:
             build_p.SetInvalid();
             if (hotkey == 's') build_type = WORKER;
-            else return CmdBPtr();
+            else return CmdInput();
             break;
         case BARRACKS:
             build_p.SetInvalid();
             if (hotkey == 'm') build_type = MELEE_ATTACKER;
             else if (hotkey == 'r') build_type = RANGE_ATTACKER;
-            else return CmdBPtr();
+            else return CmdInput();
             break;
         default:
-            return CmdBPtr();
+            return CmdInput();
     }
 
-    return CmdBPtr(new CmdBuild(u.GetId(), build_type, build_p));
+    return CmdInput(CmdInput::CI_BUILD, u.GetId(), build_p, INVALID, INVALID, build_type); 
 }
 
 void RawToCmd::add_hotkey(const string& s, EventResp f) {
@@ -197,7 +173,7 @@ RawMsgStatus RawToCmd::Process(const GameEnv &env, const string&s, CmdReceiver *
                 // We won't delete it in our selection, since the selection will naturally update.
                 if (u == nullptr) continue;
 
-                CmdBPtr cmd = f(*u, _last_key, p, id, env);
+                CmdBPtr cmd = f(*u, _last_key, p, id, env).GetCmd();
                 if (! cmd.get() || ! env.GetGameDef().unit(u->GetUnitType()).CmdAllowed(cmd->type())) continue;
 
                 // Command successful.
