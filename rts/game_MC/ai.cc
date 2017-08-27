@@ -10,6 +10,23 @@
 #include "ai.h"
 #include "engine/game_env.h"
 #include "engine/unit.h"
+#include "engine/cmd_interface.h"
+
+static inline int sampling(const std::vector<float> &v, std::mt19937 *gen) {
+    std::vector<float> accu(v.size() + 1);
+    std::uniform_real_distribution<> dis(0, 1);
+    float rd = dis(*gen);
+
+    accu[0] = 0;
+    for (size_t i = 1; i < accu.size(); i++) {
+        accu[i] = v[i - 1] + accu[i - 1];
+        if (rd < accu[i]) {
+            return i - 1;
+        }
+    }
+
+    return v.size() - 1;
+}
 
 static inline void accu_value(int idx, float val, std::map<int, std::pair<int, float> > &idx2record) {
     auto it = idx2record.find(idx);
@@ -166,20 +183,35 @@ bool TrainedAI2::on_act(const GameEnv &env) {
                 SendComment(s);
               }
 
-              float pp[NUM_AISTATE + 1];
-              float rd = float(rand() % 1000000) / 1000000;
-              pp[0] = 0;
-              for (int i = 1; i < num_action + 1; i++) {
-                  pp[i] = gs.pi[i - 1] + pp[i - 1];
-                  if (rd < pp[i]) {
-                      h = i - 1;
-                      break;
-                  }
-              }
+              h = sampling(gs.pi, &_ai_comm->gen());
               _state[h] = 1;
               return gather_decide(env, [&](const GameEnv &e, string *s, AssignedCmds *assigned_cmds) {
                   return _mc_rule_actor.ActByState(e, _state, s, assigned_cmds);
               });
+            }
+        case ACTION_UNIT_CMD:
+            {
+                // Make it vector of CmdInput.
+                _cmd_inputs.clear();
+                for (int i = 0; i < gs.n_max_cmd; ++i) {
+                    PointF unit_loc(gs.unit_loc[2*i], gs.unit_loc[2*i+1]);
+                    PointF target_loc(gs.target_loc[2*i], gs.target_loc[2*i+1]);
+                    auto t = (CmdInput::CmdInputType)(gs.cmd_type[i]);
+                    auto build_type = (UnitType)(gs.build_type[i]);
+
+                    // Check unit id.
+                    UnitId id = env.GetMap().GetClosestUnitId(unit_loc, 1.0);
+                    UnitId target_id = env.GetMap().GetClosestUnitId(target_loc, 1.0);
+                    UnitId base = INVALID;
+
+                    if (t == CmdInput::CI_GATHER) base = env.FindClosestBase(Player::ExtractPlayerId(id));
+
+                    _cmd_inputs.emplace_back(t, id, target_loc, target_id, base, build_type);
+                } 
+
+                return gather_decide(env, [&](const GameEnv &e, string *s, AssignedCmds *assigned_cmds) {
+                        return _mc_rule_actor.ActByCmd(e, _cmd_inputs, s, assigned_cmds);
+                });
             }
 
             /*

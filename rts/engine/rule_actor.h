@@ -12,6 +12,7 @@
 
 #include "cmd.h"
 #include "cmd_specific.gen.h"
+#include "cmd_interface.h"
 #include "game_env.h"
 
 custom_enum(AIState, STATE_START = 0, STATE_BUILD_WORKER, STATE_BUILD_BARRACK,
@@ -162,6 +163,17 @@ public:
     }
     // Gather information needed for action.
     bool GatherInfo(const GameEnv &env, string *state_string, AssignedCmds *assigned_cmds);
+
+    bool ActByCmd(const GameEnv &env, const vector<CmdInput>& cmd_inputs, string * /*state_string*/, AssignedCmds *assigned_cmds) {
+        for (const CmdInput &cmd : cmd_inputs) {
+            const Unit *u = env.GetUnit(cmd.id);
+            if (u != nullptr) {
+                store_cmd(u, cmd.GetCmd(), assigned_cmds);
+            }
+        }
+        return true;
+    }
+
     static const Unit *closest_dist(const vector<const Unit *>& units, const PointF &p, float *closest) {
         float closest_dist = *closest;
         const Unit *closest_unit = nullptr;
@@ -183,9 +195,6 @@ public:
     static bool IsIdle(const CmdReceiver &receiver, const Unit &u) {
         return receiver.GetUnitDurativeCmd(u.GetId()) == nullptr;
     }
-
-
-    //virtual bool ActByState(const GameEnv &env, const vector<int>& state, string *state_string, AssignedCmds *assigned_cmds);
 };
 
 #endif
