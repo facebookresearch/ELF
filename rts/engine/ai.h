@@ -46,6 +46,7 @@ protected:
     bool gather_decide(const GameEnv &env, std::function<bool (const GameEnv&, string *, AssignedCmds *)> func);
 
     static std::map<std::string, RegFunc> _factories;
+    static std::mutex _mutex;
 
 public:
     AI() : _player_id(INVALID), _name("noname"), _receiver(nullptr), _frame_skip(1) { }
@@ -97,11 +98,13 @@ public:
 
     // Factory method given specification.
     static AI *CreateAI(const std::string &name, const std::string& spec) {
+        std::lock_guard<std::mutex> lock(_mutex);
         auto it = _factories.find(name);
         if (it == _factories.end()) return nullptr;
         return it->second(spec);
     }
     static void RegisterAI(const std::string &name, RegFunc reg_func) {
+        std::lock_guard<std::mutex> lock(_mutex);
         _factories.insert(std::make_pair(name, reg_func));
     }
 
