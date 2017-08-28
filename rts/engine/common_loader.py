@@ -85,9 +85,9 @@ class CommonLoader:
         GC = self.module.GameContext(co, opt)
         params = GC.GetParams()
         print("Version: ", GC.Version())
-
         print("Num Actions: ", params["num_action"])
         print("Num unittype: ", params["num_unit_type"])
+        params["rts_engine_version"] = GC.Version()
 
         return co, GC, params
 
