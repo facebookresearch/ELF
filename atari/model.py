@@ -53,7 +53,7 @@ class Model_ActorCritic(Model):
         rep = self.conv2fc(rep.view(-1, self.linear_dim))
         policy = self.softmax(self.policy_branch(rep))
         value = self.value_branch(rep)
-        return rep, dict(pi=policy, V=value)
+        return dict(pi=policy, V=value)
 
 # Format: key, [model, method]
 Models = {

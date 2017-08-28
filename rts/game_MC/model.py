@@ -111,7 +111,7 @@ class Model_ActorCritic(Model):
 
         policy = self.softmax(self.linear_policy(output))
         value = self.linear_value(output)
-        return value, dict(V=value, pi=policy)
+        return dict(V=value, pi=policy)
 
 # Format: key, [model, method]
 # if method is None, fall back to default mapping from key to method

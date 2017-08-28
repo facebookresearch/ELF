@@ -79,7 +79,7 @@ class Model_ActorCritic(Model):
         output = self.net(self._var(s), self._var(r0), self._var(r1))
         policy = self.softmax(self.linear_policy(output))
         value = self.linear_value(output)
-        return value, dict(V=value, pi=policy)
+        return dict(V=value, pi=policy)
 
     def test(self):
         x = torch.cuda.FloatTensor(max_s, max_s)
@@ -87,7 +87,7 @@ class Model_ActorCritic(Model):
         for i in range(max_s):
             x[i, i] = 1
 
-        _, res = self(self._var(x))
+        res = self(self._var(x))
         # Check both policy and value function
         print(res["pi"].exp())
         print(res["V"])

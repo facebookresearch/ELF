@@ -94,19 +94,6 @@ class ModelInterface:
         record = interface(input)
         Then record["Q"] will be the Q-function given the input.
     '''
-    def forward(self, key, input, volatile=False):
-        model = self.models[key]
-
-        x = model.preprocess(input) if hasattr(model, 'preprocess') else input
-        # Input in general is a dict with multiple inputs. Output is a tuple.
-        # The first return variable is not used (just to keep pytorch happy)
-        # The second return variable is a dict (with output variables).
-        if volatile: self.models[key].set_volatile(True)
-        _, res = self.models[key](x)
-        if volatile: self.models[key].set_volatile(False)
-
-        return res
-
     def zero_grad(self):
         for k, optimizer in self.optimizers.items():
             optimizer.zero_grad()

@@ -80,7 +80,7 @@ class ActorCritic(LearningMethod):
 
         T = batch["a"].size(0)
 
-        state_curr = model_interface.forward("model", batch.hist(T - 1))
+        state_curr = model_interface["model"](batch.hist(T - 1))
         R = state_curr["V"].squeeze().data
         batchsize = R.size(0)
 
@@ -88,7 +88,7 @@ class ActorCritic(LearningMethod):
         ratio_clamp = 10
 
         for t in range(T - 2, -1, -1):
-            state_curr = model_interface.forward("model", batch.hist(t))
+            state_curr = model_interface["model"](batch.hist(t))
 
             # go through the sample and get the rewards.
             a = batch["a"][t]
