@@ -56,9 +56,10 @@ class Evaluator:
         if self.verbose: print("In Evaluator[%s]::actor" % self.name)
 
         # actor model.
-        self.models[key].set_volatile(True)
-        state_curr = self.mi["actor"](batch.hist(0))
-        self.models[key].set_volatile(False)
+        m = self.mi["actor"]
+        m.set_volatile(True)
+        state_curr = m(batch.hist(0))
+        m.set_volatile(False)
 
         action = self.sampler.sample(state_curr)
 
