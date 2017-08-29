@@ -1,3 +1,5 @@
+import sys
+
 from elf import GCWrapper, ContextArgs
 from rlpytorch import ArgsProvider
 
@@ -34,12 +36,16 @@ class CommonLoader:
         # Can we automate this?
         bool_convert = dict(t=True, true=True, f=False, false=False)
 
-        if key == "fow":
-            setattr(ai_options, key, bool_convert[value.lower()])
-        elif key == "name" or key == "args" or key == "type":
-            setattr(ai_options, key, value)
-        else:
-            setattr(ai_options, key, int(value))
+        try:
+            if key == "fow":
+                setattr(ai_options, key, bool_convert[value.lower()])
+            elif key == "name" or key == "args" or key == "type":
+                setattr(ai_options, key, value)
+            else:
+                setattr(ai_options, key, int(value))
+        except ValueError:
+            print("Value error! key = " + str(key) + " value = " + str(value))
+            sys.exit(1)
 
     def _parse_players(self, opt, player_names):
         players_str = str(self.args.players)
