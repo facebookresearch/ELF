@@ -75,7 +75,7 @@ class Eval:
 
         if self.args.tqdm:
             import tqdm
-            tq = tqdm.tqdm(total=self.args.num_eval)
+            tq = tqdm.tqdm(total=self.args.num_eval, ncols=50)
             while self.stats.count_completed() < self.args.num_eval:
                 old_n = self.stats.count_completed()
                 self.GC.Run()
