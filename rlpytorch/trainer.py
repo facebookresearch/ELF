@@ -19,11 +19,28 @@ import threading
 import tqdm
 import pickle
 
-from collections import defaultdict
+from collections import defaultdict, deque
 from datetime import datetime
 
 import torch.multiprocessing as _mp
 mp = _mp.get_context('spawn')
+
+class SymLink:
+    def __init__(self, sym_prefix, latest_k=5):
+        self.sym_prefix = sym_prefix
+        self.latest_k = latest_k
+        self.latest_files = deque()
+
+    def feed(self, filename):
+        self.latest_files.appendleft(filename)
+        if len(self.latest_files) > self.latest_k:
+            self.latest_files.pop()
+
+        for k, name in enumerate(self.latest_files):
+            symlink_file = self.sym_prefix + str(k)
+            if os.path.exists(symlink_file):
+                os.unlink(symlink_file)
+            os.symlink(name, symlink_file)
 
 class Evaluator:
     def __init__(self, name="eval", stats=True, verbose=False):
@@ -100,6 +117,7 @@ class Trainer:
                 ("record_dir", "./record"),
                 ("save_prefix", "save"),
                 ("save_dir", dict(type=str, default=None)),
+                ("latest_symlink", "latest"),
             ],
             more_args = ["num_games", "batchsize", "num_minibatch"],
             on_get_args = self._on_get_args,
@@ -116,6 +134,8 @@ class Trainer:
         # Use environment variable "save" if there is any.
         if args.save_dir is None:
             args.save_dir = os.environ.get("save", "./")
+
+        self.symlinker = SymLink(os.path.join(args.save_dir, args.latest_symlink))
 
     def actor(self, batch):
         if self.verbose: print("In Trainer::actor")
@@ -164,9 +184,12 @@ class Trainer:
         print("Save to " + args.save_dir)
         if self.train_count > 0:
             mi = self.evaluator.mi
-            filename = os.path.join(args.save_dir, args.save_prefix + "-%d.bin" % mi["model"].step)
+            basename = args.save_prefix + "-%d.bin" % mi["model"].step
+            filename = os.path.join(args.save_dir, basename)
             print("Filename = " + filename)
             mi["model"].save(filename)
+            # Create a symlink
+            self.symlinker.feed(basename)
 
         print("Command arguments " + str(args.command_line))
         self.rl_method.print_stats(global_counter=i)
