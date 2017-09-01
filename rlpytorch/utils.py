@@ -15,6 +15,8 @@ from torch.autograd import Variable
 import torch.multiprocessing as _mp
 mp = _mp.get_context('spawn')
 
+from .size_utils import total_size
+
 import sys
 import os
 
@@ -117,7 +119,7 @@ class Timer:
         self.before = { }
 
 
-class Stats:
+class ValueStats:
     def __init__(self, name=None):
         self.name = name
         self.reset()
@@ -406,12 +408,25 @@ def print_binary(m):
         return
     s = ""
     for i in range(m.size(0)):
-        for j in range(m.size(1)):
+        for j in range(m.size(2)):
             if m[i,j] != 0:
                 s += "x"
             else:
                 s += "."
         s += "\n"
     print(s)
+
+
+def get_total_size(o):
+    def get_tensor_size(t):
+        return t.numel() * t.element_size()
+
+    tensor_objects = [
+        torch.ByteTensor, torch.FloatTensor, torch.DoubleTensor, torch.IntTensor, torch.LongTensor,
+        torch.cuda.ByteTensor, torch.cuda.FloatTensor, torch.cuda.DoubleTensor, torch.cuda.IntTensor, torch.cuda.LongTensor,
+    ]
+
+    obj_handlers = { obj : get_tensor_size for obj in tensor_objects }
+    return total_size(o, obj_handlers=obj_handlers)
 
 

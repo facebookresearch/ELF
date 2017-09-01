@@ -1,0 +1,37 @@
+import torch
+import torch.nn as nn
+import math
+from .args_utils import ArgsProvider
+
+class DiscountedReward:
+    def __init__(self, args=None):
+        self.args = ArgsProvider(
+            call_from = self,
+            define_args = [
+                ("discount", dict(type=float, default=0.99)),
+            ]
+            fixed_args = args,
+        )
+
+    def setR(self, R, stats):
+        self.R = R
+        stats["init_reward"].feed(R.mean())
+
+    def feed(self, batch, stats):
+        r = batch["r"]
+        term = batch["terminal"]
+
+        # Compute the reward.
+        self.R = self.R * self.args.discount + r
+
+        # If we see any terminal signal, break the reward backpropagation chain.
+        for i, terminal in enumerate(term):
+            if terminal:
+                self.R[i] = r[i]
+
+        stats["reward"].feed(r.mean())
+        stats["acc_reward"].feed(self.R.mean())
+
+        return self.R
+
+

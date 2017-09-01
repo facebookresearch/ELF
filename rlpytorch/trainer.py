@@ -19,11 +19,98 @@ import threading
 import tqdm
 import pickle
 
-from collections import defaultdict
+from collections import defaultdict, deque, Counter
 from datetime import datetime
+from .utils import ValueStats
 
 import torch.multiprocessing as _mp
 mp = _mp.get_context('spawn')
+
+class SymLink:
+    def __init__(self, sym_prefix, latest_k=5):
+        self.sym_prefix = sym_prefix
+        self.latest_k = latest_k
+        self.latest_files = deque()
+
+    def feed(self, filename):
+        self.latest_files.appendleft(filename)
+        if len(self.latest_files) > self.latest_k:
+            self.latest_files.pop()
+
+        for k, name in enumerate(self.latest_files):
+            symlink_file = self.sym_prefix + str(k)
+            if os.path.exists(symlink_file):
+                os.unlink(symlink_file)
+            os.symlink(name, symlink_file)
+
+class ModelSaver:
+    def __init__(self):
+        self.args = ArgsProvider(
+            call_from = self,
+            define_args = [
+                ("record_dir", "./record"),
+                ("save_prefix", "save"),
+                ("save_dir", dict(type=str, default=None)),
+                ("latest_symlink", "latest"),
+            ],
+            more_args = ["num_games", "batchsize"],
+            on_get_args = self._on_get_args,
+        )
+
+    def _on_get_args(self, _):
+        args = self.args
+        args.save = (args.num_games == args.batchsize)
+        if args.save and not os.path.exists(args.record_dir):
+            os.mkdir(args.record_dir)
+
+        # Use environment variable "save" if there is any.
+        if args.save_dir is None:
+            args.save_dir = os.environ.get("save", "./")
+
+        self.symlinker = SymLink(os.path.join(args.save_dir, args.latest_symlink))
+
+    def feed(self, model):
+        args = self.args
+        basename = args.save_prefix + "-%d.bin" % model.step
+        print("Save to " + args.save_dir)
+        filename = os.path.join(args.save_dir, basename)
+        print("Filename = " + filename)
+        model.save(filename)
+        # Create a symlink
+        self.symlinker.feed(basename)
+
+
+class MultiCounter:
+    def __init__(self, verbose=False):
+        self.last_time = None
+        self.verbose = verbose
+        self.counts = Counter()
+        self.stats = defaultdict(lambda : ValueStats())
+        self.total_count = 0
+
+    def inc(self, key):
+        if self.verbose: print("[MultiCounter]: %s" % key)
+        self.counts[key] += 1
+        self.total_count += 1
+
+    def summary(self, global_counter=None, reset=True):
+        this_time = datetime.now()
+        if self.last_time is not None:
+            print("[%d] Time spent = %f ms" % (i, (this_time - self.last_time).total_seconds() * 1000))
+        self.last_time = this_time
+
+        for key, count in self.counts.items():
+            print("%s: %d/%d" % (key, count, self.total_count))
+
+        for k in sorted(self.stats.keys()):
+            v = self.stats[k]
+            print(v.summary(info=str(global_counter) + ":" + k))
+            if reset: v.reset()
+
+        if reset:
+            self.counts = Counter()
+            self.total_count = 0
+
 
 class Evaluator:
     def __init__(self, name="eval", stats=True, verbose=False):
@@ -40,7 +127,7 @@ class Evaluator:
             call_from = self,
             define_args = [
             ],
-            more_args = ["num_games", "batchsize", "num_minibatch"],
+            more_args = ["num_games", "batchsize"],
             on_get_args = self._on_get_args,
             child_providers = child_providers
         )
@@ -92,84 +179,56 @@ class Trainer:
         self.verbose = verbose
         self.last_time = None
         self.evaluator = Evaluator("trainer", verbose=verbose)
+        self.saver = ModelSaver()
+        self.counter = MultiCounter(verbose=verbose)
 
         self.args = ArgsProvider(
             call_from = self,
             define_args = [
                 ("freq_update", 1),
-                ("record_dir", "./record"),
-                ("save_prefix", "save"),
-                ("save_dir", dict(type=str, default=None)),
             ],
-            more_args = ["num_games", "batchsize", "num_minibatch"],
-            on_get_args = self._on_get_args,
-            child_providers = [ self.evaluator.args ],
+            more_args = ["num_games", "batchsize"],
+            child_providers = [ self.evaluator.args, self.saver.args ],
         )
         self.just_update = False
 
-    def _on_get_args(self, _):
-        args = self.args
-        args.save = (args.num_games == args.batchsize)
-        if args.save and not os.path.exists(args.record_dir):
-            os.mkdir(args.record_dir)
-
-        # Use environment variable "save" if there is any.
-        if args.save_dir is None:
-            args.save_dir = os.environ.get("save", "./")
-
     def actor(self, batch):
-        if self.verbose: print("In Trainer::actor")
+        self.counter.inc("actor")
         return self.evaluator.actor(batch)
 
     def train(self, batch):
-        # import pdb
-        # pdb.set_trace()
-        # training procedure.
-        if self.verbose: print("In trainer::train")
+        mi = self.evaluator.mi
+
+        self.counter.inc("train")
         self.timer.Record("batch_train")
-        self.rl_method.run(batch)
+
+        mi.zero_grad()
+        self.rl_method.update(mi, batch, self.counter.stats)
+        mi.update_weights()
+
         self.timer.Record("compute_train")
-        if self.args.save:
-            pickle.dump(
-                batch.to_numpy(),
-                open(os.path.join(self.args.record_dir, "record-train-%d.bin" % self.train_count), "wb"),
-                protocol=2
-            )
-        self.train_count += 1
-        if self.train_count % self.args.freq_update == 0:
+        if self.counter.counts["train"] % self.args.freq_update == 0:
             # Update actor model
             # print("Update actor model")
             # Save the current model.
-            mi = self.evaluator.mi
             mi.update_model("actor", mi["model"])
             self.just_updated = True
 
         self.just_updated = False
 
     def episode_start(self, i):
-        self.train_count = 0
-        self.evaluator.episode_start(i)
+        pass
 
     def episode_summary(self, i):
         args = self.args
 
-        this_time = datetime.now()
-        if self.last_time is not None:
-            print("[%d] Time spent = %f ms" % (i, (this_time - self.last_time).total_seconds() * 1000))
-        self.last_time = this_time
-
         prefix = "[%s][%d] Iter" % (str(datetime.now()), args.batchsize) + "[%d]: " % i
         print(prefix)
-        print("Train count: %d/%d" % (self.train_count, args.num_minibatch))
-        print("Save to " + args.save_dir)
         if self.train_count > 0:
-            mi = self.evaluator.mi
-            filename = os.path.join(args.save_dir, args.save_prefix + "-%d.bin" % mi["model"].step)
-            print("Filename = " + filename)
-            mi["model"].save(filename)
+            self.saver.feed(self.evaluator.mi["model"])
 
         print("Command arguments " + str(args.command_line))
-        self.rl_method.print_stats(global_counter=i)
+        self.counter.summary(global_counter=i)
         print("")
 
         self.evaluator.episode_summary(i)
