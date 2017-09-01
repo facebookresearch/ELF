@@ -96,7 +96,7 @@ class MultiCounter:
     def summary(self, global_counter=None, reset=True):
         this_time = datetime.now()
         if self.last_time is not None:
-            print("[%d] Time spent = %f ms" % (i, (this_time - self.last_time).total_seconds() * 1000))
+            print("[%d] Time spent = %f ms" % (global_counter, (this_time - self.last_time).total_seconds() * 1000))
         self.last_time = this_time
 
         for key, count in self.counts.items():
@@ -127,7 +127,7 @@ class Evaluator:
             call_from = self,
             define_args = [
             ],
-            more_args = ["num_games", "batchsize"],
+            more_args = ["num_games", "batchsize", "num_minibatch"],
             on_get_args = self._on_get_args,
             child_providers = child_providers
         )
@@ -217,14 +217,14 @@ class Trainer:
         self.just_updated = False
 
     def episode_start(self, i):
-        pass
+        self.evaluator.episode_start(i)
 
     def episode_summary(self, i):
         args = self.args
 
         prefix = "[%s][%d] Iter" % (str(datetime.now()), args.batchsize) + "[%d]: " % i
         print(prefix)
-        if self.train_count > 0:
+        if self.counter.counts["train"] > 0:
             self.saver.feed(self.evaluator.mi["model"])
 
         print("Command arguments " + str(args.command_line))

@@ -9,7 +9,7 @@ import sys
 import os
 
 class ArgsProvider:
-    def __init__(self, define_args=[], more_args=[], on_get_args=None, call_from=None, child_providers=[]):
+    def __init__(self, define_args=[], more_args=[], on_get_args=None, call_from=None, child_providers=[], fixed_args=None):
         '''Define arguments to be loaded from the command line. Example usage
         ::
             args = ArgsProvider(
@@ -45,15 +45,21 @@ class ArgsProvider:
             self._arg_keys = list(list(zip(*self._define_args))[0])
         self._child_providers = child_providers
         self._call_from = call_from
+        if fixed_args is not None:
+            self.set(fixed_args)
 
     def init(self, parser):
         group_name = type(self._call_from).__name__ if self._call_from is not None else "Options"
         group = parser.add_argument_group(group_name)
         for key, options in self._define_args:
-            if isinstance(options, (int, float, str)):
-                group.add_argument("--" + key, type=type(options), default=options)
-            else:
-                group.add_argument("--" + key, **options)
+            try:
+                if isinstance(options, (int, float, str)):
+                    group.add_argument("--" + key, type=type(options), default=options)
+                else:
+                    group.add_argument("--" + key, **options)
+            except:
+                # If there is issues with argument name. just plot a warning.
+                print("Warning: argument %s/%s cannot be added. Skipped." % (group_name, key))
 
         for child_provider in self._child_providers:
             child_provider.init(parser)

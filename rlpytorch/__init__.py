@@ -9,6 +9,7 @@ from .args_utils import ArgsProvider
 from .actor_critic import ActorCritic
 from .policy_gradient import PolicyGradient
 from .discounted_reward import DiscountedReward
+from .value_match import ValueMatcher
 from .model_base import Model
 from .model_loader import ModelLoader
 from .utils import load_module, get_total_size
@@ -18,8 +19,6 @@ from .trainer import ModelSaver, MultiCounter, Evaluator, Trainer, SingleProcess
 from .sampler import Sampler
 
 del args_utils
-del rlmethod_common
-del rlmethod_base
 del model_base
 del model_loader
 del utils

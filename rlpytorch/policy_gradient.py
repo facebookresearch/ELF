@@ -1,7 +1,16 @@
+# Copyright (c) 2017-present, Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
 import torch
 import torch.nn as nn
+from torch.autograd import Variable
 import math
 from .args_utils import ArgsProvider
+from .rlmethod_utils import *
 
 class PolicyGradient:
     def __init__(self, args=None):
@@ -10,17 +19,15 @@ class PolicyGradient:
             define_args = [
                 ("entropy_ratio", dict(type=float, help="The entropy ratio we put on PG", default=0.01)),
                 ("grad_clip_norm", dict(type=float, help="Gradient norm clipping", default=None)),
-                ("discount", dict(type=float, default=0.99)),
                 ("min_prob", dict(type=float, help="Minimal probability used in training", default=1e-6)),
                 ("ratio_clamp", 10),
-            ]
+            ],
             on_get_args = self._init,
             fixed_args = args,
         )
 
     def _init(self, args):
         self.policy_loss = nn.NLLLoss().cuda()
-        self.value_loss = nn.SmoothL1Loss().cuda()
 
         grad_clip_norm = getattr(args, "grad_clip_norm", None)
         self.policy_gradient_weights = None
@@ -34,13 +41,8 @@ class PolicyGradient:
             if grad_clip_norm is not None:
                 average_norm_clip(grad_input[0], grad_clip_norm)
 
-        def _value_backward(layer, grad_input, grad_output):
-            if grad_clip_norm is not None:
-                average_norm_clip(grad_input[0], grad_clip_norm)
-
         # Backward hook for training.
         self.policy_loss.register_backward_hook(_policy_backward)
-        self.value_loss.register_backward_hook(_value_backward)
 
     def _compute_one_policy_entropy_err(self, pi, a):
         batchsize = a.size(0)
@@ -68,46 +70,41 @@ class PolicyGradient:
         return errs
 
     def feed(self, batch, stats):
-        ''' Rquired keys:
-                V: value,
-                R: cumulative rewards,
-                a: action
-                pi: policy
-                old_pi (optional): old policy (in order to get importance factor)
-            All inputs are of type torch.autograd.Variable.
+        '''
+        One iteration of policy gradient. pho nabla_w log p_w(a|s) Q + entropy_ratio * nabla H(pi(.|s))
+        Keys:
+            Q (tensor): estimated return
+            a (tensor): action
+            pi (variable): policy
+            old_pi (tensor, optional): old policy, in order to get importance factor.
         '''
         args = self.args
-        R = batch["R"]
-        V = batch["V"]
+        Q = batch["Q"]
         a = batch["a"]
         pi = batch["pi"]
+        batchsize = Q.size(0)
 
         # We need to set it beforehand.
         # Note that the samples we collect might be off-policy, so we need
         # to do importance sampling.
-        self.policy_gradient_weights = R.data - V.data
+        self.policy_gradient_weights = Q
 
         if "old_pi" in batch:
-            old_pi = batch["old_pi"].data
+            old_pi = batch["old_pi"]
             # Cap it.
             coeff = torch.clamp(pi.data.div(old_pi), max=args.ratio_clamp).gather(1, a.view(-1, 1)).squeeze()
             self.policy_gradient_weights.mul_(coeff)
             # There is another term (to compensate clamping), but we omit it for now.
 
         # Compute policy gradient error:
-        errs = self._compute_policy_entropy_err(pi, a)
+        errs = self._compute_policy_entropy_err(pi, Variable(a))
         policy_err = errs["policy_err"]
         entropy_err = errs["entropy_err"]
 
-        # Compute critic error
-        value_err = self.value_loss(V, R)
-        overall_err = policy_err + entropy_err * args.entropy_ratio + value_err
-
         if stats is not None:
-            stats["value_err"].feed(value_err.data[0])
             stats["policy_err"].feed(policy_err.data[0])
             stats["entropy_err"].feed(entropy_err.data[0])
             stats["rms_advantage"].feed(self.policy_gradient_weights.norm() / math.sqrt(batchsize))
 
-        return overall_err
+        return policy_err + entropy_err * args.entropy_ratio
 

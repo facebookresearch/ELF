@@ -9,7 +9,7 @@ class DiscountedReward:
             call_from = self,
             define_args = [
                 ("discount", dict(type=float, default=0.99)),
-            ]
+            ],
             fixed_args = args,
         )
 
@@ -18,6 +18,11 @@ class DiscountedReward:
         stats["init_reward"].feed(R.mean())
 
     def feed(self, batch, stats):
+        '''
+        Keys:
+            r (tensor): immediate reward.
+            terminal (tensor): whether the current game has terminated.
+        '''
         r = batch["r"]
         term = batch["terminal"]
 
