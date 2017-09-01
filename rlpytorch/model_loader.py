@@ -44,15 +44,6 @@ class ModelLoader:
                     print("calling func = %s failed!" % func)
                     sys.exit(1)
 
-        if args.onload is not None:
-            for func in args.onload.split(","):
-                try:
-                    getattr(model, func)()
-                    print("Called %s for model" % func)
-                except:
-                    print("calling func = %s failed!" % func)
-                    sys.exit(1)
-
         if args.gpu is not None and args.gpu >= 0:
             model.cuda(device_id=args.gpu)
 
