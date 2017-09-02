@@ -34,10 +34,11 @@ class PolicyGradient:
 
         # Add normalization constant
         logpi = (pi + self.args.min_prob).log()
+        logpi2 = logpi.clone()
 
         # Get policy. N * #num_actions
         policy_err = self.policy_loss(logpi, a)
-        entropy_err = (logpi * pi).sum() / batchsize
+        entropy_err = (logpi2 * pi).sum() / batchsize
         return dict(logpi=logpi, policy_err=policy_err, entropy_err=entropy_err)
 
     def _compute_policy_entropy_err(self, pi, a):
