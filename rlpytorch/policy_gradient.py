@@ -29,21 +29,6 @@ class PolicyGradient:
     def _init(self, args):
         self.policy_loss = nn.NLLLoss().cuda()
 
-        grad_clip_norm = getattr(args, "grad_clip_norm", None)
-        self.policy_gradient_weights = None
-
-        def _policy_backward(layer, grad_input, grad_output):
-            if self.policy_gradient_weights is None: return
-            # Multiply gradient weights
-
-            # This works only on pytorch 0.2.0
-            grad_input[0].data.mul_(self.policy_gradient_weights.view(-1, 1))
-            if grad_clip_norm is not None:
-                average_norm_clip(grad_input[0], grad_clip_norm)
-
-        # Backward hook for training.
-        self.policy_loss.register_backward_hook(_policy_backward)
-
     def _compute_one_policy_entropy_err(self, pi, a):
         batchsize = a.size(0)
 
@@ -69,6 +54,15 @@ class PolicyGradient:
 
         return errs
 
+    def _reg_backward(self, v, pg_weights):
+        grad_clip_norm = getattr(self.args, "grad_clip_norm", None)
+        def bw_hook(grad):
+            # this works only on pytorch 0.2.0
+            grad.mul_(pg_weights.view(-1, 1))
+            if grad_clip_norm is not None:
+                average_norm_clip(grad, grad_clip_norm)
+        v.register_hook(bw_hook)
+
     def feed(self, batch, stats):
         '''
         One iteration of policy gradient. pho nabla_w log p_w(a|s) Q + entropy_ratio * nabla H(pi(.|s))
@@ -87,19 +81,21 @@ class PolicyGradient:
         # We need to set it beforehand.
         # Note that the samples we collect might be off-policy, so we need
         # to do importance sampling.
-        self.policy_gradient_weights = Q
+        pg_weights = Q.clone()
 
         if "old_pi" in batch:
             old_pi = batch["old_pi"]
             # Cap it.
             coeff = torch.clamp(pi.data.div(old_pi), max=args.ratio_clamp).gather(1, a.view(-1, 1)).squeeze()
-            self.policy_gradient_weights.mul_(coeff)
+            pg_weights.mul_(coeff)
             # There is another term (to compensate clamping), but we omit it for now.
 
         # Compute policy gradient error:
         errs = self._compute_policy_entropy_err(pi, Variable(a))
         policy_err = errs["policy_err"]
         entropy_err = errs["entropy_err"]
+
+        self._reg_backward(policy_err, pg_weights)
 
         if stats is not None:
             stats["policy_err"].feed(policy_err.data[0])

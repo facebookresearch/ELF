@@ -25,13 +25,14 @@ class ValueMatcher:
 
     def _init(self, _):
         self.value_loss = nn.SmoothL1Loss().cuda()
+
+    def _reg_backward(self, v):
         grad_clip_norm = getattr(self.args, "grad_clip_norm", None)
-
-        def _value_backward(layer, grad_input, grad_output):
+        def bw_hook(grad):
             if grad_clip_norm is not None:
-                average_norm_clip(grad_input[0], grad_clip_norm)
+                average_norm_clip(grad, grad_clip_norm)
 
-        self.value_loss.register_backward_hook(_value_backward)
+        v.register_hook(bw_hook)
 
     def feed(self, batch, stats):
         '''
@@ -43,6 +44,7 @@ class ValueMatcher:
         '''
         V = batch["V"]
         value_err = self.value_loss(V, Variable(batch["target"]))
+        self._reg_backward(value_err)
         stats["predicted_V"].feed(V.data[0])
         stats["value_err"].feed(value_err.data[0])
 

@@ -14,6 +14,7 @@ from .args_utils import ArgsProvider
 from .policy_gradient import PolicyGradient
 from .discounted_reward import DiscountedReward
 from .value_match import ValueMatcher
+from .rlmethod_utils import add_err
 
 # Actor critic model.
 class ActorCritic:
@@ -41,6 +42,8 @@ class ActorCritic:
         state_curr = m(batch.hist(T - 1))
         self.discounted_reward.setR(state_curr["V"].squeeze().data, stats)
 
+        err = None
+
         for t in range(T - 2, -1, -1):
             state_curr = m(batch.hist(t))
 
@@ -52,13 +55,8 @@ class ActorCritic:
                 dict(r=batch["r"][t], terminal=batch["terminal"][t]),
                 stats=stats)
 
-            overall_err = self.pg.feed(
-                dict(old_pi=batch["pi"][t], Q=R - V.data, a=a, pi=state_curr["pi"]),
-                stats)
+            err = add_err(err, self.pg.feed(dict(old_pi=batch["pi"][t], Q=R - V.data, a=a, pi=state_curr["pi"]), stats))
+            err = add_err(err, self.value_matcher.feed(dict(V=V, target=R), stats))
 
-            overall_err += self.value_matcher.feed(dict(V=V, target=R), stats)
-            overall_err.backward()
-
-            stats["cost"].feed(overall_err.data[0])
-            #print("[%d]: reward=%.4f, sum_reward=%.2f, acc_reward=%.4f, value_err=%.4f, policy_err=%.4f" % (i, r.mean(), r.sum(), R.mean(), value_err.data[0], policy_err.data[0]))
+        stats["cost"].feed(err.data[0] / (T - 1))
 
