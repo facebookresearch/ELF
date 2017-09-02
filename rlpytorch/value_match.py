@@ -28,9 +28,11 @@ class ValueMatcher:
 
     def _reg_backward(self, v):
         grad_clip_norm = getattr(self.args, "grad_clip_norm", None)
-        def bw_hook(grad):
+        def bw_hook(grad_in):
+            grad = grad_in.clone()
             if grad_clip_norm is not None:
                 average_norm_clip(grad, grad_clip_norm)
+            return grad
 
         v.register_hook(bw_hook)
 
