@@ -100,7 +100,6 @@ class PolicyGradient:
         if stats is not None:
             stats["policy_err"].feed(policy_err.data[0])
             stats["entropy_err"].feed(entropy_err.data[0])
-            stats["rms_advantage"].feed(self.policy_gradient_weights.norm() / math.sqrt(batchsize))
 
         return policy_err + entropy_err * args.entropy_ratio
 
