@@ -34,7 +34,9 @@ class PolicyGradient:
 
         # Add normalization constant
         logpi = (pi + self.args.min_prob).log()
-        logpi2 = logpi.clone()
+        # TODO Seems that logpi.clone() won't create a few hook list.
+        # See https://github.com/pytorch/pytorch/issues/2601
+        logpi2 = (pi + self.args.min_prob).log()
 
         # Get policy. N * #num_actions
         policy_err = self.policy_loss(logpi, a)
