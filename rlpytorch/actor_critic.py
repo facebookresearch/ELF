@@ -59,4 +59,6 @@ class ActorCritic:
             err = add_err(err, self.value_matcher.feed(dict(V=V, target=R), stats))
 
         stats["cost"].feed(err.data[0] / (T - 1))
+        err.backward()
+
 

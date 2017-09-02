@@ -28,13 +28,14 @@ class ValueMatcher:
 
     def _reg_backward(self, v):
         grad_clip_norm = getattr(self.args, "grad_clip_norm", None)
-        def bw_hook(grad_in):
-            grad = grad_in.clone()
-            if grad_clip_norm is not None:
-                average_norm_clip(grad, grad_clip_norm)
-            return grad
+        if grad_clip_norm:
+            def bw_hook(grad_in):
+                grad = grad_in.clone()
+                if grad_clip_norm is not None:
+                    average_norm_clip(grad, grad_clip_norm)
+                return grad
 
-        v.register_hook(bw_hook)
+            v.register_hook(bw_hook)
 
     def feed(self, batch, stats):
         '''
@@ -46,7 +47,7 @@ class ValueMatcher:
         '''
         V = batch["V"]
         value_err = self.value_loss(V, Variable(batch["target"]))
-        self._reg_backward(value_err)
+        self._reg_backward(V)
         stats["predicted_V"].feed(V.data[0])
         stats["value_err"].feed(value_err.data[0])
 

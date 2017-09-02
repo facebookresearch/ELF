@@ -38,7 +38,7 @@ class PolicyGradient:
         # Get policy. N * #num_actions
         policy_err = self.policy_loss(logpi, a)
         entropy_err = (logpi * pi).sum() / batchsize
-        return dict(policy_err=policy_err, entropy_err=entropy_err)
+        return dict(logpi=logpi, policy_err=policy_err, entropy_err=entropy_err)
 
     def _compute_policy_entropy_err(self, pi, a):
         args = self.args
@@ -58,8 +58,9 @@ class PolicyGradient:
         grad_clip_norm = getattr(self.args, "grad_clip_norm", None)
         def bw_hook(grad_in):
             # this works only on pytorch 0.2.0
-            grad = grad_in.clone()
-            grad.mul_(pg_weights.view(-1, 1))
+            grad = grad_in.mul(pg_weights.view(-1, 1))
+            # import pdb
+            # pdb.set_trace()
             if grad_clip_norm is not None:
                 average_norm_clip(grad, grad_clip_norm)
             return grad
@@ -97,7 +98,7 @@ class PolicyGradient:
         policy_err = errs["policy_err"]
         entropy_err = errs["entropy_err"]
 
-        self._reg_backward(policy_err, pg_weights)
+        self._reg_backward(errs["logpi"], Variable(pg_weights))
 
         if stats is not None:
             stats["policy_err"].feed(policy_err.data[0])
