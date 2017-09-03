@@ -4,9 +4,15 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
+import os
 import sys
-from .args_utils import ArgsProvider
-from .utils import get_total_size
+from .args_provider import ArgsProvider
+# from .utils.utils import get_total_size
+
+def load_module(mod):
+    sys.path.insert(0, os.path.dirname(mod))
+    module = __import__(os.path.basename(mod))
+    return module
 
 class ModelLoader:
     def __init__(self, model_class):
@@ -34,6 +40,15 @@ class ModelLoader:
             print("Load from " + args.load)
             model.load(args.load)
             print("Loaded = " + model.filename)
+
+        if args.onload is not None:
+            for func in args.onload.split(","):
+                try:
+                    getattr(model, func)()
+                    print("Called %s for model" % func)
+                except:
+                    print("calling func = %s failed!" % func)
+                    sys.exit(1)
 
         if args.onload is not None:
             for func in args.onload.split(","):

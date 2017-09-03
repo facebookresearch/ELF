@@ -10,11 +10,11 @@ import torch.nn as nn
 from torch.autograd import Variable
 import math
 
-from .args_utils import ArgsProvider
+from ..args_provider import ArgsProvider
 from .policy_gradient import PolicyGradient
 from .discounted_reward import DiscountedReward
-from .value_match import ValueMatcher
-from .rlmethod_utils import add_err
+from .value_matcher import ValueMatcher
+from .utils import add_err
 
 # Actor critic model.
 class ActorCritic:

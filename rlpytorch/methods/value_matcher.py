@@ -9,8 +9,8 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 import math
-from .args_utils import ArgsProvider
-from .rlmethod_utils import *
+from ..args_provider import ArgsProvider
+from .utils import *
 
 class ValueMatcher:
     def __init__(self, args=None):

@@ -5,23 +5,14 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-from .args_utils import ArgsProvider
-from .actor_critic import ActorCritic
-from .policy_gradient import PolicyGradient
-from .discounted_reward import DiscountedReward
-from .value_match import ValueMatcher
+from .args_provider import ArgsProvider
 from .model_base import Model
-from .model_loader import ModelLoader
-from .utils import load_module, get_total_size
-from .stats import EvalCount, RewardCount, WinRate, Stats
+from .model_loader import ModelLoader, load_module
 from .model_interface import ModelInterface
-from .trainer import ModelSaver, MultiCounter, Evaluator, Trainer, SingleProcessRun, EvaluationProcess, MultiProcessRun
-from .sampler import Sampler
 
-del args_utils
-del model_base
-del model_loader
-del utils
-del stats
-del model_interface
-del trainer
+from .sampler import Sampler
+from .methods import ActorCritic, RNNActorCritic
+from .runner import EvalIters, SingleProcessRun
+from .trainer import Trainer, Evaluator
+
+from .methods import add_err, PolicyGradient, DiscountedReward, ValueMatcher

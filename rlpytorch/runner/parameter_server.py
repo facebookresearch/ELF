@@ -10,7 +10,7 @@ mp = _mp.get_context('spawn')
 
 # XXX hack fix path
 import sys, os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'mini-rts', 'elf'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'elf'))
 import utils_elf
 import random
 

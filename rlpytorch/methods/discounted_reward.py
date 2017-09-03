@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import math
-from .args_utils import ArgsProvider
+from ..args_provider import ArgsProvider
 
 class DiscountedReward:
     def __init__(self, args=None):

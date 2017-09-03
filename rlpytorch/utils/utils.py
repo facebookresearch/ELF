@@ -119,40 +119,6 @@ class Timer:
         self.before = { }
 
 
-class ValueStats:
-    def __init__(self, name=None):
-        self.name = name
-        self.reset()
-
-    def feed(self, v):
-        self.summation += v
-        if v > self.max_value:
-            self.max_value = v
-            self.max_idx = self.counter
-        if v < self.min_value:
-            self.min_value = v
-            self.min_idx = self.counter
-
-        self.counter += 1
-
-    def summary(self, info=None):
-        info = "" if info is None else info
-        name = "" if self.name is None else self.name
-        if self.counter > 0:
-            return "%s%s[%d]: avg: %.5f, min: %.5f[%d], max: %.5f[%d]" \
-                    % (info, name, self.counter, self.summation / self.counter, self.min_value, self.min_idx, self.max_value, self.max_idx)
-        else:
-            return "%s%s[0]" % (info, name)
-
-    def reset(self):
-        self.counter = 0
-        self.summation = 0.0
-        self.max_value = -1e38
-        self.min_value = 1e38
-        self.max_idx = None
-        self.min_idx = None
-
-
 class CategoryCounter:
     def __init__(self, name=None):
         self.name = name
@@ -380,11 +346,6 @@ class SeqStats:
         self.stats_seq.clear()
         self.max_seq = 0
         self.min_seq = float('inf')
-
-def load_module(mod):
-    sys.path.insert(0, os.path.dirname(mod))
-    module = __import__(os.path.basename(mod))
-    return module
 
 def agent2sender(agent_name):
     return agent_name[:-5].encode('ascii')
