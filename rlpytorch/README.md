@@ -20,7 +20,9 @@ Utility for loading saved models.
 In the subfolders there are multiple components in RLPyTorch:
 
 1. `methods`
-Basic RL methods, e.g., PolicyGradient, ActorCritic, etc. Some methods are constructed from other basic ones. For example, `ActorCritic = PolicyGradient + DiscountedReward`. This makes the library easier to extend.
+Basic RL methods, e.g., PolicyGradient, ActorCritic, etc. Some methods are constructed from other basic ones. For example, `ActorCritic = PolicyGradient + DiscountedReward`. 
+
+This makes the library easier to extend. For example, you might replace `DiscountedReward` with the final reward, which becomes REINFORCE. You might also replace it with Generalized Advantage Estimation (GAE) or lambda-return, etc.  
 
 2. `trainer`
 Provider example callback functions for ELF framework. A simple example looks like the following:
