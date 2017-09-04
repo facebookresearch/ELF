@@ -1,4 +1,5 @@
-PYTHON=python3
-MODEL=../private_models/atari_breakout.bin
+ROM=$1
+MODEL=$2
+GPU=$3
 
-eval_only=1 game=./atari/game model=actor_critic model_file=./atari/model $PYTHON run.py --num_games 128 --batchsize 32 --tqdm --eval_gpu 4 --rom_file breakout.bin --load $MODEL --stats rewards --reward_clip -1 --num_eval 500 
+game=./atari/game model=actor_critic model_file=./atari/model python3 eval.py --num_games 128 --batchsize 32 --tqdm --gpu $GPU --rom_file $ROM --load $MODEL --eval_stats rewards --reward_clip -1 --num_eval 500 --additional_labels id,last_terminal 
