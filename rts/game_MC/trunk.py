@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from rlpytorch import Model
+from collections import Counter
 
 class MiniRTSNet(Model):
     def __init__(self, args):
