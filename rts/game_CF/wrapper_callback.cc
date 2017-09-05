@@ -22,12 +22,6 @@ static AI *get_ai(const AIOptions &opt, Context::AIComm *ai_comm) {
     else return nullptr;
 }
 
-void WrapperCallbacks::GlobalInit() {
-    reg_engine();
-    reg_engine_specific();
-    reg_cf_specific();
-}
-
 void WrapperCallbacks::initialize_ai_comm(Context::AIComm &ai_comm) {
     auto &hstate = ai_comm.info().data;
     hstate.InitHist(_context_options.T);
@@ -58,7 +52,7 @@ void WrapperCallbacks::OnGameInit(RTSGame *game) {
     if (_options.shuffle_player) {
         std::mt19937 g(_game_idx);
         std::shuffle(ais.begin(), ais.end(), g);
-    } 
+    }
     for (AI *ai : ais) game->AddBot(ai);
 }
 

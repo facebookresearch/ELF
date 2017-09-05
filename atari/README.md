@@ -24,11 +24,11 @@ You should be able to get ~630 mean/864 max, after 12 hours training with 16 CPU
 
 Training
 =============
-To train a model in atari game, go to `[root directory]` and run the following command:
+To train a model in atari game, go to `[root directory]` and run the following command (you can also check `./train_atari.sh`):
 
 ```bash
 game=./atari/game model=actor_critic model_file=./atari/model \
-python3 run.py
+python3 train.py
     --rom_file [your rom]
     -—batchsize 128         # Batchsize
     —-freq_update 50        # How often the actor used to predict the action gets updated.
@@ -36,27 +36,28 @@ python3 run.py
     --tqdm                  # If you want to show nice progress bar.
     --gpu 0                 # Use first gpu
 ```
-`--num_games 256` and `--batchsize 32` should give you 90% GPU usage (on K40M). Here is an example pre-trained model for breakout [link](http://yuandong-tian.com/atari_breakout.bin).
+`--num_games 256` and `--batchsize 32` should give you 90% GPU usage (on K40M). Learning is more stable with large batch size (e.g., 64/128). Here is an example pre-trained model for breakout [link](http://yuandong-tian.com/atari_breakout.bin).
 
 Evaluation
 ==============
-To evaluate, try the following command:
+To evaluate, try the following command (or you can check `./eval_atari.sh`):
 
 ```bash
-eval_only=1 game=./atari/game model=actor_critic model_file=./atari/model \
-python3 run.py
+game=./atari/game model=actor_critic model_file=./atari/model \
+python3 eval.py
     --num_games 128 --batchsize 32 --tqdm --eval_gpu [your gpu id]
     --rom_file [your rom]
     --load [your model]
-    --stats reward          # Accumulate stats.
-    --reward_clip -1        # Disable reward_clip
-    --num_eval 500          # Number of episodes to be evaluated.
+    --stats rewards                             # Accumulate stats.
+    --reward_clip -1                            # Disable reward_clip (by default rewards are clipped into [-1, 1]).
+    --num_eval 500                              # Number of episodes to be evaluated.
+    --additional_labels id,last_terminal
 ```
 
 Here is a sample output using the example pre-trained model:
 
 ```
-$ eval_only=1 game=./atari/game model_file=./atari/model model=actor_critic taskset -c 0-11 python3 run.py --num_games 128 --batchsize 32 --tqdm --load model_breakout.bin --rom_file breakout.bin --reward_clip -1 --num_eval 500
+$ game=./atari/game model_file=./atari/model model=actor_critic taskset -c 0-11 python3 run.py --num_games 128 --batchsize 32 --tqdm --load model_breakout.bin --rom_file breakout.bin --reward_clip -1 --num_eval 500
 
 Namespace(T=6, actor_only=False, batchsize=32, discount=0.99, entropy_ratio=0.01, epsilon=0.0, eval=False, eval_freq=10, eval_gpu=1, frame_skip=4, freq_update=1, game_multi=None, gpu=None, grad_clip_norm=None, greedy=False, hist_len=4, load='model_breakout.bin', min_prob=1e-06, num_episode=10000, num_eval=500, num_games=128, num_minibatch=5000, record_dir='./record', reward_clip=-1, rom_dir='./atari', rom_file='breakout.bin', sample_node='pi', sample_policy='epsilon-greedy', save_dir=None, save_prefix='save', stats='rewards', tqdm=True, verbose_collector=False, verbose_comm=False, wait_per_group=False)
 A.L.E: Arcade Learning Environment (version 0.5.1)

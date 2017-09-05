@@ -204,6 +204,22 @@
         MM_INVOKE_B( macroname, (C, a1) ), \
     MM_APPLY_COMMA_15( macroname, C, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16)
 
+#define MM_APPLY_COMMA_17( macroname, C, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17) \
+        MM_INVOKE_B( macroname, (C, a1) ), \
+    MM_APPLY_COMMA_16( macroname, C, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17)
+
+#define MM_APPLY_COMMA_18( macroname, C, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18) \
+        MM_INVOKE_B( macroname, (C, a1) ), \
+    MM_APPLY_COMMA_17( macroname, C, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18)
+
+#define MM_APPLY_COMMA_19( macroname, C, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19) \
+        MM_INVOKE_B( macroname, (C, a1) ), \
+    MM_APPLY_COMMA_18( macroname, C, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19)
+
+#define MM_APPLY_COMMA_20( macroname, C, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20) \
+        MM_INVOKE_B( macroname, (C, a1) ), \
+    MM_APPLY_COMMA_19( macroname, C, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+
 // C: pyclass instance
 #define ADD_PYBIND_FIELD(C, field) C.def_readwrite(#field, &std::remove_reference<decltype(C)>::type::type::field);
 

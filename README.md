@@ -101,7 +101,7 @@ python3 train.py
 
 Note that long horizon (e.g., `--T 20`) could make the training much faster and (at the same time) stable. With long horizon, you should be able to train it to 70% winrate within 12 hours with 16CPU and 1GPU.  You can control the number of CPUs used in the training using `taskset -c`. 
 
-Here is one [trained model](http://yuandong-tian.com/model-minirts-212808.bin) with `T = 16`. Another [trained model](http://yuandong-tian.com/model-minirts-361745.bin) with 80% winrate against `AI_SIMPLE` for `fs_opponent=50`. Here is one game [replay](https://www.youtube.com/watch?v=YgZyWobkqfw). 
+Here is one [trained model](http://yuandong-tian.com/model-winrate-80.0-357800.bin) with 80% winrate against `AI_SIMPLE` for frameskip=50. Here is one game [replay](https://www.youtube.com/watch?v=YgZyWobkqfw). 
 
 The following is a sample output during training:
 ```

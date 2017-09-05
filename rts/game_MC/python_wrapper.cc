@@ -24,15 +24,12 @@ public:
     using Wrapper = WrapperT<WrapperCallbacks, GC::Comm, PythonOptions>;
 
 private:
-    int _T;
     std::unique_ptr<GC> _context;
     Wrapper _wrapper;
 
 public:
     GameContext(const ContextOptions& context_options, const PythonOptions& options) {
-      _T = context_options.T;
-      WrapperCallbacks::GlobalInit();
-
+      GameDef::GlobalInit();
       _context.reset(new GC{context_options, options});
     }
 
@@ -47,7 +44,10 @@ public:
         return std::map<std::string, int>{
             { "num_action", GameDef::GetNumAction() },
             { "num_unit_type", GameDef::GetNumUnitType() },
-            { "resource_dim", 2 * NUM_RES_SLOT }
+            { "resource_dim", 2 * NUM_RES_SLOT },
+            { "max_unit_cmd", _context->options().max_unit_cmd },
+            { "map_x", _context->options().map_size_x },
+            { "map_y", _context->options().map_size_y }
         };
     }
 
@@ -59,11 +59,17 @@ public:
 
         std::string type_name = mm->type();
 
-        if (key == "s") return EntryInfo(key, type_name, {GameDef::GetNumUnitType() + 7, 20, 20});
+        const int max_unit_cmd = _context->options().max_unit_cmd;
+
+        if (key == "s") return EntryInfo(key, type_name, {GameDef::GetNumUnitType() + 7, _context->options().map_size_x, _context->options().map_size_y});
         else if (key == "last_r" || key == "terminal" || key == "last_terminal" || key == "id" || key == "seq" || key == "game_counter" || key == "player_id") return EntryInfo(key, type_name);
         else if (key == "pi") return EntryInfo(key, type_name, {GameDef::GetNumAction()});
         else if (key == "a" || key == "rv" || key == "V") return EntryInfo(key, type_name);
         else if (key == "res") return EntryInfo(key, type_name, {2, NUM_RES_SLOT});
+        else if (key == "unit_loc") return EntryInfo(key, type_name, { max_unit_cmd, 2 });
+        else if (key == "target_loc") return EntryInfo(key, type_name, { max_unit_cmd, 2 });
+        else if (key == "build_type") return EntryInfo(key, type_name, { max_unit_cmd });
+        else if (key == "cmd_type") return EntryInfo(key, type_name, { max_unit_cmd });
 
         return EntryInfo();
     }

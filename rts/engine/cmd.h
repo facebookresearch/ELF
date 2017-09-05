@@ -183,15 +183,18 @@ class CmdTypeLookup {
 private:
     static std::map<std::string, int> _name2idx;
     static std::map<int, std::string> _idx2name;
-    static std::string _null; 
+    static std::string _null;
+    static std::mutex _mutex;
 
 public:
     static void RegCmdType(CmdType type, const std::string &name) {
+        std::lock_guard<std::mutex> lock(_mutex);
         _name2idx.insert(make_pair(name, type));
         _idx2name.insert(make_pair(type, name));
     }
 
     static const std::string &idx2str(CmdType type) {
+        std::lock_guard<std::mutex> lock(_mutex);
         auto it = _idx2name.find(type);
         if (it != _idx2name.end()) {
             return it->second;
@@ -201,6 +204,7 @@ public:
     }
 
     static CmdType str2idx(const std::string &name) {
+        std::lock_guard<std::mutex> lock(_mutex);
         auto it = _name2idx.find(name);
         if (it != _name2idx.end()) {
             return it->second;

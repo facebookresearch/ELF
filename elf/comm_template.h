@@ -312,6 +312,9 @@ public:
     Comm &comm() { return _comm; }
     const Comm &comm() const { return _comm; }
 
+    const ContextOptions &context_options() const { return _context_options; }
+    const Options &options() const { return _options; }
+
     void Start(GameStartFunc game_start_func) {
         _comm.CollectorsReady();
 

@@ -44,7 +44,6 @@ if __name__ == '__main__':
     mi.add_model("model", model, copy=True, cuda=all_args.gpu is not None, gpu_id=all_args.gpu, optim_params={ "lr" : 0.001})
     mi.add_model("actor", model, copy=True, cuda=all_args.gpu is not None, gpu_id=all_args.gpu)
     mi = mi.clone(gpu=all_args.gpu)
-    method.set_model_interface(mi)
 
     trainer.setup(sampler=sampler, mi=mi, rl_method=method)
     evaluator.setup(sampler=sampler, mi=mi.clone(gpu=all_args.gpu))

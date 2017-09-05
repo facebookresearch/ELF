@@ -61,6 +61,7 @@ class Model(nn.Module):
         else:
             self.load_state_dict(data["stats_dict"])
         self.step = data.get("step", 0)
+        self.filename = data.get("filename", filename)
 
     def load_from(self, model):
         if hasattr(model, "args"):

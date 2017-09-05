@@ -62,6 +62,12 @@ struct PythonOptions {
     // When not empty, save replays to the files.
     std::string save_replay_prefix;
 
+    // Map size 
+    int map_size_x, map_size_y;
+
+    // Maximum unit command you could send per action.
+    int max_unit_cmd;
+
     // Max tick.
     int max_tick;
 
@@ -79,7 +85,7 @@ struct PythonOptions {
     int handicap_level;
 
     PythonOptions()
-      : simulation_type(ST_NORMAL), max_tick(30000), seed(0), shuffle_player(false), mcts_threads(1), mcts_rollout_per_thread(1),
+      : simulation_type(ST_NORMAL), map_size_x(20), map_size_y(20), max_unit_cmd(10), max_tick(30000), seed(0), shuffle_player(false), mcts_threads(1), mcts_rollout_per_thread(1),
         game_name(0), handicap_level(0) {
     }
 
@@ -88,8 +94,10 @@ struct PythonOptions {
     }
 
     void Print() const {
+        std::cout << "Map: " << map_size_x << " by " << map_size_y << std::endl;
         std::cout << "Handicap: " << handicap_level << std::endl;
         std::cout << "Max tick: " << max_tick << std::endl;
+        std::cout << "Max #Unit Cmd: " << max_unit_cmd << std::endl;
         std::cout << "Seed: " << seed << std::endl;
         std::cout << "Shuffled: " << (shuffle_player ? "True" : "False") << std::endl;
         for (const AIOptions& ai_option : ai_options) {
@@ -101,5 +109,5 @@ struct PythonOptions {
         std::cout << "Save_replay_prefix: \"" << save_replay_prefix << "\"" << std::endl;
     }
 
-    REGISTER_PYBIND_FIELDS(simulation_type, output_filename, cmd_dumper_prefix, save_replay_prefix, max_tick, seed, mcts_threads, mcts_rollout_per_thread, game_name, handicap_level, shuffle_player);
+    REGISTER_PYBIND_FIELDS(simulation_type, map_size_x, map_size_y, max_unit_cmd, output_filename, cmd_dumper_prefix, save_replay_prefix, max_tick, seed, mcts_threads, mcts_rollout_per_thread, game_name, handicap_level, shuffle_player);
 };

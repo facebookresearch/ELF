@@ -32,7 +32,7 @@ private:
 public:
     GameContext(const ContextOptions& context_options, const PythonOptions& options) {
       _T = context_options.T;
-      WrapperCallbacks::GlobalInit();
+      GameDef::GlobalInit();
 
       _context.reset(new GC{context_options, options});
     }

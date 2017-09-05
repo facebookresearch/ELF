@@ -25,5 +25,6 @@ PYBIND11_MODULE(atari_game, m) {
 
   CONTEXT_REGISTER(GameContext)
       .def("GetParams", &GameContext::GetParams);
-
+  PYCLASS_WITH_FIELDS(m, GameOptions)
+    .def(py::init<>());
 }

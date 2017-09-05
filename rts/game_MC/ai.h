@@ -11,6 +11,7 @@
 
 #include "engine/ai.h"
 #include "engine/cmd_util.h"
+#include "engine/cmd_interface.h"
 #include "python_options.h"
 #include "mc_rule_actor.h"
 #define NUM_RES_SLOT 5
@@ -75,6 +76,8 @@ private:
     Tick _backup_ai_tick_thres;
     std::unique_ptr<AI> _backup_ai;
     MCRuleActor _mc_rule_actor;
+
+    std::vector<CmdInput> _cmd_inputs;
 
     // Latest start of backup AI. When training, before each game starts,
     // we will sample a tick ~ Uniform(0, latest_start) and run backup AI

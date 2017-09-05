@@ -7,17 +7,14 @@
 * of patent rights can be found in the PATENTS file in the same directory.
 */
 
-#ifndef _RAW2CMD_H_
-#define _RAW2CMD_H_
-
-#include "engine/game_env.h"
-#include "engine/cmd.h"
+#pragma once
+#include "engine/cmd_interface.h"
 class CmdReceiver;
 
 // RawMsgStatus. 
 custom_enum(RawMsgStatus, PROCESSED = 0, EXCEED_TICK, FAILED);
 
-typedef function<CmdBPtr (const Unit&, char hotkey, const PointF& p, const UnitId &target_id, const GameEnv &)> EventResp; 
+typedef function<CmdInput (const Unit&, char hotkey, const PointF& p, const UnitId &target_id, const GameEnv &)> EventResp; 
 
 class RawToCmd {
 private:
@@ -62,6 +59,4 @@ public:
         }
     }
 };
-
-#endif
 

@@ -16,6 +16,7 @@
 #define ACTION_GLOBAL 0
 #define ACTION_PROB 1
 #define ACTION_REGIONAL 2
+#define ACTION_UNIT_CMD 3 
 
 struct GameState {
     using State = GameState;
@@ -53,6 +54,20 @@ struct GameState {
     float V;
     std::vector<float> pi;
 
+    int n_max_cmd;
+    int n_action;
+
+    // Action as unit command.
+    // nMaxCmd-by-2 (x, y)
+    std::vector<float> unit_loc;
+    std::vector<float> target_loc;
+
+    // nMaxCmd (cmdType)
+    std::vector<float> cmd_type;
+
+    // nMaxCmd (buildType)
+    std::vector<float> build_type;
+
     // Action per region
     // Python side will output an action map for each region for the player to follow.
     // std::vector<std::vector<std::vector<int>>> a_region;
@@ -65,13 +80,17 @@ struct GameState {
         return *this;
     }
 
-    void Restart() {
+    void Restart() { }
 
-    }
-
-    void Init(int iid, int num_action) {
+    void Init(int iid, int num_action, int num_max_cmd) {
         id = iid;
         pi.resize(num_action, 0.0);
+        unit_loc.resize(num_max_cmd * 2, 0.0);
+        target_loc.resize(num_max_cmd * 2, 0.0);
+        cmd_type.resize(num_max_cmd, 0.0);
+        build_type.resize(num_max_cmd, 0.0);
+        n_action = num_action;
+        n_max_cmd = num_max_cmd;
     }
 
     void Clear() {
@@ -92,7 +111,7 @@ struct GameState {
         */
     }
 
-    DECLARE_FIELD(GameState, id, a, V, pi, action_type, last_r, s, res, rv, terminal, seq, game_counter, last_terminal);
+    DECLARE_FIELD(GameState, id, a, V, pi, action_type, last_r, s, res, rv, terminal, seq, game_counter, last_terminal, unit_loc, target_loc, cmd_type, build_type);
     REGISTER_PYBIND_FIELDS(id, a, V, pi, action_type, last_r, s, res, tick, winner, player_id, ai_start_tick, last_terminal);
 };
 
