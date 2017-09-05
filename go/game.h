@@ -39,6 +39,7 @@ private:
 
     void reload();
     void build_handicap_table();
+    void print_context() const;
 
 public:
     GoGame(int game_idx, const GameOptions& options);

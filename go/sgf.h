@@ -11,6 +11,30 @@
 
 using namespace std;
 
+// Load the remaining part.
+inline Coord str2coord(const string &s) {
+    if (s.size() < 2) return M_PASS;
+    int x = s[0] - 'a';
+    //if (x >= 9) x --;
+    int y = s[1] - 'a';
+    //if (y >= 9) y --;
+    return OFFSETXY(x, y);
+}
+
+inline string coord2str(Coord c) {
+    int x = X(c);
+    //if (x >= 8) x ++;
+    int y = Y(c);
+    //if (y >= 8) y ++;
+
+    string s;
+    s.resize(3);
+    s[0] = 'a' + x;
+    s[1] = 'a' + y;
+    s[2] = 0;
+    return s;
+}
+
 struct SgfEntry {
     Coord move;
     Stone player;
@@ -93,6 +117,7 @@ public:
     Sgf() : _curr(nullptr), _move_idx(-1), _num_moves(0) { }
     bool Load(const string& filename);
     SgfMove GetCurr() const { return get_move(_curr); }
+    int GetCurrMoveIdx() const { return _move_idx; }
 
     vector<SgfMove> GetForwardMoves(int k) const {
         const SgfEntry *curr = _curr;

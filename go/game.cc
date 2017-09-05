@@ -39,6 +39,11 @@ GoGame::GoGame(int game_idx, const GameOptions& options) : _options(options) {
     _path = _path.substr(0, i + 1);
 }
 
+void GoGame::print_context() const {
+    cout << "[id=" << _game_idx << "][curr_game=" << _curr_game << "][filename="
+         << _games[_curr_game] << " " << _sgf.GetCurrMoveIdx() << "/" << _sgf.NumMoves() << endl;
+}
+
 void GoGame::Act(const std::atomic_bool& done) {
   // Act on the current game.
   while ((_sgf.StepLeft() < NUM_FUTURE_ACTIONS) && !done.load() )
@@ -46,10 +51,15 @@ void GoGame::Act(const std::atomic_bool& done) {
   if (done.load()) {
       return;
   }
-  vector<SgfMove> future_moves = _sgf.GetForwardMoves(NUM_FUTURE_ACTIONS);
-  if (future_moves.size() < NUM_FUTURE_ACTIONS) {
-      throw std::range_error("future_moves.size() [" +
-          std::to_string(future_moves.size()) + "] < #FUTURE_ACTIONS [" + std::to_string(NUM_FUTURE_ACTIONS));
+
+  vector<SgfMove> future_moves;
+  while (true) {
+      future_moves = _sgf.GetForwardMoves(NUM_FUTURE_ACTIONS);
+      if (future_moves.size() >= NUM_FUTURE_ACTIONS) break;
+      print_context();
+      cout << "future_moves.size() [" +
+          std::to_string(future_moves.size()) + "] < #FUTURE_ACTIONS [" + std::to_string(NUM_FUTURE_ACTIONS) << endl;
+      reload();
   }
   //bool terminal = (_sgf.StepLeft() == NUM_FUTURE_ACTIONS);
 
@@ -146,8 +156,7 @@ void GoGame::reload() {
     } while (! _sgf.Load(_path + _games[_curr_game]) || _sgf.NumMoves() < 10);
 
     if (_options.verbose) {
-        cout << "[" << _game_idx << "] New game: [" << _curr_game << "] "
-             << _games[_curr_game] << " #Moves: " << _sgf.NumMoves() << endl;
+        print_context();
     }
 
     // Clear the board.
@@ -194,9 +203,9 @@ void GoGame::SaveTo(GameState& state, const vector<SgfMove> &future_moves) const
       if (action < 0 || action >= BOARD_DIM * BOARD_DIM) {
           Coord move = future_moves[i].move;
           Stone player = future_moves[i].player;
-          cout << "[id=" << _game_idx << "][curr_game=" << _curr_game << "][filename="
-               << _games[_curr_game] << " #Moves: " << _sgf.NumMoves() << endl;
-          cout << "invalid action! action = " << action << " x = " << X(move) << " y = " << Y(move) << " player = " << player << endl;
+          print_context();
+          cout << "invalid action! action = " << action << " x = " << X(move) << " y = " << Y(move)
+               << " player = " << player << " " << coord2str(move) << endl;
           action = 0;
       }
       state.a[i] = action;

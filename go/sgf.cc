@@ -134,30 +134,6 @@ bool Sgf::load_header(const char *s, const seg& range, int *next_offset) {
     return true;
 }
 
-// Load the remaining part.
-static Coord str2coord(const string &s) {
-    if (s.size() < 2) return M_PASS;
-    int x = s[0] - 'a';
-    //if (x >= 9) x --;
-    int y = s[1] - 'a';
-    //if (y >= 9) y --;
-    return OFFSETXY(x, y);
-}
-
-static string coord2str(Coord c) {
-    int x = X(c);
-    //if (x >= 8) x ++;
-    int y = Y(c);
-    //if (y >= 8) y ++;
-
-    string s;
-    s.resize(3);
-    s[0] = 'a' + x;
-    s[1] = 'a' + y;
-    s[2] = 0;
-    return s;
-}
-
 static void save_sgf_entry(SgfEntry *entry, const char *s, const seg &key, const seg &value) {
     string v = make_str(s, value);
     if (key.second - key.first == 1) {
