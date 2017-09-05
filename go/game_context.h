@@ -15,19 +15,28 @@ class GameContext {
   private:
     std::unique_ptr<GC> _context;
     std::vector<GoGame> games;
+    const int _num_action = BOARD_DIM * BOARD_DIM;
 
-    int _num_action = BOARD_DIM * BOARD_DIM;
+    std::unique_ptr<RBuffer> _shared_buffer;
 
   public:
     GameContext(const ContextOptions& context_options, const GameOptions& options) {
       _context.reset(new GC{context_options, options});
       for (int i = 0; i < context_options.num_games; ++i) {
-        games.emplace_back(i, options);
+          games.emplace_back(i, options);
       }
+
+      _shared_buffer.reset(new RBuffer([](const std::string &name) {
+            std::unique_ptr<Sgf> sgf(new Sgf());
+            sgf->Load(name);
+            return sgf;
+      }));
     }
 
     void Start() {
-        auto f = [this](int game_idx, const ContextOptions &context_options, const GameOptions&,
+        RBuffer *rbuffer = _shared_buffer.get();
+
+        auto f = [this, rbuffer](int game_idx, const ContextOptions &context_options, const GameOptions&,
                 const std::atomic_bool& done, GC::Comm* comm) {
             GC::AIComm ai_comm(game_idx, comm);
             auto &state = ai_comm.info().data;
@@ -36,7 +45,7 @@ class GameContext {
                 s.Init(game_idx, _num_action);
             }
             auto& game = games[game_idx];
-            game.initialize_comm(&ai_comm);
+            game.Init(&ai_comm, rbuffer);
             game.MainLoop(done);
         };
         _context->Start(f);
@@ -50,6 +59,7 @@ class GameContext {
           { "num_future_actions", NUM_FUTURE_ACTIONS}
         };
     }
+
     EntryInfo EntryFunc(const std::string &key) {
         auto *mm = GameState::get_mm(key);
         if (mm == nullptr) return EntryInfo();
@@ -67,5 +77,6 @@ class GameContext {
 
     void Stop() {
       _context.reset(nullptr);
+      // [TODO] there may be issues when deleting shared_buffer.
     }
 };

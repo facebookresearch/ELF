@@ -69,3 +69,4 @@ struct GameState {
     DECLARE_FIELD(GameState, id, seq, game_counter, last_terminal, features, a);
     REGISTER_PYBIND_FIELDS(id, seq, game_counter, last_terminal, features, a);
 };
+

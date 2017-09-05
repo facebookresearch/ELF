@@ -1,9 +1,10 @@
-#ifndef _GAME_H_
-#define _GAME_H_
+#pragma once
 
 #include "elf/pybind_helper.h"
 #include "elf/comm_template.h"
 #include "elf/ai_comm.h"
+#include "elf/shared_replay_buffer.h"
+
 #include "go_game_specific.h"
 #include "board.h"
 #include "sgf.h"
@@ -15,11 +16,13 @@ using Context = ContextT<GameOptions, HistT<GameState>>;
 using Comm = typename Context::Comm;
 using AIComm = AICommT<Comm>;
 
+using RBuffer = SharedReplayBuffer<std::string, Sgf>;
+
 // Game interface for Go.
 class GoGame {
 private:
     int _game_idx = -1;
-    AIComm* _ai_comm;
+    AIComm* _ai_comm = nullptr;
     GameOptions _options;
 
     std::mt19937 _rng;
@@ -31,8 +34,11 @@ private:
 
     // Current game, its sgf record and game board state.
     int _curr_game;
+    Sgf::SgfIterator _sgf_iter;
     Board _board;
-    Sgf _sgf;
+
+    // Shared Sgf buffer.
+    RBuffer *_rbuffer = nullptr;
 
     // handicap table.
     map<int, vector<Coord> > _handicaps;
@@ -43,6 +49,14 @@ private:
 
 public:
     GoGame(int game_idx, const GameOptions& options);
+
+    void Init(AIComm *ai_comm, RBuffer *rbuffer) {
+        assert(ai_comm);
+        assert(rbuffer);
+        _ai_comm = ai_comm;
+        _rbuffer = rbuffer;
+    }
+
     void MainLoop(const std::atomic_bool& done) {
         // Main loop of the game.
         while (true) {
@@ -51,13 +65,6 @@ public:
         }
     }
 
-    void initialize_comm(AIComm* ai_comm) {
-      assert(ai_comm);
-      _ai_comm = ai_comm;
-    }
-
     void Act(const std::atomic_bool& done);
     void SaveTo(GameState &state, const vector<SgfMove> &future_moves) const;
 };
-
-#endif

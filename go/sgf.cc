@@ -6,15 +6,20 @@
 
 using namespace std;
 
+static std::string trim(const std::string& str) {
+    int l = 0;
+    while (l < (int)str.size() && (str[l] == ' ' || str[l] == '\n')) l ++;
+    int r = str.size() - 1;
+    while (r >= 0 && (str[r] == ' ' || str[r] == '\n')) r --;
+
+    return str.substr(l, r + 1);
+}
+
 // [start, end)
 typedef pair<int, int> seg;
 
-void Sgf::Reset() {
-    _move_idx = 0;
-    _curr = _root.get();
-}
-
 bool Sgf::Load(const string& filename) {
+    // std::cout << "Loading SGF: " << filename << std::endl;
     // Load the game.
     ifstream iFile(filename);
     stringstream ss;
@@ -28,22 +33,28 @@ bool Sgf::Load(const string& filename) {
     int next_offset = 0;
     if (load_header(str, seg(0, len), &next_offset)) {
         _root.reset(load(str, seg(next_offset, len), &next_offset));
-        Reset();
-        if (_curr == nullptr) return false;
+        // cout << "Next offset = " << next_offset << " len = " << len << endl;
+        // cout << PrintHeader();
+        // cout << PrintMainVariation();
+
+        SgfIterator iter = begin();
+        if (iter.done()) return false;
 
         // Compute the length of the move.
         _num_moves = 0;
-        do {
+
+        while (! iter.done()) {
           // Although two PASS means the ending of a game. In our training,
           // as long as we see one pass, the game is considered done.
-          if (_curr->move == M_PASS) break;
+          if (iter.GetCurrMove().move == M_PASS) break;
           _num_moves ++;
-        } while (Next());
-        Reset();
+          ++ iter;
+        }
         return true;
+    } else {
+        std::cout << "Failed to read the header of " << filename << std::endl;
     }
     return false;
-    // cout << "Load complete, next_offset = " << next_offset << endl;
 }
 
 #define STATE_KEY 0
@@ -59,12 +70,12 @@ static int get_key_values(const char *s, const seg& range, std::function<void (c
     bool backslash = false;
 
     // cout << "Begin calling get_key_values with [" << range.first << ", " << range.second << ")" << endl;
-
     for (i = range.first; i < range.second && ! done; ++i) {
         if (s[i] == '\\') { backslash = ! backslash; continue; }
         if (backslash) { backslash = false; continue; }
 
         char c = s[i];
+        // std::cout << "Next c: " << c << endl;
         switch (state) {
             case STATE_KEY:
                 if (c == '[') {
@@ -99,12 +110,21 @@ static string make_str(const char *s, const seg &g) {
 }
 
 static void save_sgf_header(SgfHeader *header, const char *s, const seg &key, const seg &value) {
-    string v = make_str(s, value);
-    string k = make_str(s, key);
+    string v = trim(make_str(s, value));
+    string k = trim(make_str(s, key));
 
+    // std::cout << "SGF_Header: \"" << k << "\" = \"" <<  v << "\"" << std::endl;
     if (k == "RE") {
-        header->winner = (v[0] == 'B' || v[0] == 'b') ? S_BLACK : S_WHITE;
-        header->win_margin = stof(v.substr(2));
+        if (! v.empty()) {
+            header->winner = (v[0] == 'B' || v[0] == 'b') ? S_BLACK : S_WHITE;
+            if (v.size() >= 3) {
+                try {
+                  header->win_margin = stof(v.substr(2));
+                } catch (...) {
+                  header->win_reason = v.substr(2);
+                }
+            }
+        }
     } else if (k == "SZ") {
         header->size = stoi(v);
     } else if (k == "PW") {
@@ -127,15 +147,22 @@ static void save_sgf_header(SgfHeader *header, const char *s, const seg &key, co
 bool Sgf::load_header(const char *s, const seg& range, int *next_offset) {
     // Load the header.
     int i = range.first;
-    while (s[i] != ';') i++;
+    // std::cout << "[" << range.first << ", " << range.second << ")" << std::endl;
+    while (s[i] != ';' && i < 2) {
+        // std::cout << "Char[" << i << "]: " << s[i] << std::endl;
+        i++;
+    }
+    if (s[i] != ';') return false;
     i ++;
     // Now we have header.
-    *next_offset = get_key_values(s, seg(i, range.second), [&](const char *_s, const seg& key, const seg& value) { save_sgf_header(&_header, _s, key, value); });
+    *next_offset = get_key_values(s, seg(i, range.second), [&](const char *_s, const seg& key, const seg& value) {
+        save_sgf_header(&_header, _s, key, value);
+    });
     return true;
 }
 
 static void save_sgf_entry(SgfEntry *entry, const char *s, const seg &key, const seg &value) {
-    string v = make_str(s, value);
+    string v = trim(make_str(s, value));
     if (key.second - key.first == 1) {
         char c = s[key.first];
         if (c == 'B') {
@@ -184,19 +211,12 @@ SgfEntry *Sgf::load(const char *s, const seg &range, int *next_offset) {
     return entry;
 }
 
-bool Sgf::Next() {
-    // Only move at siblings (main variation).
-    const SgfEntry *next = get_next(_curr);
-    if (next == nullptr) return false;
-    _curr = next;
-    _move_idx ++;
-    return true;
-}
-
 string Sgf::PrintHeader() const {
     stringstream ss;
 
-    ss << "Win: " << STR_STONE(_header.winner) << " by " << _header.win_margin << endl;
+    ss << "Win: " << STR_STONE(_header.winner) << " by " << _header.win_margin;
+    if (! _header.win_reason.empty()) ss << " Reason: " << _header.win_reason;
+    ss << endl;
     ss << "Komi: " << _header.komi << endl;
     ss << "Handi: " << _header.handi << endl;
     ss << "Size: " << _header.size << endl;
@@ -208,13 +228,14 @@ string Sgf::PrintHeader() const {
 
 string Sgf::PrintMainVariation() {
     stringstream ss;
-    Reset();
-    do {
-        auto curr = GetCurr();
-        ss << "[" << _move_idx << "]: " << STR_STONE(curr.player) << " " << coord2str(curr.move);
-        string s = GetCurrComment();
+    SgfIterator iter = begin();
+    while (! iter.done()) {
+        auto curr = iter.GetCurrMove();
+        ss << "[" << iter.GetCurrIdx() << "]: " << STR_STONE(curr.player) << " " << coord2str(curr.move);
+        string s = iter.GetCurrComment();
         if (! s.empty()) ss << " Comment: " << s;
         ss << endl;
-    } while (Next());
+        ++ iter;
+    }
     return ss.str();
 }

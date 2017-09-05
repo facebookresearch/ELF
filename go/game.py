@@ -63,11 +63,11 @@ class Loader:
 
         return GCWrapper(GC, co, desc, use_numpy=False, params=params)
 
-nIter = 5000
 elapsed_wait_only = 0
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument("--num_iter", type=int, default=5000)
 
     loader = Loader()
     args = ArgsProvider.Load(parser, [loader])
@@ -85,7 +85,7 @@ if __name__ == '__main__':
     GC.Start()
 
     import tqdm
-    for k in tqdm.trange(nIter):
+    for k in tqdm.trange(args.num_iter):
         b = datetime.now()
         # print("Before wait")
         GC.Run()

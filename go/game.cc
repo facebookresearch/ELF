@@ -13,7 +13,7 @@ GoGame::GoGame(int game_idx, const GameOptions& options) : _options(options) {
         auto value = now_ms.time_since_epoch();
         long duration = value.count();
         seed = (time(NULL) * 1000 + duration + _game_idx * 2341479) % 100000000;
-        // std::cout << "Seed:" << seed << std::endl;
+        if (_options.verbose) std::cout << "[" << _game_idx << "] Seed:" << seed << std::endl;
     } else {
         seed = options.seed;
     }
@@ -22,6 +22,7 @@ GoGame::GoGame(int game_idx, const GameOptions& options) : _options(options) {
     build_handicap_table();
 
     // Get all .sgf file in the directory.
+    if (_options.verbose) std::cout << "[" << _game_idx << "] Loading list_file: " << options.list_filename << std::endl;
     ifstream iFile(options.list_filename);
     _games.clear();
     while (! iFile.eof()) {
@@ -30,31 +31,35 @@ GoGame::GoGame(int game_idx, const GameOptions& options) : _options(options) {
       _games.push_back(this_game);
     }
     _games.pop_back();
+    if (_options.verbose) std::cout << "[" << _game_idx << "] Loaded: #Game: " << _games.size() << std::endl;
+
     // Get the path of the filename.
     _path = string(options.list_filename);
     int i = _path.size() - 1;
-    while (_path[i] != '/') i --;
+    while (_path[i] != '/' && i >= 0) i --;
 
-    // Include "/"
-    _path = _path.substr(0, i + 1);
+    if (i >= 0) _path = _path.substr(0, i + 1);
+    else _path = "";
+
+    if (_options.verbose) std::cout << "[" << _game_idx << "] Done with initialization" << std::endl;
 }
 
 void GoGame::print_context() const {
     cout << "[id=" << _game_idx << "][curr_game=" << _curr_game << "][filename="
-         << _games[_curr_game] << " " << _sgf.GetCurrMoveIdx() << "/" << _sgf.NumMoves() << endl;
+         << _games[_curr_game] << " " << _sgf_iter.GetCurrIdx() << "/" << _sgf_iter.GetSgf().NumMoves() << endl;
 }
 
 void GoGame::Act(const std::atomic_bool& done) {
   // Act on the current game.
-  while ((_sgf.StepLeft() < NUM_FUTURE_ACTIONS) && !done.load() )
+  while ( (_sgf_iter.done() || _sgf_iter.StepLeft() < NUM_FUTURE_ACTIONS) && !done.load() ) {
+      // std::cout << "Reloading games.." << std::endl;
       reload();
-  if (done.load()) {
-      return;
   }
+  if (done.load()) return;
 
   vector<SgfMove> future_moves;
   while (true) {
-      future_moves = _sgf.GetForwardMoves(NUM_FUTURE_ACTIONS);
+      future_moves = _sgf_iter.GetForwardMoves(NUM_FUTURE_ACTIONS);
       if (future_moves.size() >= NUM_FUTURE_ACTIONS) break;
       print_context();
       cout << "future_moves.size() [" +
@@ -76,7 +81,7 @@ void GoGame::Act(const std::atomic_bool& done) {
   GroupId4 ids;
   if (TryPlay2(&_board, future_moves[0].move, &ids)) {
       Play(&_board, &ids);
-      _sgf.Next();
+      ++ _sgf_iter;
   } else {
       reload();
   }
@@ -150,21 +155,36 @@ void GoGame::build_handicap_table() {
 }
 
 void GoGame::reload() {
-    do {
-      _curr_game = _rng() % _games.size();
-      // Load sgf file.
-    } while (! _sgf.Load(_path + _games[_curr_game]) || _sgf.NumMoves() < 10);
+    while (true) {
+        _curr_game = _rng() % _games.size();
+        // std::cout << "_game_idx = " << _curr_game << std::endl;
 
-    if (_options.verbose) {
-        print_context();
+        std::string full_name = _path + _games[_curr_game];
+        // std::cout << "full_name = " << full_name << std::endl;
+
+        bool file_loaded = _rbuffer->HasKey(full_name);
+        // std::cout << "Has key: " << (file_loaded ? "True" : "False") << std::endl;
+
+        const auto &sgf = _rbuffer->Get(full_name);
+        if (_options.verbose) {
+            if (! file_loaded)
+              std::cout << "Loaded file " << full_name << std::endl;
+        }
+        if (sgf.NumMoves() >= 10) {
+            _sgf_iter = sgf.begin();
+            break;
+        }
     }
+
+    if (_options.verbose) print_context();
 
     // Clear the board.
     ClearBoard(&_board);
     _ai_comm->Restart();
 
     // Place handicap stones if there is any.
-    int handi = _sgf.GetHandicapStones();
+    const Sgf &sgf = _sgf_iter.GetSgf();
+    int handi = sgf.GetHandicapStones();
     if (handi > 0) {
         auto it = _handicaps.find(handi);
         if (it != _handicaps.end()) {
@@ -174,8 +194,8 @@ void GoGame::reload() {
         }
     }
     // Then we need to randomly play the game.
-    int pre_moves = _rng() % (_sgf.NumMoves() / 2);
-    for (int i = 0; i < pre_moves; ++i) _sgf.Next();
+    int pre_moves = _rng() % (sgf.NumMoves() / 2);
+    for (int i = 0; i < pre_moves; ++i) ++ _sgf_iter;
 }
 
 static float *board_plane(vector<float> &features, int idx) {
