@@ -17,7 +17,9 @@ struct GameOptions {
     int num_future_actions;
     // A list file containing the files to load.
     std::string list_filename;
-    REGISTER_PYBIND_FIELDS(seed, num_planes, num_future_actions, list_filename);
+    bool verbose = false;
+
+    REGISTER_PYBIND_FIELDS(seed, num_planes, num_future_actions, list_filename, verbose);
 };
 
 struct GameState {

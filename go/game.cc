@@ -4,7 +4,7 @@
 #include <fstream>
 #include <chrono>
 
-GoGame::GoGame(int game_idx, const GameOptions& options) {
+GoGame::GoGame(int game_idx, const GameOptions& options) : _options(options) {
     _game_idx = game_idx;
     uint64_t seed = 0;
     if (options.seed == 0) {
@@ -145,8 +145,10 @@ void GoGame::reload() {
       // Load sgf file.
     } while (! _sgf.Load(_path + _games[_curr_game]) || _sgf.NumMoves() < 10);
 
-    // cout << "[" << _game_idx << "] New game: [" << _curr_game << "] "
-    //       << _games[_curr_game] << " #Moves: " << _sgf.NumMoves() << endl;
+    if (_options.verbose) {
+        cout << "[" << _game_idx << "] New game: [" << _curr_game << "] "
+             << _games[_curr_game] << " #Moves: " << _sgf.NumMoves() << endl;
+    }
 
     // Clear the board.
     ClearBoard(&_board);
