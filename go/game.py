@@ -10,6 +10,7 @@ import os
 import go_game as go
 
 import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from elf import GCWrapper, ContextArgs
 from rlpytorch import ArgsProvider
 
@@ -43,8 +44,8 @@ class Loader:
         desc = {}
         desc["actor"] = dict(
             batchsize=args.batchsize,
-            input=dict(T=1, keys=set(["features", "actions"])),
-            reply=dict(T=1, keys=set(["rv", "pi", "V", "a"]))
+            input=dict(T=1, keys=set(["features", "a"])),
+            reply=None
         )
 
         if not args.actor_only:
@@ -53,7 +54,7 @@ class Loader:
             # models) and reward.
             desc["train"] = dict(
                 batchsize=args.batchsize,
-                input=dict(T=args.T, keys=set(["rv", "pi", "features", "actions", "a", "V"])),
+                input=dict(T=args.T, keys=set(["features", "a"])),
                 reply=None
             )
 
@@ -79,9 +80,8 @@ if __name__ == '__main__':
 
     GC = loader.initialize()
 
-    def actor(sel, sel_gpu, reply):
-        # pickle.dump(to_numpy(sel), open("tmp%d.bin" % k, "wb"), protocol=2)
-        reply[0]["a"][:] = 0
+    def actor(batch):
+        pass
 
     GC.reg_callback("actor", actor)
 
