@@ -190,6 +190,15 @@ void GoGame::SaveTo(GameState& state, const vector<SgfMove> &future_moves) const
   GetStones(&_board, S_EMPTY, LAYER(EMPTY_STONES));
 
   for (int i = 0; i < NUM_FUTURE_ACTIONS; ++i) {
-      state.a[i] = future_moves[i].GetAction();
+      int action = future_moves[i].GetAction();
+      if (action < 0 || action >= BOARD_DIM * BOARD_DIM) {
+          Coord move = future_moves[i].move;
+          Stone player = future_moves[i].player;
+          cout << "[id=" << _game_idx << "][curr_game=" << _curr_game << "][filename="
+               << _games[_curr_game] << " #Moves: " << _sgf.NumMoves() << endl;
+          cout << "invalid action! action = " << action << " x = " << X(move) << " y = " << Y(move) << " player = " << player << endl;
+          action = 0;
+      }
+      state.a[i] = action;
   }
 }
