@@ -57,10 +57,8 @@ class GameContext {
         std::string type_name = mm->type();
 
         if (key == "features") return EntryInfo(key, type_name, {MAX_NUM_FEATURE, BOARD_DIM, BOARD_DIM});
-        else if (key == "actions") return EntryInfo(key, type_name, {NUM_FUTURE_ACTIONS});
-        else if (key == "last_r" || key == "last_terminal" || key == "id" || key == "seq" || key == "game_counter") return EntryInfo(key, type_name);
-        else if (key == "pi") return EntryInfo(key, type_name, {_num_action});
-        else if (key == "a" || key == "rv" || key == "V") return EntryInfo(key, type_name);
+        else if (key == "a") return EntryInfo(key, type_name, {NUM_FUTURE_ACTIONS});
+        else if (key == "last_terminal" || key == "id" || key == "seq" || key == "game_counter") return EntryInfo(key, type_name);
 
         return EntryInfo();
     }

@@ -45,6 +45,10 @@ void GoGame::Act(const std::atomic_bool& done) {
       return;
   }
   vector<pair<Stone, Coord> > future_moves = _sgf.GetForwardMoves(NUM_FUTURE_ACTIONS);
+  if (future_moves.size() < NUM_FUTURE_ACTIONS) {
+      throw std::range_error("future_moves.size() [" +
+          std::to_string(future_moves.size()) + "] < #FUTURE_ACTIONS [" + std::to_string(NUM_FUTURE_ACTIONS));
+  }
   //bool terminal = (_sgf.StepLeft() == NUM_FUTURE_ACTIONS);
 
   // Send the current board situation.
@@ -161,12 +165,17 @@ void GoGame::reload() {
     for (int i = 0; i < pre_moves; ++i) _sgf.Next();
 }
 
-#define LAYER(idx) reinterpret_cast<float *>(features[idx])
+static float *board_plane(vector<float> &features, int idx) {
+    return &features[idx * BOARD_DIM * BOARD_DIM];
+}
+
+#define LAYER(idx) board_plane(state.features, idx)
 
 void GoGame::SaveTo(GameState& state, const vector<pair<Stone, Coord>> &future_moves) const {
   Stone player = _board._next_player;
 
-  float features[MAX_NUM_FEATURE][BOARD_DIM][BOARD_DIM];
+  state.features.resize(MAX_NUM_FEATURE * BOARD_DIM * BOARD_DIM);
+  state.a.resize(NUM_FUTURE_ACTIONS);
 
   // Save the current board state to game state.
   GetLibertyMap3(&_board, player, LAYER(OUR_LIB));
@@ -176,11 +185,7 @@ void GoGame::SaveTo(GameState& state, const vector<pair<Stone, Coord>> &future_m
   GetStones(&_board, OPPONENT(player), LAYER(OPPONENT_STONES));
   GetStones(&_board, S_EMPTY, LAYER(EMPTY_STONES));
 
-  const float* start = (const float*) features;
-  state.features.resize(MAX_NUM_FEATURE * BOARD_DIM * BOARD_DIM);
-  state.actions.resize(NUM_FUTURE_ACTIONS);
-  std::copy(start, start + MAX_NUM_FEATURE * BOARD_DIM * BOARD_DIM, &(state.features[0]));
-  for (int i = 0; i < min((int)future_moves.size(), NUM_FUTURE_ACTIONS); ++i) {
-      state.actions[i] = future_moves[i].second;
+  for (int i = 0; i < NUM_FUTURE_ACTIONS; ++i) {
+      state.a[i] = future_moves[i].second;
   }
 }

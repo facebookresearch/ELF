@@ -1,4 +1,5 @@
-from rlpytorch import Model, ActorCritic, MultiplePrediction
+from rlpytorch import Model, ActorCritic
+from multiple_prediction import MultiplePrediction
 
 import torch
 import torch.nn as nn

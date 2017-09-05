@@ -27,26 +27,20 @@ struct GameState {
     std::vector<float> features;
 
     // Next k actions.
-    std::vector<long> actions;
+    std::vector<int> a;
+
     // Seq information.
     int32_t id = -1;
     int32_t seq = 0;
     int32_t game_counter = 0;
     char last_terminal = 0;
 
-    // Reply
-    int64_t a;
-    float V;
-    std::vector<float> pi;
-    int32_t rv;
-
     std::string player_name;
 
-    void Clear() { a = 0; V = 0.0; fill(pi.begin(), pi.end(), 0.0); rv = 0; }
+    void Clear() { }
 
-    void Init(int iid, int num_action) {
+    void Init(int iid, int /*num_action*/) {
         id = iid;
-        pi.resize(num_action, 0.0);
     }
 
     GameState &Prepare(const SeqInfo &seq_info) {
@@ -69,6 +63,7 @@ struct GameState {
         game_counter = 0;
         last_terminal = 0;
     }
-    DECLARE_FIELD(GameState, id, seq, game_counter, last_terminal, features, actions, a, V, pi, rv);
-    REGISTER_PYBIND_FIELDS(id, seq, game_counter, last_terminal, features, actions, a, V, pi, rv);
+
+    DECLARE_FIELD(GameState, id, seq, game_counter, last_terminal, features, a);
+    REGISTER_PYBIND_FIELDS(id, seq, game_counter, last_terminal, features, a);
 };
