@@ -149,6 +149,7 @@ typedef struct {
 // X first, then y.
 #define X(c) ( (c) % MACRO_BOARD_EXPAND_SIZE - 1 )
 #define Y(c) ( (c) / MACRO_BOARD_EXPAND_SIZE - 1 )
+#define ON_BOARD(x, y) ( (x) >= 0 && (x) < BOARD_SIZE && (y) >= 0 && (y) < BOARD_SIZE )
 #define EXTENDOFFSETXY(x, y)  ( (y) * MACRO_BOARD_EXPAND_SIZE + (x) )
 #define OFFSETXY(x, y)  ( ((y) + BOARD_MARGIN) * MACRO_BOARD_EXPAND_SIZE + (x) + BOARD_MARGIN )
 

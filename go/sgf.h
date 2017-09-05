@@ -17,6 +17,8 @@ inline Coord str2coord(const string &s) {
     int x = s[0] - 'a';
     //if (x >= 9) x --;
     int y = s[1] - 'a';
+    // tt
+    if (! ON_BOARD(x, y)) return M_PASS;
     //if (y >= 9) y --;
     return OFFSETXY(x, y);
 }
