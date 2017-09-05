@@ -41,7 +41,7 @@ private:
     void build_handicap_table();
 
 public:
-    GoGame(const GameOptions& options);
+    GoGame(int game_idx, const GameOptions& options);
     void MainLoop(const std::atomic_bool& done) {
         // Main loop of the game.
         while (true) {
@@ -50,10 +50,9 @@ public:
         }
     }
 
-    void initialize_comm(int game_idx, AIComm* ai_comm) {
-      assert(!_ai_comm);
+    void initialize_comm(AIComm* ai_comm) {
+      assert(ai_comm);
       _ai_comm = ai_comm;
-      _game_idx = game_idx;
     }
 
     void Act(const std::atomic_bool& done);

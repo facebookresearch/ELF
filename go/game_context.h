@@ -22,7 +22,7 @@ class GameContext {
     GameContext(const ContextOptions& context_options, const GameOptions& options) {
       _context.reset(new GC{context_options, options});
       for (int i = 0; i < context_options.num_games; ++i) {
-        games.emplace_back(options);
+        games.emplace_back(i, options);
       }
     }
 
@@ -36,7 +36,7 @@ class GameContext {
                 s.Init(game_idx, _num_action);
             }
             auto& game = games[game_idx];
-            game.initialize_comm(game_idx, &ai_comm);
+            game.initialize_comm(&ai_comm);
             game.MainLoop(done);
         };
         _context->Start(f);

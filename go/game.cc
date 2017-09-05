@@ -4,14 +4,16 @@
 #include <fstream>
 #include <chrono>
 
-GoGame::GoGame(const GameOptions& options) {
+GoGame::GoGame(int game_idx, const GameOptions& options) {
+    _game_idx = game_idx;
     uint64_t seed = 0;
     if (options.seed == 0) {
         auto now = chrono::system_clock::now();
         auto now_ms = chrono::time_point_cast<chrono::milliseconds>(now);
         auto value = now_ms.time_since_epoch();
         long duration = value.count();
-        seed = (time(NULL) * 1000 + duration) % 100000000;
+        seed = (time(NULL) * 1000 + duration + _game_idx * 2341479) % 100000000;
+        // std::cout << "Seed:" << seed << std::endl;
     } else {
         seed = options.seed;
     }

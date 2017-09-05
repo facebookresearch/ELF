@@ -21,7 +21,8 @@ class Loader:
         self.args = ArgsProvider(
             call_from = self,
             define_args = [
-                ("actor_only", dict(action="store_true"))
+                ("actor_only", dict(action="store_true")),
+                ("list_file", "./train.lst")
             ],
             more_args = ["batchsize", "T"],
             child_providers = [ self.context_args.args ]
@@ -34,7 +35,7 @@ class Loader:
 
         opt = go.GameOptions()
         opt.seed = 0
-        opt.list_filename = "./go/train.lst"
+        opt.list_filename = args.list_file
         GC = go.GameContext(co, opt)
         print("Version: ", GC.Version())
 
@@ -67,7 +68,7 @@ class Loader:
 
         return GCWrapper(GC, co, desc, use_numpy=False, params=params)
 
-cmd_line = "--num_games 1 --batchsize 1 --actor_only"
+cmd_line = "--num_games 16 --batchsize 4 --actor_only"
 
 nIter = 5000
 elapsed_wait_only = 0
