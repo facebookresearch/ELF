@@ -25,12 +25,10 @@ GoGame::GoGame(int game_idx, const GameOptions& options) : _options(options) {
     if (_options.verbose) std::cout << "[" << _game_idx << "] Loading list_file: " << options.list_filename << std::endl;
     ifstream iFile(options.list_filename);
     _games.clear();
-    while (! iFile.eof()) {
-      string this_game;
-      iFile >> this_game;
+    for (string this_game; std::getline(iFile, this_game) ; ) {
       _games.push_back(this_game);
     }
-    _games.pop_back();
+    while (_games.back().empty()) _games.pop_back();
     if (_options.verbose) std::cout << "[" << _game_idx << "] Loaded: #Game: " << _games.size() << std::endl;
 
     // Get the path of the filename.
@@ -170,7 +168,7 @@ void GoGame::reload() {
             if (! file_loaded)
               std::cout << "Loaded file " << full_name << std::endl;
         }
-        if (sgf.NumMoves() >= 10) {
+        if (sgf.NumMoves() >= 10 && sgf.GetBoardSize() == BOARD_DIM) {
             _sgf_iter = sgf.begin();
             break;
         }

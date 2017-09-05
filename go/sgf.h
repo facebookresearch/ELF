@@ -162,6 +162,7 @@ public:
 
     Stone GetWinner() const { return _header.winner; }
     int GetHandicapStones() const { return _header.handi; }
+    int GetBoardSize() const { return _header.size; }
     int NumMoves() const { return _num_moves; }
 
     string PrintHeader() const;
