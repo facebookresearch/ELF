@@ -20,12 +20,12 @@ class Model_Policy(Model):
         self.convs = []
         last_planes = self.num_planes
         for i in range(10):
-            conv = nn.Conv2d(last_planes, 64, 3, padding=1)
+            conv = nn.Conv2d(last_planes, 128, 3, padding=1)
             setattr(self, "conv" + str(i), conv)
             self.convs.append(conv)
-            last_planes = 64
+            last_planes = 128
 
-        self.final_conv = nn.Conv2d(64, self.num_future_actions, 3, padding=1)
+        self.final_conv = nn.Conv2d(128, self.num_future_actions, 3, padding=1)
 
         # Softmax as the final layer
         self.softmax = nn.Softmax()
@@ -41,7 +41,7 @@ class Model_Policy(Model):
         d = self.board_size * self.board_size
         for i in range(self.num_future_actions):
             actions.append(self.softmax(output[:,i].contiguous().view(-1, d)))
-        return output, dict(actions=actions, pi=actions[0], V=actions[0].select(1,0))
+        return dict(a=actions)
 
 # Format: key, [model, method]
 Models = {

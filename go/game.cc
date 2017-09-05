@@ -46,7 +46,7 @@ void GoGame::Act(const std::atomic_bool& done) {
   if (done.load()) {
       return;
   }
-  vector<pair<Stone, Coord> > future_moves = _sgf.GetForwardMoves(NUM_FUTURE_ACTIONS);
+  vector<SgfMove> future_moves = _sgf.GetForwardMoves(NUM_FUTURE_ACTIONS);
   if (future_moves.size() < NUM_FUTURE_ACTIONS) {
       throw std::range_error("future_moves.size() [" +
           std::to_string(future_moves.size()) + "] < #FUTURE_ACTIONS [" + std::to_string(NUM_FUTURE_ACTIONS));
@@ -64,7 +64,7 @@ void GoGame::Act(const std::atomic_bool& done) {
   _ai_comm->SendDataWaitReply();
 
   GroupId4 ids;
-  if (TryPlay2(&_board, future_moves[0].second, &ids)) {
+  if (TryPlay2(&_board, future_moves[0].move, &ids)) {
       Play(&_board, &ids);
       _sgf.Next();
   } else {
@@ -175,7 +175,7 @@ static float *board_plane(vector<float> &features, int idx) {
 
 #define LAYER(idx) board_plane(state.features, idx)
 
-void GoGame::SaveTo(GameState& state, const vector<pair<Stone, Coord>> &future_moves) const {
+void GoGame::SaveTo(GameState& state, const vector<SgfMove> &future_moves) const {
   Stone player = _board._next_player;
 
   state.features.resize(MAX_NUM_FEATURE * BOARD_DIM * BOARD_DIM);
@@ -190,6 +190,6 @@ void GoGame::SaveTo(GameState& state, const vector<pair<Stone, Coord>> &future_m
   GetStones(&_board, S_EMPTY, LAYER(EMPTY_STONES));
 
   for (int i = 0; i < NUM_FUTURE_ACTIONS; ++i) {
-      state.a[i] = future_moves[i].second;
+      state.a[i] = future_moves[i].GetAction();
   }
 }

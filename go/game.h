@@ -56,7 +56,7 @@ public:
     }
 
     void Act(const std::atomic_bool& done);
-    void SaveTo(GameState &state, const vector<pair<Stone, Coord>> &future_moves) const;
+    void SaveTo(GameState &state, const vector<SgfMove> &future_moves) const;
 };
 
 #endif

@@ -45,26 +45,19 @@ class Loader:
         print("Num Actions: ", params["num_action"])
 
         desc = {}
-        desc["actor"] = dict(
+
+        # For training: group 1
+        # We want input, action (filled by actor models), value (filled by actor
+        # models) and reward.
+        desc["train"] = dict(
             batchsize=args.batchsize,
-            input=dict(T=1, keys=set(["features", "a"])),
+            input=dict(T=args.T, keys=set(["features", "a"])),
             reply=None
         )
 
-        if not args.actor_only:
-            # For training: group 1
-            # We want input, action (filled by actor models), value (filled by actor
-            # models) and reward.
-            desc["train"] = dict(
-                batchsize=args.batchsize,
-                input=dict(T=args.T, keys=set(["features", "a"])),
-                reply=None
-            )
-
         params.update(dict(
             num_group = 1 if args.actor_only else 2,
-            action_batchsize = int(desc["actor"]["batchsize"]),
-            train_batchsize = int(desc["train"]["batchsize"]) if not args.actor_only else None,
+            train_batchsize = int(desc["train"]["batchsize"]),
             T = args.T,
         ))
 

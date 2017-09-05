@@ -29,7 +29,7 @@ struct GameState {
     std::vector<float> features;
 
     // Next k actions.
-    std::vector<int> a;
+    std::vector<int64_t> a;
 
     // Seq information.
     int32_t id = -1;

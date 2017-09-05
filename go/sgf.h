@@ -52,6 +52,21 @@ struct SgfHeader {
     }
 };
 
+struct SgfMove {
+    Stone player;
+    Coord move;
+
+    SgfMove() : player(S_OFF_BOARD), move(M_INVALID) {
+    }
+
+    SgfMove(Stone p, Coord m) : player(p), move(m) {
+    }
+
+    int GetAction() const {
+        return EXPORT_OFFSET_XY(X(move), Y(move));
+    }
+};
+
 // A library to load Sgf file for Go.
 class Sgf {
 private:
@@ -64,9 +79,9 @@ private:
 
     bool load_header(const char *s, const std::pair<int, int>& range, int *next_offset);
 
-    static pair<Stone, Coord> get_pair(const SgfEntry *curr) {
-        if (curr == nullptr) return make_pair(S_OFF_BOARD, M_INVALID);
-        else return make_pair(curr->player, curr->move);
+    static SgfMove get_move(const SgfEntry *curr) {
+        if (curr == nullptr) return SgfMove();
+        else return SgfMove(curr->player, curr->move);
     }
     static const SgfEntry *get_next(const SgfEntry *curr) {
         if (curr == nullptr) return nullptr;
@@ -77,16 +92,13 @@ private:
 public:
     Sgf() : _curr(nullptr), _move_idx(-1), _num_moves(0) { }
     bool Load(const string& filename);
-    pair<Stone, Coord> GetCurr() const { return get_pair(_curr); }
+    SgfMove GetCurr() const { return get_move(_curr); }
 
-    vector<pair<Stone, Coord> > GetForwardMoves(int k) const {
+    vector<SgfMove> GetForwardMoves(int k) const {
         const SgfEntry *curr = _curr;
-        vector<pair<Stone, Coord>> res;
+        vector<SgfMove> res;
         for (int i = 0; i < k; ++i) {
-            auto pair = get_pair(curr);
-            Coord c = pair.second;
-            pair.second = EXPORT_OFFSET_XY(X(c), Y(c));
-            res.push_back(pair);
+            res.push_back(get_move(curr));
             curr = get_next(curr);
         }
         return res;

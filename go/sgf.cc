@@ -29,10 +29,14 @@ bool Sgf::Load(const string& filename) {
     if (load_header(str, seg(0, len), &next_offset)) {
         _root.reset(load(str, seg(next_offset, len), &next_offset));
         Reset();
+        if (_curr == nullptr) return false;
 
         // Compute the length of the move.
         _num_moves = 0;
         do {
+          // Although two PASS means the ending of a game. In our training,
+          // as long as we see one pass, the game is considered done.
+          if (_curr->move == M_PASS) break;
           _num_moves ++;
         } while (Next());
         Reset();
@@ -132,6 +136,7 @@ bool Sgf::load_header(const char *s, const seg& range, int *next_offset) {
 
 // Load the remaining part.
 static Coord str2coord(const string &s) {
+    if (s.size() < 2) return M_PASS;
     int x = s[0] - 'a';
     //if (x >= 9) x --;
     int y = s[1] - 'a';
@@ -194,7 +199,10 @@ SgfEntry *Sgf::load(const char *s, const seg &range, int *next_offset) {
         (*next_offset) ++;
         entry->sibling.reset(load(s, seg(*next_offset, e), next_offset));
     } else {
-        *next_offset = get_key_values(s, seg(i, e), [&](const char *_s, const seg& key, const seg& value) { save_sgf_entry(entry, _s, key, value); });
+        *next_offset =
+            get_key_values(s, seg(i, e), [&](const char *_s, const seg& key, const seg& value) {
+                save_sgf_entry(entry, _s, key, value);
+            });
         entry->sibling.reset(load(s, seg(*next_offset, e), next_offset));
     }
     return entry;
@@ -226,8 +234,8 @@ string Sgf::PrintMainVariation() {
     stringstream ss;
     Reset();
     do {
-        pair<Stone, Coord> curr = GetCurr();
-        ss << "[" << _move_idx << "]: " << STR_STONE(curr.first) << " " << coord2str(curr.second);
+        auto curr = GetCurr();
+        ss << "[" << _move_idx << "]: " << STR_STONE(curr.player) << " " << coord2str(curr.move);
         string s = GetCurrComment();
         if (! s.empty()) ss << " Comment: " << s;
         ss << endl;
