@@ -118,6 +118,7 @@ void GoState::SaveTo(GameState& state, const vector<SgfMove> &future_moves) cons
   Stone player = _board._next_player;
 
   state.features.resize(MAX_NUM_FEATURE * BOARD_DIM * BOARD_DIM);
+  std::fill(state.features.begin(), state.features.end(), 0.0);
   state.a.resize(NUM_FUTURE_ACTIONS);
 
   state.move_idx = _board._ply;
