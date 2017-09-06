@@ -34,12 +34,12 @@ class Model_Policy(Model):
 
         # Softmax as the final layer
         self.softmax = nn.Softmax()
-        self.relu = nn.ReLU() # nn.LeakyReLU(0.1)
+        self.relu = nn.LeakyReLU(0.1)
 
     def forward(self, x):
         s = self._var(x["features"])
         for conv, conv_bn in zip(self.convs, self.convs_bn):
-            s = conv_bn(conv(s))
+            s = conv_bn(self.relu(conv(s)))
 
         output = self.final_conv(s)
         actions = []
