@@ -114,7 +114,7 @@ bool RTSMap::GenerateMap(const std::function<uint16_t(int)>& f, int nImpassable,
     do {
         success = true;
         GenerateImpassable(f, nImpassable);
-        int x1, y1, x2, y2;
+        int x1 = -1, y1 = -1, x2 = -1, y2 = -1;
         _infos.clear();
         for (PlayerId i = 0; i < num_player; ++i) {
             if (! find_two_nearby_empty_slots(f, &x1, &y1, &x2, &y2, i)) {
