@@ -114,7 +114,8 @@ class Batch:
         '''s=1 means going back in time by one step, etc'''
         if key is None:
             new_batch = Batch(**{ k : v[s] for k, v in self.batch.items() })
-            new_batch.GC = self.GC
+            if hasattr(self, "GC"):
+                new_batch.GC = self.GC
             return new_batch
         else:
             return self[key][s]
