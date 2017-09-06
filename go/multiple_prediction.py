@@ -42,8 +42,8 @@ class MultiplePrediction:
         for i, pred in enumerate(state_curr["a"]):
             if i == 0:
                 prec1, prec5 = self.accuracy(pred.data, targets[:, i].contiguous(), topk=(1, 5))
-                stats["top1"].feed(prec1[0])
-                stats["top5"].feed(prec5[0])
+                stats["top1_acc"].feed(prec1[0])
+                stats["top5_acc"].feed(prec5[0])
             # backward.
             loss = self.policy_loss((pred + eps).log(), Variable(targets[:, i]))
             stats["loss" + str(i)].feed(loss.data[0])
