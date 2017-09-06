@@ -328,6 +328,7 @@ bool IsGameEnd(const Board *board);
 bool GetStones(const Board* board, Stone player, float *data);
 bool GetSimpleKo(const Board* board, Stone player, float *data);
 bool GetHistory(const Board* board, Stone player, float *data);
+bool GetHistoryExp(const Board* board, Stone player, float *data);
 bool GetDistanceMap(const Board* board, Stone player, float *data);
 
 void GetAllEmptyLocations(const Board* board, AllMoves *all_moves);

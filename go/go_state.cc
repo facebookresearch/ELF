@@ -111,7 +111,8 @@ extended = {
 #define OPPONENT_HISTORY 11
 #define BORDER           12
 #define POSITION_MARK    13
-#define CLOSEST_COLOR    14
+#define OUR_CLOSEST_COLOR    14
+#define OPPONENT_CLOSEST_COLOR   15
 
 void GoState::SaveTo(GameState& state, const vector<SgfMove> &future_moves) const {
   Stone player = _board._next_player;
@@ -130,6 +131,10 @@ void GoState::SaveTo(GameState& state, const vector<SgfMove> &future_moves) cons
   GetStones(&_board, player, LAYER(OUR_STONES));
   GetStones(&_board, OPPONENT(player), LAYER(OPPONENT_STONES));
   GetStones(&_board, S_EMPTY, LAYER(EMPTY_STONES));
+  GetHistoryExp(&_board, player, LAYER(OUR_HISTORY));
+  GetHistoryExp(&_board, OPPONENT(player), LAYER(OPPONENT_HISTORY));
+  GetDistanceMap(&_board, player, LAYER(OUR_CLOSEST_COLOR));
+  GetDistanceMap(&_board, OPPONENT(player), LAYER(OPPONENT_CLOSEST_COLOR));
 
   for (int i = 0; i < NUM_FUTURE_ACTIONS; ++i) {
       int action = future_moves[i].GetAction();

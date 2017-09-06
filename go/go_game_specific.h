@@ -17,7 +17,6 @@
 #define BOARD_DIM 19
 #define MAX_NUM_FEATURE 25
 #define NUM_FUTURE_ACTIONS 3
-#define NUM_PLANES 10
 
 struct GameOptions {
     // Seed.

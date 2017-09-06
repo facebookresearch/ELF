@@ -9,6 +9,7 @@
 
 #include "board.h"
 #include <vector>
+#include <cmath>
 
 #define assert(p, text) do { if (!(p)) { printf((text)); } }while(0)
 #define min(a, b) ( ((a) < (b)) ? (a) : (b) )
@@ -1506,6 +1507,19 @@ bool GetHistory(const Board* board, Stone player, float *data) {
     for (int j = 0; j < BOARD_SIZE; ++j) {
       Coord c = OFFSETXY(i, j);
       if (S_ISA(board->_infos[c].color, player)) data[EXPORT_OFFSET_XY(i, j)] = board->_infos[c].last_placed;
+    }
+  }
+  return true;
+}
+
+bool GetHistoryExp(const Board* board, Stone player, float *data) {
+  memset(data, 0, BOARD_SIZE * BOARD_SIZE * sizeof(float));
+  for (int i = 0; i < BOARD_SIZE; ++i) {
+    for (int j = 0; j < BOARD_SIZE; ++j) {
+      Coord c = OFFSETXY(i, j);
+      if (S_ISA(board->_infos[c].color, player)) {
+          data[EXPORT_OFFSET_XY(i, j)] = exp( (board->_infos[c].last_placed - board->_ply) / 10.0 );
+      }
     }
   }
   return true;
