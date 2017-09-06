@@ -16,6 +16,7 @@
 
 #include "game.h"
 #include "../elf/pybind_interface.h"
+#include "board_feature.h"
 
 class GameContext {
   public:

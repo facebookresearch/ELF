@@ -9,6 +9,9 @@
 
 using namespace std;
 
+#define BOARD_DIM 19
+#define NUM_FUTURE_ACTIONS 3
+
 class GoState {
 private:
     Sgf::SgfIterator _sgf_iter;
@@ -23,7 +26,7 @@ public:
     GoState() { build_handicap_table(); }
     bool NextMove();
     void Reset(const Sgf &sgf);
-    void SaveTo(GameState &state, const vector<SgfMove> &future_moves) const;
+    void SaveTo(GameState &state, const vector<SgfMove> &future_moves, std::mt19937 &rng) const;
     bool NeedReload() const;
     bool GetForwardMoves(vector<SgfMove> *future_moves) const;
 

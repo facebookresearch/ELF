@@ -76,7 +76,7 @@ void GoGame::Act(const std::atomic_bool& done) {
   //meta->tick = _board._ply;
   //meta->terminated = terminal;
   //if (terminal) meta->winner = _sgf.GetWinner();
-  _state.SaveTo(gs, future_moves);
+  _state.SaveTo(gs, future_moves, _rng);
 
   // There is always only 1 player.
   _ai_comm->SendDataWaitReply();

@@ -14,10 +14,6 @@
 #include "elf/hist.h"
 #include "elf/copier.hh"
 
-#define BOARD_DIM 19
-#define MAX_NUM_FEATURE 25
-#define NUM_FUTURE_ACTIONS 3
-
 struct GameOptions {
     // Seed.
     unsigned int seed;

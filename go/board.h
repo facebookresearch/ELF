@@ -18,10 +18,10 @@ extern "C" {
 #include <memory.h>
 #include "common.h"
 
-static const int BOARD_SIZE = 19;
-static const int BOARD_MARGIN = 1;
-static const int BOARD_EXPAND_SIZE = 21;
-static const int NUM_INTERSECTION = 361; // (BOARD_SIZE*BOARD_SIZE);
+const int BOARD_SIZE = 19;
+const int BOARD_MARGIN = 1;
+const int BOARD_EXPAND_SIZE = 21;
+const int NUM_INTERSECTION = 361; // (BOARD_SIZE*BOARD_SIZE);
 
 #define MACRO_BOARD_SIZE 19
 #define MACRO_BOARD_EXPAND_SIZE 21
@@ -323,13 +323,6 @@ Coord GetSimpleKoLocation(const Board *board, Stone *player);
 
 // Check if the game has ended
 bool IsGameEnd(const Board *board);
-
-// Compute features.
-bool GetStones(const Board* board, Stone player, float *data);
-bool GetSimpleKo(const Board* board, Stone player, float *data);
-bool GetHistory(const Board* board, Stone player, float *data);
-bool GetHistoryExp(const Board* board, Stone player, float *data);
-bool GetDistanceMap(const Board* board, Stone player, float *data);
 
 void GetAllEmptyLocations(const Board* board, AllMoves *all_moves);
 

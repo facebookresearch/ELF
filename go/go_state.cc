@@ -2,6 +2,7 @@
 #include <chrono>
 
 #include "go_state.h"
+#include "board_feature.h"
 
 static std::vector<std::string> split(const std::string &s, char delim) {
     std::stringstream ss(s);
@@ -86,59 +87,21 @@ bool GoState::GetForwardMoves(vector<SgfMove> *future_moves) const {
     return future_moves->size() >= NUM_FUTURE_ACTIONS;
 }
 
-static float *board_plane(vector<float> &features, int idx) {
-    return &features[idx * BOARD_DIM * BOARD_DIM];
-}
-
-#define LAYER(idx) board_plane(state.features, idx)
-
-/* darkforestGo/utils/goutils.lua
-extended = {
-    "our liberties", "opponent liberties", "our simpleko", "our stones", "opponent stones", "empty stones", "our history", "opponent history",
-    "border", 'position_mask', 'closest_color'
-},
-*/
-
-#define OUR_LIB          0
-#define OPPONENT_LIB     3
-#define OUR_SIMPLE_KO    6
-#define OUR_STONES       7
-#define OPPONENT_STONES  8
-#define EMPTY_STONES     9
-
-// [TODO]: Other todo features.
-#define OUR_HISTORY      10
-#define OPPONENT_HISTORY 11
-#define BORDER           12
-#define POSITION_MARK    13
-#define OUR_CLOSEST_COLOR    14
-#define OPPONENT_CLOSEST_COLOR   15
-
-void GoState::SaveTo(GameState& state, const vector<SgfMove> &future_moves) const {
-  Stone player = _board._next_player;
-
-  state.features.resize(MAX_NUM_FEATURE * BOARD_DIM * BOARD_DIM);
-  std::fill(state.features.begin(), state.features.end(), 0.0);
+void GoState::SaveTo(GameState& state, const vector<SgfMove> &future_moves, std::mt19937& rng) const {
   state.a.resize(NUM_FUTURE_ACTIONS);
 
   state.move_idx = _board._ply;
   Stone winner = _sgf_iter.GetSgf().GetWinner();
   state.winner = (winner == S_BLACK ? 1 : (winner == S_WHITE ? -1 : 0));
 
-  // Save the current board state to game state.
-  GetLibertyMap3binary(&_board, player, LAYER(OUR_LIB));
-  GetLibertyMap3binary(&_board, OPPONENT(player), LAYER(OPPONENT_LIB));
-  GetSimpleKo(&_board, player, LAYER(OUR_SIMPLE_KO));
-  GetStones(&_board, player, LAYER(OUR_STONES));
-  GetStones(&_board, OPPONENT(player), LAYER(OPPONENT_STONES));
-  GetStones(&_board, S_EMPTY, LAYER(EMPTY_STONES));
-  GetHistoryExp(&_board, player, LAYER(OUR_HISTORY));
-  GetHistoryExp(&_board, OPPONENT(player), LAYER(OPPONENT_HISTORY));
-  GetDistanceMap(&_board, player, LAYER(OUR_CLOSEST_COLOR));
-  GetDistanceMap(&_board, OPPONENT(player), LAYER(OPPONENT_CLOSEST_COLOR));
+  int rot = rng() % 4;
+  bool flip = rng() % 2 == 1;
+
+  BoardFeature bf(_board, (BoardFeature::Rot)rot, flip);
+  bf.Extract(&state.features);
 
   for (int i = 0; i < NUM_FUTURE_ACTIONS; ++i) {
-      int action = future_moves[i].GetAction();
+      int action = bf.GetAction(future_moves[i].move);
       if (action < 0 || action >= BOARD_DIM * BOARD_DIM) {
           Coord move = future_moves[i].move;
           Stone player = future_moves[i].player;

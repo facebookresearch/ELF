@@ -88,10 +88,6 @@ struct SgfMove {
 
     SgfMove(Stone p, Coord m) : player(p), move(m) {
     }
-
-    int GetAction() const {
-        return EXPORT_OFFSET_XY(X(move), Y(move));
-    }
 };
 
 // A library to load Sgf file for Go.
