@@ -279,6 +279,7 @@ void FindAllCandidateMovesInRegion(const Board* board, const Region *r, Stone pl
 // Find all valid moves including self-atari.
 void FindAllValidMoves(const Board* board, Stone player, AllMoves *all_moves);
 void ShowBoardFancy(const Board *board, ShowChoice choice);
+void ShowBoard2Buf(const Board *board, ShowChoice choice, char *buf);
 void ShowBoard(const Board *board, ShowChoice choice);
 void DumpBoard(const Board *board);
 void VerifyBoard(Board* board);
@@ -366,6 +367,7 @@ float GetTrompTaylorScore(const Board *board, const Stone *group_stats, Stone *t
 // Get features.
 bool GetLibertyMap(const Board* board, Stone player, float* data);
 bool GetLibertyMap3(const Board* board, Stone player, float* data);
+bool GetLibertyMap3binary(const Board* board, Stone player, float* data);
 bool GetStones(const Board* board, Stone player, float *data);
 bool GetSimpleKo(const Board* board, Stone player, float *data);
 bool GetHistory(const Board* board, Stone player, float *data);

@@ -1189,9 +1189,8 @@ void str_concat(char *buf, int *len, const char *str) {
   *len += sprintf(buf + *len, "%s", str);
 }
 
-void ShowBoard(const Board *board, ShowChoice choice) {
-  // Simple function to show board.
-  char buf[2000];
+void ShowBoard2Buf(const Board *board, ShowChoice choice, char *buf) {
+  // Warning [TODO]: possibly buffer overflow.
   char buf2[30];
   int len = 0;
   str_concat(buf, &len, "   A B C D E F G H J K L M N O P Q R S T\n");
@@ -1235,6 +1234,12 @@ void ShowBoard(const Board *board, ShowChoice choice) {
     len += sprintf(buf + len, "\n   Last move2 = %s", get_move_str(board->_last_move2, board->_next_player, buf2));
     len += sprintf(buf + len, "\n   Ko point = %s [Age = %d]", get_move_str(board->_simple_ko, board->_simple_ko_color, buf2), board->_ko_age);
   }
+}
+
+void ShowBoard(const Board *board, ShowChoice choice) {
+  // Simple function to show board.
+  char buf[2000];
+  ShowBoard2Buf(board, choice, buf);
   // Finally print
   fprintf(stderr, "%s", buf);
 }
@@ -1436,15 +1441,7 @@ bool GetLibertyMap(const Board* board, Stone player, float* data) {
 }
 
 bool GetLibertyMap3(const Board* board, Stone player, float* data) {
-  // We assume the output liberties is a 19x19 tensor.
-  /*
-  if (THTensor_nDimension(liberties) != 2) return false;
-  if (THTensor_size(liberties, 1) != BOARD_SIZE) return false;
-  if (THTensor_size(liberties, 2) != BOARD_SIZE) return false;
-  float *data = THTensor_data(liberties);
-
-  int stride = THTensor_stride(liberties, 1);
-  */
+  // We assume the output liberties is a 3x19x19 tensor.
   // == 1, == 2, >= 3
   memset(data, 0, 3 * BOARD_SIZE * BOARD_SIZE * sizeof(float));
   for (int i = 1; i < board->_num_groups; ++i) {
@@ -1460,6 +1457,26 @@ bool GetLibertyMap3(const Board* board, Stone player, float* data) {
 
   return true;
 }
+
+
+bool GetLibertyMap3binary(const Board* board, Stone player, float* data) {
+  // We assume the output liberties is a 3x19x19 tensor.
+  // == 1, == 2, >= 3
+  memset(data, 0, 3 * BOARD_SIZE * BOARD_SIZE * sizeof(float));
+  for (int i = 1; i < board->_num_groups; ++i) {
+    if (S_ISA(board->_groups[i].color, player)) {
+      int liberty = board->_groups[i].liberties;
+      TRAVERSE(board, i, c) {
+        if (liberty == 1) data[EXPORT_OFFSET_PLANE(c, 0)] = 1.0;
+        else if (liberty == 2) data[EXPORT_OFFSET_PLANE(c, 1)] = 1.0;
+        else data[EXPORT_OFFSET_PLANE(c, 2)] = 1.0;
+      } ENDTRAVERSE
+    }
+  }
+
+  return true;
+}
+
 
 bool GetStones(const Board* board, Stone player, float *data) {
   memset(data, 0, BOARD_SIZE * BOARD_SIZE * sizeof(float));

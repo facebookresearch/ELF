@@ -117,6 +117,8 @@ public:
               else return SgfMove(_curr->player, _curr->move);
           }
 
+          Coord GetCoord() const { if (done()) return M_PASS; else return _curr->move; }
+
           string GetCurrComment() const { return ! done() ? _curr->comment : string(""); }
 
           bool done() const { return _curr == nullptr; }

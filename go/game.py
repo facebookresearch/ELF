@@ -74,10 +74,11 @@ if __name__ == '__main__':
 
     GC = loader.initialize()
 
-    def actor(batch):
-        pass
+    def train(batch):
+        import pdb
+        pdb.set_trace()
 
-    GC.reg_callback("actor", actor)
+    GC.reg_callback("train", train)
 
     reward_dist = Counter()
 

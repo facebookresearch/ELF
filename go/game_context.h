@@ -1,3 +1,12 @@
+/**
+* Copyright (c) 2017-present, Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD-style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
+*/
+
 //File: game_context.h
 //Author: Yuxin Wu <ppwwyyxxc@gmail.com>
 
@@ -14,7 +23,7 @@ class GameContext {
 
   private:
     std::unique_ptr<GC> _context;
-    std::vector<GoGame> games;
+    std::vector<GoGame> _games;
     const int _num_action = BOARD_DIM * BOARD_DIM;
 
     std::unique_ptr<RBuffer> _shared_buffer;
@@ -23,7 +32,7 @@ class GameContext {
     GameContext(const ContextOptions& context_options, const GameOptions& options) {
       _context.reset(new GC{context_options, options});
       for (int i = 0; i < context_options.num_games; ++i) {
-          games.emplace_back(i, options);
+          _games.emplace_back(i, options);
       }
 
       _shared_buffer.reset(new RBuffer([](const std::string &name) {
@@ -44,7 +53,7 @@ class GameContext {
             for (auto &s : state.v()) {
                 s.Init(game_idx, _num_action);
             }
-            auto& game = games[game_idx];
+            auto& game = _games[game_idx];
             game.Init(&ai_comm, rbuffer);
             game.MainLoop(done);
         };
@@ -69,8 +78,15 @@ class GameContext {
         if (key == "features") return EntryInfo(key, type_name, {MAX_NUM_FEATURE, BOARD_DIM, BOARD_DIM});
         else if (key == "a") return EntryInfo(key, type_name, {NUM_FUTURE_ACTIONS});
         else if (key == "last_terminal" || key == "id" || key == "seq" || key == "game_counter") return EntryInfo(key, type_name);
+        else if (key == "move_idx") return EntryInfo(key, type_name);
+        else if (key == "winner") return EntryInfo(key, type_name);
 
         return EntryInfo();
+    }
+
+    std::string ShowBoard(int game_idx) const {
+        if (game_idx < 0 || game_idx >= (int)_games.size()) return "Invalid game_idx [" + std::to_string(game_idx) + "]";
+        return _games[game_idx].ShowBoard();
     }
 
     CONTEXT_CALLS(GC, _context);

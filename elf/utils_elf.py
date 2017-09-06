@@ -60,6 +60,7 @@ class Batch:
     def load(GC, input_reply, desc, group_id, use_gpu=True, use_numpy=False):
         batch = Batch()
         batch.infos = { }
+        batch.GC = GC
 
         keys = desc["keys"]
         T = desc["T"]
@@ -112,7 +113,9 @@ class Batch:
     def hist(self, s, key=None):
         '''s=1 means going back in time by one step, etc'''
         if key is None:
-            return Batch(**{ k : v[s] for k, v in self.batch.items() })
+            new_batch = Batch(**{ k : v[s] for k, v in self.batch.items() })
+            new_batch.GC = self.GC
+            return new_batch
         else:
             return self[key][s]
 

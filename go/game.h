@@ -1,3 +1,12 @@
+/**
+* Copyright (c) 2017-present, Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD-style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
+*/
+
 #pragma once
 
 #include "elf/pybind_helper.h"
@@ -6,11 +15,9 @@
 #include "elf/shared_replay_buffer.h"
 
 #include "go_game_specific.h"
-#include "board.h"
-#include "sgf.h"
+#include "go_state.h"
 #include <random>
 #include <map>
-#include <sstream>
 
 using Context = ContextT<GameOptions, HistT<GameState>>;
 using Comm = typename Context::Comm;
@@ -34,17 +41,13 @@ private:
 
     // Current game, its sgf record and game board state.
     int _curr_game;
-    Sgf::SgfIterator _sgf_iter;
-    Board _board;
+    GoState _state;
 
     // Shared Sgf buffer.
     RBuffer *_rbuffer = nullptr;
 
-    // handicap table.
-    map<int, vector<Coord> > _handicaps;
-
     void reload();
-    void build_handicap_table();
+    const Sgf &pick_sgf();
     void print_context() const;
 
 public:
@@ -66,5 +69,5 @@ public:
     }
 
     void Act(const std::atomic_bool& done);
-    void SaveTo(GameState &state, const vector<SgfMove> &future_moves) const;
+    string ShowBoard() const { return _state.ShowBoard(); }
 };

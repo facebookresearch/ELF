@@ -1,3 +1,12 @@
+/**
+* Copyright (c) 2017-present, Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD-style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
+*/
+
 #pragma once
 
 #include "elf/pybind_helper.h"
@@ -37,6 +46,9 @@ struct GameState {
     int32_t game_counter = 0;
     char last_terminal = 0;
 
+    int32_t move_idx = -1;
+    int32_t winner = 0; // B +1, W -1, U 0
+
     std::string player_name;
 
     void Clear() { }
@@ -66,7 +78,7 @@ struct GameState {
         last_terminal = 0;
     }
 
-    DECLARE_FIELD(GameState, id, seq, game_counter, last_terminal, features, a);
-    REGISTER_PYBIND_FIELDS(id, seq, game_counter, last_terminal, features, a);
+    DECLARE_FIELD(GameState, id, seq, game_counter, last_terminal, features, a, move_idx, winner);
+    REGISTER_PYBIND_FIELDS(id, seq, game_counter, last_terminal, features, a, move_idx, winner);
 };
 
