@@ -148,7 +148,7 @@ bool Sgf::load_header(const char *s, const seg& range, int *next_offset) {
     // Load the header.
     int i = range.first;
     // std::cout << "[" << range.first << ", " << range.second << ")" << std::endl;
-    while (s[i] != ';' && i < 2) {
+    while (s[i] != ';' && i < range.second) {
         // std::cout << "Char[" << i << "]: " << s[i] << std::endl;
         i++;
     }
