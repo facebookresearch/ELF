@@ -70,7 +70,7 @@ class Batch:
             v, info = Batch._alloc(info, use_gpu=use_gpu, use_numpy=use_numpy)
             batch.batch[info.key] = v
             batch.infos[info.key] = info
-            print(key + " : " + str(v.size()))
+            # print(key + " : " + str(v.size()))
             GC.AddTensor(group_id, input_reply, info)
 
         return batch
