@@ -32,7 +32,6 @@ struct GameState {
     int32_t winner;
 
     // Used for self-play.
-    uint32_t player_id;
     std::string player_name;
 
     // Extra data.
@@ -41,7 +40,7 @@ struct GameState {
     // Extracted feature map.
     std::vector<float> s;
 
-    // Resource for each player (one-hot representation).
+    // Resource for each player (one-hot representation). Not used now. 
     std::vector<float> res;
 
     float last_r;
@@ -112,7 +111,7 @@ struct GameState {
     }
 
     DECLARE_FIELD(GameState, id, a, V, pi, action_type, last_r, s, res, rv, terminal, seq, game_counter, last_terminal, unit_loc, target_loc, cmd_type, build_type);
-    REGISTER_PYBIND_FIELDS(id, a, V, pi, action_type, last_r, s, res, tick, winner, player_id, ai_start_tick, last_terminal);
+    REGISTER_PYBIND_FIELDS(id, a, V, pi, action_type, last_r, s, res, tick, winner, ai_start_tick, last_terminal);
 };
 
 using Context = ContextT<PythonOptions, HistT<GameState>>;

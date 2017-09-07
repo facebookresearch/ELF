@@ -27,6 +27,8 @@ protected:
     // Feature extraction.
     void save_structured_state(const GameEnv &env, Data *data) const override;
 
+    void compute_state(const GameEnv &env, std::vector<float> *state) const;
+
 public:
     AIBase() { }
     AIBase(const AIOptions &opt, CmdReceiver *receiver, AIComm *ai_comm = nullptr)

@@ -43,9 +43,23 @@ void AIBase::save_structured_state(const GameEnv &env, Data *data) const {
     game->tick = _receiver->GetTick();
     game->winner = env.GetWinnerId();
     game->terminal = env.GetTermination() ? 1 : 0;
-    game->player_id = _player_id;
     game->player_name = _name;
 
+    // Extra data.
+    game->ai_start_tick = 0;
+
+    compute_state(env, &game->s);
+
+    game->last_r = 0.0;
+    int winner = env.GetWinnerId();
+
+    if (winner != INVALID) {
+        if (winner == _player_id) game->last_r = 1.0;
+        else game->last_r = -1.0;
+    }
+}
+
+void AIBase::compute_state(const GameEnv &env, std::vector<float> *state) const {
     const int n_type = env.GetGameDef().GetNumUnitType();
     const int n_additional = 2;
     const int resource_grid = 50;
@@ -56,19 +70,12 @@ void AIBase::save_structured_state(const GameEnv &env, Data *data) const {
 
     // [Channel, width, height]
     const int sz = total_channel * m.GetXSize() * m.GetYSize();
-    game->s.resize(sz);
-    std::fill(game->s.begin(), game->s.end(), 0.0);
+    state->resize(sz);
+    std::fill(state->begin(), state->end(), 0.0);
 
     std::map<int, std::pair<int, float> > idx2record;
 
-    // res is not used.
-    game->res.resize(env.GetNumOfPlayers() * res_pt);
-    std::fill(game->res.begin(), game->res.end(), 0.0);
-
 #define _OFFSET(_c, _x, _y) (((_c) * m.GetYSize() + (_y)) * m.GetXSize() + (_x))
-
-    // Extra data.
-    game->ai_start_tick = 0;
 
     PlayerId visibility_check = _respect_fow ? _player_id : INVALID;
 
@@ -109,7 +116,7 @@ void AIBase::save_structured_state(const GameEnv &env, Data *data) const {
     }
 
     for (const auto &p : idx2record) {
-        game->s[p.first] = p.second.second / p.second.first;
+        state->at(p.first) = p.second.second / p.second.first;
     }
 
     myworker = min(myworker, 3);
@@ -121,21 +128,12 @@ void AIBase::save_structured_state(const GameEnv &env, Data *data) const {
         if (visibility_check != INVALID && visibility_check != i) continue;
         const auto &player = env.GetPlayer(i);
         quantized_r[i] = min(int(player.GetResource() / resource_grid), res_pt - 1);
-        // game->res[i * res_pt + quantized_r[i]] = 1.0;
     }
 
     if (_player_id != INVALID) {
         // Add resource layer for the current player.
         const int c = _OFFSET(n_type + n_additional + quantized_r[_player_id], 0, 0);
-        std::fill(game->s.begin() + c, game->s.begin() + c + m.GetXSize() * m.GetYSize(), 1.0);
-    }
-
-    game->last_r = 0.0;
-    int winner = env.GetWinnerId();
-
-    if (winner != INVALID) {
-        if (winner == _player_id) game->last_r = 1.0;
-        else game->last_r = -1.0;
+        std::fill(state->begin() + c, state->begin() + c + m.GetXSize() * m.GetYSize(), 1.0);
     }
 }
 
