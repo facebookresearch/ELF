@@ -118,7 +118,7 @@ if __name__ == '__main__':
 
     actor_count = 0
     train_count = 0
-    def actor(sel, sel_gpu):
+    def actor(batch):
         global actor_count, GC
         actor_count += 1
         batchsize = sel["s"].size(1)
@@ -132,7 +132,7 @@ if __name__ == '__main__':
         '''
         return reply
 
-    def train(sel, sel_gpu):
+    def train(batch):
         global train_count
         # pickle.dump(sel.to_numpy(), open("tmp-train%d.bin" % train_count, "wb"), protocol=2)
         train_count += 1
