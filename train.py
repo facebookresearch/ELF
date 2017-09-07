@@ -44,8 +44,14 @@ if __name__ == '__main__':
 
     trainer.setup(sampler=sampler, mi=mi, rl_method=method)
 
+    def actor(batch):
+        import pdb
+        pdb.set_trace()
+        reply = trainer.actor(batch)
+        return reply
+
     GC.reg_callback("train", trainer.train)
-    GC.reg_callback("actor", trainer.actor)
+    GC.reg_callback("actor", actor)
     runner.setup(GC, episode_summary=trainer.episode_summary,
                 episode_start=trainer.episode_start)
 

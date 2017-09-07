@@ -52,7 +52,7 @@ public:
         return std::map<std::string, int>{
             { "num_action", GameDef::GetNumAction() },
             { "num_unit_type", GameDef::GetNumUnitType() },
-            { "num_planes", _num_planes }, 
+            { "num_planes", _num_planes },
             { "resource_dim", 2 * NUM_RES_SLOT },
             { "max_unit_cmd", _context->options().max_unit_cmd },
             { "map_x", _context->options().map_size_x },
@@ -70,7 +70,7 @@ public:
 
         const int max_unit_cmd = _context->options().max_unit_cmd;
 
-        if (key == "s") return EntryInfo(key, type_name, { _num_planes,  _context->options().map_size_x, _context->options().map_size_y});
+        if (key == "s") return EntryInfo(key, type_name, { _num_planes,  _context->options().map_size_y, _context->options().map_size_x});
         else if (key == "last_r" || key == "terminal" || key == "last_terminal" || key == "id" || key == "seq" || key == "game_counter" || key == "player_id") return EntryInfo(key, type_name);
         else if (key == "pi") return EntryInfo(key, type_name, {GameDef::GetNumAction()});
         else if (key == "a" || key == "rv" || key == "V") return EntryInfo(key, type_name);

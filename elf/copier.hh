@@ -169,7 +169,9 @@ struct CopyItemT {
     }
 
     size_t Capacity(const State &s) const {
-      return buf.size() / mm->size(s);
+      size_t sz = mm->size(s);
+      assert(sz > 0);
+      return buf.size() / sz;
     }
 
     char *ptr() const { return static_cast<char*>(buf.ptr()); }

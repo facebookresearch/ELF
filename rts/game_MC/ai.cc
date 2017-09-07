@@ -56,22 +56,27 @@ void AIBase::save_structured_state(const GameEnv &env, Data *data) const {
 
     if (_recent_states.size() == 1) {
         compute_state(env, &game->s);
+        // std::cout << "(1) size_s = " << game->s.size() << std::endl << std::flush;
     } else {
         std::vector<float> &state = _recent_states.GetRoom();
         compute_state(env, &state);
 
         const size_t maxlen = _recent_states.maxlen();
         game->s.resize(maxlen * state.size());
+        std::cout << "(" << maxlen << ") size_s = " << game->s.size() << std::endl << std::flush;
         std::fill(game->s.begin(), game->s.end(), 0.0);
-        // Then put all states to game->s. 
+        // Then put all states to game->s.
         for (size_t i = 0; i < maxlen; ++i) {
             const auto &s = _recent_states.get_from_push(i);
             if (! s.empty()) {
                 assert(s.size() == state.size());
-                std::copy(s.begin(), s.end(), &game->s[i * s.size()]); 
+                std::copy(s.begin(), s.end(), &game->s[i * s.size()]);
             }
         }
     }
+
+    // res is not used.
+    game->res.resize(env.GetNumOfPlayers() * NUM_RES_SLOT, 0.0);
 
     game->last_r = 0.0;
     int winner = env.GetWinnerId();
@@ -228,7 +233,7 @@ bool TrainedAI2::on_act(const GameEnv &env) {
                     if (t == CmdInput::CI_GATHER) base = env.FindClosestBase(Player::ExtractPlayerId(id));
 
                     _cmd_inputs.emplace_back(t, id, target_loc, target_id, base, build_type);
-                } 
+                }
 
                 return gather_decide(env, [&](const GameEnv &e, string *s, AssignedCmds *assigned_cmds) {
                         return _mc_rule_actor.ActByCmd(e, _cmd_inputs, s, assigned_cmds);

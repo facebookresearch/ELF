@@ -28,7 +28,7 @@ struct AIOptions {
     // Whether it respects FoW.
     bool fow;
 
-    // Number of frames that will be put to the state and send to training. 
+    // Number of frames that will be put to the state and send to training.
     int num_frames_in_state;
 
     // other args.
@@ -40,11 +40,11 @@ struct AIOptions {
     std::string info() const {
         std::stringstream ss;
         ss << "[name=" << name << "][fs=" << fs << "][type=" << type << "][FoW=" << (fow ? "True" : "False") << "][#frames_in_state=" << num_frames_in_state << "]";
-        if (! args.empty()) ss << "[args=" << args << "]"; 
+        if (! args.empty()) ss << "[args=" << args << "]";
         return ss.str();
     }
 
-    REGISTER_PYBIND_FIELDS(type, fs, name, fow, args);
+    REGISTER_PYBIND_FIELDS(type, fs, name, fow, num_frames_in_state, args);
 };
 
 struct PythonOptions {
@@ -65,7 +65,7 @@ struct PythonOptions {
     // When not empty, save replays to the files.
     std::string save_replay_prefix;
 
-    // Map size 
+    // Map size
     int map_size_x, map_size_y;
 
     // Maximum unit command you could send per action.

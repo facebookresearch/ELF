@@ -16,6 +16,7 @@ class CommonLoader:
                 ("max_tick", dict(type=int, default=30000, help="Maximal tick")),
                 ("shuffle_player", dict(action="store_true")),
                 ("mcts_threads", 64),
+                ("num_frames_in_state", 1),
                 ("seed", 0),
                 ("actor_only", dict(action="store_true")),
                 ("additional_labels", dict(type=str, default=None, help="Add additional labels in the batch. E.g., id,seq,last_terminal")),
@@ -54,6 +55,7 @@ class CommonLoader:
 
         for i, player in enumerate(players_str.split(";")):
             ai_options = self.module.AIOptions()
+            ai_options.num_frames_in_state = self.args.num_frames_in_state
             for item in player.split(","):
                 key, value = item.split("=")
                 self._set_key(ai_options, key, value)
