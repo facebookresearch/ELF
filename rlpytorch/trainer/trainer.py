@@ -51,7 +51,7 @@ class Evaluator:
         # actor model.
         m = self.mi["actor"]
         m.set_volatile(True)
-        state_curr = m(batch.hist(0))
+        state_curr = m.forward(batch.hist(0))
         m.set_volatile(False)
 
         action = self.sampler.sample(state_curr)

@@ -96,12 +96,14 @@ class FieldMemoryManagerT<Struct, VecT,
 
     void copy_to_mem(const Struct& s, void* dst) override {
       const VecT* srcptr = reinterpret_cast<const VecT*>(reinterpret_cast<const char*>(&s) + this->_offset);
+      // std::cout << "copy_to_mem: src size: " << srcptr->size() << std::endl << std::flush;
       memcpy(dst, srcptr->data(), srcptr->size() * sizeof(typename VecT::value_type));
     }
 
     void copy_from_mem(const void *src, Struct& s) override {
       // Note that we need to preallocate the size.
       VecT* dstptr = reinterpret_cast<VecT*>(reinterpret_cast<char*>(&s) + this->_offset);
+      // std::cout << "copy_from_mem: dst size: " << dstptr->size() << std::endl << std::flush;
       memcpy(dstptr->data(), src, dstptr->size() * sizeof(typename VecT::value_type));
     }
 

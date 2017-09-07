@@ -54,7 +54,7 @@ void AIBase::save_structured_state(const GameEnv &env, Data *data) const {
     // Extra data.
     game->ai_start_tick = 0;
 
-    if (_recent_states.size() == 1) {
+    if (_recent_states.maxlen() == 1) {
         compute_state(env, &game->s);
         // std::cout << "(1) size_s = " << game->s.size() << std::endl << std::flush;
     } else {
@@ -63,7 +63,7 @@ void AIBase::save_structured_state(const GameEnv &env, Data *data) const {
 
         const size_t maxlen = _recent_states.maxlen();
         game->s.resize(maxlen * state.size());
-        std::cout << "(" << maxlen << ") size_s = " << game->s.size() << std::endl << std::flush;
+        // std::cout << "(" << maxlen << ") size_s = " << game->s.size() << std::endl << std::flush;
         std::fill(game->s.begin(), game->s.end(), 0.0);
         // Then put all states to game->s.
         for (size_t i = 0; i < maxlen; ++i) {
