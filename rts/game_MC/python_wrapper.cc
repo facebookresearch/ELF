@@ -26,11 +26,19 @@ public:
 private:
     std::unique_ptr<GC> _context;
     Wrapper _wrapper;
+    int _num_frames_in_state;
+    int _num_planes;
 
 public:
     GameContext(const ContextOptions& context_options, const PythonOptions& options) {
       GameDef::GlobalInit();
       _context.reset(new GC{context_options, options});
+
+      _num_frames_in_state = 1;
+      for (const AIOptions& opt : options.ai_options) {
+          _num_frames_in_state = max(_num_frames_in_state, opt.num_frames_in_state);
+      }
+      _num_planes = (GameDef::GetNumUnitType() + 7) * _num_frames_in_state;
     }
 
     void Start() {
@@ -44,6 +52,7 @@ public:
         return std::map<std::string, int>{
             { "num_action", GameDef::GetNumAction() },
             { "num_unit_type", GameDef::GetNumUnitType() },
+            { "num_planes", _num_planes }, 
             { "resource_dim", 2 * NUM_RES_SLOT },
             { "max_unit_cmd", _context->options().max_unit_cmd },
             { "map_x", _context->options().map_size_x },
@@ -61,7 +70,7 @@ public:
 
         const int max_unit_cmd = _context->options().max_unit_cmd;
 
-        if (key == "s") return EntryInfo(key, type_name, {GameDef::GetNumUnitType() + 7, _context->options().map_size_x, _context->options().map_size_y});
+        if (key == "s") return EntryInfo(key, type_name, { _num_planes,  _context->options().map_size_x, _context->options().map_size_y});
         else if (key == "last_r" || key == "terminal" || key == "last_terminal" || key == "id" || key == "seq" || key == "game_counter" || key == "player_id") return EntryInfo(key, type_name);
         else if (key == "pi") return EntryInfo(key, type_name, {GameDef::GetNumAction()});
         else if (key == "a" || key == "rv" || key == "V") return EntryInfo(key, type_name);

@@ -12,6 +12,7 @@
 #include "engine/ai.h"
 #include "engine/cmd_util.h"
 #include "engine/cmd_interface.h"
+#include "elf/circular_queue.h"
 #include "python_options.h"
 #include "mc_rule_actor.h"
 #define NUM_RES_SLOT 5
@@ -24,16 +25,22 @@ class AIBase : public AIWithComm<AIComm> {
 protected:
     bool _respect_fow;
 
+    // History to send. 
+    mutable CircularQueue<std::vector<float>> _recent_states; 
+
     // Feature extraction.
     void save_structured_state(const GameEnv &env, Data *data) const override;
 
     void compute_state(const GameEnv &env, std::vector<float> *state) const;
 
 public:
-    AIBase() { }
+    AIBase() : _recent_states(1) { }
     AIBase(const AIOptions &opt, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
-        : AIWithComm<AIComm>(opt.name, opt.fs, receiver, ai_comm), _respect_fow(opt.fow) {
+        : AIWithComm<AIComm>(opt.name, opt.fs, receiver, ai_comm), _respect_fow(opt.fow), _recent_states(opt.num_frames_in_state) {
+       Reset();
     }
+
+    void Reset() override;
 };
 
 // Simple AI, rule-based AI for Mini-RTS
@@ -164,7 +171,7 @@ public:
     }
 
     void Reset() override {
-        AIWithComm::Reset();
+        AIBase::Reset();
         if (_ai_comm->seq_info().game_counter > 0) {
             // Decay latest_start.
             _latest_start *= _latest_start_decay;

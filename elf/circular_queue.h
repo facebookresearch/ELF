@@ -54,6 +54,13 @@ public:
         return true;
     }
 
+    T &GetRoom() {
+        if (full()) Pop();
+        T &v = ItemPush();
+        Push();
+        return v;
+    }
+
     std::vector<T> &v() { return _q; }
 
     const T &get_from_push(int i) const {

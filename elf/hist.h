@@ -32,9 +32,7 @@ public:
 
     DataPrepareReturn Prepare(const SeqInfo &seq) {
         // we move the history forward.
-        if (_h->full()) _h->Pop();
-        _h->Push();
-        return newest().Prepare(seq);
+        return _h->GetRoom().Prepare(seq);
     }
 
     // Note that these two will be called after .Push, so we need to retrieve them from .newest().

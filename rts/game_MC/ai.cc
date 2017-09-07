@@ -38,6 +38,12 @@ static inline void accu_value(int idx, float val, std::map<int, std::pair<int, f
     }
 }
 
+void AIBase::Reset() {
+    for (auto &v : _recent_states.v()) {
+        v.clear();
+    }
+}
+
 void AIBase::save_structured_state(const GameEnv &env, Data *data) const {
     GameState *game = &data->newest();
     game->tick = _receiver->GetTick();
@@ -48,7 +54,24 @@ void AIBase::save_structured_state(const GameEnv &env, Data *data) const {
     // Extra data.
     game->ai_start_tick = 0;
 
-    compute_state(env, &game->s);
+    if (_recent_states.size() == 1) {
+        compute_state(env, &game->s);
+    } else {
+        std::vector<float> &state = _recent_states.GetRoom();
+        compute_state(env, &state);
+
+        const size_t maxlen = _recent_states.maxlen();
+        game->s.resize(maxlen * state.size());
+        std::fill(game->s.begin(), game->s.end(), 0.0);
+        // Then put all states to game->s. 
+        for (size_t i = 0; i < maxlen; ++i) {
+            const auto &s = _recent_states.get_from_push(i);
+            if (! s.empty()) {
+                assert(s.size() == state.size());
+                std::copy(s.begin(), s.end(), &game->s[i * s.size()]); 
+            }
+        }
+    }
 
     game->last_r = 0.0;
     int winner = env.GetWinnerId();
