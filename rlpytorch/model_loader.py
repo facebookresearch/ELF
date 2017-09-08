@@ -21,6 +21,7 @@ class ModelLoader:
             ("gpu", dict(type=int, help="gpu to use", default=None)),
             ("load", dict(type=str, help="load model", default=None)),
             ("onload", dict(type=str, help="function(s) to call after loading. e.g., reset,zero_first_layer. These functions are specified in the model", default=None)),
+            ("omit_keys", dict(type=str, help="omitted keys when loading.", default=None)),
         ]
         if hasattr(model_class, "get_define_args"):
             define_args += model_class.get_define_args()
@@ -38,7 +39,12 @@ class ModelLoader:
 
         if args.load is not None:
             print("Load from " + args.load)
-            model.load(args.load)
+            if args.omit_keys is not None:
+                omit_keys = args.omit_keys.split(",")
+                print("Omit_keys = " + str(omit_keys))
+            else:
+                omit_keys = []
+            model.load(args.load, omit_keys=omit_keys)
             print("Loaded = " + model.filename)
 
         if args.onload is not None:

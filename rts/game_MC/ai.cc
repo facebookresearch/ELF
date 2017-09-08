@@ -39,6 +39,7 @@ static inline void accu_value(int idx, float val, std::map<int, std::pair<int, f
 }
 
 void AIBase::Reset() {
+    AIWithComm<AIComm>::Reset();
     for (auto &v : _recent_states.v()) {
         v.clear();
     }

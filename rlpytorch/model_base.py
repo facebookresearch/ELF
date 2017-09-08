@@ -49,7 +49,7 @@ class Model(nn.Module):
                 sleep(1)
         print("Failed to save %s after %d trials, giving up ..." % (filename, num_trial))
 
-    def load(self, filename):
+    def load(self, filename, omit_keys=[]):
         data = torch.load(filename)
         if "args" in data:
             # Reload the structure of the model.
@@ -59,6 +59,10 @@ class Model(nn.Module):
         if isinstance(data, OrderedDict):
             self.load_state_dict(data)
         else:
+            for k in omit_keys:
+                del data["stats_dict"][k + ".weight"]
+                del data["stats_dict"][k + ".bias"]
+
             self.load_state_dict(data["stats_dict"])
         self.step = data.get("step", 0)
         self.filename = data.get("filename", filename)

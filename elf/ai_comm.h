@@ -79,6 +79,7 @@ public:
     }
 
     void Restart() {
+        // std::cout << "[" << _info.meta.id << "] Restarting" << std::endl;
         _info.data.Restart();
         _curr_seq.NewEpisode();
     }

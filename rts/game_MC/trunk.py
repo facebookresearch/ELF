@@ -11,10 +11,10 @@ class MiniRTSNet(Model):
         self._init(args)
 
     def _init(self, args):
-        self.input_channel = args.params["num_planes"]
         self.m = args.params["num_unit_type"] + 7
-        self.mapx = args.params["map_x"]
-        self.mapy = args.params["map_y"]
+        self.input_channel = args.params.get("num_planes", self.m)
+        self.mapx = args.params.get("map_x", 20)
+        self.mapy = args.params.get("map_y", 20)
         self.pool = nn.MaxPool2d(2, 2)
 
         # self.arch = "ccpccp"
