@@ -1,8 +1,6 @@
 #include "sgf.h"
-#include "board.h"
 #include <fstream>
 #include <sstream>
-#include <iostream>
 
 using namespace std;
 
@@ -18,16 +16,9 @@ static std::string trim(const std::string& str) {
 // [start, end)
 typedef pair<int, int> seg;
 
-bool Sgf::Load(const string& filename) {
-    // std::cout << "Loading SGF: " << filename << std::endl;
-    // Load the game.
-    ifstream iFile(filename);
-    stringstream ss;
-    ss << iFile.rdbuf();
-    string s = ss.str();
-
-    const char *str = s.c_str();
-    int len = s.size();
+bool Sgf::load_game(const string& filename, const string& game_string) {
+    const char *str = game_string.c_str();
+    int len = game_string.size();
 
     _header.Reset();
     int next_offset = 0;
@@ -55,6 +46,23 @@ bool Sgf::Load(const string& filename) {
         std::cout << "Failed to read the header of " << filename << std::endl;
     }
     return false;
+}
+
+bool Sgf::Load(const string& filename, TarLoader& tar_loader) {
+  size_t last_slash_idx = filename.find_last_of("/");
+  string basename = filename.substr(last_slash_idx+1);
+  string s = tar_loader.Load(basename);
+  return load_game(filename, s);
+}
+
+bool Sgf::Load(const string& filename) {
+    // std::cout << "Loading SGF: " << filename << std::endl;
+    // Load the game.
+    ifstream iFile(filename);
+    stringstream ss;
+    ss << iFile.rdbuf();
+    string s = ss.str();
+    return load_game(filename, s);
 }
 
 #define STATE_KEY 0

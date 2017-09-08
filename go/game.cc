@@ -28,23 +28,29 @@ GoGame::GoGame(int game_idx, const GameOptions& options) : _options(options) {
     }
     _rng.seed(seed);
 
-    // Get all .sgf file in the directory.
     if (_options.verbose) std::cout << "[" << _game_idx << "] Loading list_file: " << options.list_filename << std::endl;
-    ifstream iFile(options.list_filename);
-    _games.clear();
-    for (string this_game; std::getline(iFile, this_game) ; ) {
-      _games.push_back(this_game);
+    if (options.list_filename.substr(options.list_filename.find_last_of(".") + 1) == "tar") {
+      // Get all .sgf from tar
+      TarLoader tl = TarLoader(options.list_filename.c_str());
+      _games = tl.List();
+    } else {
+      // Get all .sgf file in the directory.
+      ifstream iFile(options.list_filename);
+      _games.clear();
+      for (string this_game; std::getline(iFile, this_game) ; ) {
+        _games.push_back(this_game);
+      }
+      while (_games.back().empty()) _games.pop_back();
+
+      // Get the path of the filename.
+      _path = string(options.list_filename);
+      int i = _path.size() - 1;
+      while (_path[i] != '/' && i >= 0) i --;
+
+      if (i >= 0) _path = _path.substr(0, i + 1);
+      else _path = "";
     }
-    while (_games.back().empty()) _games.pop_back();
     if (_options.verbose) std::cout << "[" << _game_idx << "] Loaded: #Game: " << _games.size() << std::endl;
-
-    // Get the path of the filename.
-    _path = string(options.list_filename);
-    int i = _path.size() - 1;
-    while (_path[i] != '/' && i >= 0) i --;
-
-    if (i >= 0) _path = _path.substr(0, i + 1);
-    else _path = "";
 
     if (_options.verbose) std::cout << "[" << _game_idx << "] Done with initialization" << std::endl;
 }
@@ -89,7 +95,8 @@ const Sgf &GoGame::pick_sgf() {
         _curr_game = _rng() % _games.size();
         // std::cout << "_game_idx = " << _curr_game << std::endl;
 
-        std::string full_name = _path + _games[_curr_game];
+        std::string full_name = _options.list_filename.substr(_options.list_filename.find_last_of(".") + 1) == "tar" ?
+           _games[_curr_game] : _path + _games[_curr_game];
         // std::cout << "full_name = " << full_name << std::endl;
 
         bool file_loaded = _rbuffer->HasKey(full_name);

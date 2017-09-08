@@ -28,6 +28,7 @@ class GameContext {
     const int _num_action = BOARD_DIM * BOARD_DIM;
 
     std::unique_ptr<RBuffer> _shared_buffer;
+    std::unique_ptr<TarLoader> _tar_loader;
 
   public:
     GameContext(const ContextOptions& context_options, const GameOptions& options) {
@@ -35,10 +36,16 @@ class GameContext {
       for (int i = 0; i < context_options.num_games; ++i) {
           _games.emplace_back(i, options);
       }
-
-      _shared_buffer.reset(new RBuffer([](const std::string &name) {
+      if (options.list_filename.substr(options.list_filename.find_last_of(".") + 1) == "tar") {
+          _tar_loader.reset(new TarLoader(options.list_filename));
+      }
+      _shared_buffer.reset(new RBuffer([&options,  this](const std::string &name) {
             std::unique_ptr<Sgf> sgf(new Sgf());
-            sgf->Load(name);
+            if (options.list_filename.substr(options.list_filename.find_last_of(".") + 1) == "tar") {
+              sgf->Load(name, *this->_tar_loader);
+            } else {
+              sgf->Load(name);
+            }
             return sgf;
       }));
     }

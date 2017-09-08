@@ -24,3 +24,8 @@ add_library(json INTERFACE)
 target_include_directories(json SYSTEM INTERFACE
 	 $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>
 )
+
+add_library(microtar INTERFACE)
+target_include_directories(microtar SYSTEM INTERFACE
+	 $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>
+)
