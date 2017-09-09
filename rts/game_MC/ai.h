@@ -25,8 +25,8 @@ class AIBase : public AIWithComm<AIComm> {
 protected:
     bool _respect_fow;
 
-    // History to send. 
-    mutable CircularQueue<std::vector<float>> _recent_states; 
+    // History to send.
+    mutable CircularQueue<std::vector<float>> _recent_states;
 
     // Feature extraction.
     void save_structured_state(const GameEnv &env, Data *data) const override;
@@ -37,7 +37,7 @@ public:
     AIBase() : _recent_states(1) { }
     AIBase(const AIOptions &opt, CmdReceiver *receiver, AIComm *ai_comm = nullptr)
         : AIWithComm<AIComm>(opt.name, opt.fs, receiver, ai_comm), _respect_fow(opt.fow), _recent_states(opt.num_frames_in_state) {
-       Reset();
+      for (auto &v : _recent_states.v()) v.clear();
     }
 
     void Reset() override;
@@ -135,7 +135,7 @@ protected:
         }
         return kvmap;
     }
-    
+
 public:
     TrainedAI2(const AIOptions &opt, CmdReceiver *receiver, AIComm *ai_comm)
       : AIBase(opt, receiver, ai_comm), _backup_ai_tick_thres(0), _latest_start(0), _latest_start_decay(0) {
@@ -179,6 +179,6 @@ public:
 
         // Random tick, max 1000
         _backup_ai_tick_thres = _ai_comm->gen()() % (int(_latest_start + 0.5) + 1);
-    } 
+    }
 };
 
