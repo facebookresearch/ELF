@@ -1,8 +1,8 @@
-#ifndef _SGF_H_
-#define _SGF_H_
+#pragma once
 
 #include "common.h"
 #include "board.h"
+#include "elf/tar_loader.h"
 #include <string>
 #include <vector>
 #include <map>
@@ -101,6 +101,7 @@ private:
     bool load_header(const char *s, const std::pair<int, int>& range, int *next_offset);
 
     static SgfEntry *load(const char *s, const std::pair<int, int>& range, int *next_offset);
+    bool load_game(const string& filename, const string& game);
 
 public:
     class SgfIterator {
@@ -155,6 +156,7 @@ public:
 
     Sgf() : _num_moves(0) { }
     bool Load(const string& filename);
+    bool Load(const string& gamename, TarLoader& tar_loader);
 
     SgfIterator begin() const { return SgfIterator(*this); }
 
@@ -166,5 +168,3 @@ public:
     string PrintHeader() const;
     string PrintMainVariation();
 };
-
-#endif
