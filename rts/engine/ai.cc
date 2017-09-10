@@ -51,7 +51,7 @@ void AI::actual_send_cmds(const GameEnv &env, AssignedCmds &assigned_cmds) {
 void AI::SendComment(const string& s) {
     // Finally send these commands.
     if (_receiver != nullptr) {
-        auto cmt = "[" + std::to_string(_player_id) + "] " + s;
+        auto cmt = "[" + std::to_string(_player_id) + ":" + _name + "] " + s;
         _receiver->SendCmd(CmdBPtr(new CmdComment(INVALID, cmt)));
     }
 }
