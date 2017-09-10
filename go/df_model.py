@@ -17,16 +17,17 @@ class Model_Policy(Model):
         # print("#num_planes: " + str(self.num_planes))
 
         # Simple method. multiple conv layers.
-        self.dim = 128
+        self.dim = args.dim
         self.convs = []
         self.convs_bn = []
         last_planes = self.num_planes
+
         for i in range(10):
             conv = nn.Conv2d(last_planes, self.dim, 3, padding=1)
-            conv_bn = nn.BatchNorm2d(self.dim)
+            conv_bn = nn.BatchNorm2d(self.dim) if not args.no_bn else lambda x: x
             setattr(self, "conv" + str(i), conv)
-            setattr(self, "conv_bn" + str(i), conv_bn)
             self.convs.append(conv)
+            setattr(self, "conv_bn" + str(i), conv_bn)
             self.convs_bn.append(conv_bn)
             last_planes = self.dim
 
@@ -34,10 +35,18 @@ class Model_Policy(Model):
 
         # Softmax as the final layer
         self.softmax = nn.Softmax()
-        self.relu = nn.LeakyReLU(0.1)
+        self.relu = nn.LeakyReLU(0.1) if not args.no_leaky_relu else nn.ReLU()
+
+    def get_define_args():
+        return [
+            ("no_bn", dict(action="store_true")),
+            ("no_leaky_relu", dict(action="store_true")),
+            ("dim", 128)
+        ]
 
     def forward(self, x):
         s = self._var(x["features"])
+
         for conv, conv_bn in zip(self.convs, self.convs_bn):
             s = conv_bn(self.relu(conv(s)))
 
