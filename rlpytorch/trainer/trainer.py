@@ -19,7 +19,7 @@ import torch.multiprocessing as _mp
 mp = _mp.get_context('spawn')
 
 class Evaluator:
-    def __init__(self, name="eval", stats=True, verbose=False):
+    def __init__(self, name="eval", stats=True, verbose=False, actor_name="actor"):
         if stats:
             self.stats = Stats(name)
             child_providers = [ self.stats.args ]
@@ -28,6 +28,7 @@ class Evaluator:
             child_providers = []
 
         self.name = name
+        self.actor_name = actor_name
         self.verbose = verbose
         self.args = ArgsProvider(
             call_from = self,
@@ -49,7 +50,7 @@ class Evaluator:
         if self.verbose: print("In Evaluator[%s]::actor" % self.name)
 
         # actor model.
-        m = self.mi["actor"]
+        m = self.mi[self.actor_name]
         m.set_volatile(True)
         state_curr = m.forward(batch.hist(0))
         m.set_volatile(False)
@@ -80,11 +81,11 @@ class Evaluator:
 
 
 class Trainer:
-    def __init__(self, verbose=False):
+    def __init__(self, verbose=False, actor_name="actor"):
         self.timer = RLTimer()
         self.verbose = verbose
         self.last_time = None
-        self.evaluator = Evaluator("trainer", verbose=verbose)
+        self.evaluator = Evaluator("trainer", verbose=verbose, actor_name=actor_name)
         self.saver = ModelSaver()
         self.counter = MultiCounter(verbose=verbose)
 

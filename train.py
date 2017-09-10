@@ -21,23 +21,15 @@ if __name__ == '__main__':
 
     sampler = Sampler()
     trainer = Trainer()
-    game = load_module(os.environ["game"]).Loader()
     runner = SingleProcessRun()
-    model_file = load_module(os.environ["model_file"])
-    model_class, method_class = model_file.Models[os.environ["model"]]
+    game, method, model_loaders = load_env(os.environ)
 
-    model_loader = ModelLoader(model_class)
-    method = method_class()
-
-    args_providers = [sampler, trainer, game, runner, model_loader, method]
-
+    args_providers = [sampler, trainer, game, runner, method] + model_loaders
     all_args = ArgsProvider.Load(parser, args_providers)
 
     GC = game.initialize()
-    GC.setup_gpu(all_args.gpu)
-    all_args.method_class = method_class
 
-    model = model_loader.load_model(GC.params)
+    model = model_loaders[0].load_model(GC.params)
     mi = ModelInterface()
     mi.add_model("model", model, optim_params={ "lr" : 0.001})
     mi.add_model("actor", model, copy=True, cuda=all_args.gpu is not None, gpu_id=all_args.gpu)

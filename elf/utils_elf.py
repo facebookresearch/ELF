@@ -152,9 +152,8 @@ class GCWrapper:
         '''
 
         self._init_collectors(GC, co, descriptions, use_gpu=gpu is not None, use_numpy=use_numpy)
-        self.gpu = None
-        self.inputs_gpu = None
-        self.setup_gpu(gpu)
+        self.gpu = gpu
+        self.inputs_gpu = [ self.inputs[gids[0]].cpu2gpu(gpu=gpu) for gids in self.gpu2gid ] if gpu is not None else None
         self.params = params
         self._cb = { }
 
@@ -219,12 +218,6 @@ class GCWrapper:
         self.name2idx = name2idx
         self.gid2gpu = gid2gpu
         self.gpu2gid = gpu2gid
-
-    def setup_gpu(self, gpu):
-        '''Setup the gpu used in the wrapper'''
-        if gpu is not None and self.gpu != gpu:
-            self.gpu = gpu
-            self.inputs_gpu = [ self.inputs[gids[0]].cpu2gpu(gpu=gpu) for gids in self.gpu2gid ]
 
     def reg_callback(self, key, cb):
         '''Set callback function for key

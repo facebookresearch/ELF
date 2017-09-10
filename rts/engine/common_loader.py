@@ -23,9 +23,10 @@ class CommonLoader:
                 ("model_no_spatial", dict(action="store_true")), # TODO, put it to model
                 ("save_replay_prefix", dict(type=str, default=None)),
                 ("output_file", dict(type=str, default=None)),
-                ("cmd_dumper_prefix", dict(type=str, default=None))
+                ("cmd_dumper_prefix", dict(type=str, default=None)),
+                ("gpu", dict(type=int, help="gpu to use", default=None)),
             ],
-            more_args = ["batchsize", "T", "gpu"],
+            more_args = ["batchsize", "T"],
             child_providers = [ self.context_args.args ]
         )
 

@@ -7,7 +7,7 @@
 
 from .args_provider import ArgsProvider
 from .model_base import Model
-from .model_loader import ModelLoader, load_module
+from .model_loader import ModelLoader, load_env
 from .model_interface import ModelInterface
 
 from .sampler import Sampler

@@ -19,21 +19,16 @@ from rlpytorch import ModelLoader, load_module, Sampler, Evaluator, ModelInterfa
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
-    model_file = load_module(os.environ["model_file"])
-    model_class, method_class = model_file.Models[os.environ["model"]]
-    model_loader = ModelLoader(model_class)
-
-    game = load_module(os.environ["game"]).Loader()
-    game.args.set_override(actor_only=True, game_multi=2)
     sampler = Sampler()
     evaluator = Evaluator(stats=False)
-
     eval_iters = EvalIters()
 
-    args = ArgsProvider.Load(parser, [ game, sampler, evaluator, model_loader, eval_iters ])
+    game, method, model_loaders = load_env(os.environ)
+    game.args.set_override(actor_only=True, game_multi=2)
+
+    args = ArgsProvider.Load(parser, [ game, sampler, evaluator, eval_iters ] + model_loaders )
 
     GC = game.initialize()
-    GC.setup_gpu(args.gpu)
 
     model = model_loader.load_model(GC.params)
     mi = ModelInterface()
