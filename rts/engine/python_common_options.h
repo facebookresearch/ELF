@@ -65,6 +65,9 @@ struct PythonOptions {
     // When not empty, save replays to the files.
     std::string save_replay_prefix;
 
+    // When not empty, load a map.
+    std::string map_filename;
+
     // Map size
     int map_size_x, map_size_y;
 
@@ -98,6 +101,9 @@ struct PythonOptions {
 
     void Print() const {
         std::cout << "Map: " << map_size_x << " by " << map_size_y << std::endl;
+        if (! map_filename.empty()) {
+            std::cout << "Map filename: " << map_filename << std::endl;
+        }
         std::cout << "Handicap: " << handicap_level << std::endl;
         std::cout << "Max tick: " << max_tick << std::endl;
         std::cout << "Max #Unit Cmd: " << max_unit_cmd << std::endl;
@@ -112,5 +118,5 @@ struct PythonOptions {
         std::cout << "Save_replay_prefix: \"" << save_replay_prefix << "\"" << std::endl;
     }
 
-    REGISTER_PYBIND_FIELDS(simulation_type, map_size_x, map_size_y, max_unit_cmd, output_filename, cmd_dumper_prefix, save_replay_prefix, max_tick, seed, mcts_threads, mcts_rollout_per_thread, game_name, handicap_level, shuffle_player);
+    REGISTER_PYBIND_FIELDS(simulation_type, map_size_x, map_size_y, max_unit_cmd, output_filename, cmd_dumper_prefix, map_filename, save_replay_prefix, max_tick, seed, mcts_threads, mcts_rollout_per_thread, game_name, handicap_level, shuffle_player);
 };

@@ -268,8 +268,12 @@ bool RTSGame::PrepareGame() {
           }
       }
 
-      if (_output_stream) *_output_stream << "Generate from scratch, seed = " << seed << endl << flush;
-      _cmd_receiver.SendCmdWithTick(CmdBPtr(new CmdRandomSeed(INVALID, seed)), 0);
+      if (_options.map_filename.empty()) {
+          if (_output_stream) *_output_stream << "Generate from scratch, seed = " << seed << endl << flush;
+          _cmd_receiver.SendCmdWithTick(CmdBPtr(new CmdRandomSeed(INVALID, seed)), 0);
+      } else {
+          // _cmd_receiver.SendCmdWithTick(CmdBPtr(new CmdLoadMap(INVALID, _options.map_filename)));
+      }
 
       for (auto&& cmd_pair : _env.GetGameDef().GetInitCmds(_options)) {
           _cmd_receiver.SendCmdWithTick(std::move(cmd_pair.first), cmd_pair.second);

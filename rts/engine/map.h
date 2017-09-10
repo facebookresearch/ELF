@@ -66,9 +66,10 @@ public:
   // Load map from a file.
   RTSMap();
   bool GenerateMap(const std::function<uint16_t (int)>& f, int nImpassable, int num_player, int init_resource);
+  bool LoadMap(const std::string &filename);
   bool GenerateImpassable(const std::function<uint16_t(int)>& f, int nImpassable);
 
-  // TODO: move this to game_TD 
+  // TODO: move this to game_TD
   bool GenerateTDMaze(const std::function<uint16_t(int)>& f);
 
 
@@ -82,7 +83,7 @@ public:
   int GetYSize() const { return _n; }
   int GetPlaneSize() const { return _m * _n; }
 
-  // TODO: move this to game_TD 
+  // TODO: move this to game_TD
   bool CanBuildTower(const PointF &p, UnitId id_exclude) const {
       Coord c = p.ToCoord();
       if (! IsIn(c)) return false;

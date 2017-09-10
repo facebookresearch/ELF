@@ -41,6 +41,10 @@ bool RTSMap::GenerateImpassable(const std::function<uint16_t(int)>& f, int nImpa
     return true;
 }
 
+bool RTSMap::LoadMap(const std::string &filename) {
+    return true;
+}
+
 bool RTSMap::GenerateTDMaze(const std::function<uint16_t(int)>& f) {
     const int blank = 3;
     int m = _m / 2;
