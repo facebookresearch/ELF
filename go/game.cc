@@ -9,6 +9,7 @@
 
 #include "game.h"
 #include "go_game_specific.h"
+#include "../elf/tar_loader.h"
 
 #include <fstream>
 
@@ -29,7 +30,7 @@ GoGame::GoGame(int game_idx, const GameOptions& options) : _options(options) {
     _rng.seed(seed);
 
     if (_options.verbose) std::cout << "[" << _game_idx << "] Loading list_file: " << options.list_filename << std::endl;
-    if (options.list_filename.substr(options.list_filename.find_last_of(".") + 1) == "tar") {
+    if (file_is_tar(options.list_filename) {
       // Get all .sgf from tar
       TarLoader tl = TarLoader(options.list_filename.c_str());
       _games = tl.List();
@@ -95,7 +96,7 @@ const Sgf &GoGame::pick_sgf() {
         _curr_game = _rng() % _games.size();
         // std::cout << "_game_idx = " << _curr_game << std::endl;
 
-        std::string full_name = _options.list_filename.substr(_options.list_filename.find_last_of(".") + 1) == "tar" ?
+        std::string full_name = file_is_tar(_options.list_filename) ?
            _games[_curr_game] : _path + _games[_curr_game];
         // std::cout << "full_name = " << full_name << std::endl;
 

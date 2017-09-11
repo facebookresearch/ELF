@@ -2,7 +2,7 @@
 
 #include "common.h"
 #include "board.h"
-#include "elf/tar_loader.h"
+#include "../elf/tar_loader.h"
 #include <string>
 #include <vector>
 #include <map>

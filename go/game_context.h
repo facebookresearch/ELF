@@ -16,6 +16,7 @@
 
 #include "game.h"
 #include "../elf/pybind_interface.h"
+#include "../elf/tar_loader.h"
 #include "board_feature.h"
 
 class GameContext {
@@ -36,12 +37,12 @@ class GameContext {
       for (int i = 0; i < context_options.num_games; ++i) {
           _games.emplace_back(i, options);
       }
-      if (options.list_filename.substr(options.list_filename.find_last_of(".") + 1) == "tar") {
+      if (file_is_tar(options.list_filename) {
           _tar_loader.reset(new TarLoader(options.list_filename));
       }
       _shared_buffer.reset(new RBuffer([&options,  this](const std::string &name) {
             std::unique_ptr<Sgf> sgf(new Sgf());
-            if (options.list_filename.substr(options.list_filename.find_last_of(".") + 1) == "tar") {
+            if (file_is_tar(options.list_filename)) {
               sgf->Load(name, *this->_tar_loader);
             } else {
               sgf->Load(name);
