@@ -14,7 +14,7 @@ from datetime import datetime
 import sys
 import os
 
-from rlpytorch import ModelLoader, load_module, Sampler, Evaluator, ModelInterface, ArgsProvider, EvalIters
+from rlpytorch import ModelLoader, load_env, Sampler, Evaluator, ModelInterface, ArgsProvider, EvalIters
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
