@@ -30,7 +30,7 @@ if __name__ == '__main__':
 
     GC = game.initialize()
 
-    model = model_loader.load_model(GC.params)
+    model = model_loaders[0].load_model(GC.params)
     mi = ModelInterface()
     mi.add_model("model", model, optim_params={ "lr" : 0.001})
     mi.add_model("actor", model, copy=True, cuda=True, gpu_id=args.gpu)
