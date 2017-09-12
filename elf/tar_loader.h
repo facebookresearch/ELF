@@ -2,7 +2,6 @@
 
 #include <string>
 #include <vector>
-#include "microtar.h"
 
 extern bool file_is_tar(const std::string& filename);
 
