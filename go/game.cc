@@ -30,7 +30,7 @@ GoGame::GoGame(int game_idx, const GameOptions& options) : _options(options) {
     _rng.seed(seed);
 
     if (_options.verbose) std::cout << "[" << _game_idx << "] Loading list_file: " << options.list_filename << std::endl;
-    if (file_is_tar(options.list_filename) {
+    if (file_is_tar(options.list_filename)) {
       // Get all .sgf from tar
       TarLoader tl = TarLoader(options.list_filename.c_str());
       _games = tl.List();

@@ -37,7 +37,7 @@ class GameContext {
       for (int i = 0; i < context_options.num_games; ++i) {
           _games.emplace_back(i, options);
       }
-      if (file_is_tar(options.list_filename) {
+      if (file_is_tar(options.list_filename)) {
           _tar_loader.reset(new TarLoader(options.list_filename));
       }
       _shared_buffer.reset(new RBuffer([&options,  this](const std::string &name) {
