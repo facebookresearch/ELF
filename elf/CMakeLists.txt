@@ -1,9 +1,9 @@
 # find sources
-file(GLOB SOURCES lib/*.cc)
+file(GLOB SOURCES lib/*.cc tar_loader.cc)
 
 add_library(elf INTERFACE)
 target_sources(elf INTERFACE ${SOURCES})
-target_link_libraries(elf INTERFACE concurrentqueue tbb)
+target_link_libraries(elf INTERFACE concurrentqueue tbb microtar)
 target_include_directories(elf
 	INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../>
 )
