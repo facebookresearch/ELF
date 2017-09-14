@@ -42,6 +42,7 @@ bool RTSMap::GenerateImpassable(const std::function<uint16_t(int)>& f, int nImpa
 }
 
 bool RTSMap::LoadMap(const std::string &filename) {
+    (void)filename;
     return true;
 }
 

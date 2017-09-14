@@ -102,6 +102,9 @@ PYBIND11_MODULE(minirts, m) {
   PYCLASS_WITH_FIELDS(m, AIOptions)
     .def(py::init<>());
 
+  PYCLASS_WITH_FIELDS(m, GameState)
+    .def("AddUnitCmd", &GameState::AddUnitCmd);
+
   PYCLASS_WITH_FIELDS(m, PythonOptions)
     .def(py::init<>())
     .def("Print", &PythonOptions::Print)

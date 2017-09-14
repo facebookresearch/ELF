@@ -26,10 +26,30 @@ struct CmdInput {
     PointF p;
     UnitType build_type;
 
+    // ready signal. 
+    // When not ready, id/target/base are not usable and should be used after ApplyEnv().
+    bool ready = false;
+    PointF unit_loc;
+
+    // By default this is ready.
     CmdInput(CmdInputType t, UnitId id, const PointF &p, UnitId target = INVALID, UnitId base = INVALID, UnitType build_type = INVALID_UNITTYPE)
-        : type(t), id(id), target(target), base(base), p(p), build_type(build_type) {
+        : type(t), id(id), target(target), base(base), p(p), build_type(build_type), ready(true) {
     }
-    CmdInput() : type(CI_INVALID), id(INVALID), target(INVALID), base(INVALID) { }
+    CmdInput() : type(CI_INVALID), id(INVALID), target(INVALID), base(INVALID), ready(false) { }
+
+    // Not ready and need to call ApplyEnv().
+    CmdInput(float unit_loc_x, float unit_loc_y, float target_loc_x, float target_loc_y, int cmd_type, int build_tp)
+        : type((CmdInputType)cmd_type), id(INVALID), target(INVALID), base(INVALID), p(target_loc_x, target_loc_y), build_type((UnitType)build_tp), ready(false), unit_loc(unit_loc_x, unit_loc_y) {
+    }
+
+    void ApplyEnv(const GameEnv &env) {
+        // Check unit id.
+        id = env.GetMap().GetClosestUnitId(unit_loc, 1.0);
+        target = env.GetMap().GetClosestUnitId(p, 1.0);
+        base = INVALID;
+        if (type == CI_GATHER) base = env.FindClosestBase(Player::ExtractPlayerId(id));
+        ready = true;
+    }
 
     CmdBPtr GetCmd() const {
         if (id == INVALID) return CmdBPtr();

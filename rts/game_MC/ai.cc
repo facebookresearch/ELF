@@ -218,26 +218,10 @@ bool TrainedAI2::on_act(const GameEnv &env) {
             }
         case ACTION_UNIT_CMD:
             {
-                // Make it vector of CmdInput.
-                _cmd_inputs.clear();
-                for (int i = 0; i < gs.n_max_cmd; ++i) {
-                    PointF unit_loc(gs.unit_loc[2*i], gs.unit_loc[2*i+1]);
-                    PointF target_loc(gs.target_loc[2*i], gs.target_loc[2*i+1]);
-                    auto t = (CmdInput::CmdInputType)(gs.cmd_type[i]);
-                    auto build_type = (UnitType)(gs.build_type[i]);
-
-                    // Check unit id.
-                    UnitId id = env.GetMap().GetClosestUnitId(unit_loc, 1.0);
-                    UnitId target_id = env.GetMap().GetClosestUnitId(target_loc, 1.0);
-                    UnitId base = INVALID;
-
-                    if (t == CmdInput::CI_GATHER) base = env.FindClosestBase(Player::ExtractPlayerId(id));
-
-                    _cmd_inputs.emplace_back(t, id, target_loc, target_id, base, build_type);
-                }
-
+                std::vector<CmdInput> unit_cmds(gs.unit_cmds);
+                std::for_each(unit_cmds.begin(), unit_cmds.end(), [&](CmdInput &ci) { ci.ApplyEnv(env); });
                 return gather_decide(env, [&](const GameEnv &e, string *s, AssignedCmds *assigned_cmds) {
-                        return _mc_rule_actor.ActByCmd(e, _cmd_inputs, s, assigned_cmds);
+                        return _mc_rule_actor.ActByCmd(e, unit_cmds, s, assigned_cmds);
                 });
             }
 

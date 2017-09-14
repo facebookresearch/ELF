@@ -57,15 +57,7 @@ struct GameState {
     int n_action;
 
     // Action as unit command.
-    // nMaxCmd-by-2 (x, y)
-    std::vector<float> unit_loc;
-    std::vector<float> target_loc;
-
-    // nMaxCmd (cmdType)
-    std::vector<float> cmd_type;
-
-    // nMaxCmd (buildType)
-    std::vector<float> build_type;
+    std::vector<CmdInput> unit_cmds;
 
     // Action per region
     // Python side will output an action map for each region for the player to follow.
@@ -84,10 +76,6 @@ struct GameState {
     void Init(int iid, int num_action, int num_max_cmd) {
         id = iid;
         pi.resize(num_action, 0.0);
-        unit_loc.resize(num_max_cmd * 2, 0.0);
-        target_loc.resize(num_max_cmd * 2, 0.0);
-        cmd_type.resize(num_max_cmd, 0.0);
-        build_type.resize(num_max_cmd, 0.0);
         n_action = num_action;
         n_max_cmd = num_max_cmd;
     }
@@ -97,6 +85,7 @@ struct GameState {
         V = 0.0;
         std::fill(pi.begin(), pi.end(), 0.0);
         action_type = ACTION_GLOBAL;
+        unit_cmds.clear();
 
         /*
         // TODO Specify action map dimensions in Init.
@@ -110,8 +99,17 @@ struct GameState {
         */
     }
 
-    DECLARE_FIELD(GameState, id, a, V, pi, action_type, last_r, s, res, rv, terminal, seq, game_counter, last_terminal, unit_loc, target_loc, cmd_type, build_type);
-    REGISTER_PYBIND_FIELDS(id, a, V, pi, action_type, last_r, s, res, tick, winner, ai_start_tick, last_terminal);
+    bool AddUnitCmd(float unit_loc_x, float unit_loc_y, float target_loc_x, float target_loc_y, int cmd_type, int build_tp) {
+        if ((int)unit_cmds.size() < n_max_cmd) {
+            unit_cmds.emplace_back(unit_loc_x, unit_loc_y, target_loc_x, target_loc_y, cmd_type, build_tp);
+            return true;
+        } else return false;
+    }
+
+    // These fields are used to exchange with Python side using tensor interface.
+    DECLARE_FIELD(GameState, id, a, V, pi, action_type, last_r, s, res, rv, terminal, seq, game_counter, last_terminal);
+
+    REGISTER_PYBIND_FIELDS(id); 
 };
 
 using Context = ContextT<PythonOptions, HistT<GameState>>;
