@@ -10,12 +10,18 @@ from .args_provider import ArgsProvider
 # from .utils.utils import get_total_size
 
 def load_module(mod):
+    ''' Load a python module'''
     sys.path.insert(0, os.path.dirname(mod))
     module = __import__(os.path.basename(mod))
     return module
 
 class ModelLoader:
+    ''' Load a previously saved model'''
     def __init__(self, model_class, model_idx=None):
+        ''' Initialization, specify the model to be loaded, function to call after loading and arguments.
+            omit_keys is to omit certain keys when loading, e.g. model can have extra keys. Loading will fail if extra keys are not put in ``omit_keys``
+        '''
+
         self.model_class = model_class
         self.model_idx = model_idx
 
@@ -41,10 +47,14 @@ class ModelLoader:
         )
 
     def _on_get_args(self, _):
+        '''Set all the arguments'''
         for arg, arg_final in zip(self.define_args, self.define_args_final):
             setattr(self, arg[0], getattr(self.args, arg_final[0]))
 
     def load_model(self, params):
+        '''Actually loading the model with initialized args.
+           Call onload funtions if needed.
+        '''
         args = self.args
         args.params = params
         # Initialize models.
@@ -84,6 +94,13 @@ class ModelLoader:
         return model
 
 def load_env(envs, num_models=None):
+    ''' Load envs. envs will be specified as environment variables, more specifically, ``game``, ``model_file`` and ``model`` are required.
+
+    Returns:
+        ``game`` : game module
+        `` method``: Learning method used
+        ``model_loaders``: loaders for model
+    '''
     game = load_module(envs["game"]).Loader()
     model_file = load_module(envs["model_file"])
     model_class, method_class = model_file.Models[envs["model"]]
@@ -96,4 +113,3 @@ def load_env(envs, num_models=None):
         model_loaders = [ ModelLoader(model_class, model_idx=i) for i in range(num_models) ]
 
     return game, method, model_loaders
-

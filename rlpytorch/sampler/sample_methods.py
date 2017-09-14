@@ -10,6 +10,7 @@ import torch
 import sys
 
 def uniform_multinomial(batchsize, num_action, use_cuda=True):
+    ''' Sample with uniform probability.'''
     # [TODO] Make the type more friendly
     if use_cuda:
         uniform_p = torch.cuda.FloatTensor(num_action).fill_(1.0 / num_action)
@@ -19,6 +20,7 @@ def uniform_multinomial(batchsize, num_action, use_cuda=True):
     return uniform_p.multinomial(batchsize, replacement=True)
 
 def sample_with_check(probs, greedy=False):
+    ''' sample with out of bound check '''
     num_action = probs.size(1)
     if greedy:
         _, actions = probs.max(1)
@@ -43,6 +45,7 @@ def sample_with_check(probs, greedy=False):
         sys.stdout.flush()
 
 def sample_eps_with_check(probs, epsilon, greedy=False):
+    ''' sample with out of bound check '''
     # actions = self.sample_policy(state_curr[self.sample_node].data, args)
     actions = sample_with_check(probs, greedy=greedy)
 
@@ -61,6 +64,7 @@ def sample_eps_with_check(probs, epsilon, greedy=False):
     return actions
 
 def sample_multinomial(state_curr, args, node="pi", greedy=False):
+    ''' multinomial sampling'''
     if isinstance(state_curr[node], list):
         # Action map
         probs = state_curr[node]
@@ -81,10 +85,11 @@ def sample_multinomial(state_curr, args, node="pi", greedy=False):
         return sample_eps_with_check(probs, args.epsilon, greedy=greedy)
 
 def epsilon_greedy(state_curr, args, node="pi"):
+    ''' epsilon greedy sampling'''
     return sample_multinomial(state_curr, args, node=node, greedy=True)
 
-# Send probability as is.
 def original_distribution(state_curr, args, node="pi"):
+    ''' Send original probability as it is'''
     probs = state_curr[node].data
     batchsize = probs.size(0)
     # Return a list of list.

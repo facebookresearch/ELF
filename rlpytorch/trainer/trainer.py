@@ -20,6 +20,8 @@ mp = _mp.get_context('spawn')
 
 class Evaluator:
     def __init__(self, name="eval", stats=True, verbose=False, actor_name="actor"):
+        ''' Initialization for Evaluator. Accepted arguments: ``num_games``, ``batch_size``, ``num_minibatch``
+        '''
         if stats:
             self.stats = Stats(name)
             child_providers = [ self.stats.args ]
@@ -44,9 +46,17 @@ class Evaluator:
             self.stats = None
 
     def episode_start(self, i):
+        ''' Called before each episode. Reset ``actor_count`` to 0.'''
         self.actor_count = 0
 
     def actor(self, batch):
+        ''' Actor.
+            Get the model, forward the batch and get a distribution. Sample from it and act.
+            Reply the message to game engine.
+
+        Returns:
+            reply_msg(dict): ``pi``: policy, ``a``: action, ``V``: value, `rv`: reply version, signatured by step
+        '''
         if self.verbose: print("In Evaluator[%s]::actor" % self.name)
 
         # actor model.
@@ -65,6 +75,7 @@ class Evaluator:
         return reply_msg
 
     def episode_summary(self, i):
+        ''' Called after each episode. Print stats and summary'''
         print("[%s] actor count: %d/%d" % (self.name, self.actor_count, self.args.num_minibatch))
 
         if self.stats is not None:
@@ -73,6 +84,7 @@ class Evaluator:
                 self.stats.reset()
 
     def setup(self, mi=None, sampler=None):
+        ''' Setup `ModelInterface` and `Sampler`. Resetting stats.'''
         self.mi = mi
         self.sampler = sampler
 
@@ -82,6 +94,9 @@ class Evaluator:
 
 class Trainer:
     def __init__(self, verbose=False, actor_name="actor"):
+        ''' Initialization for Trainer. Accepted arguments: ``num_games``, ``batch_size``
+            Also need arguments for `evaluator` and `saver` class.
+        '''
         self.timer = RLTimer()
         self.verbose = verbose
         self.last_time = None
@@ -104,6 +119,9 @@ class Trainer:
         return self.evaluator.actor(batch)
 
     def train(self, batch):
+        ''' Trainer.
+            Get the model, forward the batch and update the weights.
+        '''
         mi = self.evaluator.mi
 
         self.counter.inc("train")
@@ -124,9 +142,11 @@ class Trainer:
         self.just_updated = False
 
     def episode_start(self, i):
+        ''' Called before each episode. '''
         self.evaluator.episode_start(i)
 
     def episode_summary(self, i):
+        ''' Called after each episode. Print stats and summary. Also print arguments passed in.'''
         args = self.args
 
         prefix = "[%s][%d] Iter" % (str(datetime.now()), args.batchsize) + "[%d]: " % i
@@ -142,7 +162,6 @@ class Trainer:
         self.timer.Restart()
 
     def setup(self, rl_method=None, mi=None, sampler=None):
+        ''' Setup `RLMethod`, ModelInterface` and `Sampler`'''
         self.rl_method = rl_method
         self.evaluator.setup(mi=mi, sampler=sampler)
-
-

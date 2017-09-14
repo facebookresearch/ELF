@@ -75,6 +75,7 @@ class EvalCount:
                 self.terminal(id)
 
 class RewardCount(EvalCount):
+    ''' Class to accumulate rewards achieved'''
     def __init__(self):
         super(RewardCount, self).__init__()
         self.reset()
@@ -96,6 +97,7 @@ class RewardCount(EvalCount):
 
 
 class WinRate(EvalCount):
+    ''' Class to accumulate game results to win rate'''
     def __init__(self):
         super(WinRate, self).__init__()
         self.total_win_count = 0
@@ -145,6 +147,7 @@ class WinRate(EvalCount):
 
 class Stats(EvalCount):
     def __init__(self, stats_name=""):
+        ''' Initialization for Stats, Accepted arguments: ``rewards`` or ``winrate`` to track'''
         self.name = stats_name + "_stats"
         self.collector = None
         self.args = ArgsProvider(

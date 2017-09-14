@@ -10,6 +10,9 @@ from ..args_provider import ArgsProvider
 
 class Sampler:
     def __init__(self):
+        ''' Initialization for Sampler. Accepted arguments:
+        ``sample_policy``: choices of ``epsilon-greedy``, ``multinomial`` or ``uniform``,
+        ``greedy``, ``epsilon`` '''
         self.args = ArgsProvider(
             call_from = self,
             define_args = [
@@ -20,6 +23,8 @@ class Sampler:
         )
 
     def sample(self, state_curr):
+        ''' Sample an action from distribution using a certain sample method'''
+        #TODO: This only handles epsilon_greedy and multinomial for now. Add uniform and original_distribution?
         if self.args.greedy:
             # print("Use greedy approach")
             action = epsilon_greedy(state_curr, self.args, node="pi")
@@ -27,4 +32,3 @@ class Sampler:
             # print("Use multinomial approach")
             action = sample_multinomial(state_curr, self.args, node="pi")
         return action
-

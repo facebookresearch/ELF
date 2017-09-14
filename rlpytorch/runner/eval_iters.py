@@ -4,6 +4,7 @@ import tqdm
 
 class EvalIters:
     def __init__(self):
+        ''' Initialization for Evaluation. Accepted arguments: ``num_eval`` number of games to evaluate, ``tqdm``'''
         self.stats = Stats("eval")
         self.args = ArgsProvider(
             call_from = self,
@@ -19,6 +20,10 @@ class EvalIters:
         self.stats.reset()
 
     def iters(self):
+        ''' loop through until we reach ``args.num_eval`` games
+            if use tqdm, also visualize the progress.
+            Print stats summary in the end.
+        '''
         if self.args.tqdm:
             import tqdm
             tq = tqdm.tqdm(total=self.args.num_eval, ncols=50)
@@ -33,5 +38,3 @@ class EvalIters:
                 yield self.stats.count_completed()
 
         self.stats.print_summary()
-
-

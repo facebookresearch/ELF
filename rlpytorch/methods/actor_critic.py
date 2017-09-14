@@ -18,7 +18,11 @@ from .utils import add_err
 
 # Actor critic model.
 class ActorCritic:
+    ''' An actor critic model '''
     def __init__(self, args=None):
+        ''' Initialization policy gradient, discounted reward and value matcher.
+            Initialize the arguments needed (num_games, batchsize) and in child_providers.
+        '''
         self.pg = PolicyGradient()
         self.discounted_reward = DiscountedReward()
         self.value_matcher = ValueMatcher()
@@ -33,7 +37,9 @@ class ActorCritic:
         )
 
     def update(self, mi, batch, stats):
-        ''' Actor critic model '''
+        ''' Actor critic model update.
+            Feed stats for lating summarization.
+        '''
         m = mi["model"]
         args = self.args
 
@@ -60,5 +66,3 @@ class ActorCritic:
 
         stats["cost"].feed(err.data[0] / (T - 1))
         err.backward()
-
-

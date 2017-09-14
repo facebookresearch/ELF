@@ -49,6 +49,7 @@ class ArgsProvider:
             self.set(fixed_args)
 
     def init(self, parser):
+        ''' recursively add arguments in _define_args and child_providers'''
         group_name = type(self._call_from).__name__ if self._call_from is not None else "Options"
         group = parser.add_argument_group(group_name)
         for key, options in self._define_args:
@@ -100,6 +101,7 @@ class ArgsProvider:
         self.override_args = kwargs
 
     def get_define_keys(self):
+        ''' return all keys in _define_args in a list '''
         return [ k for k, _ in self._define_args ]
 
     def Load(parser, args_providers, cmd_line=sys.argv[1:]):

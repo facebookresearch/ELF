@@ -14,6 +14,7 @@ from .utils import *
 
 class PolicyGradient:
     def __init__(self, args=None):
+        ''' Initialization for arguments. Accepted arguments: ``entropy_ratio``, ``grad_clip_norm``, ``min_prob``, ``ratio_clamp``'''
         self.args = ArgsProvider(
             call_from = self,
             define_args = [
@@ -27,9 +28,16 @@ class PolicyGradient:
         )
 
     def _init(self, args):
+        ''' Initialize policy loss to be an NLLLoss'''
         self.policy_loss = nn.NLLLoss().cuda()
 
     def _compute_one_policy_entropy_err(self, pi, a):
+        '''Compute policy error and entropy error for one.
+           Pass in ``args.min_prob`` to avoid ``Nan`` in logrithms.
+
+           Returns:
+               dict of log policy ``logpi``, ``policy_err``, ``entropy_err``
+        '''
         batchsize = a.size(0)
 
         # Add normalization constant
@@ -44,6 +52,12 @@ class PolicyGradient:
         return dict(logpi=logpi, policy_err=policy_err, entropy_err=entropy_err)
 
     def _compute_policy_entropy_err(self, pi, a):
+        '''Compute policy error and entropy error for a batch.
+           Pass in ``args.min_prob`` to avoid ``Nan`` in logrithms.
+
+           Returns:
+               dict of log policy ``logpi``, ``policy_err``, ``entropy_err``
+        '''
         args = self.args
 
         errs = { }
@@ -58,6 +72,7 @@ class PolicyGradient:
         return errs
 
     def _reg_backward(self, v, pg_weights):
+        ''' Register the backward hook. '''
         grad_clip_norm = getattr(self.args, "grad_clip_norm", None)
         def bw_hook(grad_in):
             # this works only on pytorch 0.2.0
@@ -108,4 +123,3 @@ class PolicyGradient:
             stats["entropy_err"].feed(entropy_err.data[0])
 
         return policy_err + entropy_err * args.entropy_ratio
-

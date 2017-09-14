@@ -14,6 +14,7 @@ from .utils import *
 
 class ValueMatcher:
     def __init__(self, args=None):
+        ''' Initialize value matcher. Accepted arguments: ``grad_clip_norm``'''
         self.args = ArgsProvider(
             call_from = self,
             define_args = [
@@ -24,9 +25,11 @@ class ValueMatcher:
         )
 
     def _init(self, _):
+        ''' Initialize value loss to be ``nn.SmoothL1Loss`` '''.
         self.value_loss = nn.SmoothL1Loss().cuda()
 
     def _reg_backward(self, v):
+        ''' Register the backward hook. '''
         grad_clip_norm = getattr(self.args, "grad_clip_norm", None)
         if grad_clip_norm:
             def bw_hook(grad_in):
@@ -44,6 +47,9 @@ class ValueMatcher:
             V (variable): value
             target (tensor): target value.
         Inputs that are of type Variable can backpropagate.
+
+        Returns:
+            value_err
         '''
         V = batch["V"]
         value_err = self.value_loss(V, Variable(batch["target"]))

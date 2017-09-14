@@ -4,6 +4,7 @@ import tqdm
 
 class MultiProcessRun:
     def __init__(self):
+        ''' Initialization for MultiProcessRun. Accepted arguments: ``num_minibatch``, ``num_episode``, ``num_process`` and ``tqdm`` '''
         self.args = ArgsProvider(
             call_from = self,
             define_args = [
@@ -16,6 +17,17 @@ class MultiProcessRun:
 
     def setup(self, GC, mi, remote_init, remote_process,
               episode_start=None, episode_summary=None, args=None):
+        ''' Setup for MultiProcessRun.
+
+        Args:
+            GC: Game Context
+            mi: ModelInterface
+            remote_init: Callbacks for remote Initialization
+            remote_process: Callbacks for remote process
+            episode_start: operations to perform before each episode
+            episode_summary: operations to summarize after each epidsode
+            args: Additional arguments for `SharedData`
+        '''
         self.GC = GC
         self.episode_start = episode_start
         self.episode_summary = episode_summary
@@ -37,6 +49,11 @@ class MultiProcessRun:
         if success: self.success_train_count += 1
 
     def run(self):
+        ''' Main training loop. Initialize Game Context and looping the required episodes.
+            Call episode_start and episode_summary before and after each episode if necessary.
+            Visualize with a progress bar if ``tqdm`` is set.
+            Print training stats after each episode.
+        '''
         self.GC.reg_callback("train", self._train)
 
         self.GC.Start()
