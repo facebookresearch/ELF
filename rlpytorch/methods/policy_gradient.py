@@ -73,19 +73,18 @@ class PolicyGradient:
             return grad
         v.register_hook(bw_hook)
 
-    def feed(self, batch, stats):
+    def feed(self, Q, pi_s, actions,  stats, old_pi_s=dict()):
         '''
         One iteration of policy gradient. pho nabla_w log p_w(a|s) Q + entropy_ratio * nabla H(pi(.|s))
         Keys:
             Q (tensor): estimated return
-            a (tensor): action
-            pi (variable): policy
-            old_pi (tensor, optional): old policy, in order to get importance factor.
+            actions (tensor): action
+            pi_s (variable): policy
+            old_pi_s (tensor, optional): old policy, in order to get importance factor.
 
         If you specify multiple policies, then all the log prob of these policies are added, and their importance factors are multiplied.
         '''
         args = self.args
-        Q = batch["Q"]
         batchsize = Q.size(0)
 
         # We need to set it beforehand.
@@ -98,13 +97,11 @@ class PolicyGradient:
         sum_log_pi = None
 
         for pi_node, a_node in args.policy_action_nodes:
-            pi = batch[pi_node]
-            a = batch[a_node]
+            pi = pi_s[pi_node]
+            a = actions[a_node]
 
-            old_pi_node = "old_" + pi_node
-
-            if old_pi_node in batch:
-                old_pi = batch[old_pi_node]
+            if pi_node in old_pi_s:
+                old_pi = old_pi_s[old_pi]
                 # Cap it.
                 coeff = torch.clamp(pi.data.div(old_pi), max=args.ratio_clamp).gather(1, a.view(-1, 1)).squeeze()
                 pg_weights.mul_(coeff)
