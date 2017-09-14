@@ -88,7 +88,13 @@ class ArgsProvider:
             global_overrides(dict of key and their overridden values): change the value of some parameters (the parameters can be defined elsewhere). If there is a collison, the program will err.
         '''
 
-        self._define_args = define_args
+        def make_regular(options):
+            if isinstance(options, (int, float, str)):
+                return dict(type=type(options), default=options)
+            else:
+                return options
+
+        self._define_args = [ (k, make_regular(v)) for k, v in define_args ]
         self._more_args = more_args
         self._on_get_args = on_get_args
         if len(self._define_args) == 0:
@@ -149,10 +155,7 @@ class ArgsProvider:
             group = parser.add_argument_group(group_name)
             for key, options in define_args:
                 try:
-                    if isinstance(options, (int, float, str)):
-                        group.add_argument("--" + key, type=type(options), default=options)
-                    else:
-                        group.add_argument("--" + key, **options)
+                    group.add_argument("--" + key, **options)
                 except:
                     # If there is issues with argument name. just plot a warning.
                     print("Warning: argument %s/%s cannot be added. Skipped." % (group_name, key))
