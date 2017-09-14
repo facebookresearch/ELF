@@ -56,7 +56,8 @@ public:
             { "resource_dim", 2 * NUM_RES_SLOT },
             { "max_unit_cmd", _context->options().max_unit_cmd },
             { "map_x", _context->options().map_size_x },
-            { "map_y", _context->options().map_size_y }
+            { "map_y", _context->options().map_size_y },
+            { "num_cmd_type", CmdInput::CI_NUM_CMDS }
         };
     }
 
@@ -75,8 +76,8 @@ public:
         else if (key == "pi") return EntryInfo(key, type_name, {GameDef::GetNumAction()});
         else if (key == "a" || key == "rv" || key == "V") return EntryInfo(key, type_name);
         else if (key == "res") return EntryInfo(key, type_name, {2, NUM_RES_SLOT});
-        else if (key == "unit_loc") return EntryInfo(key, type_name, { max_unit_cmd, 2 });
-        else if (key == "target_loc") return EntryInfo(key, type_name, { max_unit_cmd, 2 });
+        else if (key == "unit_loc") return EntryInfo(key, type_name, { max_unit_cmd });
+        else if (key == "target_loc") return EntryInfo(key, type_name, { max_unit_cmd });
         else if (key == "build_type") return EntryInfo(key, type_name, { max_unit_cmd });
         else if (key == "cmd_type") return EntryInfo(key, type_name, { max_unit_cmd });
 
@@ -101,6 +102,9 @@ PYBIND11_MODULE(minirts, m) {
   // Also register other objects.
   PYCLASS_WITH_FIELDS(m, AIOptions)
     .def(py::init<>());
+
+  PYCLASS_WITH_FIELDS(m, GameState)
+    .def("AddUnitCmd", &GameState::AddUnitCmd);
 
   PYCLASS_WITH_FIELDS(m, PythonOptions)
     .def(py::init<>())

@@ -19,6 +19,7 @@ template <typename GameContext>
 void register_common_func(py::module &m) {
   using GC = typename GameContext::GC;
   using State = typename GC::State;
+  using Infos = typename GC::Infos;
 
   PYCLASS_WITH_FIELDS(m, ContextOptions)
     .def(py::init<>())
@@ -31,8 +32,6 @@ void register_common_func(py::module &m) {
     .def(py::init<>());
 
   PYCLASS_WITH_FIELDS(m, Infos);
-
-  PYCLASS_WITH_FIELDS(m, State);
 
   using HistState = HistT<State>;
   PYCLASS_WITH_FIELDS(m, HistState)
@@ -49,6 +48,7 @@ void register_common_func(py::module &m) {
 #endif
 
 #define CONTEXT_CALLS(GC, context) \
+  using Infos = typename GC::Infos; \
   Infos Wait(int timeout) { return context->Wait(timeout); } \
   Infos WaitGroup(int group_id, int timeout) { return context->WaitGroup(group_id, timeout); } \
   void Steps(const Infos& infos) { context->Steps(infos); } \
@@ -59,7 +59,6 @@ void register_common_func(py::module &m) {
     return context->comm().AddCollectors(batchsize, exclusive_id, gstat); \
   } \
   int size() const { return context->size(); } \
-\
   EntryInfo GetTensorSpec(int gid, const std::string &key, int T) { \
       return context->comm().GetCollectorGroup(gid).GetEntry(key, T, [&](const std::string &key) { return EntryFunc(key); }); \
   } \

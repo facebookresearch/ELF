@@ -65,13 +65,14 @@ class Evaluator:
         state_curr = m.forward(batch.hist(0))
         m.set_volatile(False)
 
-        action = self.sampler.sample(state_curr)
+        reply_msg = self.sampler.sample(state_curr)
 
         if self.stats is not None:
             self.stats.feed_batch(batch)
-        reply_msg = dict(pi=state_curr["pi"].data, a=action, V=state_curr["V"].data, rv=self.mi["actor"].step)
-        self.actor_count += 1
 
+        reply_msg["rv"] = self.mi["actor"].step
+
+        self.actor_count += 1
         return reply_msg
 
     def episode_summary(self, i):

@@ -18,17 +18,25 @@ class Sampler:
             define_args = [
                 ("sample_policy", dict(type=str, choices=["epsilon-greedy", "multinomial", "uniform"], help="Sample policy", default="epsilon-greedy")),
                 ("greedy", dict(action="store_true")),
-                ("epsilon", dict(type=float, help="Used in epsilon-greedy approach", default=0.00))
-            ]
+                ("epsilon", dict(type=float, help="Used in epsilon-greedy approach", default=0.00)),
+                ("sample_nodes", dict(type=str, help=";-separated nodes to be sampled and saved", default="pi,a"))
+            ],
+            on_get_args = self._on_get_args,
         )
+
+    def _on_get_args(self, _):
+        self.sample_nodes = []
+        for nodes in self.args.sample_nodes.split(";"):
+            policy, action = nodes.split(",")
+            self.sample_nodes.append((policy, action))
 
     def sample(self, state_curr):
         ''' Sample an action from distribution using a certain sample method'''
         #TODO: This only handles epsilon_greedy and multinomial for now. Add uniform and original_distribution?
-        if self.args.greedy:
-            # print("Use greedy approach")
-            action = epsilon_greedy(state_curr, self.args, node="pi")
-        else:
-            # print("Use multinomial approach")
-            action = sample_multinomial(state_curr, self.args, node="pi")
-        return action
+        sampler = epsilon_greedy if self.args.greedy else sample_multinomial
+
+        actions = dict()
+        for pi_node, a_node in self.sample_nodes:
+            actions[a_node] = sampler(state_curr, self.args, node=pi_node)
+            actions[pi_node] = state_curr[pi_node].data
+        return actions

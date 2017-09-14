@@ -59,7 +59,7 @@ class Batch:
 
     def load(GC, input_reply, desc, group_id, use_gpu=True, use_numpy=False):
         batch = Batch()
-        batch.infos = { }
+        batch.dims = { }
         batch.GC = GC
 
         keys = desc["keys"]
@@ -69,7 +69,7 @@ class Batch:
             info = Batch._request(GC, group_id, key, T)
             v, info = Batch._alloc(info, use_gpu=use_gpu, use_numpy=use_numpy)
             batch.batch[info.key] = v
-            batch.infos[info.key] = info
+            batch.dims[info.key] = info
             # print(key + " : " + str(v.size()))
             GC.AddTensor(group_id, input_reply, info)
 
@@ -109,7 +109,9 @@ class Batch:
                     bk[:] = v
 
     def cpu2gpu(self, gpu=0):
-        return Batch(**{ k : v.cuda(gpu) for k, v in self.batch.items() })
+        batch = Batch(**{ k : v.cuda(gpu) for k, v in self.batch.items() })
+        batch.GC = self.GC
+        return batch
 
     def hist(self, s, key=None):
         '''s=1 means going back in time by one step, etc'''
@@ -242,6 +244,10 @@ class GCWrapper:
             picked = sel_gpu
         else:
             picked = sel
+
+        # Save the infos structure, if people want to have access to state
+        # directly, they can use infos.s[i], which is a state pointer.
+        picked.infos = infos
 
         # Get the reply array
         if len(self.replies) > infos.gid and self.replies[infos.gid] is not None:

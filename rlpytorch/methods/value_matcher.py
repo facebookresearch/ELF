@@ -13,20 +13,21 @@ from ..args_provider import ArgsProvider
 from .utils import *
 
 class ValueMatcher:
-    def __init__(self, args=None):
+    def __init__(self):
         ''' Initialize value matcher. Accepted arguments: ``grad_clip_norm``'''
         self.args = ArgsProvider(
             call_from = self,
             define_args = [
                 ("grad_clip_norm", dict(type=float, help="Gradient norm clipping", default=None)),
+                ("value_node", dict(type=str, help="The name of the value node", default="V"))
             ],
             on_get_args = self._init,
-            fixed_args = args,
         )
 
     def _init(self, _):
         ''' Initialize value loss to be ``nn.SmoothL1Loss`` '''.
         self.value_loss = nn.SmoothL1Loss().cuda()
+        self.value_node = self.args.value_node
 
     def _reg_backward(self, v):
         ''' Register the backward hook. '''
@@ -51,10 +52,10 @@ class ValueMatcher:
         Returns:
             value_err
         '''
-        V = batch["V"]
+        V = batch[self.value_node]
         value_err = self.value_loss(V, Variable(batch["target"]))
         self._reg_backward(V)
-        stats["predicted_V"].feed(V.data[0])
-        stats["value_err"].feed(value_err.data[0])
+        stats["predicted_" + self.value_node].feed(V.data[0])
+        stats[self.value_node + "_err"].feed(value_err.data[0])
 
         return value_err

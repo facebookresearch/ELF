@@ -4,14 +4,13 @@ import math
 from ..args_provider import ArgsProvider
 
 class DiscountedReward:
-    def __init__(self, args=None):
+    def __init__(self):
         ''' Initialization discounted_reward. Accepted arguments: ``discount``'''
         self.args = ArgsProvider(
             call_from = self,
             define_args = [
                 ("discount", dict(type=float, default=0.99)),
             ],
-            fixed_args = args,
         )
 
     def setR(self, R, stats):

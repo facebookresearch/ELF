@@ -28,17 +28,23 @@
 #include "collector.hh"
 #include "hist.h"
 
-struct Infos {
+template <typename Data>
+struct InfosT {
     int gid;
-    int batchsize;
+    std::vector<Data *> s;
 
-    Infos(int gid, int batchsize) : gid(gid), batchsize(batchsize) { }
-    Infos() : gid(-1), batchsize(0) { }
+    InfosT(int gid, const std::vector<Data *> &s) : gid(gid), s(s) { }
+    InfosT() : gid(-1) { }
 
-    REGISTER_PYBIND_FIELDS(gid, batchsize);
+    REGISTER_PYBIND_FIELDS(gid, s);
 };
 
-class SyncSignal {
+template <typename Data>
+class SyncSignalT {
+public:
+    using SyncSignal = SyncSignalT<Data>;
+    using Infos = InfosT<Data>;
+
 private:
     // A queue that contains the current queue of finished batch.
     CCQueue2<Infos> _queue;
@@ -53,15 +59,15 @@ private:
     std::mutex _mutex_cout;
 
 public:
-    SyncSignal() { }
+    SyncSignalT() { }
 
     void use_queue_per_group(int num_groups) {
         _queue_per_group.resize(num_groups);
     }
 
-    void push(int gid, int batchsize) {
-        if (_queue_per_group.empty() || gid == -1) _queue.enqueue(Infos(gid, batchsize));
-        else _queue_per_group[gid].enqueue(Infos(gid, batchsize));
+    void push(int gid, const std::vector<Data *>& batch) {
+        if (_queue_per_group.empty() || gid == -1) _queue.enqueue(Infos(gid, batch));
+        else _queue_per_group[gid].enqueue(Infos(gid, batch));
     }
 
     // From the main thread.
@@ -143,6 +149,7 @@ public:
     using Key = decltype(MetaInfo::query_id);
     using State = typename In::State;
     using Data = typename In::Data;
+    using SyncSignal = SyncSignalT<Data>;
     using CopyItem = elf::CopyItemT<State>;
     using EntryFunc = std::function<EntryInfo (const std::string &key)>;
 
@@ -171,9 +178,9 @@ private:
     // Wakeup signal.
     Semaphore<int> _wakeup;
 
-    void send_batch(int batchsize) {
+    void send_batch() {
         _wakeup.reset();
-        _signal->push(_gid, batchsize);
+        _signal->push(_gid, _batch_data);
     }
 
     int wait_batch_used() {
@@ -258,7 +265,7 @@ public:
 
             // Signal.
             V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Send_batch. batchsize = " << _batch.size());
-            send_batch(_batch.size());
+            send_batch();
 
             V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Wait until the batch is processed");
             // Wait until it is processed.
