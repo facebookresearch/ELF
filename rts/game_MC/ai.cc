@@ -12,6 +12,10 @@
 #include "engine/unit.h"
 #include "engine/cmd_interface.h"
 
+#define _OFFSET(_c, _x, _y, _m) (((_c) * _m.GetYSize() + (_y)) * _m.GetXSize() + (_x))
+#define _XY(loc, m) ((loc) % m.GetXSize()), ((loc) / m.GetXSize()) 
+
+
 static inline int sampling(const std::vector<float> &v, std::mt19937 *gen) {
     std::vector<float> accu(v.size() + 1);
     std::uniform_real_distribution<> dis(0, 1);
@@ -104,8 +108,6 @@ void AIBase::compute_state(const GameEnv &env, std::vector<float> *state) const 
 
     std::map<int, std::pair<int, float> > idx2record;
 
-#define _OFFSET(_c, _x, _y) (((_c) * m.GetYSize() + (_y)) * m.GetXSize() + (_x))
-
     PlayerId visibility_check = _respect_fow ? _player_id : INVALID;
 
     auto unit_iter = env.GetUnitIterator(visibility_check);
@@ -126,12 +128,12 @@ void AIBase::compute_state(const GameEnv &env, std::vector<float> *state) const 
 
         bool self_unit = (u.GetPlayerId() == _player_id);
 
-        accu_value(_OFFSET(t, x, y), 1.0, idx2record);
+        accu_value(_OFFSET(t, x, y, m), 1.0, idx2record);
 
         // Self unit or enemy unit.
         // For historical reason, the flag of enemy unit = 2
-        accu_value(_OFFSET(n_type, x, y), (self_unit ? 1 : 2), idx2record);
-        accu_value(_OFFSET(n_type + 1, x, y), hp_level, idx2record);
+        accu_value(_OFFSET(n_type, x, y, m), (self_unit ? 1 : 2), idx2record);
+        accu_value(_OFFSET(n_type + 1, x, y, m), hp_level, idx2record);
 
         total_hp_ratio += hp_level;
 
@@ -161,7 +163,7 @@ void AIBase::compute_state(const GameEnv &env, std::vector<float> *state) const 
 
     if (_player_id != INVALID) {
         // Add resource layer for the current player.
-        const int c = _OFFSET(n_type + n_additional + quantized_r[_player_id], 0, 0);
+        const int c = _OFFSET(n_type + n_additional + quantized_r[_player_id], 0, 0, m);
         std::fill(state->begin() + c, state->begin() + c + m.GetXSize() * m.GetYSize(), 1.0);
     }
 }
@@ -183,6 +185,7 @@ bool TrainedAI2::on_act(const GameEnv &env) {
     // Get the current action from the queue.
     int num_action = NUM_AISTATE;
     int h = num_action - 1;
+    const auto &m = env.GetMap();
     const GameState& gs = _ai_comm->info().data.newest();
     // uint64_t hash_code;
 
@@ -218,26 +221,17 @@ bool TrainedAI2::on_act(const GameEnv &env) {
             }
         case ACTION_UNIT_CMD:
             {
-                // Make it vector of CmdInput.
-                _cmd_inputs.clear();
+                // Use gs.unit_cmds
+                // std::vector<CmdInput> unit_cmds(gs.unit_cmds);
+                // Use data
+                std::vector<CmdInput> unit_cmds;
                 for (int i = 0; i < gs.n_max_cmd; ++i) {
-                    PointF unit_loc(gs.unit_loc[2*i], gs.unit_loc[2*i+1]);
-                    PointF target_loc(gs.target_loc[2*i], gs.target_loc[2*i+1]);
-                    auto t = (CmdInput::CmdInputType)(gs.cmd_type[i]);
-                    auto build_type = (UnitType)(gs.build_type[i]);
-
-                    // Check unit id.
-                    UnitId id = env.GetMap().GetClosestUnitId(unit_loc, 1.0);
-                    UnitId target_id = env.GetMap().GetClosestUnitId(target_loc, 1.0);
-                    UnitId base = INVALID;
-
-                    if (t == CmdInput::CI_GATHER) base = env.FindClosestBase(Player::ExtractPlayerId(id));
-
-                    _cmd_inputs.emplace_back(t, id, target_loc, target_id, base, build_type);
+                    unit_cmds.emplace_back(_XY(gs.unit_loc[i], m), _XY(gs.target_loc[i], m), gs.cmd_type[i], gs.build_type[i]); 
                 }
+                std::for_each(unit_cmds.begin(), unit_cmds.end(), [&](CmdInput &ci) { ci.ApplyEnv(env); });
 
                 return gather_decide(env, [&](const GameEnv &e, string *s, AssignedCmds *assigned_cmds) {
-                        return _mc_rule_actor.ActByCmd(e, _cmd_inputs, s, assigned_cmds);
+                        return _mc_rule_actor.ActByCmd(e, unit_cmds, s, assigned_cmds);
                 });
             }
 

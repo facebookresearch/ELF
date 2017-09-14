@@ -17,26 +17,18 @@ import os
 from rlpytorch import *
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
     verbose = False
-
-    sampler = Sampler()
     runner = SingleProcessRun()
-
     evaluators = [ Evaluator(name="eval" + str(i), verbose=verbose) for i in range(2) ]
-    game, method, model_loaders = load_env(os.environ, num_models=2)
-    game.args.set_override(actor_only=True)
+    env, all_args = load_env(os.environ, num_models=2, evaluators=evaluators, runner=runner, overrides=dict(actor_only=True))
 
-    args_providers = [sampler, runner, game, method] + model_loaders + evaluators
-    all_args = ArgsProvider.Load(parser, args_providers)
+    GC = env["game"].initialize_selfplay()
 
-    GC = game.initialize_selfplay()
-
-    for i, (model_loader, e) in enumerate(zip(model_loaders, evaluators)):
+    for i, (model_loader, e) in enumerate(zip(env["model_loaders"], evaluators)):
         model = model_loader.load_model(GC.params)
         mi = ModelInterface()
         mi.add_model("actor", model, copy=False)
-        e.setup(sampler=sampler, mi=mi)
+        e.setup(sampler=env["sampler"], mi=mi)
         GC.reg_callback("actor%d" % i, e.actor)
 
     def summary(i):

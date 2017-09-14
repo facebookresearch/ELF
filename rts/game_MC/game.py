@@ -10,6 +10,8 @@ from datetime import datetime
 
 import sys, os
 
+sys.path.append('../../')
+
 from rts.engine import CommonLoader
 from rlpytorch import ArgsProvider
 

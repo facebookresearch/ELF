@@ -6,7 +6,9 @@
 # of patent rights can be found in the PATENTS file in the same directory.
 import os
 import sys
+import argparse
 from .args_provider import ArgsProvider
+from .sampler import Sampler
 # from .utils.utils import get_total_size
 
 def load_module(mod):
@@ -83,11 +85,21 @@ class ModelLoader:
 
         return model
 
-def load_env(envs, num_models=None):
+def load_env(envs, num_models=None, overrides=dict(), defaults=dict(), **kwargs):
     game = load_module(envs["game"]).Loader()
     model_file = load_module(envs["model_file"])
-    model_class, method_class = model_file.Models[envs["model"]]
+    # TODO This is not good, need to fix.
+    if len(model_file.Models[envs["model"]]) == 2:
+        model_class, method_class = model_file.Models[envs["model"]]
+        sampler_class = Sampler
+    else:
+        model_class, method_class, sampler_class = model_file.Models[envs["model"]]
+
+    defaults.update(getattr(model_file, "Defaults", dict()))
+    overrides.update(getattr(model_file, "Overrides", dict()))
+
     method = method_class()
+    sampler = sampler_class()
 
     # You might want multiple models loaded.
     if num_models is None:
@@ -95,5 +107,10 @@ def load_env(envs, num_models=None):
     else:
         model_loaders = [ ModelLoader(model_class, model_idx=i) for i in range(num_models) ]
 
-    return game, method, model_loaders
+    env = dict(game=game, method=method, sampler=sampler, model_loaders=model_loaders)
+    env.update(kwargs)
+
+    parser = argparse.ArgumentParser()
+    all_args = ArgsProvider.Load(parser, env, global_defaults=defaults, global_overrides=overrides)
+    return  env, all_args
 

@@ -32,7 +32,7 @@ void WrapperCallbacks::initialize_ai_comm(Context::AIComm &ai_comm) {
     auto &hstate = ai_comm.info().data;
     hstate.InitHist(_context_options.T);
     for (auto &item : hstate.v()) {
-        item.Init(_game_idx, GameDef::GetNumAction(), _options.max_unit_cmd);
+        item.Init(_game_idx, GameDef::GetNumAction(), _options.max_unit_cmd, _options.map_size_x, _options.map_size_y, CmdInput::CI_NUM_CMDS, GameDef::GetNumUnitType());
     }
 }
 

@@ -84,6 +84,8 @@ public:
     using Key = decltype(MetaInfo::query_id);
     using Data = typename In::Data;
     using Info = In;
+    using Infos = InfosT<Data>;
+    using SyncSignal = SyncSignalT<Data>;
     using CollectorGroup = CollectorGroupT<In>;
 
 private:
@@ -285,6 +287,7 @@ public:
     using Key = decltype(MetaInfo::query_id);
 
     using Data = _Data;
+    using Infos = InfosT<Data>;
     using State = typename Data::State;
     using Context = ContextT<Options, Data>;
     using Info = InfoT<Data>;

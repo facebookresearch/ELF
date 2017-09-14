@@ -17,28 +17,22 @@ import os
 from rlpytorch import *
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
     verbose = False
 
-    sampler = Sampler()
     trainer = Trainer(verbose=verbose)
     runner = SingleProcessRun()
     evaluator = Evaluator(stats=False, verbose=verbose)
+    env, all_args = load_env(os.environ, trainer=trainer, runner=runner, evaluator=evaluator)
 
-    game, method, model_loaders = load_env(os.environ)
+    GC = env["game"].initialize_selfplay()
 
-    args_providers = [sampler, trainer, game, runner, method, evaluator] + model_loaders
-    all_args = ArgsProvider.Load(parser, args_providers)
-
-    GC = game.initialize_selfplay()
-
-    model = model_loaders[0].load_model(GC.params)
+    model = env["model_loaders"][0].load_model(GC.params)
     mi = ModelInterface()
     mi.add_model("model", model, copy=False, optim_params={ "lr" : 0.001})
     mi.add_model("actor", model, copy=True, cuda=all_args.gpu is not None, gpu_id=all_args.gpu)
 
-    trainer.setup(sampler=sampler, mi=mi, rl_method=method)
-    evaluator.setup(sampler=sampler, mi=mi.clone(gpu=all_args.gpu))
+    trainer.setup(sampler=env["sampler"], mi=mi, rl_method=env["method"])
+    evaluator.setup(sampler=env["sampler"], mi=mi.clone(gpu=all_args.gpu))
 
     if not all_args.actor_only:
         GC.reg_callback("train1", trainer.train)

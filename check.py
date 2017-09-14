@@ -1,4 +1,3 @@
-import argparse
 from datetime import datetime
 
 import sys
@@ -6,7 +5,7 @@ import os
 import random
 from collections import defaultdict
 
-from rlpytorch import load_module, SingleProcessRun, ArgsProvider
+from rlpytorch import load_module, SingleProcessRun, ArgsProvider, load_env
 
 class StatsCollector:
     def __init__(self):
@@ -86,17 +85,11 @@ class StatsCollector:
             self.id2seqs_train[id] = last_seq - 1
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-
-    game = load_module(os.environ["game"]).Loader()
     collector = StatsCollector()
     runner = SingleProcessRun()
+    env, all_args = load_env(os.environ, collector=collector, runner=runner)
 
-    args_providers = [game, runner]
-
-    all_args = ArgsProvider.Load(parser, args_providers)
-
-    GC = game.initialize()
+    GC = env["game"].initialize()
     # GC.setup_gpu(0)
     collector.set_params(GC.params)
 
