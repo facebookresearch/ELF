@@ -6,7 +6,7 @@ import os
 import random
 from collections import defaultdict
 
-from rlpytorch import load_module, SingleProcessRun, ArgsProvider
+from rlpytorch import load_module, SingleProcessRun, ArgsProvider, load_env
 
 class StatsCollector:
     def __init__(self):
@@ -88,15 +88,14 @@ class StatsCollector:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
-    game = load_module(os.environ["game"]).Loader()
+    env = load_env(os.environ)
     collector = StatsCollector()
     runner = SingleProcessRun()
 
-    args_providers = [game, runner]
-
+    args_providers = [env, runner]
     all_args = ArgsProvider.Load(parser, args_providers)
 
-    GC = game.initialize()
+    GC = env["game"].initialize()
     # GC.setup_gpu(0)
     collector.set_params(GC.params)
 

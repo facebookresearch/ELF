@@ -8,6 +8,16 @@
 import sys
 import os
 
+def recursive_apply(x, f):
+    if isinstance(x, dict):
+        for k, v in x.items():
+            recursive_apply(v, f)
+    elif isinstance(x, list):
+        for v in x:
+            recursive_apply(v, f)
+    else:
+        f(x)
+
 class ArgsProvider:
     def __init__(self, define_args=[], more_args=[], on_get_args=None, call_from=None, child_providers=[], fixed_args=None):
         '''Define arguments to be loaded from the command line. Example usage
@@ -113,13 +123,10 @@ class ArgsProvider:
         Returns:
             A class instance whose attributes contain all loaded arguments.
         '''
-        for provider in args_providers:
-            provider.args.init(parser)
+        recursive_apply(args_providers, lambda provider : provider.args.init(parser))
 
         args = parser.parse_args(cmd_line)
         print(args)
 
-        for provider in args_providers:
-            provider.args.set(args)
-
+        recursive_apply(args_providers, lambda provider : provider.args.set(args))
         return args

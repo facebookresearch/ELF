@@ -19,7 +19,7 @@
 
 // To prevent parsing, we also provide structured interface 
 struct CmdInput {
-    enum CmdInputType {CI_INVALID, CI_MOVE, CI_ATTACK, CI_GATHER, CI_BUILD};
+    enum CmdInputType {CI_INVALID = -1, CI_MOVE = 0, CI_ATTACK, CI_GATHER, CI_BUILD, CI_NUM_CMDS};
 
     CmdInputType type;
     UnitId id, target, base;
