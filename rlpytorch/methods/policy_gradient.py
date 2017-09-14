@@ -96,12 +96,12 @@ class PolicyGradient:
         entropy_err = None
         sum_log_pi = None
 
-        for pi_node, a_node in args.policy_action_nodes:
+        for pi_node, a_node in self.policy_action_nodes:
             pi = pi_s[pi_node]
             a = actions[a_node]
 
             if pi_node in old_pi_s:
-                old_pi = old_pi_s[old_pi]
+                old_pi = old_pi_s[pi_node]
                 # Cap it.
                 coeff = torch.clamp(pi.data.div(old_pi), max=args.ratio_clamp).gather(1, a.view(-1, 1)).squeeze()
                 pg_weights.mul_(coeff)
