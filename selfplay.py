@@ -17,17 +17,12 @@ import os
 from rlpytorch import *
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
     verbose = False
 
     trainer = Trainer(verbose=verbose)
     runner = SingleProcessRun()
     evaluator = Evaluator(stats=False, verbose=verbose)
-
-    env = load_env(os.environ)
-
-    args_providers = [trainer, runner, evaluator, env]
-    all_args = ArgsProvider.Load(parser, args_providers)
+    env, all_args = load_env(os.environ, trainer=trainer, runner=runner, evaluator=evaluator)
 
     GC = env["game"].initialize_selfplay()
 

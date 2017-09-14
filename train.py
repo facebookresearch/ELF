@@ -8,21 +8,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import argparse
 from datetime import datetime
-
 import sys
 import os
 
 from rlpytorch import *
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-
-    env = load_env(os.environ)
     trainer = Trainer()
     runner = SingleProcessRun()
-    all_args = ArgsProvider.Load(parser, [env, trainer, runner])
+    env, all_args = load_env(os.environ, trainer=trainer, runner=runner)
 
     GC = env["game"].initialize()
 

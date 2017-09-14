@@ -1,4 +1,3 @@
-import argparse
 from datetime import datetime
 
 import sys
@@ -86,14 +85,9 @@ class StatsCollector:
             self.id2seqs_train[id] = last_seq - 1
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-
-    env = load_env(os.environ)
     collector = StatsCollector()
     runner = SingleProcessRun()
-
-    args_providers = [env, runner]
-    all_args = ArgsProvider.Load(parser, args_providers)
+    env, all_args = load_env(os.environ, collector=collector, runner=runner)
 
     GC = env["game"].initialize()
     # GC.setup_gpu(0)

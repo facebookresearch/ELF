@@ -8,7 +8,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import argparse
 from datetime import datetime
 
 import sys
@@ -17,15 +16,9 @@ import os
 from rlpytorch import ModelLoader, load_env, Sampler, Evaluator, ModelInterface, ArgsProvider, EvalIters
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-
     evaluator = Evaluator(stats=False)
     eval_iters = EvalIters()
-
-    env = load_env(os.environ)
-    env["game"].args.set_global_overrides(actor_only=True, game_multi=2)
-
-    args = ArgsProvider.Load(parser, [ env, evaluator, eval_iters ])
+    env, args = load_env(os.environ, overrides=dict(actor_only=True), evaluator=evaluator, eval_iters=eval_iters)
 
     GC = env["game"].initialize()
 

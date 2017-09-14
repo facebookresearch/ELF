@@ -59,7 +59,7 @@ class Args:
         return hasattr(self, key)
 
 class ArgsProvider:
-    def __init__(self, define_args=[], more_args=[], on_get_args=None, call_from=None, child_providers=[], child_transforms=None, global_defaults=dict(), global_overrides=dict()):
+    def __init__(self, define_args=[], more_args=[], on_get_args=None, call_from=None, child_providers=[], child_transforms=None):
         '''Define arguments to be loaded from the command line. Example usage
         ::
             args = ArgsProvider(
@@ -99,15 +99,6 @@ class ArgsProvider:
         self._child_transforms = child_transforms if child_transforms is not None else [None] * len(child_providers)
         self._call_from = call_from
 
-        self._global_defaults = global_defaults
-        self._global_overrides = global_overrides
-
-    def set_global_overrides(self, **kwargs):
-        self._global_overrides.update(kwargs)
-
-    def set_global_defaults(self, **kwargs):
-        self._global_defaults.update(kwargs)
-
     def get_define_keys(self):
         return [ k for k, _ in self._define_args ]
 
@@ -145,17 +136,6 @@ class ArgsProvider:
         if self._on_get_args is not None:
             self._on_get_args(args)
 
-    def _apply_global_defaults(self, args_list):
-        for _, define_args in args_list:
-            for k, v in define_args:
-                if k in self._global_defaults:
-                    v["default"] = self.global_defaults[k]
-
-    def _apply_global_overrides(self, args):
-        for k, v in self._global_overrides.items():
-            if k in args:
-                args[k] = v
-
     def _GetProvider(x):
         if isinstance(x, ArgsProvider):
             return x
@@ -177,7 +157,18 @@ class ArgsProvider:
                     # If there is issues with argument name. just plot a warning.
                     print("Warning: argument %s/%s cannot be added. Skipped." % (group_name, key))
 
-    def Load(parser, args_providers, cmd_line=sys.argv[1:]):
+    def _ApplyDefaults(global_defaults, args_list):
+        for _, define_args in args_list:
+            for k, v in define_args:
+                if k in global_defaults:
+                    v["default"] = global_defaults[k]
+
+    def _ApplyOverrides(global_overrides, args):
+        for k, v in global_overrides.items():
+            if k in args:
+                args[k] = v
+
+    def Load(parser, args_providers, cmd_line=sys.argv[1:], global_defaults=dict(), global_overrides=dict()):
         '''Load args from ``cmd_line``
 
         Parameters:
@@ -192,13 +183,13 @@ class ArgsProvider:
 
         args_list = []
         recursive_map(args_providers, lambda provider : provider._collect(args_list))
-        recursive_map(args_providers, lambda provider : provider._apply_global_defaults(args_list))
+        ArgsProvider._ApplyDefaults(global_defaults, args_list)
 
         ArgsProvider._SendArgsToParser(parser, args_list)
         args = Args(parser.parse_args(cmd_line), args_list)
         args.add_cmdline()
 
-        recursive_map(args_providers, lambda provider : provider._apply_global_overrides(args))
+        ArgsProvider._ApplyOverrides(global_overrides, args)
 
         args.print_info()
         recursive_map(args_providers, lambda provider : provider._set(args))
