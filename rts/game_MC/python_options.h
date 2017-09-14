@@ -18,6 +18,11 @@
 #define ACTION_REGIONAL 2
 #define ACTION_UNIT_CMD 3 
 
+template <typename T>
+void fill_zero(std::vector<T> &v) {
+    std::fill(v.begin(), v.end(), (T)0);
+}
+
 struct GameState {
     using State = GameState;
     using Data = GameState;
@@ -53,6 +58,14 @@ struct GameState {
     float V;
     std::vector<float> pi;
 
+    // 
+    std::vector<int64_t> unit_loc, target_loc;
+    std::vector<int64_t> build_type, cmd_type;
+
+    // Also we need to save distributions.
+    std::vector<float> unit_loc_prob, target_loc_prob;
+    std::vector<float> build_type_prob, cmd_type_prob;
+
     int n_max_cmd;
     int n_action;
 
@@ -73,11 +86,21 @@ struct GameState {
 
     void Restart() { }
 
-    void Init(int iid, int num_action, int num_max_cmd) {
+    void Init(int iid, int num_action, int num_max_cmd, int mapx, int mapy, int num_cmd_type, int num_units) {
         id = iid;
         pi.resize(num_action, 0.0);
         n_action = num_action;
+
         n_max_cmd = num_max_cmd;
+        unit_loc.resize(num_max_cmd, 0);
+        target_loc.resize(num_max_cmd, 0);
+        build_type.resize(num_max_cmd, 0);
+        cmd_type.resize(num_max_cmd, 0);
+
+        unit_loc_prob.resize(num_max_cmd * mapx * mapy, 0.0);
+        target_loc_prob.resize(num_max_cmd * mapx * mapy, 0.0);
+        build_type_prob.resize(num_max_cmd * num_units, 0.0);
+        cmd_type_prob.resize(num_max_cmd * num_cmd_type, 0.0);
     }
 
     void Clear() {
@@ -86,6 +109,16 @@ struct GameState {
         std::fill(pi.begin(), pi.end(), 0.0);
         action_type = ACTION_GLOBAL;
         unit_cmds.clear();
+
+        fill_zero(unit_loc);
+        fill_zero(target_loc);
+        fill_zero(build_type);
+        fill_zero(cmd_type);
+
+        fill_zero(unit_loc_prob);
+        fill_zero(target_loc_prob);
+        fill_zero(build_type_prob);
+        fill_zero(cmd_type_prob);
 
         /*
         // TODO Specify action map dimensions in Init.
@@ -107,8 +140,7 @@ struct GameState {
     }
 
     // These fields are used to exchange with Python side using tensor interface.
-    DECLARE_FIELD(GameState, id, a, V, pi, action_type, last_r, s, res, rv, terminal, seq, game_counter, last_terminal);
-
+    DECLARE_FIELD(GameState, id, a, V, pi, action_type, last_r, s, res, rv, terminal, seq, game_counter, last_terminal, unit_loc, target_loc, build_type, cmd_type, unit_loc_prob, target_loc_prob, build_type_prob, cmd_type_prob);
     REGISTER_PYBIND_FIELDS(id); 
 };
 
