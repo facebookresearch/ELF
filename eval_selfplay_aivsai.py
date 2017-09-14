@@ -24,7 +24,7 @@ if __name__ == '__main__':
     evaluators = [ Evaluator(name="eval" + str(i), verbose=verbose) for i in range(2) ]
 
     env = load_env(os.environ, num_models=2)
-    env["game"].args.set_override(actor_only=True)
+    env["game"].args.set_global_overrides(actor_only=True)
 
     args_providers = [runner, env] + evaluators
     all_args = ArgsProvider.Load(parser, args_providers)

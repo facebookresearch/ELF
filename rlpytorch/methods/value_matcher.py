@@ -13,7 +13,7 @@ from ..args_provider import ArgsProvider
 from .utils import *
 
 class ValueMatcher:
-    def __init__(self, args=None):
+    def __init__(self):
         self.args = ArgsProvider(
             call_from = self,
             define_args = [
@@ -21,7 +21,6 @@ class ValueMatcher:
                 ("value_node", dict(type=str, help="The name of the value node", default="V"))
             ],
             on_get_args = self._init,
-            fixed_args = args,
         )
 
     def _init(self, _):

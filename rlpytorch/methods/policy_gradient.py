@@ -13,7 +13,7 @@ from ..args_provider import ArgsProvider
 from .utils import *
 
 class PolicyGradient:
-    def __init__(self, args=None):
+    def __init__(self):
         self.args = ArgsProvider(
             call_from = self,
             define_args = [
@@ -24,7 +24,6 @@ class PolicyGradient:
                 ("policy_action_nodes", dict(type=str, help=";separated string that specify policy_action nodes.", default="pi,a"))
             ],
             on_get_args = self._init,
-            fixed_args = args,
         )
 
     def _init(self, args):

@@ -23,7 +23,7 @@ if __name__ == '__main__':
     eval_iters = EvalIters()
 
     env = load_env(os.environ)
-    env["game"].args.set_override(actor_only=True, game_multi=2)
+    env["game"].args.set_global_overrides(actor_only=True, game_multi=2)
 
     args = ArgsProvider.Load(parser, [ env, evaluator, eval_iters ])
 

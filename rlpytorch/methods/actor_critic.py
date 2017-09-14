@@ -18,7 +18,7 @@ from .utils import add_err
 
 # Actor critic model.
 class ActorCritic:
-    def __init__(self, args=None):
+    def __init__(self):
         self.pg = PolicyGradient()
         self.discounted_reward = DiscountedReward()
         self.value_matcher = ValueMatcher()
@@ -29,7 +29,6 @@ class ActorCritic:
             ],
             more_args = ["num_games", "batchsize"],
             child_providers = [ self.pg.args, self.discounted_reward.args, self.value_matcher.args ],
-            fixed_args = args
         )
 
     def update(self, mi, batch, stats):
