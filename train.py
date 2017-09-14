@@ -22,7 +22,7 @@ if __name__ == '__main__':
     env = load_env(os.environ)
     trainer = Trainer()
     runner = SingleProcessRun()
-    all_args = ArgsProvider.Load(parser, [env, trianer, runner])
+    all_args = ArgsProvider.Load(parser, [env, trainer, runner])
 
     GC = env["game"].initialize()
 

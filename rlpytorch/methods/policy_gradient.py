@@ -21,6 +21,7 @@ class PolicyGradient:
                 ("grad_clip_norm", dict(type=float, help="Gradient norm clipping", default=None)),
                 ("min_prob", dict(type=float, help="Minimal probability used in training", default=1e-6)),
                 ("ratio_clamp", 10),
+                ("policy_action_nodes", dict(type=str, help=";separated string that specify policy_action nodes.", default="pi,a"))
             ],
             on_get_args = self._init,
             fixed_args = args,
@@ -28,6 +29,10 @@ class PolicyGradient:
 
     def _init(self, args):
         self.policy_loss = nn.NLLLoss().cuda()
+        self.policy_action_nodes = []
+        for node in args.policy_action_nodes.split(";"):
+            policy, action = node.split(",")
+            self.policy_action_nodes.append((policy, action))
 
     def _compute_one_policy_entropy_err(self, pi, a):
         batchsize = a.size(0)
@@ -69,7 +74,7 @@ class PolicyGradient:
             return grad
         v.register_hook(bw_hook)
 
-    def feed(self, batch, stats, policies=[("pi", "a")]):
+    def feed(self, batch, stats):
         '''
         One iteration of policy gradient. pho nabla_w log p_w(a|s) Q + entropy_ratio * nabla H(pi(.|s))
         Keys:
@@ -93,14 +98,14 @@ class PolicyGradient:
         entropy_err = None
         sum_log_pi = None
 
-        for pi_name, a_name in policies:
-            pi = batch[pi_name]
-            a = batch[a_name]
+        for pi_node, a_node in args.policy_action_nodes:
+            pi = batch[pi_node]
+            a = batch[a_node]
 
-            old_pi_name = "old_" + pi_name
+            old_pi_node = "old_" + pi_node
 
-            if old_pi_name in batch:
-                old_pi = batch[old_pi_name]
+            if old_pi_node in batch:
+                old_pi = batch[old_pi_node]
                 # Cap it.
                 coeff = torch.clamp(pi.data.div(old_pi), max=args.ratio_clamp).gather(1, a.view(-1, 1)).squeeze()
                 pg_weights.mul_(coeff)
@@ -112,11 +117,14 @@ class PolicyGradient:
             entropy_err = add_err(entropy_err, errs["entropy_err"])
             sum_log_pi = add_err(sum_log_pi, errs["logpi"])
 
+            stats["nll_" + pi_node].feed(errs["policy_err"].data[0])
+            stats["entropy_" + pi_node].feed(errs["entropy_err"].data[0])
+
         self._reg_backward(sum_log_pi, Variable(pg_weights))
 
-        if stats is not None:
-            stats["policy_err"].feed(policy_err.data[0])
-            stats["entropy_err"].feed(entropy_err.data[0])
+        if len(args.policy_action_nodes) > 1:
+            stats["total_nll"].feed(policy_err.data[0])
+            stats["total_entropy"].feed(entropy_err.data[0])
 
         return policy_err + entropy_err * args.entropy_ratio
 

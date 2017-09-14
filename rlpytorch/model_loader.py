@@ -88,7 +88,7 @@ def load_env(envs, num_models=None):
     game = load_module(envs["game"]).Loader()
     model_file = load_module(envs["model_file"])
     # TODO This is not good, need to fix.
-    if len(model_file.Models) == 2:
+    if len(model_file.Models[envs["model"]]) == 2:
         model_class, method_class = model_file.Models[envs["model"]]
         sampler_class = Sampler
     else:
