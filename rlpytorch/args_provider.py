@@ -109,6 +109,11 @@ class ArgsProvider:
         ''' set the override before we parse any command line '''
         self.override_args = kwargs
 
+    def set_defaults(self, **kwargs):
+        for key, options in self._define_args:
+            if key in kwargs:
+                options["default"] = kwargs[key]
+
     def get_define_keys(self):
         return [ k for k, _ in self._define_args ]
 
