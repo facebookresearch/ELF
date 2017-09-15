@@ -1,5 +1,5 @@
 /*
-    pybind11/class_support.h: Python C API implementation details for py::class_
+    pybind11/detail/class.h: Python C API implementation details for py::class_
 
     Copyright (c) 2017 Wenzel Jakob <wenzel.jakob@epfl.ch>
 
@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "attr.h"
+#include "../attr.h"
 
 NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
 NAMESPACE_BEGIN(detail)
@@ -232,11 +232,10 @@ inline bool deregister_instance(instance *self, void *valptr, const type_info *t
     return ret;
 }
 
-/// Instance creation function for all pybind11 types. It only allocates space for the C++ object
-/// (or multiple objects, for Python-side inheritance from multiple pybind11 types), but doesn't
-/// call the constructor -- an `__init__` function must do that (followed by an `init_instance`
-/// to set up the holder and register the instance).
-inline PyObject *make_new_instance(PyTypeObject *type, bool allocate_value /*= true (in cast.h)*/) {
+/// Instance creation function for all pybind11 types. It allocates the internal instance layout for
+/// holding C++ objects and holders.  Allocation is done lazily (the first time the instance is cast
+/// to a reference or pointer), and initialization is done by an `__init__` function.
+inline PyObject *make_new_instance(PyTypeObject *type) {
 #if defined(PYPY_VERSION)
     // PyPy gets tp_basicsize wrong (issue 2482) under multiple inheritance when the first inherited
     // object is a a plain Python type (i.e. not derived from an extension type).  Fix it.
@@ -251,13 +250,6 @@ inline PyObject *make_new_instance(PyTypeObject *type, bool allocate_value /*= t
     inst->allocate_layout();
 
     inst->owned = true;
-    // Allocate (if requested) the value pointers; otherwise leave them as nullptr
-    if (allocate_value) {
-        for (auto &v_h : values_and_holders(inst)) {
-            void *&vptr = v_h.value_ptr();
-            vptr = v_h.type->operator_new(v_h.type->type_size);
-        }
-    }
 
     return self;
 }
@@ -342,7 +334,17 @@ inline void clear_instance(PyObject *self) {
 /// to destroy the C++ object itself, while the rest is Python bookkeeping.
 extern "C" inline void pybind11_object_dealloc(PyObject *self) {
     clear_instance(self);
-    Py_TYPE(self)->tp_free(self);
+
+    auto type = Py_TYPE(self);
+    type->tp_free(self);
+
+    // `type->tp_dealloc != pybind11_object_dealloc` means that we're being called
+    // as part of a derived type's dealloc, in which case we're not allowed to decref
+    // the type here. For cross-module compatibility, we shouldn't compare directly
+    // with `pybind11_object_dealloc`, but with the common one stashed in internals.
+    auto pybind11_object_type = (PyTypeObject *) get_internals().instance_base;
+    if (type->tp_dealloc == pybind11_object_type->tp_dealloc)
+        Py_DECREF(type);
 }
 
 /** Create the type which can be used as a common base for all classes.  This is
@@ -591,6 +593,8 @@ inline PyObject* make_new_python_type(const type_record &rec) {
     /* Register type with the parent scope */
     if (rec.scope)
         setattr(rec.scope, rec.name, (PyObject *) type);
+    else
+        Py_INCREF(type); // Keep it alive forever (reference leak)
 
     if (module) // Needed by pydoc
         setattr((PyObject *) type, "__module__", module);
