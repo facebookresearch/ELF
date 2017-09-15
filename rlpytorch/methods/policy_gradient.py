@@ -94,14 +94,15 @@ class PolicyGradient:
 
         policy_err = None
         entropy_err = None
-        sum_log_pi = None
+        log_pi_s = []
 
         for pi_node, a_node in self.policy_action_nodes:
             pi = pi_s[pi_node]
-            a = actions[a_node]
+            a = actions[a_node].squeeze()
 
             if pi_node in old_pi_s:
-                old_pi = old_pi_s[pi_node]
+                old_pi = old_pi_s[pi_node].squeeze()
+
                 # Cap it.
                 coeff = torch.clamp(pi.data.div(old_pi), max=args.ratio_clamp).gather(1, a.view(-1, 1)).squeeze()
                 pg_weights.mul_(coeff)
@@ -111,12 +112,13 @@ class PolicyGradient:
             errs = self._compute_policy_entropy_err(pi, Variable(a))
             policy_err = add_err(policy_err, errs["policy_err"])
             entropy_err = add_err(entropy_err, errs["entropy_err"])
-            sum_log_pi = add_err(sum_log_pi, errs["logpi"])
+            log_pi_s.append(errs["logpi"])
 
             stats["nll_" + pi_node].feed(errs["policy_err"].data[0])
             stats["entropy_" + pi_node].feed(errs["entropy_err"].data[0])
 
-        self._reg_backward(sum_log_pi, Variable(pg_weights))
+        for log_pi in log_pi_s:
+            self._reg_backward(log_pi, Variable(pg_weights))
 
         if len(args.policy_action_nodes) > 1:
             stats["total_nll"].feed(policy_err.data[0])
