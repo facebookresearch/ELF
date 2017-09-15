@@ -1,4 +1,5 @@
 #include "tar_loader.h"
+#include <memory.h>
 
 bool file_is_tar(const std::string& filename) {
   return filename.substr(filename.find_last_of(".") + 1) == "tar";
@@ -21,11 +22,12 @@ std::vector<std::string> TarLoader::List() {
 std::string TarLoader::Load(const std::string &filename) {
   mtar_header_t h;
   mtar_find(&tar, filename.c_str(), &h);
-  char* p = (char *) calloc(1, h.size + 1);
-  mtar_read_data(&tar, p, h.size);
-  std::string s = std::string(p);
-  delete[] p;
-  return s;
+  char *s = new char[h.size + 1];
+  ::memset(s, 0, h.size + 1);
+  mtar_read_data(&tar, s, h.size);
+  std::string res(s);
+  delete [] s;
+  return res;
 }
 
 TarLoader::~TarLoader() {
