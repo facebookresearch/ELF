@@ -28,7 +28,7 @@ class ModelSaver:
             define_args = [
                 ("record_dir", "./record"),
                 ("save_prefix", "save"),
-                ("save_dir", dict(type=str, default=None)),
+                ("save_dir", dict(type=str, default=os.environ.get("save", "./"))),
                 ("latest_symlink", "latest"),
             ],
             more_args = ["num_games", "batchsize"],
@@ -40,10 +40,6 @@ class ModelSaver:
         args.save = (args.num_games == args.batchsize)
         if args.save and not os.path.exists(args.record_dir):
             os.mkdir(args.record_dir)
-
-        # Use environment variable "save" if there is any.
-        if args.save_dir is None:
-            args.save_dir = os.environ.get("save", "./")
 
         self.symlinker = SymLink(os.path.join(args.save_dir, args.latest_symlink))
 
