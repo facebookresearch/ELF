@@ -9,7 +9,7 @@
 #include <string>
 
 // Cmd interface. From vector<string> to executable command.
-// For example: 
+// For example:
 // Unit = id | (float, float)
 // Loc = (float, float)
 // move Unit Loc
@@ -17,7 +17,7 @@
 // gather Unit1 ResourceUnit
 // build Unit1 UnitTypeToBuild Loc
 
-// To prevent parsing, we also provide structured interface 
+// To prevent parsing, we also provide structured interface
 struct CmdInput {
     enum CmdInputType {CI_INVALID = -1, CI_MOVE = 0, CI_ATTACK, CI_GATHER, CI_BUILD, CI_NUM_CMDS};
 
@@ -26,7 +26,7 @@ struct CmdInput {
     PointF p;
     UnitType build_type;
 
-    // ready signal. 
+    // ready signal.
     // When not ready, id/target/base are not usable and should be used after ApplyEnv().
     bool ready = false;
     PointF unit_loc;
@@ -42,12 +42,18 @@ struct CmdInput {
         : type((CmdInputType)cmd_type), id(INVALID), target(INVALID), base(INVALID), p(target_loc_x, target_loc_y), build_type((UnitType)build_tp), ready(false), unit_loc(unit_loc_x, unit_loc_y) {
     }
 
+    std::string info() const {
+        std::stringstream ss;
+        ss << "[" << (ready ? "True" : "False") << "] type: " << type << " id: " << id << " target: " << target << " base: " << base << " p: " << p << " build_type: " << build_type;
+        return ss.str();
+    }
+
     void ApplyEnv(const GameEnv &env) {
         // Check unit id.
         id = env.GetMap().GetClosestUnitId(unit_loc, 1.0);
         target = env.GetMap().GetClosestUnitId(p, 1.0);
         base = INVALID;
-        if (type == CI_GATHER) base = env.FindClosestBase(Player::ExtractPlayerId(id));
+        if (type == CI_GATHER && id != INVALID) base = env.FindClosestBase(Player::ExtractPlayerId(id));
         ready = true;
     }
 
@@ -102,7 +108,7 @@ private:
 
     PointF parse_loc(const Tokens& tokens, int *idx) {
         // loc is in the form of (2.35,4.5). Note that there is no space allowed
-        const auto& token = tokens[*idx]; 
+        const auto& token = tokens[*idx];
         (*idx) ++;
 
         if (token[0] != '(' || token[token.size() - 1] != ')') { _success = false; return PointF(); }
@@ -114,12 +120,12 @@ private:
     UnitId parse_unit(const Tokens& tokens, int *idx) {
         UnitId id;
         if (tokens[*idx][0] == '(') {
-            PointF loc = parse_loc(tokens, idx); 
+            PointF loc = parse_loc(tokens, idx);
             // From loc to unit.
             id = _env.GetMap().GetClosestUnitId(loc, 1.0);
         } else {
             // Unit id.
-            const auto &token = tokens[*idx]; 
+            const auto &token = tokens[*idx];
             (*idx) ++;
             id = std::stoi(token);
         }
@@ -127,7 +133,7 @@ private:
     }
 
     UnitType parse_unittype(const Tokens& tokens, int *idx) {
-        const auto &token = tokens[*idx]; 
+        const auto &token = tokens[*idx];
         (*idx) ++;
         return _string2UnitType(token);
     }
