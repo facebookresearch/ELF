@@ -23,7 +23,8 @@ class Loader:
             define_args = [
                 ("actor_only", dict(action="store_true")),
                 ("list_file", "./train.lst"),
-                ("verbose", dict(action="store_true"))
+                ("verbose", dict(action="store_true")),
+                ("gpu", dict(type=int, default=None))
             ],
             more_args = ["batchsize", "T"],
             child_providers = [ self.context_args.args ]
@@ -61,7 +62,7 @@ class Loader:
             T = args.T,
         ))
 
-        return GCWrapper(GC, co, desc, use_numpy=False, params=params)
+        return GCWrapper(GC, co, desc, gpu=args.gpu, use_numpy=False, params=params)
 
 elapsed_wait_only = 0
 

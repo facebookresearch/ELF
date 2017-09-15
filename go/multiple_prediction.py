@@ -6,12 +6,11 @@ import math
 from rlpytorch import ArgsProvider, add_err
 
 class MultiplePrediction:
-    def __init__(self, args=None):
+    def __init__(self):
         self.args = ArgsProvider(
             call_from = self,
             define_args = [
             ],
-            fixed_args = args,
         )
 
         self.policy_loss = nn.NLLLoss().cuda()
