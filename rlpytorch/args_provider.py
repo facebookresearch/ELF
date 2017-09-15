@@ -139,6 +139,10 @@ class ArgsProvider:
                     else:
                         print("Warning: key = %s cannot be found from either args or environment!" % key)
 
+        # Finally set commandline.
+        if "command_line" in args:
+            setattr(self, "command_line", args["command_line"])
+
         if self._on_get_args is not None:
             self._on_get_args(args)
 
