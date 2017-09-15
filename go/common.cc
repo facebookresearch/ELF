@@ -22,6 +22,7 @@ uint64_t __attribute__ ((noinline)) wallclock64() {
 }
 
 void dbg_printf(const char *format, ...) {
+  (void)(format);
 #ifdef DEBUG
   va_list argptr;
   va_start(argptr, format);

@@ -1,26 +1,31 @@
 #include "tar_loader.h"
 
-TarLoader::TarLoader(const char *tar_filename) {
-  mtar_open(&tar, filename.c_str(), "r");
+bool file_is_tar(const std::string& filename) {
+  return filename.substr(filename.find_last_of(".") + 1) == "tar";
 }
 
-std::vector<string> List() {
-  /* Print all file names and sizes */
-  std::vector<string> v;
+TarLoader::TarLoader(const std::string &tar_filename) {
+  mtar_open(&tar, tar_filename.c_str(), "r");
+}
+
+std::vector<std::string> TarLoader::List() {
+  std::vector<std::string> v;
   mtar_header_t h;
   while ((mtar_read_header(&tar, &h)) != MTAR_ENULLRECORD) {
-    v.append(string(h.name()));
+    v.push_back(std::string(h.name));
     mtar_next(&tar);
   }
+  return v;
 }
 
-string Load(string filename) {
-  /* Load and print contents of file "test.txt" */
+std::string TarLoader::Load(const std::string &filename) {
   mtar_header_t h;
   mtar_find(&tar, filename.c_str(), &h);
-  char* p = calloc(1, h.size + 1);
+  char* p = (char *) calloc(1, h.size + 1);
   mtar_read_data(&tar, p, h.size);
-  return string(p);
+  std::string s = std::string(p);
+  delete[] p;
+  return s;
 }
 
 TarLoader::~TarLoader() {
