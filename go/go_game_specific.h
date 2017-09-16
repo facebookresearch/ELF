@@ -25,11 +25,13 @@ struct GameOptions {
     // Instead, it will get the action from the neural network to proceed.
     bool online = false;
 
+    bool use_data_aug = true;
+
     // A list file containing the files to load.
     std::string list_filename;
     bool verbose = false;
 
-    REGISTER_PYBIND_FIELDS(seed, online, num_planes, num_future_actions, list_filename, verbose);
+    REGISTER_PYBIND_FIELDS(seed, online, use_data_aug, num_planes, num_future_actions, list_filename, verbose);
 };
 
 struct GameState {

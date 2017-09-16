@@ -39,12 +39,12 @@ public:
     bool JustStarted() const { return _board._ply == 1; }
     int GetPly() const { return _board._ply; }
 
-    const BoardFeature &extractor(BoardFeature::Rot new_rot, bool new_flip) { 
+    const BoardFeature &extractor(BoardFeature::Rot new_rot, bool new_flip) {
         _bf.SetD4Group(new_rot, new_flip);
         return _bf;
     }
 
-    const BoardFeature &extractor() { 
+    const BoardFeature &extractor() {
         _bf.SetD4Group(BoardFeature::NONE, false);
         return _bf;
     }
@@ -77,7 +77,7 @@ protected:
     // Shared buffer for OfflineLoader.
     static std::unique_ptr<RBuffer> _rbuffer;
     static std::unique_ptr<TarLoader> _tar_loader;
-    
+
     Sgf::SgfIterator _sgf_iter;
     string _list_filename;
     string _path;
@@ -91,6 +91,7 @@ protected:
     int _num_future_moves;
 
     bool _verbose;
+    bool _use_data_aug;
 
     std::mt19937 _rng;
 
@@ -113,7 +114,7 @@ protected:
     bool save_forward_moves(const BoardFeature &bf, vector<int64_t> *actions) const;
 
 public:
-    OfflineLoader(const std::string &list_filename, int num_future_moves, bool verbose, int seed); 
+    OfflineLoader(const std::string &list_filename, int num_future_moves, bool verbose, int seed, bool use_data_aug);
     static void InitSharedBuffer(const std::string &list_filename);
 
     bool Ready(const std::atomic_bool &done) override;
@@ -123,7 +124,7 @@ public:
 
 class OnlinePlayer: public Loader {
 public:
-    OnlinePlayer() { } 
+    OnlinePlayer() { }
     void SaveTo(GameState &state) override;
     void Next(int64_t action) override;
 };

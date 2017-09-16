@@ -83,8 +83,8 @@ void GoState::ApplyHandicap(int handi) {
 std::unique_ptr<TarLoader> OfflineLoader::_tar_loader;
 std::unique_ptr<RBuffer> OfflineLoader::_rbuffer;
 
-OfflineLoader::OfflineLoader(const std::string &list_filename, int num_future_moves, bool verbose, int seed)
-    : _num_future_moves(num_future_moves),  _verbose(verbose), _rng(seed) {
+OfflineLoader::OfflineLoader(const std::string &list_filename, int num_future_moves, bool verbose, int seed, bool use_data_aug)
+    : _num_future_moves(num_future_moves),  _verbose(verbose), _use_data_aug(use_data_aug), _rng(seed) {
     if (verbose) std::cout << "Loading list_file: " << list_filename << std::endl;
     if (file_is_tar(list_filename)) {
       // Get all .sgf from tar
@@ -205,12 +205,18 @@ void OfflineLoader::SaveTo(GameState& gs) {
   Stone winner = _sgf_iter.GetSgf().GetWinner();
   gs.winner = (winner == S_BLACK ? 1 : (winner == S_WHITE ? -1 : 0));
 
-  auto rot = (BoardFeature::Rot)(_rng() % 4);
-  bool flip = _rng() % 2 == 1;
+  const BoardFeature *bf = nullptr;
 
-  const auto &bf = _state.extractor(rot, flip);
-  bf.Extract(&gs.s);
-  save_forward_moves(bf, &gs.offline_a);
+  if (_use_data_aug) {
+      auto rot = (BoardFeature::Rot)(_rng() % 4);
+      bool flip = _rng() % 2 == 1;
+      bf = &_state.extractor(rot, flip);
+  } else {
+      bf = &_state.extractor();
+  }
+
+  bf->Extract(&gs.s);
+  save_forward_moves(*bf, &gs.offline_a);
 }
 
 bool OfflineLoader::save_forward_moves(const BoardFeature &bf, vector<int64_t> *actions) const {
