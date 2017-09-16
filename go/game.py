@@ -24,7 +24,7 @@ class Loader:
                 ("actor_only", dict(action="store_true")),
                 ("list_file", "./train.lst"),
                 ("verbose", dict(action="store_true")),
-                ("online", dict(action="store_true", default="Set game to online mode")),
+                ("online", dict(action="store_true", help="Set game to online mode")),
                 ("gpu", dict(type=int, default=None))
             ],
             more_args = ["batchsize", "T"],
@@ -48,25 +48,21 @@ class Loader:
         print("Num Actions: ", params["num_action"])
 
         desc = {}
-
-        # For training: group 1
-        # We want input, action (filled by actor models), value (filled by actor
-        # models) and reward.
-        desc["train"] = dict(
-            batchsize=args.batchsize,
-            input=dict(T=args.T, keys=set(["s", "offline_a"])),
-            reply=None
-        )
-
-        desc["actor"] = dict(
-            batchsize=args.batchsize,
-            input=dict(T=args.T, keys=set(["s"])),
-            reply=dict(T=args.T, keys=set(["V", "a"]))
-        )
+        if args.online:
+            desc["actor"] = dict(
+                batchsize=args.batchsize,
+                input=dict(T=args.T, keys=set(["s"])),
+                reply=dict(T=args.T, keys=set(["V", "a"]))
+            )
+        else:
+            desc["train"] = dict(
+                batchsize=args.batchsize,
+                input=dict(T=args.T, keys=set(["s", "offline_a"])),
+                reply=None
+            )
 
         params.update(dict(
             num_group = 1 if args.actor_only else 2,
-            train_batchsize = int(desc["train"]["batchsize"]),
             T = args.T,
         ))
 
