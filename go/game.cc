@@ -27,102 +27,25 @@ GoGame::GoGame(int game_idx, const GameOptions& options) : _options(options) {
     } else {
         seed = options.seed;
     }
-    _rng.seed(seed);
-
-    if (_options.verbose) std::cout << "[" << _game_idx << "] Loading list_file: " << options.list_filename << std::endl;
-    if (file_is_tar(options.list_filename)) {
-      // Get all .sgf from tar
-      TarLoader tl = TarLoader(options.list_filename.c_str());
-      _games = tl.List();
+    if (_options.online) {
+        _loader.reset(new OnlinePlayer());
     } else {
-      // Get all .sgf file in the directory.
-      ifstream iFile(options.list_filename);
-      _games.clear();
-      for (string this_game; std::getline(iFile, this_game) ; ) {
-        _games.push_back(this_game);
-      }
-      while (_games.back().empty()) _games.pop_back();
-
-      // Get the path of the filename.
-      _path = string(options.list_filename);
-      int i = _path.size() - 1;
-      while (_path[i] != '/' && i >= 0) i --;
-
-      if (i >= 0) _path = _path.substr(0, i + 1);
-      else _path = "";
+        _loader.reset(new OfflineLoader(_options, seed));
     }
-    if (_options.verbose) std::cout << "[" << _game_idx << "] Loaded: #Game: " << _games.size() << std::endl;
-
     if (_options.verbose) std::cout << "[" << _game_idx << "] Done with initialization" << std::endl;
 }
 
-void GoGame::print_context() const {
-    cout << "[id=" << _game_idx << "][curr_game=" << _curr_game << "][filename=" << _games[_curr_game] << " " << _state.info() << endl;
-}
-
 void GoGame::Act(const std::atomic_bool& done) {
-  // Act on the current game.
-  while ( _state.NeedReload() && !done.load() ) {
-      // std::cout << "Reloading games.." << std::endl;
-      reload();
-  }
-  if (done.load()) return;
-
-  vector<SgfMove> future_moves;
-  while (true) {
-      if (_state.GetForwardMoves(&future_moves)) break;
-      print_context();
-      cout << "future_moves.size() [" +
-          std::to_string(future_moves.size()) + "] < #FUTURE_ACTIONS [" + std::to_string(NUM_FUTURE_ACTIONS) << endl;
-      reload();
-  }
-  //bool terminal = (_sgf.StepLeft() == NUM_FUTURE_ACTIONS);
+  if (!_loader->Ready(done)) return;
+  if (_loader->state().JustStarted()) _ai_comm->Restart();
 
   // Send the current board situation.
   auto& gs = _ai_comm->Prepare();
-  //meta->tick = _board._ply;
-  //meta->terminated = terminal;
-  //if (terminal) meta->winner = _sgf.GetWinner();
-  _state.SaveTo(gs, future_moves, _rng);
+
+  _loader->SaveTo(gs);
 
   // There is always only 1 player.
   _ai_comm->SendDataWaitReply();
 
-  if (!_state.NextMove()) reload();
+  _loader->Next(_ai_comm->info().data.newest().a);
 }
-
-const Sgf &GoGame::pick_sgf() {
-    while (true) {
-        _curr_game = _rng() % _games.size();
-        // std::cout << "_game_idx = " << _curr_game << std::endl;
-
-        std::string full_name = file_is_tar(_options.list_filename) ?
-           _games[_curr_game] : _path + _games[_curr_game];
-        // std::cout << "full_name = " << full_name << std::endl;
-
-        bool file_loaded = _rbuffer->HasKey(full_name);
-        // std::cout << "Has key: " << (file_loaded ? "True" : "False") << std::endl;
-
-        const auto &sgf = _rbuffer->Get(full_name);
-        if (_options.verbose) {
-            if (! file_loaded)
-              std::cout << "Loaded file " << full_name << std::endl;
-        }
-        if (sgf.NumMoves() >= 10 && sgf.GetBoardSize() == BOARD_DIM) return sgf;
-    }
-}
-
-void GoGame::reload() {
-    const Sgf &sgf = pick_sgf();
-    _state.Reset(sgf);
-
-    if (_options.verbose) print_context();
-
-    // Clear the board.
-    _ai_comm->Restart();
-
-    // Then we need to randomly play the game.
-    int pre_moves = _rng() % (sgf.NumMoves() / 2);
-    for (int i = 0; i < pre_moves; ++i) _state.NextMove();
-}
-

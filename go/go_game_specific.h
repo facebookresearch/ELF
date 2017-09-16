@@ -18,22 +18,36 @@ struct GameOptions {
     // Seed.
     unsigned int seed;
     int num_planes;
-    int num_future_actions;
+    int num_future_actions = 3;
+
+    // If true, then it will open the game in online mode.
+    // In this mode, the thread will not output the next k moves (since every game is new).
+    // Instead, it will get the action from the neural network to proceed.
+    bool online = false;
+
+    // -1 is random, 0-7 mean specific data aug. 
+    int data_aug = -1;
+
+    // 
+    float ratio_pre_moves = 0.5;
+
+    // Cutoff ply for each loaded game. 
+    int move_cutoff = -1;
+
     // A list file containing the files to load.
     std::string list_filename;
     bool verbose = false;
 
-    REGISTER_PYBIND_FIELDS(seed, num_planes, num_future_actions, list_filename, verbose);
+    REGISTER_PYBIND_FIELDS(seed, online, data_aug, ratio_pre_moves, move_cutoff, num_planes, num_future_actions, list_filename, verbose);
 };
 
 struct GameState {
     using State = GameState;
     // Board state 19x19
-    // temp state.
-    std::vector<float> features;
+    std::vector<float> s;
 
     // Next k actions.
-    std::vector<int64_t> a;
+    std::vector<int64_t> offline_a;
 
     // Seq information.
     int32_t id = -1;
@@ -43,6 +57,9 @@ struct GameState {
 
     int32_t move_idx = -1;
     int32_t winner = 0; // B +1, W -1, U 0
+
+    int64_t a;
+    float V;
 
     std::string player_name;
 
@@ -73,7 +90,7 @@ struct GameState {
         last_terminal = 0;
     }
 
-    DECLARE_FIELD(GameState, id, seq, game_counter, last_terminal, features, a, move_idx, winner);
-    REGISTER_PYBIND_FIELDS(id, seq, game_counter, last_terminal, features, a, move_idx, winner);
+    DECLARE_FIELD(GameState, id, seq, game_counter, last_terminal, s, offline_a, a, V, move_idx, winner);
+    REGISTER_PYBIND_FIELDS(id, seq, game_counter, last_terminal, s, offline_a, a, V, move_idx, winner);
 };
 

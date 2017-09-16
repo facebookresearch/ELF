@@ -189,11 +189,14 @@ void BoardFeature::Extract(std::vector<float> *features) const {
   GetLibertyMap3binary(player, LAYER(OUR_LIB));
   GetLibertyMap3binary(OPPONENT(player), LAYER(OPPONENT_LIB));
   GetSimpleKo(player, LAYER(OUR_SIMPLE_KO));
+
   GetStones(player, LAYER(OUR_STONES));
   GetStones(OPPONENT(player), LAYER(OPPONENT_STONES));
   GetStones(S_EMPTY, LAYER(EMPTY_STONES));
+
   GetHistoryExp(player, LAYER(OUR_HISTORY));
   GetHistoryExp(OPPONENT(player), LAYER(OPPONENT_HISTORY));
+
   GetDistanceMap(player, LAYER(OUR_CLOSEST_COLOR));
   GetDistanceMap(OPPONENT(player), LAYER(OPPONENT_CLOSEST_COLOR));
 }

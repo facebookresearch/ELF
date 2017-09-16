@@ -24,6 +24,10 @@ class Loader:
                 ("actor_only", dict(action="store_true")),
                 ("list_file", "./train.lst"),
                 ("verbose", dict(action="store_true")),
+                ("data_aug", dict(type=int, default=-1, help="specify data augumentation, 0-7, -1 mean random")),
+                ("ratio_pre_moves", dict(type=float, default=0.5, help="how many moves to perform before we train the model")),
+                ("move_cutoff", dict(type=int, default=-1, help="Cutoff ply in replay")),
+                ("online", dict(action="store_true", help="Set game to online mode")),
                 ("gpu", dict(type=int, default=None))
             ],
             more_args = ["batchsize", "T"],
@@ -38,7 +42,11 @@ class Loader:
         opt = go.GameOptions()
         opt.seed = 0
         opt.list_filename = args.list_file
+        opt.online = args.online
         opt.verbose = args.verbose
+        opt.data_aug = args.data_aug
+        opt.ratio_pre_moves = args.ratio_pre_moves
+        opt.move_cutoff = args.move_cutoff
         GC = go.GameContext(co, opt)
         print("Version: ", GC.Version())
 
@@ -46,19 +54,21 @@ class Loader:
         print("Num Actions: ", params["num_action"])
 
         desc = {}
-
-        # For training: group 1
-        # We want input, action (filled by actor models), value (filled by actor
-        # models) and reward.
-        desc["train"] = dict(
-            batchsize=args.batchsize,
-            input=dict(T=args.T, keys=set(["features", "a"])),
-            reply=None
-        )
+        if args.online:
+            desc["actor"] = dict(
+                batchsize=args.batchsize,
+                input=dict(T=args.T, keys=set(["s"])),
+                reply=dict(T=args.T, keys=set(["V", "a"]))
+            )
+        else:
+            desc["train"] = dict(
+                batchsize=args.batchsize,
+                input=dict(T=args.T, keys=set(["s", "offline_a"])),
+                reply=None
+            )
 
         params.update(dict(
             num_group = 1 if args.actor_only else 2,
-            train_batchsize = int(desc["train"]["batchsize"]),
             T = args.T,
         ))
 

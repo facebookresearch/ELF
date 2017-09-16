@@ -20,7 +20,7 @@ public:
         if (it == _buffer.end()) {
             std::lock_guard<std::mutex> lock(_mutex);
             // Check again.
-            it == _buffer.find(key);
+            it = _buffer.find(key);
             if (it == _buffer.end()) it = add_record_no_lock(key);
         }
         return *it->second;
