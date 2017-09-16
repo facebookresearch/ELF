@@ -24,6 +24,7 @@ class Loader:
                 ("actor_only", dict(action="store_true")),
                 ("list_file", "./train.lst"),
                 ("verbose", dict(action="store_true")),
+                ("online", dict(action="store_true", default="Set game to online model, then the game will read the actions and proceed")),
                 ("gpu", dict(type=int, default=None))
             ],
             more_args = ["batchsize", "T"],

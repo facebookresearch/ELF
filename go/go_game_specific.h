@@ -19,6 +19,12 @@ struct GameOptions {
     unsigned int seed;
     int num_planes;
     int num_future_actions;
+
+    // If true, then it will save the game to online mode.
+    // In this mode, the thread will not output the next k moves (since every game is new), but will get the
+    // action from the neural network to proceed.
+    bool online = false;
+
     // A list file containing the files to load.
     std::string list_filename;
     bool verbose = false;

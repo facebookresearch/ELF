@@ -114,3 +114,18 @@ void GoState::SaveTo(GameState& state, const vector<SgfMove> &future_moves, std:
   }
 }
 
+void GoState::SaveForwardMoves(const BoardFeature &bf, vector<int> *actions) const {
+  actions->resize(NUM_FUTURE_ACTIONS);
+  for (int i = 0; i < NUM_FUTURE_ACTIONS; ++i) {
+    int action = bf.GetAction(future_moves[i].move);
+    if (action < 0 || action >= BOARD_DIM * BOARD_DIM) {
+      Coord move = future_moves[i].move;
+      Stone player = future_moves[i].player;
+      // print_context();
+      cout << "invalid action! action = " << action << " x = " << X(move) << " y = " << Y(move)
+        << " player = " << player << " " << coord2str(move) << endl;
+      action = 0;
+    }
+    actions->at(i) =  action;
+  }
+}
