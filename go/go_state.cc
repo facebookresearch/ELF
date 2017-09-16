@@ -155,19 +155,16 @@ void OfflineLoader::reset(const Sgf &sgf) {
     _sgf_iter = sgf.begin();
 
     // Place handicap stones if there is any.
-    _state.ApplyHandicap(sgf.GetHandicapStones());
+    int handi = sgf.GetHandicapStones();
+    if (_verbose) std::cout << "#Handi = " << handi << std::endl;
+    _state.ApplyHandicap(handi);
 }
 
 const Sgf &OfflineLoader::pick_sgf() {
     while (true) {
         _curr_game = _rng() % _games.size();
-        // std::cout << "_game_idx = " << _curr_game << std::endl;
-
         std::string full_name = file_is_tar(_list_filename) ? _games[_curr_game] : _path + _games[_curr_game];
-        // std::cout << "full_name = " << full_name << std::endl;
-        //
         bool file_loaded = _rbuffer->HasKey(full_name);
-        // std::cout << "Has key: " << (file_loaded ? "True" : "False") << std::endl;
 
         const auto &sgf = _rbuffer->Get(full_name);
         if (_verbose) {
@@ -187,6 +184,11 @@ void OfflineLoader::reload() {
     // Then we need to randomly play the game.
     int pre_moves = _rng() % (sgf.NumMoves() / 2);
     for (int i = 0; i < pre_moves; ++i) next_move();
+
+    if (_verbose) {
+        std::cout << "PreMove: " << pre_moves << std::endl;
+        print_context();
+    }
 }
 
 

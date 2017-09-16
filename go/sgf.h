@@ -37,6 +37,18 @@ inline string coord2str(Coord c) {
     return s;
 }
 
+inline string coord2str2(Coord c) {
+    int x = X(c);
+    if (x >= 8) x ++;
+    int y = Y(c);
+
+    string s;
+    s.resize(2);
+    s[0] = 'A' + x;
+    s[1] = 0;
+    return s + std::to_string(y + 1);
+}
+
 struct SgfEntry {
     Coord move;
     Stone player;

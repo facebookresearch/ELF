@@ -23,6 +23,18 @@ def action2move(a):
     y = a % 19
     return xy2move(x, y)
 
+def plot_plane(v):
+    s = ""
+    for j in range(v.size(1)):
+        for i in range(v.size(0)):
+            if v[i, v.size(1) - 1 - j] != 0:
+                s += "o "
+            else:
+                s += ". "
+        s += "\n"
+    print(s)
+
+
 class DFConsole:
     def __init__(self):
         self.exit = False
@@ -33,31 +45,40 @@ class DFConsole:
         while True:
             cmd = input(prompt_str)
             items = cmd.split()
-            if items[0] == 'p':
-                return dict(a=move2action(items[1]))
-            elif items[0] == 'c':
-                return evaluator.actor(batch)
-            elif items[0] == "a":
-                reply = evaluator.actor(batch)
-                if "pi" in reply:
-                    score, indices = reply["pi"].squeeze().sort(dim=0, descending=True)
-                    first_n = int(items[1])
-                    for i in range(first_n):
-                        print("%s: %.3f" % (action2move(indices[i]), score[i]))
-                else:
-                    print("No key \"pi\"")
-            elif items[0] == 'offline_a':
-                if "offline_a" in batch:
-                    for i, offline_a in enumerate(batch["offline_a"][0][0]):
-                        print("[%d]: %s" % (i, action2move(offline_a)))
-                else:
-                    print("No offline_a available!")
-            elif items[0] == "exit":
-                self.exit = True
-                return
-            else:
-                print("Invalid input: " + cmd + ". Please try again")
+            if len(items) < 1:
+                print("Invalid input")
 
+            try:
+                if items[0] == 'p':
+                    return dict(a=move2action(items[1]))
+                elif items[0] == 'c':
+                    return evaluator.actor(batch)
+                elif items[0] == "s":
+                    channel_id = int(items[1])
+                    plot_plane(batch["s"][0][0][channel_id])
+
+                elif items[0] == "a":
+                    reply = evaluator.actor(batch)
+                    if "pi" in reply:
+                        score, indices = reply["pi"].squeeze().sort(dim=0, descending=True)
+                        first_n = int(items[1])
+                        for i in range(first_n):
+                            print("%s: %.3f" % (action2move(indices[i]), score[i]))
+                    else:
+                        print("No key \"pi\"")
+                elif items[0] == 'offline_a':
+                    if "offline_a" in batch:
+                        for i, offline_a in enumerate(batch["offline_a"][0][0]):
+                            print("[%d]: %s" % (i, action2move(offline_a)))
+                    else:
+                        print("No offline_a available!")
+                elif items[0] == "exit":
+                    self.exit = True
+                    return
+                else:
+                    print("Invalid input: " + cmd + ". Please try again")
+            except:
+                pass
 
     def main_loop(self):
         evaluator = Evaluator(stats=False)

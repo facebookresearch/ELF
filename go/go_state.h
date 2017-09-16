@@ -103,12 +103,13 @@ protected:
 
     std::string info() const {
         std::stringstream ss;
-        ss << _sgf_iter.GetCurrIdx() << "/" << _sgf_iter.GetSgf().NumMoves();
+        Coord m = _sgf_iter.GetCoord();
+        ss << _sgf_iter.GetCurrIdx() << "/" << _sgf_iter.GetSgf().NumMoves() << ": " << coord2str(m) << ", " << coord2str2(m) << " (" << m << ")" << std::endl;
         return ss.str();
     }
 
     void print_context() const {
-        cout << "[curr_game=" << _curr_game << "][filename=" << _games[_curr_game] << " " << info() << endl;
+        cout << "[curr_game=" << _curr_game << "][filename=" << _games[_curr_game] << "] " << info() << endl;
     }
 
     bool save_forward_moves(const BoardFeature &bf, vector<int64_t> *actions) const;
