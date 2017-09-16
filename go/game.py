@@ -24,7 +24,7 @@ class Loader:
                 ("actor_only", dict(action="store_true")),
                 ("list_file", "./train.lst"),
                 ("verbose", dict(action="store_true")),
-                ("online", dict(action="store_true", default="Set game to online model, then the game will read the actions and proceed")),
+                ("online", dict(action="store_true", default="Set game to online mode")),
                 ("gpu", dict(type=int, default=None))
             ],
             more_args = ["batchsize", "T"],
@@ -39,6 +39,7 @@ class Loader:
         opt = go.GameOptions()
         opt.seed = 0
         opt.list_filename = args.list_file
+        opt.online = args.online
         opt.verbose = args.verbose
         GC = go.GameContext(co, opt)
         print("Version: ", GC.Version())
