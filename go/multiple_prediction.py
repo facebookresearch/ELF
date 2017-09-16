@@ -38,7 +38,7 @@ class MultiplePrediction:
         total_loss = None
         eps = 1e-6
         targets = batch.hist(0)["offline_a"]
-        for i, pred in enumerate(state_curr["a"]):
+        for i, pred in enumerate(state_curr["pis"]):
             if i == 0:
                 prec1, prec5 = self.accuracy(pred.data, targets[:, i].contiguous(), topk=(1, 5))
                 stats["top1_acc"].feed(prec1[0])

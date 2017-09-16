@@ -51,11 +51,11 @@ class Model_Policy(Model):
             s = conv_bn(self.relu(conv(s)))
 
         output = self.final_conv(s)
-        actions = []
+        pis = []
         d = self.board_size * self.board_size
         for i in range(self.num_future_actions):
-            actions.append(self.softmax(output[:,i].contiguous().view(-1, d)))
-        return dict(a=actions)
+            pis.append(self.softmax(output[:,i].contiguous().view(-1, d)))
+        return dict(pis=pis, pi=pis[0])
 
 # Format: key, [model, method]
 Models = {

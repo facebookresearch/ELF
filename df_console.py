@@ -3,12 +3,16 @@ import sys
 import os
 from rlpytorch import load_env, Evaluator, ModelInterface, ArgsProvider, EvalIters
 
-def move_parse(v):
+def move2xy(v):
     x = ord(v[0].lower()) - ord('a')
     # Skip 'i'
     if x >= 9: x -= 1
-    y = int(v[1:])
+    y = int(v[1:]) - 1
     return x, y
+
+def xy2move(x, y):
+    if x >= 8: x += 1
+    return chr(x + 65) + str(y + 1)
 
 class DFConsole:
     def __init__(self):
@@ -36,10 +40,16 @@ class DFConsole:
                 cmd = input("DF> ")
                 items = cmd.split()
                 if items[0] == 'p':
-                    x, y = move_parse(items[1])
+                    x, y = move2xy(items[1])
                     return dict(a=[x * 19 + y])
                 elif items[0] == 'c':
                     return evaluator.actor(batch)
+                elif items[0] == "a":
+                    reply = evaluator.actor(batch)
+                    score, indices = reply["pi"].squeeze().sort(dim=0, descending=True)
+                    first_n = int(items[1])
+                    for i in range(first_n):
+                        print("%s: %.3f" % (xy2move(indices[i] // 19, indices[i] % 19), score[i]))
                 else:
                     print("Invalid input: " + cmd + ". Please try again")
 
