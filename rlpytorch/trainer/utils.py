@@ -16,9 +16,12 @@ class SymLink:
 
         for k, name in enumerate(self.latest_files):
             symlink_file = self.sym_prefix + str(k)
-            if os.path.exists(symlink_file):
-                os.unlink(symlink_file)
-            os.symlink(name, symlink_file)
+            try:
+                if os.path.exists(symlink_file):
+                    os.unlink(symlink_file)
+                os.symlink(name, symlink_file)
+            except:
+                print("Build symlink %s for %s failed, skipped" % (symlink_file, name))
 
 
 class ModelSaver:
