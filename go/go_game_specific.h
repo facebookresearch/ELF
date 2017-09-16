@@ -29,7 +29,7 @@ struct GameOptions {
     std::string list_filename;
     bool verbose = false;
 
-    REGISTER_PYBIND_FIELDS(seed, num_planes, num_future_actions, list_filename, verbose);
+    REGISTER_PYBIND_FIELDS(seed, online, num_planes, num_future_actions, list_filename, verbose);
 };
 
 struct GameState {

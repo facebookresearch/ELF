@@ -80,7 +80,10 @@ void GoState::ApplyHandicap(int handi) {
 }
 
 ///////////// OfflineLoader ////////////////////
-OfflineLoader::OfflineLoader(const std::string &list_filename, int num_future_moves, bool verbose, int seed) 
+std::unique_ptr<TarLoader> OfflineLoader::_tar_loader;
+std::unique_ptr<RBuffer> OfflineLoader::_rbuffer;
+
+OfflineLoader::OfflineLoader(const std::string &list_filename, int num_future_moves, bool verbose, int seed)
     : _num_future_moves(num_future_moves),  _verbose(verbose), _rng(seed) {
     if (verbose) std::cout << "Loading list_file: " << list_filename << std::endl;
     if (file_is_tar(list_filename)) {
@@ -204,7 +207,7 @@ void OfflineLoader::SaveTo(GameState& gs) {
 
   auto rot = (BoardFeature::Rot)(_rng() % 4);
   bool flip = _rng() % 2 == 1;
-  
+
   const auto &bf = _state.extractor(rot, flip);
   bf.Extract(&gs.s);
   save_forward_moves(bf, &gs.offline_a);
@@ -240,8 +243,8 @@ void OnlinePlayer::SaveTo(GameState &gs) {
 
 void OnlinePlayer::Next(int64_t action) {
     // From action to coord.
-    Coord m = _state.last_extractor().Action2Coord(action); 
-    // Play it. 
+    Coord m = _state.last_extractor().Action2Coord(action);
+    // Play it.
     if (! _state.ApplyMove(m)) {
         _state.Reset();
     }

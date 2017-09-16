@@ -1,4 +1,6 @@
 # Console for DarkForest
+import sys
+import os
 from rlpytorch import load_env, Evaluator, ModelInterface, ArgsProvider, EvalIters
 
 def move_parse(v):
@@ -17,7 +19,7 @@ class DFConsole:
         )
 
     def main_loop(self):
-        evaluator = Evaluator()
+        evaluator = Evaluator(stats=False)
         # Set game to online model.
         env, args = load_env(os.environ, evaluator=evaluator, overrides=dict(num_games=1, batchsize=1, online=True, list_file="", greedy=True))
 
