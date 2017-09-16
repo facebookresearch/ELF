@@ -116,9 +116,9 @@ bool OfflineLoader::Ready(const std::atomic_bool &done) {
   if (done.load()) return false;
 
   while (true) {
-      if (_sgf_iter.StepLeft() >= NUM_FUTURE_ACTIONS) break;
+      if (_sgf_iter.StepLeft() >= _num_future_moves) break;
       print_context();
-      cout << "future_moves.size() [" + std::to_string(_sgf_iter.StepLeft()) + "] < #FUTURE_ACTIONS [" + std::to_string(NUM_FUTURE_ACTIONS) << endl;
+      cout << "future_moves.size() [" + std::to_string(_sgf_iter.StepLeft()) + "] < #FUTURE_MOVES [" + std::to_string(_num_future_moves) << endl;
       reload();
   }
   return true;
@@ -188,7 +188,7 @@ void OfflineLoader::reload() {
 
 
 bool OfflineLoader::need_reload() const {
-    return (_sgf_iter.done() || _sgf_iter.StepLeft() < NUM_FUTURE_ACTIONS);
+    return (_sgf_iter.done() || _sgf_iter.StepLeft() < _num_future_moves);
 }
 
 bool OfflineLoader::next_move() {

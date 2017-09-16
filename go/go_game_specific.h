@@ -18,11 +18,11 @@ struct GameOptions {
     // Seed.
     unsigned int seed;
     int num_planes;
-    int num_future_actions;
+    int num_future_actions = 3;
 
-    // If true, then it will save the game to online mode.
-    // In this mode, the thread will not output the next k moves (since every game is new), but will get the
-    // action from the neural network to proceed.
+    // If true, then it will open the game in online mode.
+    // In this mode, the thread will not output the next k moves (since every game is new).
+    // Instead, it will get the action from the neural network to proceed.
     bool online = false;
 
     // A list file containing the files to load.

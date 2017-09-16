@@ -12,7 +12,6 @@
 using namespace std;
 
 #define BOARD_DIM 19
-#define NUM_FUTURE_ACTIONS 3
 
 class HandicapTable {
 private:

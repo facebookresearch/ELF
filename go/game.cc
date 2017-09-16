@@ -27,7 +27,11 @@ GoGame::GoGame(int game_idx, const GameOptions& options) : _options(options) {
     } else {
         seed = options.seed;
     }
-    _loader.reset(new OfflineLoader(_options.list_filename, NUM_FUTURE_ACTIONS, _options.verbose, seed));
+    if (_options.online) {
+        _loader.reset(new OnlinePlayer());
+    } else {
+        _loader.reset(new OfflineLoader(_options.list_filename, _options.num_future_actions, _options.verbose, seed));
+    }
     if (_options.verbose) std::cout << "[" << _game_idx << "] Done with initialization" << std::endl;
 }
 
