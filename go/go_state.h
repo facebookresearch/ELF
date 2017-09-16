@@ -88,10 +88,7 @@ protected:
     // Current game, its sgf record and game board state.
     int _curr_game;
 
-    int _num_future_moves;
-
-    bool _verbose;
-    bool _use_data_aug;
+    GameOptions _options;
 
     std::mt19937 _rng;
 
@@ -115,7 +112,7 @@ protected:
     bool save_forward_moves(const BoardFeature &bf, vector<int64_t> *actions) const;
 
 public:
-    OfflineLoader(const std::string &list_filename, int num_future_moves, bool verbose, int seed, bool use_data_aug);
+    OfflineLoader(const GameOptions &options, int seed);
     static void InitSharedBuffer(const std::string &list_filename);
 
     bool Ready(const std::atomic_bool &done) override;

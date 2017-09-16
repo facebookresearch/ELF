@@ -25,13 +25,20 @@ struct GameOptions {
     // Instead, it will get the action from the neural network to proceed.
     bool online = false;
 
-    bool use_data_aug = true;
+    // -1 is random, 0-7 mean specific data aug. 
+    int data_aug = -1;
+
+    // 
+    float ratio_pre_moves = 0.5;
+
+    // Cutoff ply for each loaded game. 
+    int move_cutoff = -1;
 
     // A list file containing the files to load.
     std::string list_filename;
     bool verbose = false;
 
-    REGISTER_PYBIND_FIELDS(seed, online, use_data_aug, num_planes, num_future_actions, list_filename, verbose);
+    REGISTER_PYBIND_FIELDS(seed, online, data_aug, ratio_pre_moves, move_cutoff, num_planes, num_future_actions, list_filename, verbose);
 };
 
 struct GameState {

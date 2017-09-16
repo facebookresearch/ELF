@@ -24,7 +24,9 @@ class Loader:
                 ("actor_only", dict(action="store_true")),
                 ("list_file", "./train.lst"),
                 ("verbose", dict(action="store_true")),
-                ("no_data_aug", dict(action="store_true")),
+                ("data_aug", dict(type=int, default=-1, help="specify data augumentation, 0-7, -1 mean random")),
+                ("ratio_pre_moves", dict(type=float, default=0.5, help="how many moves to perform before we train the model")),
+                ("move_cutoff", dict(type=int, default=-1, help="Cutoff ply in replay")),
                 ("online", dict(action="store_true", help="Set game to online mode")),
                 ("gpu", dict(type=int, default=None))
             ],
@@ -42,7 +44,9 @@ class Loader:
         opt.list_filename = args.list_file
         opt.online = args.online
         opt.verbose = args.verbose
-        opt.use_data_aug = not args.no_data_aug
+        opt.data_aug = args.data_aug
+        opt.ratio_pre_moves = args.ratio_pre_moves
+        opt.move_cutoff = args.move_cutoff
         GC = go.GameContext(co, opt)
         print("Version: ", GC.Version())
 

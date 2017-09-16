@@ -30,7 +30,7 @@ GoGame::GoGame(int game_idx, const GameOptions& options) : _options(options) {
     if (_options.online) {
         _loader.reset(new OnlinePlayer());
     } else {
-        _loader.reset(new OfflineLoader(_options.list_filename, _options.num_future_actions, _options.verbose, seed, _options.use_data_aug));
+        _loader.reset(new OfflineLoader(_options, seed));
     }
     if (_options.verbose) std::cout << "[" << _game_idx << "] Done with initialization" << std::endl;
 }
