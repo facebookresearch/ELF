@@ -28,33 +28,17 @@ class GameContext {
     std::vector<GoGame> _games;
     const int _num_action = BOARD_DIM * BOARD_DIM;
 
-    std::unique_ptr<RBuffer> _shared_buffer;
-    std::unique_ptr<TarLoader> _tar_loader;
-
   public:
     GameContext(const ContextOptions& context_options, const GameOptions& options) {
       _context.reset(new GC{context_options, options});
       for (int i = 0; i < context_options.num_games; ++i) {
           _games.emplace_back(i, options);
       }
-      if (file_is_tar(options.list_filename)) {
-          _tar_loader.reset(new TarLoader(options.list_filename));
-      }
-      _shared_buffer.reset(new RBuffer([&options,  this](const std::string &name) {
-            std::unique_ptr<Sgf> sgf(new Sgf());
-            if (file_is_tar(options.list_filename)) {
-              sgf->Load(name, *this->_tar_loader);
-            } else {
-              sgf->Load(name);
-            }
-            return sgf;
-      }));
+      if (! options.list_filename.empty()) OfflineLoader::InitSharedBuffer(options.list_filename);  
     }
 
     void Start() {
-        RBuffer *rbuffer = _shared_buffer.get();
-
-        auto f = [this, rbuffer](int game_idx, const ContextOptions &context_options, const GameOptions&,
+        auto f = [this](int game_idx, const ContextOptions &context_options, const GameOptions&,
                 const std::atomic_bool& done, GC::Comm* comm) {
             GC::AIComm ai_comm(game_idx, comm);
             auto &state = ai_comm.info().data;
@@ -63,7 +47,7 @@ class GameContext {
                 s.Init(game_idx, _num_action);
             }
             auto& game = _games[game_idx];
-            game.Init(&ai_comm, rbuffer);
+            game.Init(&ai_comm);
             game.MainLoop(done);
         };
         _context->Start(f);
@@ -85,10 +69,11 @@ class GameContext {
         std::string type_name = mm->type();
 
         if (key == "features") return EntryInfo(key, type_name, {MAX_NUM_FEATURE, BOARD_DIM, BOARD_DIM});
-        else if (key == "a") return EntryInfo(key, type_name, {NUM_FUTURE_ACTIONS});
+        else if (key == "offline_a") return EntryInfo(key, type_name, {NUM_FUTURE_ACTIONS});
         else if (key == "last_terminal" || key == "id" || key == "seq" || key == "game_counter") return EntryInfo(key, type_name);
         else if (key == "move_idx") return EntryInfo(key, type_name);
         else if (key == "winner") return EntryInfo(key, type_name);
+        else if (key == "a" || key == "V") return EntryInfo(key, type_name);
 
         return EntryInfo();
     }

@@ -39,7 +39,7 @@ struct GameState {
     std::vector<float> features;
 
     // Next k actions.
-    std::vector<int64_t> a;
+    std::vector<int64_t> offline_a;
 
     // Seq information.
     int32_t id = -1;
@@ -49,6 +49,9 @@ struct GameState {
 
     int32_t move_idx = -1;
     int32_t winner = 0; // B +1, W -1, U 0
+
+    int64_t a;
+    float V;
 
     std::string player_name;
 
@@ -79,7 +82,7 @@ struct GameState {
         last_terminal = 0;
     }
 
-    DECLARE_FIELD(GameState, id, seq, game_counter, last_terminal, features, a, move_idx, winner);
-    REGISTER_PYBIND_FIELDS(id, seq, game_counter, last_terminal, features, a, move_idx, winner);
+    DECLARE_FIELD(GameState, id, seq, game_counter, last_terminal, features, offline_a, a, V, move_idx, winner);
+    REGISTER_PYBIND_FIELDS(id, seq, game_counter, last_terminal, features, offline_a, a, V, move_idx, winner);
 };
 

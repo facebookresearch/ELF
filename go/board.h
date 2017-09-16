@@ -158,6 +158,8 @@ typedef struct {
 // External representation: x * stride + y
 #define EXPORT_OFFSET_XY(x, y) ( (x) * BOARD_SIZE + (y) )
 #define EXPORT_OFFSET(c) ( (X(c)) * BOARD_SIZE + (Y(c)) )
+#define EXPORT_X(a) ((a) / BOARD_SIZE)
+#define EXPORT_Y(a) ((a) % BOARD_SIZE)
 #define EXPORT_OFFSET_PLANE(c, plane) ( (X(c)) * BOARD_SIZE + (Y(c)) + BOARD_SIZE * BOARD_SIZE * (plane) )
 
 #define ATXY(b, x, y) b[OFFSETXY(x, y)]

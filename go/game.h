@@ -12,7 +12,6 @@
 #include "elf/pybind_helper.h"
 #include "elf/comm_template.h"
 #include "elf/ai_comm.h"
-#include "elf/shared_replay_buffer.h"
 
 #include "go_game_specific.h"
 #include "go_state.h"
@@ -23,8 +22,6 @@ using Context = ContextT<GameOptions, HistT<GameState>>;
 using Comm = typename Context::Comm;
 using AIComm = AICommT<Comm>;
 
-using RBuffer = SharedReplayBuffer<std::string, Sgf>;
-
 // Game interface for Go.
 class GoGame {
 private:
@@ -32,32 +29,14 @@ private:
     AIComm* _ai_comm = nullptr;
     GameOptions _options;
 
-    std::mt19937 _rng;
-
-    string _path;
-
-    // Database
-    vector<string> _games;
-
-    // Current game, its sgf record and game board state.
-    int _curr_game;
-    GoState _state;
-
-    // Shared Sgf buffer.
-    RBuffer *_rbuffer = nullptr;
-
-    void reload();
-    const Sgf &pick_sgf();
-    void print_context() const;
+    std::unique_ptr<Loader> _loader;
 
 public:
     GoGame(int game_idx, const GameOptions& options);
 
-    void Init(AIComm *ai_comm, RBuffer *rbuffer) {
+    void Init(AIComm *ai_comm) {
         assert(ai_comm);
-        assert(rbuffer);
         _ai_comm = ai_comm;
-        _rbuffer = rbuffer;
     }
 
     void MainLoop(const std::atomic_bool& done) {
@@ -69,5 +48,5 @@ public:
     }
 
     void Act(const std::atomic_bool& done);
-    string ShowBoard() const { return _state.ShowBoard(); }
+    string ShowBoard() const { return _loader->state().ShowBoard(); }
 };
