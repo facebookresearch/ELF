@@ -53,8 +53,14 @@ class Loader:
         # models) and reward.
         desc["train"] = dict(
             batchsize=args.batchsize,
-            input=dict(T=args.T, keys=set(["features", "a"])),
+            input=dict(T=args.T, keys=set(["features", "offline_a"])),
             reply=None
+        )
+
+        desc["actor"] = dict(
+            batchsize=args.batchsize,
+            input=dict(T=args.T, keys=set(["features"])),
+            reply=dict(T=args.T, keys=set(["V", "a"]))
         )
 
         params.update(dict(
