@@ -29,10 +29,9 @@ public:
 
         if (_flip) std::swap(output.first, output.second);
 
-        if (_rot == CCW90) output = std::make_pair(BOARD_SIZE - output.second - 1, output.first); 
+        if (_rot == CCW90) output = std::make_pair(BOARD_SIZE - output.second - 1, output.first);
         else if (_rot == CCW180) output = std::make_pair(BOARD_SIZE - output.first - 1, BOARD_SIZE - output.second - 1);
         else if (_rot == CCW270) output = std::make_pair(output.second, BOARD_SIZE - output.first - 1);
-        else output = p;
 
         return output;
     }

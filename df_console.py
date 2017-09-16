@@ -66,6 +66,13 @@ class DFConsole:
                             print("%s: %.3f" % (action2move(indices[i]), score[i]))
                     else:
                         print("No key \"pi\"")
+                elif items[0] == "aug":
+                    print(batch["aug_code"][0][0])
+                elif items[0] == "show":
+                    print(batch.GC.ShowBoard(0))
+                elif items[0] == "dbg":
+                    import pdb
+                    pdb.set_trace()
                 elif items[0] == 'offline_a':
                     if "offline_a" in batch:
                         for i, offline_a in enumerate(batch["offline_a"][0][0]):
@@ -83,7 +90,7 @@ class DFConsole:
     def main_loop(self):
         evaluator = Evaluator(stats=False)
         # Set game to online model.
-        env, args = load_env(os.environ, evaluator=evaluator, overrides=dict(num_games=1, batchsize=1, greedy=True, T=1))
+        env, args = load_env(os.environ, evaluator=evaluator, overrides=dict(num_games=1, batchsize=1, greedy=True, T=1, additional_labels="aug_code,move_idx"))
 
         GC = env["game"].initialize()
         model = env["model_loaders"][0].load_model(GC.params)

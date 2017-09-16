@@ -1,11 +1,12 @@
 import sys
 
-from elf import GCWrapper, ContextArgs
+from elf import GCWrapper, ContextArgs, MoreLabels
 from rlpytorch import ArgsProvider
 
 class CommonLoader:
     def __init__(self, module):
         self.context_args = ContextArgs()
+        self.more_labels = MoreLabels()
         self.module = module
 
         self.args = ArgsProvider(
@@ -19,7 +20,6 @@ class CommonLoader:
                 ("num_frames_in_state", 1),
                 ("seed", 0),
                 ("actor_only", dict(action="store_true")),
-                ("additional_labels", dict(type=str, default=None, help="Add additional labels in the batch. E.g., id,seq,last_terminal")),
                 ("model_no_spatial", dict(action="store_true")), # TODO, put it to model
                 ("save_replay_prefix", dict(type=str, default=None)),
                 ("output_file", dict(type=str, default=None)),
@@ -27,7 +27,7 @@ class CommonLoader:
                 ("gpu", dict(type=int, help="gpu to use", default=None)),
             ],
             more_args = ["batchsize", "T"],
-            child_providers = [ self.context_args.args ]
+            child_providers = [ self.context_args.args, self.more_labels.args ]
         )
 
     def _set_key(self, ai_options, key, value):
@@ -100,14 +100,6 @@ class CommonLoader:
 
         return co, GC, params
 
-    def _add_more_labels(self, desc):
-        args = self.args
-        if args.additional_labels is None: return
-
-        extra = args.additional_labels.split(",")
-        for _, v in desc.items():
-            v["input"]["keys"].update(extra)
-
     def _add_player_name(self, desc, player_name):
         desc["filters"] = dict(player_name=player_name)
 
@@ -124,7 +116,7 @@ class CommonLoader:
             # For training, we want input, action (filled by actor models), value (filled by actor models) and reward.
             desc["train"] = self._get_train_spec()
 
-        self._add_more_labels(desc)
+        self.more_labels.add_labels(desc)
 
         params.update(dict(
             num_group = 1 if args.actor_only else 2,

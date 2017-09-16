@@ -34,7 +34,7 @@ class GameContext {
       for (int i = 0; i < context_options.num_games; ++i) {
           _games.emplace_back(i, options);
       }
-      if (! options.list_filename.empty()) OfflineLoader::InitSharedBuffer(options.list_filename);  
+      if (! options.list_filename.empty()) OfflineLoader::InitSharedBuffer(options.list_filename);
     }
 
     void Start() {
@@ -74,6 +74,7 @@ class GameContext {
         else if (key == "move_idx") return EntryInfo(key, type_name);
         else if (key == "winner") return EntryInfo(key, type_name);
         else if (key == "a" || key == "V") return EntryInfo(key, type_name);
+        else if (key == "aug_code" || key == "move_idx") return EntryInfo(key, type_name);
 
         return EntryInfo();
     }

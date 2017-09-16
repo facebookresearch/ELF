@@ -11,12 +11,13 @@ import go_game as go
 
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-from elf import GCWrapper, ContextArgs
+from elf import GCWrapper, ContextArgs, MoreLabels
 from rlpytorch import ArgsProvider
 
 class Loader:
     def __init__(self):
         self.context_args = ContextArgs()
+        self.more_labels = MoreLabels()
 
         self.args = ArgsProvider(
             call_from = self,
@@ -31,7 +32,7 @@ class Loader:
                 ("gpu", dict(type=int, default=None))
             ],
             more_args = ["batchsize", "T"],
-            child_providers = [ self.context_args.args ]
+            child_providers = [ self.context_args.args, self.more_labels.args ]
         )
 
     def initialize(self):
@@ -66,6 +67,8 @@ class Loader:
                 input=dict(T=args.T, keys=set(["s", "offline_a"])),
                 reply=None
             )
+
+        self.more_labels.add_labels(desc)
 
         params.update(dict(
             num_group = 1 if args.actor_only else 2,

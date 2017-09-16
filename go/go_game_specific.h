@@ -25,13 +25,13 @@ struct GameOptions {
     // Instead, it will get the action from the neural network to proceed.
     bool online = false;
 
-    // -1 is random, 0-7 mean specific data aug. 
+    // -1 is random, 0-7 mean specific data aug.
     int data_aug = -1;
 
-    // 
+    //
     float ratio_pre_moves = 0.5;
 
-    // Cutoff ply for each loaded game. 
+    // Cutoff ply for each loaded game.
     int move_cutoff = -1;
 
     // A list file containing the files to load.
@@ -56,6 +56,7 @@ struct GameState {
     char last_terminal = 0;
 
     int32_t move_idx = -1;
+    int32_t aug_code = 0;
     int32_t winner = 0; // B +1, W -1, U 0
 
     int64_t a;
@@ -63,7 +64,7 @@ struct GameState {
 
     std::string player_name;
 
-    void Clear() { }
+    void Clear() { aug_code = 0; winner = 0; move_idx = -1; }
 
     void Init(int iid, int /*num_action*/) {
         id = iid;
@@ -90,7 +91,7 @@ struct GameState {
         last_terminal = 0;
     }
 
-    DECLARE_FIELD(GameState, id, seq, game_counter, last_terminal, s, offline_a, a, V, move_idx, winner);
-    REGISTER_PYBIND_FIELDS(id, seq, game_counter, last_terminal, s, offline_a, a, V, move_idx, winner);
+    DECLARE_FIELD(GameState, id, seq, game_counter, last_terminal, s, offline_a, a, V, move_idx, winner, aug_code);
+    REGISTER_PYBIND_FIELDS(id, seq, game_counter, last_terminal, s, offline_a, a, V, move_idx, winner, aug_code);
 };
 

@@ -292,3 +292,4 @@ class GCWrapper:
     def PrintSummary(self):
         '''Print summary'''
         self.GC.PrintSummary()
+

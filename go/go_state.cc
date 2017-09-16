@@ -211,6 +211,7 @@ void OfflineLoader::SaveTo(GameState& gs) {
 
   int code = _options.data_aug;
   if (code  == -1 || code >= 8) code = _rng() % 8;
+  gs.aug_code = code;
 
   auto rot = (BoardFeature::Rot)(code % 4);
   bool flip = (code >> 2) == 1;
