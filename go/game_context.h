@@ -68,7 +68,7 @@ class GameContext {
 
         std::string type_name = mm->type();
 
-        if (key == "features") return EntryInfo(key, type_name, {MAX_NUM_FEATURE, BOARD_DIM, BOARD_DIM});
+        if (key == "s") return EntryInfo(key, type_name, {MAX_NUM_FEATURE, BOARD_DIM, BOARD_DIM});
         else if (key == "offline_a") return EntryInfo(key, type_name, {NUM_FUTURE_ACTIONS});
         else if (key == "last_terminal" || key == "id" || key == "seq" || key == "game_counter") return EntryInfo(key, type_name);
         else if (key == "move_idx") return EntryInfo(key, type_name);

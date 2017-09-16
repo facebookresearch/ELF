@@ -35,8 +35,7 @@ struct GameOptions {
 struct GameState {
     using State = GameState;
     // Board state 19x19
-    // temp state.
-    std::vector<float> features;
+    std::vector<float> s;
 
     // Next k actions.
     std::vector<int64_t> offline_a;
@@ -82,7 +81,7 @@ struct GameState {
         last_terminal = 0;
     }
 
-    DECLARE_FIELD(GameState, id, seq, game_counter, last_terminal, features, offline_a, a, V, move_idx, winner);
-    REGISTER_PYBIND_FIELDS(id, seq, game_counter, last_terminal, features, offline_a, a, V, move_idx, winner);
+    DECLARE_FIELD(GameState, id, seq, game_counter, last_terminal, s, offline_a, a, V, move_idx, winner);
+    REGISTER_PYBIND_FIELDS(id, seq, game_counter, last_terminal, s, offline_a, a, V, move_idx, winner);
 };
 

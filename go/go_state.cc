@@ -206,7 +206,7 @@ void OfflineLoader::SaveTo(GameState& gs) {
   bool flip = _rng() % 2 == 1;
   
   const auto &bf = _state.extractor(rot, flip);
-  bf.Extract(&gs.features);
+  bf.Extract(&gs.s);
   save_forward_moves(bf, &gs.offline_a);
 }
 
@@ -235,7 +235,7 @@ void OnlinePlayer::SaveTo(GameState &gs) {
     gs.move_idx = _state.GetPly();
     gs.winner = 0;
     const auto &bf = _state.extractor();
-    bf.Extract(&gs.features);
+    bf.Extract(&gs.s);
 }
 
 void OnlinePlayer::Next(int64_t action) {

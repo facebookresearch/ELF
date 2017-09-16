@@ -45,7 +45,7 @@ class Model_Policy(Model):
         ]
 
     def forward(self, x):
-        s = self._var(x["features"])
+        s = self._var(x["s"])
 
         for conv, conv_bn in zip(self.convs, self.convs_bn):
             s = conv_bn(self.relu(conv(s)))
