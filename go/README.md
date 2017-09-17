@@ -7,7 +7,7 @@ Training
 ```
 sh ./train_df.sh --gpu [your gpu] --no_leaky_relu --list_file [your list of .sgf files]
 ```
-Training with a single GPU. On GoGoD, Top 1 is around 52% after 8 days. Test performance is around 1% lower. 
+Training with a single GPU. On GoGoD, Top 1 is around 51.2% after 8 days. Test performance is around 1% lower. 
 ```
 1214:loss0[5000]: avg: 1.71844, min: 1.22093[1926], max: 2.31351[1187]
 1214:loss1[5000]: avg: 2.83697, min: 2.35151[1591], max: 3.38029[131]
