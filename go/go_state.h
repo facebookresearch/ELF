@@ -85,11 +85,11 @@ protected:
     // Database
     vector<string> _games;
 
-    // Current game, its sgf record and game board state.
-    int _curr_game;
-
     GameOptions _options;
 
+    // Current game, its sgf record and game board state.
+    int _curr_game;
+    int _game_loaded;
     std::mt19937 _rng;
 
     bool next_move();

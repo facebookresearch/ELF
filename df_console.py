@@ -87,7 +87,11 @@ class DFConsole:
         print(batch.GC.ShowBoard(0))
         # Ask user to choose
         while True:
-            cmd = input(prompt_str)
+            if getattr(self, "repeat", 0) > 0:
+                self.repeat -= 1
+                cmd = self.repeat_cmd
+            else:
+                cmd = input(prompt_str)
             items = cmd.split()
             if len(items) < 1:
                 print("Invalid input")
@@ -115,6 +119,16 @@ class DFConsole:
 
                 elif items[0] == 'check2end':
                     self.check_stats = Counter()
+                    self.check(batch)
+                    self.last_move_idx = batch["move_idx"][0][0]
+                    if len(items) == 2:
+                        self.repeat = int(items[1])
+                        self.repeat_cmd = "check2end_cont"
+                    return
+
+                elif items[0] == "check2end_cont":
+                    if not hasattr(self, "check_stats"):
+                        self.check_stats = Counter()
                     self.check(batch)
                     self.last_move_idx = batch["move_idx"][0][0]
                     return

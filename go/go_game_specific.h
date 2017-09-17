@@ -32,18 +32,24 @@ struct GameOptions {
     // -1 is random, 0-7 mean specific data aug.
     int data_aug = -1;
 
-    // Before we use the data from a recorded replay, sample number of moves to fast-forward.
+    // Before we use the data from the first recorded replay in each thread, sample number of moves to fast-forward.
+    // This is to increase the diversity of the game.
     // This number is sampled uniformly from [0, #Num moves * ratio_pre_moves]
-    float ratio_pre_moves = 0.5;
+    float start_ratio_pre_moves = 0.5;
 
-    // Cutoff ply for each loaded game.
+    // Similar as above, but note that it will be applied to any newly loaded game (except for the first one).
+    // This will introduce bias in the dataset.
+    // Useful when you want that (or when you want to visualize the data).
+    float ratio_pre_moves = 0.0;
+
+    // Cutoff ply for each loaded game, and start a new one.
     int move_cutoff = -1;
 
     // A list file containing the files to load.
     std::string list_filename;
     bool verbose = false;
 
-    REGISTER_PYBIND_FIELDS(seed, online, data_aug, ratio_pre_moves, move_cutoff, num_planes, num_future_actions, list_filename, verbose, num_games_per_thread);
+    REGISTER_PYBIND_FIELDS(seed, online, data_aug, start_ratio_pre_moves, ratio_pre_moves, move_cutoff, num_planes, num_future_actions, list_filename, verbose, num_games_per_thread);
 };
 
 struct GameState {

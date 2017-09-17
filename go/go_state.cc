@@ -84,7 +84,7 @@ std::unique_ptr<TarLoader> OfflineLoader::_tar_loader;
 std::unique_ptr<RBuffer> OfflineLoader::_rbuffer;
 
 OfflineLoader::OfflineLoader(const GameOptions &options, int seed)
-    : _options(options), _rng(seed) {
+    : _options(options), _game_loaded(0), _rng(seed) {
     if (_options.verbose) std::cout << "Loading list_file: " << _options.list_filename << std::endl;
     if (file_is_tar(_options.list_filename)) {
       // Get all .sgf from tar
@@ -158,6 +158,8 @@ void OfflineLoader::reset(const Sgf &sgf) {
     int handi = sgf.GetHandicapStones();
     if (_options.verbose) std::cout << "#Handi = " << handi << std::endl;
     _state.ApplyHandicap(handi);
+
+    _game_loaded ++;
 }
 
 const Sgf &OfflineLoader::pick_sgf() {
@@ -182,9 +184,12 @@ void OfflineLoader::reload() {
     if (_options.verbose) print_context();
 
     // Then we need to randomly play the game.
-    int random_base = static_cast<int>(sgf.NumMoves() * _options.ratio_pre_moves + 0.5);
+    const float ratio_pre_moves = (_game_loaded == 1 ? _options.start_ratio_pre_moves : _options.ratio_pre_moves);
+
+    int random_base = static_cast<int>(sgf.NumMoves() * ratio_pre_moves + 0.5);
     if (random_base == 0) random_base ++;
     int pre_moves = _rng() % random_base;
+
     for (int i = 0; i < pre_moves; ++i) next_move();
 
     if (_options.verbose) {

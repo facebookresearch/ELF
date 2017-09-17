@@ -26,8 +26,9 @@ class Loader:
                 ("list_file", "./train.lst"),
                 ("verbose", dict(action="store_true")),
                 ("data_aug", dict(type=int, default=-1, help="specify data augumentation, 0-7, -1 mean random")),
-                ("ratio_pre_moves", dict(type=float, default=0.5, help="how many moves to perform before we train the model")),
-                ("num_games_per_thread", 5),
+                ("ratio_pre_moves", dict(type=float, default=0, help="how many moves to perform in each thread, before we use the data train the model")),
+                ("start_ratio_pre_moves", dict(type=float, default=0.5, help="how many moves to perform in each thread, before we use the first sgf file to train the model")),
+                ("num_games_per_thread", dict(type=int, default=5, help="number of concurrent games per threads, used to increase diversity of games")),
                 ("move_cutoff", dict(type=int, default=-1, help="Cutoff ply in replay")),
                 ("online", dict(action="store_true", help="Set game to online mode")),
                 ("gpu", dict(type=int, default=None))
@@ -48,6 +49,7 @@ class Loader:
         opt.verbose = args.verbose
         opt.data_aug = args.data_aug
         opt.ratio_pre_moves = args.ratio_pre_moves
+        opt.start_ratio_pre_moves = args.start_ratio_pre_moves
         opt.move_cutoff = args.move_cutoff
         opt.num_games_per_thread = args.num_games_per_thread
         GC = go.GameContext(co, opt)
