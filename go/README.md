@@ -1,6 +1,8 @@
-DarkForest in ELF
+DarkForest Go Engine in ELF
 ===================
-Here is an reimplementation of DarkForest using ELF platform.
+Here is an reimplementation of DarkForest Go Engine using ELF platform.
+
+See [here](https://github.com/facebookresearch/darkforestGo) for the orignal LUA+Torch version. 
 
 Training  
 ==========
@@ -33,7 +35,7 @@ sh ./console_df.sh --load [your model] --gpu [your gpu id] --data_aug 0
 
 If you want to check training result interactively, use:
 ```
-sh ./console_df_check_train.sh --load [your model] --gpu [your gpu id] --list_file [a file contains .sgf file list] --data_aug 0
+sh ./console_df_check_train.sh --load [your model] --gpu [your gpu id] --list_file [a file contains .sgf file list] --data_aug 0 --verbose
 ```
 Here is a sample output:
 ```
@@ -55,16 +57,17 @@ Loaded file /home/yuandong/local/go/go_gogod/./Database/2012/2012-11-17n.sgf
 12 . X . X . . . . . . . . . . . . . . . 12
 11 . . X O O . . . . . . . . O . O . X . 11     WHITE (O) has captured 1 stones
 10 . . . + . . . . . + . . . . . + . . . 10     BLACK (X) has captured 2 stones
-9 . X O . . . . . . . . . . . . . X . . 9
-8 . . X O . . . . . . . . . . . . . . . 8
-7 . . X . . . . . . . . . . . . . . . . 7
-6 . . X O . . . . . . . . . . . . . . . 6
-5 . . X . . . . . . . . . . . . X . . . 5
-4 . . . + O . . . . + . . . . . + X . . 4
-3 . . . O . . . . . . O . . . O . . . . 3
-2 . . . . . . . . . . . . . . . . . . . 2
-1 . . . . . . . . . . . . . . . . . . . 1
-A B C D E F G H J K L M N O P Q R S T
+ 9 . X O . . . . . . . . . . . . . X . . 9
+ 8 . . X O . . . . . . . . . . . . . . . 8
+ 7 . . X . . . . . . . . . . . . . . . . 7
+ 6 . . X O . . . . . . . . . . . . . . . 6
+ 5 . . X . . . . . . . . . . . . X . . . 5
+ 4 . . . + O . . . . + . . . . . + X . . 4
+ 3 . . . O . . . . . . O . . . O . . . . 3
+ 2 . . . . . . . . . . . . . . . . . . . 2
+ 1 . . . . . . . . . . . . . . . . . . . 1
+   A B C D E F G H J K L M N O P Q R S T
+
 DF Train>
 ```
 
