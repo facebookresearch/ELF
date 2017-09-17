@@ -58,7 +58,9 @@ class GameContext {
           { "num_action", _num_action },
           { "board_size", BOARD_SIZE },
           { "num_planes", MAX_NUM_FEATURE },
-          { "num_future_actions", _context->options().num_future_actions}
+          { "num_future_actions", _context->options().num_future_actions },
+          { "our_stone_plane" , OUR_STONES },
+          { "opponent_stone_plane", OPPONENT_STONES }
         };
     }
 
@@ -74,7 +76,7 @@ class GameContext {
         else if (key == "move_idx") return EntryInfo(key, type_name);
         else if (key == "winner") return EntryInfo(key, type_name);
         else if (key == "a" || key == "V") return EntryInfo(key, type_name);
-        else if (key == "aug_code" || key == "move_idx") return EntryInfo(key, type_name);
+        else if (key == "aug_code" || key == "move_idx" || key == "game_record_idx") return EntryInfo(key, type_name);
 
         return EntryInfo();
     }

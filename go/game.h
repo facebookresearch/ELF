@@ -29,7 +29,9 @@ private:
     AIComm* _ai_comm = nullptr;
     GameOptions _options;
 
-    std::unique_ptr<Loader> _loader;
+    std::vector<std::unique_ptr<Loader>> _loaders;
+    int _curr_loader_idx;
+    std::mt19937 _rng;
 
 public:
     GoGame(int game_idx, const GameOptions& options);
@@ -48,5 +50,5 @@ public:
     }
 
     void Act(const std::atomic_bool& done);
-    string ShowBoard() const { return _loader->state().ShowBoard(); }
+    string ShowBoard() const { return _loaders[_curr_loader_idx]->state().ShowBoard(); }
 };

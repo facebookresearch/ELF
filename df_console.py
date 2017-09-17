@@ -90,7 +90,7 @@ class DFConsole:
     def main_loop(self):
         evaluator = Evaluator(stats=False)
         # Set game to online model.
-        env, args = load_env(os.environ, evaluator=evaluator, overrides=dict(num_games=1, batchsize=1, greedy=True, T=1, additional_labels="aug_code,move_idx"))
+        env, args = load_env(os.environ, evaluator=evaluator, overrides=dict(num_games=1, batchsize=1, num_games_per_thread=1, greedy=True, T=1, additional_labels="aug_code,move_idx"))
 
         GC = env["game"].initialize()
         model = env["model_loaders"][0].load_model(GC.params)

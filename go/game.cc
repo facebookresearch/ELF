@@ -14,7 +14,7 @@
 #include <fstream>
 
 ////////////////// GoGame /////////////////////
-GoGame::GoGame(int game_idx, const GameOptions& options) : _options(options) {
+GoGame::GoGame(int game_idx, const GameOptions& options) : _options(options), _curr_loader_idx(0) {
     _game_idx = game_idx;
     uint64_t seed = 0;
     if (options.seed == 0) {
@@ -27,25 +27,34 @@ GoGame::GoGame(int game_idx, const GameOptions& options) : _options(options) {
     } else {
         seed = options.seed;
     }
+    _rng.seed(seed);
+
     if (_options.online) {
-        _loader.reset(new OnlinePlayer());
+        _loaders.emplace_back(new OnlinePlayer());
     } else {
-        _loader.reset(new OfflineLoader(_options, seed));
+        // Open many offline instances.
+        for (int i = 0; i < _options.num_games_per_thread; ++i) {
+            _loaders.emplace_back(new OfflineLoader(_options, seed + _game_idx * i * 997 + i * 13773 + 7));
+        }
     }
     if (_options.verbose) std::cout << "[" << _game_idx << "] Done with initialization" << std::endl;
 }
 
 void GoGame::Act(const std::atomic_bool& done) {
-  if (!_loader->Ready(done)) return;
-  if (_loader->state().JustStarted()) _ai_comm->Restart();
+  // Randomly pick one loader
+  _curr_loader_idx = _rng() % _loaders.size();
+  Loader *loader = _loaders[_curr_loader_idx].get();
+
+  if (! loader->Ready(done)) return;
+  if (loader->state().JustStarted()) _ai_comm->Restart();
 
   // Send the current board situation.
   auto& gs = _ai_comm->Prepare();
 
-  _loader->SaveTo(gs);
+  loader->SaveTo(gs);
 
   // There is always only 1 player.
   _ai_comm->SendDataWaitReply();
 
-  _loader->Next(_ai_comm->info().data.newest().a);
+  loader->Next(_ai_comm->info().data.newest().a);
 }

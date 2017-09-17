@@ -205,6 +205,7 @@ bool OfflineLoader::next_move() {
 }
 
 void OfflineLoader::SaveTo(GameState& gs) {
+  gs.game_record_idx = _curr_game;
   gs.move_idx = _state.GetPly();
   Stone winner = _sgf_iter.GetSgf().GetWinner();
   gs.winner = (winner == S_BLACK ? 1 : (winner == S_WHITE ? -1 : 0));

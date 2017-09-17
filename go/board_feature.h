@@ -4,6 +4,21 @@
 #include <vector>
 #define MAX_NUM_FEATURE 25
 
+#define OUR_LIB          0
+#define OPPONENT_LIB     3
+#define OUR_SIMPLE_KO    6
+#define OUR_STONES       7
+#define OPPONENT_STONES  8
+#define EMPTY_STONES     9
+
+// [TODO]: Other todo features.
+#define OUR_HISTORY      10
+#define OPPONENT_HISTORY 11
+#define BORDER           12
+#define POSITION_MARK    13
+#define OUR_CLOSEST_COLOR    14
+#define OPPONENT_CLOSEST_COLOR   15
+
 class BoardFeature {
 public:
     enum Rot { NONE = 0, CCW90, CCW180, CCW270 };

@@ -27,6 +27,7 @@ class Loader:
                 ("verbose", dict(action="store_true")),
                 ("data_aug", dict(type=int, default=-1, help="specify data augumentation, 0-7, -1 mean random")),
                 ("ratio_pre_moves", dict(type=float, default=0.5, help="how many moves to perform before we train the model")),
+                ("num_games_per_thread", 5),
                 ("move_cutoff", dict(type=int, default=-1, help="Cutoff ply in replay")),
                 ("online", dict(action="store_true", help="Set game to online mode")),
                 ("gpu", dict(type=int, default=None))
@@ -48,6 +49,7 @@ class Loader:
         opt.data_aug = args.data_aug
         opt.ratio_pre_moves = args.ratio_pre_moves
         opt.move_cutoff = args.move_cutoff
+        opt.num_games_per_thread = args.num_games_per_thread
         GC = go.GameContext(co, opt)
         print("Version: ", GC.Version())
 
@@ -84,13 +86,30 @@ if __name__ == '__main__':
     parser.add_argument("--num_iter", type=int, default=5000)
 
     loader = Loader()
-    args = ArgsProvider.Load(parser, [loader])
+    args = ArgsProvider.Load(parser, [loader], global_overrides=dict(additional_labels="move_idx,game_record_idx"))
 
     GC = loader.initialize()
 
+    import torch
+    nbin = 10
+    stats = torch.FloatTensor(nbin, 19, 19)
+    counts = torch.FloatTensor(10)
+
+    game_records_visited = Counter()
+
+    our_idx = GC.params["our_stone_plane"]
+    opp_idx = GC.params["opponent_stone_plane"]
+
     def train(batch):
-        import pdb
-        pdb.set_trace()
+        # Collect statistics.
+        b = batch.hist(0)
+        for game_idx, move_idx, s in zip(b["game_record_idx"], b["move_idx"], b["s"]):
+            bin_idx =  move_idx // 10
+            if bin_idx >= nbin: continue
+            game_records_visited[game_idx] += 1
+            stats[bin_idx, :, :] += s[our_idx, :, :]
+            stats[bin_idx, :, :] += s[opp_idx, :, :]
+            counts[bin_idx] += 1
 
     GC.reg_callback("train", train)
 
@@ -106,6 +125,14 @@ if __name__ == '__main__':
         GC.Run()
         # print("wake up from wait")
         elapsed_wait_only += (datetime.now() - b).total_seconds() * 1000
+
+    print(len(game_records_visited))
+    print(game_records_visited.most_common(30))
+
+    stats /= stats.sum(1).sum(1).view(-1, 1, 1)
+    for i in range(nbin):
+        print("Range [%d, %d)" % (i * 10, i * 10 + 10))
+        print(stats[i, :, :])
 
     print(reward_dist)
     elapsed = (datetime.now() - before).total_seconds() * 1000
