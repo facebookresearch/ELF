@@ -1,6 +1,7 @@
 # Console for DarkForest
 import sys
 import os
+from collections import Counter
 from rlpytorch import load_env, Evaluator, ModelInterface, ArgsProvider, EvalIters
 
 def move2xy(v):
@@ -35,11 +36,54 @@ def plot_plane(v):
     print(s)
 
 
+def topk_accuracy2(batch, state_curr, topk=(1,)):
+    pi = state_curr["pi"]
+    import torch
+    if isinstance(pi, torch.autograd.Variable):
+        pi = pi.data
+    score, indices = pi.sort(dim=1, descending=True)
+
+    maxk = max(topk)
+    topn_count = [0] * maxk
+
+    for ind, gt in zip(indices, batch["offline_a"][0]):
+        for i in range(maxk):
+            if ind[i] == gt[0]:
+                topn_count[i] += 1
+
+    for i in range(maxk):
+        topn_count[i] /= indices.size(0)
+
+    return [ topn_count[i - 1] for i in topk ]
+
+
 class DFConsole:
     def __init__(self):
         self.exit = False
 
-    def prompt(self, prompt_str, batch, evaluator):
+    def check(self, batch):
+        reply = self.evaluator.actor(batch)
+        topk = topk_accuracy2(batch, reply, topk=(1,2,3,4,5))
+        for i, v in enumerate(topk):
+            self.check_stats[i] += v
+        if sum(topk) == 0: self.check_stats[-1] += 1
+
+    def prompt(self, prompt_str, batch):
+        if self.last_move_idx is not None:
+            curr_move_idx = batch["move_idx"][0][0]
+            if curr_move_idx - self.last_move_idx == 1:
+                self.check(batch)
+                self.last_move_idx = curr_move_idx
+                return
+            else:
+                n = sum(self.check_stats.values())
+                print("#Move: " + str(n))
+                accu = 0
+                for i in range(5):
+                    accu += self.check_stats[i]
+                    print("Top %d: %.3f" % (i, accu / n))
+                self.last_move_idx = None
+
         print(batch.GC.ShowBoard(0))
         # Ask user to choose
         while True:
@@ -52,13 +96,13 @@ class DFConsole:
                 if items[0] == 'p':
                     return dict(a=move2action(items[1]))
                 elif items[0] == 'c':
-                    return evaluator.actor(batch)
+                    return self.evaluator.actor(batch)
                 elif items[0] == "s":
                     channel_id = int(items[1])
                     plot_plane(batch["s"][0][0][channel_id])
 
                 elif items[0] == "a":
-                    reply = evaluator.actor(batch)
+                    reply = self.evaluator.actor(batch)
                     if "pi" in reply:
                         score, indices = reply["pi"].squeeze().sort(dim=0, descending=True)
                         first_n = int(items[1])
@@ -66,6 +110,15 @@ class DFConsole:
                             print("%s: %.3f" % (action2move(indices[i]), score[i]))
                     else:
                         print("No key \"pi\"")
+                elif items[0] == "check":
+                    print("Top %d" % self.check(batch))
+
+                elif items[0] == 'check2end':
+                    self.check_stats = Counter()
+                    self.check(batch)
+                    self.last_move_idx = batch["move_idx"][0][0]
+                    return
+
                 elif items[0] == "aug":
                     print(batch["aug_code"][0][0])
                 elif items[0] == "show":
@@ -84,8 +137,8 @@ class DFConsole:
                     return
                 else:
                     print("Invalid input: " + cmd + ". Please try again")
-            except:
-                pass
+            except Exception as e:
+                print("Something wrong! " + str(e))
 
     def main_loop(self):
         evaluator = Evaluator(stats=False)
@@ -99,11 +152,14 @@ class DFConsole:
         mi.add_model("model", model, optim_params={ "lr" : 0.001})
         mi.add_model("actor", model, copy=True, cuda=True, gpu_id=args.gpu)
 
+        self.evaluator = evaluator
+        self.last_move_idx = None
+
         def actor(batch):
-            return self.prompt("DF> ", batch, evaluator)
+            return self.prompt("DF> ", batch)
 
         def train(batch):
-            self.prompt("DF Train> ", batch, evaluator)
+            self.prompt("DF Train> ", batch)
 
         evaluator.setup(sampler=env["sampler"], mi=mi)
 
