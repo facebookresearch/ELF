@@ -16,6 +16,7 @@
 
 #include "game.h"
 #include "../elf/pybind_interface.h"
+#include "../elf/tar_loader.h"
 #include "board_feature.h"
 
 class GameContext {
@@ -27,33 +28,17 @@ class GameContext {
     std::vector<GoGame> _games;
     const int _num_action = BOARD_DIM * BOARD_DIM;
 
-    std::unique_ptr<RBuffer> _shared_buffer;
-    std::unique_ptr<TarLoader> _tar_loader;
-
   public:
     GameContext(const ContextOptions& context_options, const GameOptions& options) {
       _context.reset(new GC{context_options, options});
       for (int i = 0; i < context_options.num_games; ++i) {
           _games.emplace_back(i, options);
       }
-      if (options.list_filename.substr(options.list_filename.find_last_of(".") + 1) == "tar") {
-          _tar_loader.reset(new TarLoader(options.list_filename));
-      }
-      _shared_buffer.reset(new RBuffer([&options,  this](const std::string &name) {
-            std::unique_ptr<Sgf> sgf(new Sgf());
-            if (options.list_filename.substr(options.list_filename.find_last_of(".") + 1) == "tar") {
-              sgf->Load(name, *this->_tar_loader);
-            } else {
-              sgf->Load(name);
-            }
-            return sgf;
-      }));
+      if (! options.list_filename.empty()) OfflineLoader::InitSharedBuffer(options.list_filename);
     }
 
     void Start() {
-        RBuffer *rbuffer = _shared_buffer.get();
-
-        auto f = [this, rbuffer](int game_idx, const ContextOptions &context_options, const GameOptions&,
+        auto f = [this](int game_idx, const ContextOptions &context_options, const GameOptions&,
                 const std::atomic_bool& done, GC::Comm* comm) {
             GC::AIComm ai_comm(game_idx, comm);
             auto &state = ai_comm.info().data;
@@ -62,7 +47,7 @@ class GameContext {
                 s.Init(game_idx, _num_action);
             }
             auto& game = _games[game_idx];
-            game.Init(&ai_comm, rbuffer);
+            game.Init(&ai_comm);
             game.MainLoop(done);
         };
         _context->Start(f);
@@ -73,7 +58,9 @@ class GameContext {
           { "num_action", _num_action },
           { "board_size", BOARD_SIZE },
           { "num_planes", MAX_NUM_FEATURE },
-          { "num_future_actions", NUM_FUTURE_ACTIONS}
+          { "num_future_actions", _context->options().num_future_actions },
+          { "our_stone_plane" , OUR_STONES },
+          { "opponent_stone_plane", OPPONENT_STONES }
         };
     }
 
@@ -83,11 +70,13 @@ class GameContext {
 
         std::string type_name = mm->type();
 
-        if (key == "features") return EntryInfo(key, type_name, {MAX_NUM_FEATURE, BOARD_DIM, BOARD_DIM});
-        else if (key == "a") return EntryInfo(key, type_name, {NUM_FUTURE_ACTIONS});
+        if (key == "s") return EntryInfo(key, type_name, {MAX_NUM_FEATURE, BOARD_DIM, BOARD_DIM});
+        else if (key == "offline_a") return EntryInfo(key, type_name, {_context->options().num_future_actions});
         else if (key == "last_terminal" || key == "id" || key == "seq" || key == "game_counter") return EntryInfo(key, type_name);
         else if (key == "move_idx") return EntryInfo(key, type_name);
         else if (key == "winner") return EntryInfo(key, type_name);
+        else if (key == "a" || key == "V") return EntryInfo(key, type_name);
+        else if (key == "aug_code" || key == "move_idx" || key == "game_record_idx") return EntryInfo(key, type_name);
 
         return EntryInfo();
     }

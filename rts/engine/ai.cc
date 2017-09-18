@@ -40,6 +40,8 @@ void AI::actual_send_cmds(const GameEnv &env, AssignedCmds &assigned_cmds) {
     for (auto it = assigned_cmds.begin(); it != assigned_cmds.end(); ++it) {
         const Unit *u = env.GetUnit(it->first);
         if (u == nullptr) continue;
+        // Cannot give command to other units.
+        if (u->GetPlayerId() != _player_id) continue;
         if (! env.GetGameDef().unit(u->GetUnitType()).CmdAllowed(it->second->type())) continue;
 
         it->second->set_id(it->first);

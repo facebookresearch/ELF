@@ -1,5 +1,5 @@
 /*
-    pybind11/typeid.h: Convenience wrapper classes for basic Python types
+    pybind11/pytypes.h: Convenience wrapper classes for basic Python types
 
     Copyright (c) 2016 Wenzel Jakob <wenzel.jakob@epfl.ch>
 
@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "common.h"
+#include "detail/common.h"
 #include "buffer_info.h"
 #include <utility>
 #include <type_traits>
@@ -390,6 +390,13 @@ inline void setattr(handle obj, handle name, handle value) {
 inline void setattr(handle obj, const char *name, handle value) {
     if (PyObject_SetAttrString(obj.ptr(), name, value.ptr()) != 0) { throw error_already_set(); }
 }
+
+inline ssize_t hash(handle obj) {
+    auto h = PyObject_Hash(obj.ptr());
+    if (h == -1) { throw error_already_set(); }
+    return h;
+}
+
 /// @} python_builtins
 
 NAMESPACE_BEGIN(detail)
@@ -424,8 +431,8 @@ class accessor : public object_api<accessor<Policy>> {
 
 public:
     accessor(handle obj, key_type key) : obj(obj), key(std::move(key)) { }
-    accessor(const accessor &a) = default;
-    accessor(accessor &&a) = default;
+    accessor(const accessor &) = default;
+    accessor(accessor &&) = default;
 
     // accessor overload required to override default assignment operator (templates are not allowed
     // to replace default compiler-generated assignments).
@@ -736,7 +743,9 @@ NAMESPACE_END(detail)
     { if (!m_ptr) throw error_already_set(); } \
     Name(object &&o) \
     : Parent(check_(o) ? o.release().ptr() : ConvertFun(o.ptr()), stolen_t{}) \
-    { if (!m_ptr) throw error_already_set(); }
+    { if (!m_ptr) throw error_already_set(); } \
+    template <typename Policy_> \
+    Name(const ::pybind11::detail::accessor<Policy_> &a) : Name(object(a)) { }
 
 #define PYBIND11_OBJECT(Name, Parent, CheckFun) \
     PYBIND11_OBJECT_COMMON(Name, Parent, CheckFun) \

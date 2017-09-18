@@ -149,6 +149,7 @@ const Unit *Preload::EnemyAtBase() {
 }
 
 bool RuleActor::store_cmd(const Unit *u, CmdBPtr&& cmd, AssignedCmds *m) const {
+    if (cmd.get() == nullptr) return false;
     // Check if the same cmd has been issued (in particular ATTACK, since ATTACK has cooldown).
     const CmdDurative *curr_cmd = GetCurrCmd(*_receiver, *u);
     // cout << "id: " << u->GetId() << " " << u->GetUnitType() << " Loc: (" << u->GetPointF() << ") cmd_to_issue: "

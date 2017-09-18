@@ -37,6 +37,7 @@ class Loader:
                 ("reward_clip", 1),
                 ("rom_dir", os.path.dirname(__file__)),
                 ("additional_labels", dict(type=str, default=None, help="Add additional labels in the batch. E.g., id,seq,last_terminal")),
+                ("gpu", dict(type=int, default=None)),
             ],
             more_args = ["batchsize", "T", "env_eval_only"],
             child_providers = [ self.context_args.args ]
@@ -94,7 +95,7 @@ class Loader:
         params["hist_len"] = args.hist_len
         params["T"] = args.T
 
-        return GCWrapper(GC, co, desc, use_numpy=False, params=params)
+        return GCWrapper(GC, co, desc, gpu=args.gpu, use_numpy=False, params=params)
 
 cmd_line = "--num_games 64 --batchsize 16 --hist_len 1 --frame_skip 4 --actor_only"
 

@@ -16,9 +16,12 @@ class SymLink:
 
         for k, name in enumerate(self.latest_files):
             symlink_file = self.sym_prefix + str(k)
-            if os.path.exists(symlink_file):
-                os.unlink(symlink_file)
-            os.symlink(name, symlink_file)
+            try:
+                if os.path.exists(symlink_file):
+                    os.unlink(symlink_file)
+                os.symlink(name, symlink_file)
+            except:
+                print("Build symlink %s for %s failed, skipped" % (symlink_file, name))
 
 
 class ModelSaver:
@@ -28,7 +31,7 @@ class ModelSaver:
             define_args = [
                 ("record_dir", "./record"),
                 ("save_prefix", "save"),
-                ("save_dir", dict(type=str, default=None)),
+                ("save_dir", dict(type=str, default=os.environ.get("save", "./"))),
                 ("latest_symlink", "latest"),
             ],
             more_args = ["num_games", "batchsize"],
@@ -40,10 +43,6 @@ class ModelSaver:
         args.save = (args.num_games == args.batchsize)
         if args.save and not os.path.exists(args.record_dir):
             os.mkdir(args.record_dir)
-
-        # Use environment variable "save" if there is any.
-        if args.save_dir is None:
-            args.save_dir = os.environ.get("save", "./")
 
         self.symlinker = SymLink(os.path.join(args.save_dir, args.latest_symlink))
 
@@ -91,6 +90,21 @@ class ValueStats:
         self.max_idx = None
         self.min_idx = None
 
+
+def topk_accuracy(output, target, topk=(1,)):
+    """Computes the precision@k for the specified values of k"""
+    maxk = max(topk)
+    batch_size = target.size(0)
+
+    _, pred = output.topk(maxk, 1, True, True)
+    pred = pred.t()
+    correct = pred.eq(target.view(1, -1).expand_as(pred))
+
+    res = []
+    for k in topk:
+        correct_k = correct[:k].view(-1).float().sum(0)
+        res.append(correct_k.mul_(100.0 / batch_size))
+    return res
 
 class MultiCounter:
     def __init__(self, verbose=False):

@@ -17,14 +17,14 @@ class Model_Policy(Model):
         # print("#num_planes: " + str(self.num_planes))
 
         # Simple method. multiple conv layers.
-        self.dim = args.dim
+        self.dim = getattr(args, "dim", 128)
         self.convs = []
         self.convs_bn = []
         last_planes = self.num_planes
 
         for i in range(10):
             conv = nn.Conv2d(last_planes, self.dim, 3, padding=1)
-            conv_bn = nn.BatchNorm2d(self.dim) if not args.no_bn else lambda x: x
+            conv_bn = nn.BatchNorm2d(self.dim) if not getattr(args, "no_bn", False) else lambda x: x
             setattr(self, "conv" + str(i), conv)
             self.convs.append(conv)
             setattr(self, "conv_bn" + str(i), conv_bn)
@@ -35,7 +35,7 @@ class Model_Policy(Model):
 
         # Softmax as the final layer
         self.softmax = nn.Softmax()
-        self.relu = nn.LeakyReLU(0.1) if not args.no_leaky_relu else nn.ReLU()
+        self.relu = nn.LeakyReLU(0.1) if not getattr(args, "no_leaky_relu", False) else nn.ReLU()
 
     def get_define_args():
         return [
@@ -45,17 +45,17 @@ class Model_Policy(Model):
         ]
 
     def forward(self, x):
-        s = self._var(x["features"])
+        s = self._var(x["s"])
 
         for conv, conv_bn in zip(self.convs, self.convs_bn):
             s = conv_bn(self.relu(conv(s)))
 
         output = self.final_conv(s)
-        actions = []
+        pis = []
         d = self.board_size * self.board_size
         for i in range(self.num_future_actions):
-            actions.append(self.softmax(output[:,i].contiguous().view(-1, d)))
-        return dict(a=actions)
+            pis.append(self.softmax(output[:,i].contiguous().view(-1, d)))
+        return dict(pis=pis, pi=pis[0])
 
 # Format: key, [model, method]
 Models = {
