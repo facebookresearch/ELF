@@ -46,13 +46,20 @@ class Evaluator:
             self.stats = None
 
     def episode_start(self, i):
-        ''' Called before each episode. Reset ``actor_count`` to 0.'''
+        ''' Called before each episode. Reset ``actor_count`` to 0.
+
+        Args:
+            i(int): index in the minibatch
+        '''
         self.actor_count = 0
 
     def actor(self, batch):
         ''' Actor.
-            Get the model, forward the batch and get a distribution. Sample from it and act.
-            Reply the message to game engine.
+        Get the model, forward the batch and get a distribution. Sample from it and act.
+        Reply the message to game engine.
+
+        Args:
+            batch(dict): batch data
 
         Returns:
             reply_msg(dict): ``pi``: policy, ``a``: action, ``V``: value, `rv`: reply version, signatured by step
@@ -76,7 +83,11 @@ class Evaluator:
         return reply_msg
 
     def episode_summary(self, i):
-        ''' Called after each episode. Print stats and summary'''
+        ''' Called after each episode. Print stats and summary
+
+        Args:
+            i(int): index in the minibatch
+        '''
         print("[%s] actor count: %d/%d" % (self.name, self.actor_count, self.args.num_minibatch))
 
         if self.stats is not None:
@@ -85,7 +96,12 @@ class Evaluator:
                 self.stats.reset()
 
     def setup(self, mi=None, sampler=None):
-        ''' Setup `ModelInterface` and `Sampler`. Resetting stats.'''
+        ''' Setup `ModelInterface` and `Sampler`. Resetting stats.
+
+        Args:
+            mi(`ModelInterface`)
+            sample(`Sampler`)
+        '''
         self.mi = mi
         self.sampler = sampler
 
@@ -96,7 +112,7 @@ class Evaluator:
 class Trainer:
     def __init__(self, verbose=False, actor_name="actor"):
         ''' Initialization for Trainer. Accepted arguments: ``num_games``, ``batch_size``
-            Also need arguments for `evaluator` and `saver` class.
+            Also need arguments for `Evaluator` and `ModelSaver` class.
         '''
         self.timer = RLTimer()
         self.verbose = verbose
@@ -116,12 +132,25 @@ class Trainer:
         self.just_update = False
 
     def actor(self, batch):
+        ''' Actor.
+        Get the model, forward the batch and get a distribution. Sample from it and act.
+        Reply the message to game engine.
+
+        Args:
+            batch(dict): batch data
+
+        Returns:
+            reply_msg(dict): ``pi``: policy, ``a``: action, ``V``: value, `rv`: reply version, signatured by step
+        '''
         self.counter.inc("actor")
         return self.evaluator.actor(batch)
 
     def train(self, batch):
         ''' Trainer.
-            Get the model, forward the batch and update the weights.
+        Get the model, forward the batch and update the weights.
+
+        Args:
+            batch(dict): batch data
         '''
         mi = self.evaluator.mi
 
@@ -143,11 +172,19 @@ class Trainer:
         self.just_updated = False
 
     def episode_start(self, i):
-        ''' Called before each episode. '''
+        ''' Called before each episode.
+
+        Args:
+            i(int): index in the minibatch
+        '''
         self.evaluator.episode_start(i)
 
     def episode_summary(self, i):
-        ''' Called after each episode. Print stats and summary. Also print arguments passed in.'''
+        ''' Called after each episode. Print stats and summary. Also print arguments passed in.
+
+        Args:
+            i(int): index in the minibatch
+        '''
         args = self.args
 
         prefix = "[%s][%d] Iter" % (str(datetime.now()), args.batchsize) + "[%d]: " % i
@@ -163,6 +200,12 @@ class Trainer:
         self.timer.Restart()
 
     def setup(self, rl_method=None, mi=None, sampler=None):
-        ''' Setup `RLMethod`, ModelInterface` and `Sampler`'''
+        ''' Setup `RLMethod`, ModelInterface` and `Sampler`
+
+        Args:
+            rl_method(RLmethod)
+            mi(`ModelInterface`)
+            sample(`Sampler`)
+        '''
         self.rl_method = rl_method
         self.evaluator.setup(mi=mi, sampler=sampler)

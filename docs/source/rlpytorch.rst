@@ -16,6 +16,12 @@ Note that each entry in the dict is a PyTorch tensor whose first dimension must 
 
 Architecture
 ------------
+* :doc:`methods`. Implementation of ActorCritic Methods
+* :doc:`runner`. Running and communication with concurrency
+* :doc:`sampler`. Sample an action from an distribution
+* :doc:`stats`. Accumulate stats for training and evaluating.
+* :doc:`trainer`. Main for training and evaluating.
+* :doc:`utils`. Utils. ArgsProvider.
 
 .. currentmodule:: rlpytorch
 

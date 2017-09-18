@@ -10,7 +10,13 @@ import torch
 import sys
 
 def uniform_multinomial(batchsize, num_action, use_cuda=True):
-    ''' Sample with uniform probability.'''
+    ''' Sample with uniform probability.
+
+    Args:
+        batchsize(int): batch size
+        num_action(int): total number of actions to sample
+        use_cuda(bool): indicates if tensor is put on cuda
+    '''
     # [TODO] Make the type more friendly
     if use_cuda:
         uniform_p = torch.cuda.FloatTensor(num_action).fill_(1.0 / num_action)
@@ -20,7 +26,12 @@ def uniform_multinomial(batchsize, num_action, use_cuda=True):
     return uniform_p.multinomial(batchsize, replacement=True)
 
 def sample_with_check(probs, greedy=False):
-    ''' sample with out of bound check '''
+    ''' multinomial sampling with out of bound check
+
+    Args:
+        probs(tensor): probability to sample from
+        greedy(bool): if ``True``, pick the action with maximum probability, otherwise sample from it.
+    '''
     num_action = probs.size(1)
     if greedy:
         _, actions = probs.max(1)
@@ -45,7 +56,13 @@ def sample_with_check(probs, greedy=False):
         sys.stdout.flush()
 
 def sample_eps_with_check(probs, epsilon, greedy=False):
-    ''' sample with out of bound check '''
+    ''' multinomial sampling with out of bound check, with at least ``epsilon`` probability
+
+    Args:
+        probs(tensor): probability to sample from
+        epsilon(float): Minimum probability in sampling
+        greedy(bool): if ``True``, pick the action with maximum probability, otherwise sample from it.
+    '''
     # actions = self.sample_policy(state_curr[self.sample_node].data, args)
     actions = sample_with_check(probs, greedy=greedy)
 
@@ -64,7 +81,17 @@ def sample_eps_with_check(probs, epsilon, greedy=False):
     return actions
 
 def sample_multinomial(state_curr, args, node="pi", greedy=False):
-    ''' multinomial sampling'''
+    ''' multinomial sampling
+
+    Args:
+        state_curr(dict): current state containing all data
+        args(dict): customized arguments for sampling. `epsilon` is used
+        node(str): name string for policy, default is "pi"
+        greedy(bool): if ``True``, pick the action with maximum probability, otherwise sample from it.
+
+    Returns:
+        A list of actions using multinomial sampling.
+    '''
     if isinstance(state_curr[node], list):
         # Action map
         probs = state_curr[node]
@@ -85,11 +112,29 @@ def sample_multinomial(state_curr, args, node="pi", greedy=False):
         return sample_eps_with_check(probs, args.epsilon, greedy=greedy)
 
 def epsilon_greedy(state_curr, args, node="pi"):
-    ''' epsilon greedy sampling'''
+    ''' epsilon greedy sampling
+
+    Args:
+        state_curr(dict): current state containing all data
+        args(dict): customized arguments for sampling. `epsilon` is used
+        node(str): name string for policy, default is "pi"
+
+    Returns:
+        A list of actions using epsilon greedy sampling.
+    '''
     return sample_multinomial(state_curr, args, node=node, greedy=True)
 
 def original_distribution(state_curr, args, node="pi"):
-    ''' Send original probability as it is'''
+    ''' Send original probability as it is.
+
+    Args:
+        state_curr(dict): current state containing all data
+        args(dict): customized arguments for sampling. `epsilon` is used
+        node(str): name string for policy, default is "pi"
+
+    Returns:
+        A list of original probabilities.
+    '''
     probs = state_curr[node].data
     batchsize = probs.size(0)
     # Return a list of list.

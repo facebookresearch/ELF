@@ -18,10 +18,16 @@ def load_module(mod):
     return module
 
 class ModelLoader:
-    ''' Load a previously saved model'''
+    ''' Class to load a previously saved model'''
     def __init__(self, model_class, model_idx=None):
-        ''' Initialization, specify the model to be loaded, function to call after loading and arguments.
-            omit_keys is to omit certain keys when loading, e.g. model can have extra keys. Loading will fail if extra keys are not put in ``omit_keys``
+        ''' Initialization, Accepted arguments:
+        ``load``:specify the model to be loaded
+        ``onload``: function to call after loading and arguments.
+        ``omit_keys``: to omit certain keys when loading, e.g. model can have extra keys if trained with additional tasks.
+        Loading will fail if extra keys are not put in ``omit_keys``
+        Args:
+            model_class(class): class name of the model
+            model_idx(int): index of the model to be loaded. There may be multiple model in an `ModelInterface` to load.
         '''
 
         self.model_class = model_class
@@ -56,6 +62,9 @@ class ModelLoader:
     def load_model(self, params):
         '''Actually loading the model with initialized args.
            Call onload funtions if needed.
+
+        Args:
+            params(dict): additinoal parameters to be put into args.
         '''
         args = self.args
         args.params = params
@@ -81,15 +90,6 @@ class ModelLoader:
                     print("calling func = %s failed!" % func)
                     sys.exit(1)
 
-        if self.onload is not None:
-            for func in self.onload.split(","):
-                try:
-                    getattr(model, func)()
-                    print("Called %s for model" % func)
-                except:
-                    print("calling func = %s failed!" % func)
-                    sys.exit(1)
-
         if args.gpu is not None and args.gpu >= 0:
             model.cuda(device_id=args.gpu)
 
@@ -101,9 +101,9 @@ def load_env(envs, num_models=None, overrides=dict(), defaults=dict(), **kwargs)
     Returns:
         env: dict of
             ``game`` : game module
-            `` method``: Learning method used
+            ``method``: Learning method used
             ``model_loaders``: loaders for model
-        all_args: loaded arguments
+        all_args: loaded arguments from `ArgsPrivider`
     '''
     game = load_module(envs["game"]).Loader()
     model_file = load_module(envs["model_file"])

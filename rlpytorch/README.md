@@ -2,17 +2,17 @@
 
 Overview    
 ==============
-Here we provide a simple reinforcement learning package as a backend for ELF. In the root directory there is basic framework for Rlpytorch. 
+Here we provide a simple reinforcement learning package as a backend for ELF. In the root directory there is basic framework for Rlpytorch.
 
 * `args_provider.py`
 Provide basic argument management mechanism. In RLPyTorch, each component (methods, model loader, etc) has its own argument set.  
-Note that `args_utils.py` is a symlink for backward compatibility. 
+Note that `args_utils.py` is a symlink for backward compatibility.
 
 * `model_base.py`
 Wrapper of `nn.Module`, providing save/load/counting steps etc.
 
 * `model_interface.py`
-Wrapper of multiple models. 
+Wrapper of multiple models.
 
 * `model_loader.py`
 Utility for loading saved models.
@@ -31,11 +31,11 @@ GC.reg_callback("actor", actor_callback)
 while True:
     GC.Run()
 GC.Stop()
-``` 
+```
 The `GC.Run()` function waits until the next batch with a specific tag arrives, then call registered callback functions.  
 
 3. `runner`
-Customize how to run the loop of `GC`. E.g., whether to run it with progress bar, in a single process or multiple processes, etc. 
+Customize how to run the loop of `GC`. E.g., whether to run it with progress bar, in a single process or multiple processes, etc.
 
 4. `sampler`
 Different ways to sample the actor model (to get the next action).   
@@ -44,12 +44,11 @@ Different ways to sample the actor model (to get the next action).
 Supporting classes to collect various statistics.
 
 6. `utils`
-Internal utilites.  
+Internal utilities.  
 
 
 Actor Critic model  
 -------------
-We implemented advantagous actor-critic models, similar to Vanilla A3C, but with off-policy corrections with importance sampling. 
+We implemented advantageous actor-critic models, similar to Vanilla A3C, but with off-policy corrections with importance sampling.
 
-Specifically, we use the trajectory sampled from the previous version of the actor in the actor-critic update. 
-
+Specifically, we use the trajectory sampled from the previous version of the actor in the actor-critic update.

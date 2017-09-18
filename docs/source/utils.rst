@@ -1,10 +1,10 @@
 Utils
 =====
-To faciliate design, we also provide tools.
+To facilitate design, we also provide tools.
 
 ArgsProvider
 ------------
-An end-to-end training procedure usually contains multiple components, each with a lot of arguments, or hyperparameters (e.g., game hyperparameters, simulator hyperparameters and optimization hyperparameters). Putting them all together in the one main file so that they can be loaded from a common command line, is not only messy but also not extensible. In ELF, each Python class can register its own arguments in one argument group, as well as borrow others' arguments. This is realized using :class:`ArgsProvider`. 
+An end-to-end training procedure usually contains multiple components, each with a lot of arguments, or hyperparameters (e.g., game hyperparameters, simulator hyperparameters and optimization hyperparameters). Putting them all together in the one main file so that they can be loaded from a common command line, is not only messy but also not extensible. In ELF, each Python class can register its own arguments in one argument group, as well as borrow others' arguments. This is realized using :class:`ArgsProvider`.
 
 Using this functionality, the arguments are grouped by classes, as shown in the following:
 ::
@@ -95,3 +95,4 @@ Using this functionality, the arguments are grouped by classes, as shown in the 
 
     .. automethod:: __init__
 
+* :doc:`rlpytorch`. Go back.

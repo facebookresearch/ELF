@@ -71,7 +71,11 @@ class ParameterServer(object):
         self.queue, self.barrier, self.n_processes, self.send_done, self.recv_done = state
 
     def server_send_model(self, mi):
-        ''' Send the model to others and starts to wait'''
+        ''' Send the model to others and starts to wait. Finish waiting if all client receives the model.
+
+        Args:
+            mi(`ModelInterface`): model interface to send
+        '''
         assert mi is not None
         for i in range(self.n_processes-1):
             self.queue.put(mi)
@@ -80,7 +84,7 @@ class ParameterServer(object):
         self.barrier.wait()
 
     def client_receive_model(self):
-        ''' Receive model from the queue.
+        ''' Receive model from the queue. Finish waiting if all client receives the model.
 
         Returns:
             `ModelInterface` shared in clients.
@@ -97,7 +101,13 @@ class ParameterServer(object):
         return self._client_shared_mi
 
     def server_update_model(self, key, new_mi, noblock=False):
-        ''' Update shared model in the server '''
+        ''' Update shared model in the server, wait until all clients receive.
+
+        Args:
+            key(str): the key in ``models`` to update
+            new_mi(`ModelInterface`): new model interface to update
+            noblock(bool): indicates if updating models block other threads. Default is blocking.
+        '''
         # if recv is not done, skip it.
         if noblock:
             try:
@@ -115,7 +125,11 @@ class ParameterServer(object):
         return True
 
     def client_refresh_model(self, gpu=None, skip=False):
-        ''' Clone shared model from the server.
+        ''' Clone updated shared model from the server.
+
+        Args:
+            gpu(int): gpu index
+            skip(bool): if we skip this model. Will return ``None`` if set to ``True``
 
         Returns:
             refreshed model.
@@ -182,7 +196,12 @@ class SharedData:
         self.server.server_send_model(mi)
 
     def process_main(self, i, gpu_id):
-        ''' Main process. Transportation between cpu and gpu.'''
+        ''' Main process. Transportation between cpu and gpu.
+
+        Args:
+            i(int): process id
+            gpu_id(int): gpu id
+        '''
         batch = self.qs[i].get()
         self.b.wait()
 
@@ -202,7 +221,11 @@ class SharedData:
             self.cb_remote_batch_process(context, batch_gpu)
 
     def send_batch(self, batch):
-        ''' Send batch to a cpu process '''
+        ''' Send batch to a cpu process
+
+        Args:
+            batch(dict): batch data
+        '''
         process_idx = random.randint(0, len(self.shared_batches) - 1)
         try:
             self.cvs_send[process_idx].wait_noblock()

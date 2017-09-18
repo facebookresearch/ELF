@@ -4,8 +4,12 @@ import torch.nn as nn
 # Some utility functions
 def average_norm_clip(grad, clip_val):
     '''
-        Compute the norm and clip it if necessary.
-        The first dimension will be batchsize.
+    Compute the norm and clip it if necessary.
+    The first dimension will be batchsize.
+
+    Args:
+        grad(Tensor): the gradient
+        clip_val(float): value to clip to
     '''
     batchsize = grad.size(0)
     avg_l2_norm = 0.0
@@ -19,6 +23,10 @@ def average_norm_clip(grad, clip_val):
 def accumulate(acc, new):
     ''' accumulate by the same key in a list of dicts
 
+    Args:
+        acc(dict): the dict to accumulate to
+        new(dict): new dict entry
+
     Returns:
         A new dict containing the accumulated sums of each key.
     '''
@@ -27,7 +35,12 @@ def accumulate(acc, new):
     return ret
 
 def add_err(overall_err, new_err):
-    ''' Add ``new_err`` to ``overall_err`` '''
+    ''' Add ``new_err`` to ``overall_err``
+
+    Args:
+        overall_err(float): summed overall error
+        new_err(float): new error
+    '''
     if overall_err is None:
         return new_err
     else:
@@ -35,12 +48,12 @@ def add_err(overall_err, new_err):
         return overall_err
 
 def add_stats(stats, key, value):
-    ''' Add to value to ``stats[key]``'''
+    ''' Feed ``value`` to ``stats[key]``'''
     if stats:
         stats[key].feed(value)
 
 def check_terminals(has_terminal, batch):
-    ''' Check ifthe environment sent a terminal signal '''
+    ''' Check if the environment sent a terminal signal '''
     # Block backpropagation if we go pass a terminal node.
     for i, terminal in enumerate(batch["terminal"]):
         if terminal: has_terminal[i] = True
