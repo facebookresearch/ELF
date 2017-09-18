@@ -12,12 +12,24 @@ from .sampler import Sampler
 # from .utils.utils import get_total_size
 
 def load_module(mod):
+    ''' Load a python module'''
     sys.path.insert(0, os.path.dirname(mod))
     module = __import__(os.path.basename(mod))
     return module
 
 class ModelLoader:
+    ''' Class to load a previously saved model'''
     def __init__(self, model_class, model_idx=None):
+        ''' Initialization, Accepted arguments:
+        ``load``:specify the model to be loaded
+        ``onload``: function to call after loading and arguments.
+        ``omit_keys``: to omit certain keys when loading, e.g. model can have extra keys if trained with additional tasks.
+        Loading will fail if extra keys are not put in ``omit_keys``
+        Args:
+            model_class(class): class name of the model
+            model_idx(int): index of the model to be loaded. There may be multiple model in an `ModelInterface` to load.
+        '''
+
         self.model_class = model_class
         self.model_idx = model_idx
 
@@ -43,10 +55,17 @@ class ModelLoader:
         )
 
     def _on_get_args(self, _):
+        '''Set all the arguments'''
         for arg, arg_final in zip(self.define_args, self.define_args_final):
             setattr(self, arg[0], getattr(self.args, arg_final[0]))
 
     def load_model(self, params):
+        '''Actually loading the model with initialized args.
+           Call onload funtions if needed.
+
+        Args:
+            params(dict): additinoal parameters to be put into args.
+        '''
         args = self.args
         args.params = params
         # Initialize models.
@@ -77,6 +96,15 @@ class ModelLoader:
         return model
 
 def load_env(envs, num_models=None, overrides=dict(), defaults=dict(), **kwargs):
+    ''' Load envs. envs will be specified as environment variables, more specifically, ``game``, ``model_file`` and ``model`` are required.
+
+    Returns:
+        env: dict of
+            ``game`` : game module
+            ``method``: Learning method used
+            ``model_loaders``: loaders for model
+        all_args: loaded arguments from `ArgsPrivider`
+    '''
     game = load_module(envs["game"]).Loader()
     model_file = load_module(envs["model_file"])
     # TODO This is not good, need to fix.
@@ -104,4 +132,3 @@ def load_env(envs, num_models=None, overrides=dict(), defaults=dict(), **kwargs)
     parser = argparse.ArgumentParser()
     all_args = ArgsProvider.Load(parser, env, global_defaults=defaults, global_overrides=overrides)
     return  env, all_args
-

@@ -10,6 +10,14 @@ from ..args_provider import ArgsProvider
 
 class Sampler:
     def __init__(self):
+        ''' Initialization for Sampler. Accepted arguments:
+
+        ``sample_policy``: choices of ``epsilon-greedy``, ``multinomial`` or ``uniform``,
+
+        ``greedy``: if ``True``, pick the action with maximum probability, otherwise sample from it.
+        ``epsilon``: Minimum probability in sampling
+        ``sample_nodes``: ;-separated nodes to be sampled and saved
+        '''
         self.args = ArgsProvider(
             call_from = self,
             define_args = [
@@ -28,6 +36,12 @@ class Sampler:
             self.sample_nodes.append((policy, action))
 
     def sample(self, state_curr):
+        ''' Sample an action from distribution using a certain sample method
+
+        Args:
+            state_curr(dict): current state containing all data
+        '''
+        #TODO: This only handles epsilon_greedy and multinomial for now. Add uniform and original_distribution?
         sampler = epsilon_greedy if self.args.greedy else sample_multinomial
 
         actions = dict()

@@ -17,13 +17,25 @@ from collections import deque
 #       .preprocess = lambda self, x: downsample(x)
 
 class ModelInterface:
-    ''' Receive intermediate results from the forward pass '''
+    ''' An interface for the model to receive intermediate results from the forward pass '''
     def __init__(self):
+        ''' Initialization for models and optimizers.
+        ``models`` is a dict that can contain multiple models in a single `ModelInterface`
+        For each model in ``models``, there is an optimizer in ``optimizers`` in correspondence, using ``torch.optim.Adam``.
+        '''
         self.models = { }
         self.old_models = deque()
         self.optimizers = { }
 
     def clone(self, gpu=None):
+        ''' Clone the state for the model interface, including ``models`` and ``optimizers``
+
+        Args:
+            gpu(int): gpu id to be put the model on
+
+        Returns:
+            cloned `ModelInterface`.
+        '''
         mi = ModelInterface()
         for key, model in self.models.items():
             mi.models[key] = model.clone(gpu=gpu)
@@ -54,6 +66,19 @@ class ModelInterface:
 
 
     def add_model(self, key, model, copy=False, cuda=False, gpu_id=None, optim_params={}):
+        '''Add a model to `ModelInterface`.
+
+        Args:
+            key(str): key in ``self.models``.
+            model(`Model`): the model to be added.
+            copy(bool): indicate if the model needs to be deep copied.
+            cuda(bool): indicate if model needs to be converted to cuda.
+            gpu_id(int): gpu index.
+            optim_params(dict): an dict of parameters for optimizers.
+
+        Returns:
+            ``False`` if key is already in ``self.models``, ``True`` if model is successfully added.
+        '''
         if key in self.models: return False
 
         # New model.
@@ -66,12 +91,19 @@ class ModelInterface:
 
         curr_model = self.models[key]
         if len(optim_params) > 0:
+            # TODO: put betas, eps into optim_params?
             self.optimizers[key] = \
                     torch.optim.Adam(curr_model.parameters(), lr = optim_params["lr"], betas = (0.9, 0.999), eps=1e-3)
 
         return True
 
     def update_model(self, key, model, save_old_model=False):
+        ''' Update an old model. Does not deep copy it.
+        
+        Args:
+            key(str): the key in ``models`` to be updated
+            model(`Model`): updated model
+        '''
         # print("Updating model " + key)
         if save_old_model:
             self.old_models.append(self.models[key].clone().cpu())
@@ -80,12 +112,24 @@ class ModelInterface:
         self.models[key].load_from(model)
 
     def average_model(self, key, model):
-        # Average the model parameters.
+        ''' Average the model parameters from ``self.models[key]`` and ``model``, and update to ``self.models[key]``.
+
+        Args:
+            key(str): the key in ``models``
+            model(Model): the model containing the parameters to update
+        '''
         for param, other_param in zip(self.models[key].parameters(), model.parameters()):
             param.data += other_param.data.cuda(param.data.get_device())
             param.data /= 2
 
     def copy(self, dst_key, src_key):
+        ''' Deep copy a model from src_key to dst_key in ``self.models``
+
+        Args:
+            dst_key(str): destination key in ``self.models``
+            src_key(str): source key in ``self.models``
+        '''
+
         assert dst_key in self.models, "ModelInterface: dst_key = %s cannot be found" % dst_key
         assert src_key in self.models, "ModelInterface: src_key = %s cannot be found" % src_key
         self.update_model(dst_key, self.models[src_key].clone())
@@ -95,17 +139,17 @@ class ModelInterface:
         Then record["Q"] will be the Q-function given the input.
     '''
     def zero_grad(self):
+        ''' Zero the gradient for all ``optimizers`` '''
         for k, optimizer in self.optimizers.items():
             optimizer.zero_grad()
 
     def update_weights(self):
-        # Call before_update for all the models.
+        ''' For each optimizer, call before_update for all the models, update the weights and increment the step for the model.'''
         for k, optimizer in self.optimizers.items():
             self.models[k].before_update()
             optimizer.step()
             self.models[k].inc_step()
 
     def __getitem__(self, key):
+        ''' Get an item associated with ``key`` from ``self.models``'''
         return self.models[key]
-
-
