@@ -3,7 +3,13 @@ import tqdm
 
 class SingleProcessRun:
     def __init__(self):
-        ''' Initialization for SingleProcessRun. Accepted arguments: ``num_minibatch``, ``num_episode``, and ``tqdm`` '''
+        ''' Initialization for SingleProcessRun. Accepted arguments:
+        ``num_minibatch``,
+
+        ``num_episode``,
+
+        ``tqdm``
+        '''
         self.args = ArgsProvider(
             call_from = self,
             define_args = [
@@ -17,9 +23,9 @@ class SingleProcessRun:
         ''' Setup for SingleProcessRun.
 
         Args:
-            GC: Game Context
-            episode_start: operations to perform before each episode
-            episode_summary: operations to summarize after each epidsode
+            GC(`GameContext`): Game Context
+            episode_start(func): operations to perform before each episode
+            episode_summary(func): operations to summarize after each epidsode
         '''
         self.GC = GC
         self.episode_summary = episode_summary
@@ -30,6 +36,7 @@ class SingleProcessRun:
             Call episode_start and episode_summary before and after each episode if necessary.
             Visualize with a progress bar if ``tqdm`` is set.
             Print training stats after each episode.
+            In the end, print summary for game context and stop it.
         '''
         self.GC.Start()
         args = self.args
@@ -49,7 +56,7 @@ class SingleProcessRun:
         self.GC.Stop()
 
     def run_multithread(self):
-        ''' Start training in a multithread environment '''
+        ''' Start training in a multithreaded environment '''
         def train_thread():
             args = self.args
             for i in range(args.num_episode):

@@ -12,6 +12,7 @@ import numpy as np
 from collections import defaultdict
 
 class Batch:
+    ''' A wrapper class for batch data'''
     torch_types = {
         "int32_t" : torch.IntTensor,
         "int64_t" : torch.LongTensor,
@@ -28,6 +29,7 @@ class Batch:
     }
 
     def __init__(self, **kwargs):
+        ''' Initialize `Batch` class. Pass in a dict and wrap it into ``self.batch``'''
         self.batch = kwargs
 
     def _request(GC, group_id, key, T):
@@ -58,6 +60,19 @@ class Batch:
         return v, info
 
     def load(GC, input_reply, desc, group_id, use_gpu=True, use_numpy=False):
+        '''load Batch from the specifications
+
+        Args:
+            GC(C++ class): Game Context
+            input_reply(str): ``"input"`` or ``"reply"`` to indicate input batch data or reply batch data
+            desc(dict): description of the batch we want. Detailed explanation can be see in :doc:`wrapper-python`. The Python interface of wrapper.
+            group_id(int): group id. Batch data with the same group id will be batched together
+            use_gpu(bool): indicates if we use gpu
+            use_numpy(bool): indicates if we use numpy
+
+        Returns:
+            loaded batch object
+        '''
         batch = Batch()
         batch.dims = { }
         batch.GC = GC
@@ -76,6 +91,11 @@ class Batch:
         return batch
 
     def __getitem__(self, key):
+        ''' Get a key from batch. Can be either ``key`` or ``last_key``
+
+        Args:
+            key(str): key name. e.g. if ``r`` is passed in, will search for ``r`` or ``last_r``
+        '''
         if key in self.batch:
             return self.batch[key]
         else:
@@ -89,10 +109,16 @@ class Batch:
         return key in self.batch or "last_" + key in self.batch
 
     def setzero(self):
+        ''' Set all tensors in the batch to 0 '''
         for _, v in self.batch.items():
             v[:] = 0
 
     def copy_from(self, src):
+        ''' copy all keys and values from another dict or `Batch` object
+
+        Args:
+            src(dict or `Batch`): batch data to be copied
+        '''
         this_src = src if isinstance(src, dict) else src.batch
 
         for k, v in this_src.items():
@@ -109,12 +135,23 @@ class Batch:
                     bk[:] = v
 
     def cpu2gpu(self, gpu=0):
+        ''' call ``cuda()`` on all batch data
+
+        Args:
+            gpu(int): gpu id
+        '''
         batch = Batch(**{ k : v.cuda(gpu) for k, v in self.batch.items() })
         batch.GC = self.GC
         return batch
 
     def hist(self, s, key=None):
-        '''s=1 means going back in time by one step, etc'''
+        '''
+        return batch history.
+
+        Args:
+            s(int): s=1 means going back in time by one step, etc
+            key(str): if None, return all key's history, otherwise just return that key's history
+        '''
         if key is None:
             new_batch = Batch(**{ k : v[s] for k, v in self.batch.items() })
             if hasattr(self, "GC"):
@@ -124,19 +161,25 @@ class Batch:
             return self[key][s]
 
     def transfer_cpu2gpu(self, batch_gpu, async=True):
+        ''' transfer batch data to gpu '''
         # For each time step
         for k, v in self.batch.items():
             batch_gpu[k].copy_(v, async=async)
 
     def transfer_cpu2cpu(self, batch_dst, async=True):
+        ''' transfer batch data to cpu '''
+
         # For each time step
         for k, v in self.batch.items():
             batch_dst[k].copy_(v)
 
     def pin_clone(self):
+        ''' clone and pin memory for faster transportations to gpu '''
+
         return Batch(**{ k : v.clone().pin_memory() for k, v in self.batch.items() })
 
     def to_numpy(self):
+        ''' convert batch data to numpy format '''
         return { k : v.numpy() if not isinstance(v, np.ndarray) else v for k, v in self.batch.items() }
 
 
@@ -147,7 +190,7 @@ class GCWrapper:
         Parameters:
             GC(C++ class): Game Context
             co(C type): context parameters.
-            descriptions(list of tuple of dict): descriptions of input and reply entries.
+            descriptions(list of tuple of dict): descriptions of input and reply entries. Detailed explanation can be see in :doc:`wrapper-python`. The Python interface of wrapper.
             use_numpy(boolean): whether we use numpy array (or PyTorch tensors)
             gpu(int): gpu to use.
             params(dict): additional parameters

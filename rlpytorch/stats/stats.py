@@ -1,6 +1,7 @@
 from ..args_provider import ArgsProvider
 
 class EvalCount:
+    ''' Eval Count. Run games and record required stats.'''
     def __init__(self):
         # All previous ids.
         self.ids = dict()
