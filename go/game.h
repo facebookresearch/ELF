@@ -51,4 +51,6 @@ public:
 
     void Act(const std::atomic_bool& done);
     string ShowBoard() const { return _loaders[_curr_loader_idx]->state().ShowBoard(); }
+    void UndoMove() {_loaders[_curr_loader_idx]->UndoMove();}
+    void ApplyHandicap(int handicap) {_loaders[_curr_loader_idx]->ApplyHandicap(handicap);}
 };

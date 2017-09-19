@@ -26,6 +26,7 @@ public:
 class GoState {
 protected:
     Board _board;
+    Board _last_board;
     HandicapTable _handi_table;
     BoardFeature _bf;
 
@@ -36,6 +37,8 @@ public:
     void ApplyHandicap(int handi);
 
     Board &board() { return _board; }
+    Board &last_board() { return _last_board; }
+    HandicapTable &handi_table() { return _handi_table; }
     bool JustStarted() const { return _board._ply == 1; }
     int GetPly() const { return _board._ply; }
 
@@ -66,6 +69,8 @@ public:
     virtual bool Ready(const std::atomic_bool &done) { (void)done; return true; }
     virtual void SaveTo(GameState &state) = 0;
     virtual void Next(int64_t action) = 0;
+    void ApplyHandicap(int handi);
+    void UndoMove();
 
     const GoState &state() const { return _state; }
 };

@@ -120,7 +120,6 @@ typedef struct {
   // The current ply number, it will be increase after each play.
   // The initial ply number is 1.
   short _ply;
-
   // uint64_t hash for the current board situatons. If we want to enable it, then make MAX_GROUP smaller.
   // uint64_t hash;
 } Board;
