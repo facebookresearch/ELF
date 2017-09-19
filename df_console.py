@@ -104,7 +104,13 @@ class DFConsole:
                 elif items[0] == "s":
                     channel_id = int(items[1])
                     plot_plane(batch["s"][0][0][channel_id])
-
+                elif items[0] == "u":
+                    batch.GC.UndoMove(0)
+                    print(batch.GC.ShowBoard(0))
+                elif items[0] == "h":
+                    handicap = int(items[1])
+                    batch.GC.ApplyHandicap(0, handicap)
+                    print(batch.GC.ShowBoard(0))
                 elif items[0] == "a":
                     reply = self.evaluator.actor(batch)
                     if "pi" in reply:

@@ -16,6 +16,7 @@ static std::vector<std::string> split(const std::string &s, char delim) {
 
 static Coord s2c(const string &s) {
     int row = s[0] - 'A';
+    if (row >= 9) row --;
     int col = stoi(s.substr(1)) - 1;
     return GetCoord(row, col);
 }
@@ -71,12 +72,12 @@ bool GoState::ApplyMove(Coord c) {
     }
 }
 
-void GoState::Reset() {
-    ClearBoard(&_board);
-}
-
 void GoState::ApplyHandicap(int handi) {
     _handi_table.Apply(handi, &_board);
+}
+
+void GoState::Reset() {
+    ClearBoard(&_board);
 }
 
 ///////////// OfflineLoader ////////////////////
@@ -257,9 +258,20 @@ void OnlinePlayer::SaveTo(GameState &gs) {
 
 void OnlinePlayer::Next(int64_t action) {
     // From action to coord.
+    _state.last_board() = _state.board();
     Coord m = _state.last_extractor().Action2Coord(action);
     // Play it.
     if (! _state.ApplyMove(m)) {
-        _state.Reset();
+        cout << "Invalid action! action = " << action << " x = " << X(m) << " y = " << Y(m) << coord2str(m) << " please try again" << endl;
     }
+}
+
+
+void Loader::UndoMove() {
+    _state.board() = _state.last_board();
+}
+
+void Loader::ApplyHandicap(int handi) {
+    _state.last_board() = _state.board();
+    _state.ApplyHandicap(handi);
 }
