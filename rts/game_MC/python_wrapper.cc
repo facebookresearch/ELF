@@ -68,7 +68,8 @@ public:
         if (mm == nullptr) return EntryInfo();
 
         std::string type_name = mm->type();
-
+        const int mapx = _context->options().map_size_x;
+        const int mapy = _context->options().map_size_y;
         const int max_unit_cmd = _context->options().max_unit_cmd;
 
         if (key == "s") return EntryInfo(key, type_name, { _num_planes,  _context->options().map_size_y, _context->options().map_size_x});
@@ -76,10 +77,14 @@ public:
         else if (key == "pi") return EntryInfo(key, type_name, {GameDef::GetNumAction()});
         else if (key == "a" || key == "rv" || key == "V") return EntryInfo(key, type_name);
         else if (key == "res") return EntryInfo(key, type_name, {2, NUM_RES_SLOT});
-        else if (key == "unit_loc") return EntryInfo(key, type_name, { max_unit_cmd });
-        else if (key == "target_loc") return EntryInfo(key, type_name, { max_unit_cmd });
-        else if (key == "build_type") return EntryInfo(key, type_name, { max_unit_cmd });
-        else if (key == "cmd_type") return EntryInfo(key, type_name, { max_unit_cmd });
+        else if (key == "uloc") return EntryInfo(key, type_name, { max_unit_cmd });
+        else if (key == "tloc") return EntryInfo(key, type_name, { max_unit_cmd });
+        else if (key == "bt") return EntryInfo(key, type_name, { max_unit_cmd });
+        else if (key == "ct") return EntryInfo(key, type_name, { max_unit_cmd });
+        else if (key == "uloc_prob") return EntryInfo(key, type_name, { max_unit_cmd,  mapx * mapy });
+        else if (key == "tloc_prob") return EntryInfo(key, type_name, { max_unit_cmd, mapx * mapy });
+        else if (key == "bt_prob") return EntryInfo(key, type_name, { max_unit_cmd, GameDef::GetNumUnitType() });
+        else if (key == "ct_prob") return EntryInfo(key, type_name, { max_unit_cmd, CmdInput::CI_NUM_CMDS });
 
         return EntryInfo();
     }
