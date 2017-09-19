@@ -25,7 +25,9 @@ PYBIND11_MODULE(go_game, m) {
 
   CONTEXT_REGISTER(GameContext)
       .def("GetParams", &GameContext::GetParams)
-      .def("ShowBoard", &GameContext::ShowBoard);
+      .def("ShowBoard", &GameContext::ShowBoard)
+      .def("ApplyHandicap", &GameContext::ApplyHandicap)
+      .def("UndoMove", &GameContext::UndoMove);
 
   // Also register other objects.
   PYCLASS_WITH_FIELDS(m, GameOptions)

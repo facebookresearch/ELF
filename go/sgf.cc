@@ -49,10 +49,7 @@ bool Sgf::load_game(const string& filename, const string& game_string) {
 }
 
 bool Sgf::Load(const string& filename, TarLoader& tar_loader) {
-  size_t last_slash_idx = filename.find_last_of("/");
-  string basename = filename.substr(last_slash_idx+1);
-  string s = tar_loader.Load(basename);
-  return load_game(filename, s);
+  return load_game(filename, tar_loader.Load(filename));
 }
 
 bool Sgf::Load(const string& filename) {

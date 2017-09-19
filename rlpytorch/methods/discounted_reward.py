@@ -5,6 +5,9 @@ from ..args_provider import ArgsProvider
 
 class DiscountedReward:
     def __init__(self):
+        ''' Initialization discounted_reward.
+        Accepted arguments:
+        ``discount``: discount factor of reward.'''
         self.args = ArgsProvider(
             call_from = self,
             define_args = [
@@ -13,14 +16,21 @@ class DiscountedReward:
         )
 
     def setR(self, R, stats):
+        ''' Set rewards and feed to stats'''
         self.R = R
         stats["init_reward"].feed(R.mean())
 
     def feed(self, batch, stats):
         '''
-        Keys:
-            r (tensor): immediate reward.
-            terminal (tensor): whether the current game has terminated.
+        Update discounted reward and feed to stats.
+
+        Keys in a batch:
+
+        ``r`` (tensor): immediate reward.
+
+        ``terminal`` (tensor): whether the current game has terminated.
+
+        Feed to stats: immediate reward and accumulated reward
         '''
         r = batch["r"]
         term = batch["terminal"]
@@ -37,5 +47,3 @@ class DiscountedReward:
         stats["acc_reward"].feed(self.R.mean())
 
         return self.R
-
-

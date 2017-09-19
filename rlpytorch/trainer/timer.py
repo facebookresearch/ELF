@@ -10,6 +10,7 @@ import time
 from collections import defaultdict, Counter
 
 class RLTimer:
+    ''' A customized timer class'''
     def __init__(self):
         self.overall_counts = defaultdict(int)
         self.last_overall_mark = defaultdict(lambda : -1)
@@ -49,4 +50,3 @@ class RLTimer:
 
     def GetPeriodicValue(self, name):
         return self.overall_counts[name]
-

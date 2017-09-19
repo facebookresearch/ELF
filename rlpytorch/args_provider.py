@@ -10,6 +10,7 @@ import os
 from copy import deepcopy
 
 def recursive_map(x, f):
+    ''' Act a function ``f`` on ``x``. Recursively act on its items if ``x`` is a dict or list'''
     if isinstance(x, dict):
         return { k : recursive_map(v, f) for k, v in x.items() }
     elif isinstance(x, list):
@@ -27,6 +28,9 @@ class Args:
     def replace(self, keys):
         '''
         keys = [ (old_key1, new_key1), (old_key2, new_key2), ... ]
+
+        Returns:
+            Replaced list of keys
         '''
         res = deepcopy(self)
         for old_key, new_key in keys:
@@ -36,9 +40,11 @@ class Args:
         return res
 
     def add_cmdline(self):
+        ''' set ``command_line`` attribute, joined by ``sys.argv``'''
         setattr(self, "command_line", " ".join(sys.argv))
 
     def print_info(self):
+        ''' Print args '''
         def stringify(x):
             if isinstance(x, str): return "\"" + x + "\""
             else: return str(x)
@@ -106,6 +112,7 @@ class ArgsProvider:
         self._call_from = call_from
 
     def get_define_keys(self):
+        ''' return all keys in _define_args in a list '''
         return [ k for k, _ in self._define_args ]
 
 
@@ -118,7 +125,6 @@ class ArgsProvider:
             child_provider._collect(args_list)
 
     def _set(self, args):
-        ''' kwargs is used to override any existing args '''
         # First check all the children.
         for child_provider, child_transform in zip(self._child_providers, self._child_transforms):
             if child_transform is not None:

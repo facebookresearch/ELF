@@ -3,32 +3,45 @@ RLPyTorch
 
 Design principle
 ------------------
-In RLPytorch, models/algorithms communicatee with each other via Python dictionary. Each model/algorithm takes the key they want, and return the key-pair for others to use. For example: 
+In RLPytorch, models/algorithms communicate with each other via Python dictionary. Each model/algorithm takes the key they want, and return the key-pair for others to use. For example:
 
-* A model might take a ``dict(s=states)`` and returns ``dict(pi=policy_distribution, V=values)``. 
+* A model might take a ``dict(s=states)`` and returns ``dict(pi=policy_distribution, V=values)``.
 * An actor-critic algorithm might take a ``dict(s=states, a=actions, r=rewards)`` and run forward/backward updates.
 
 Note that each entry in the dict is a PyTorch tensor whose first dimension must be the batchsize. The remaining dimensions depend on the semantic meaning of the key. For example:
 
 * ``input["s"]`` encodes the current states of a batch of games. For Atari games, ``input["s"]`` can be ``128x3x100x80``, which encodes the current RGB frame of size ```100x80`` for 128 games. If 4 history frames are concatenated, the dimensions of ``input["s"]`` may become ``128x12x100x80``.
 
-* ``output["pi"]`` encodes the action probability of a batch of games. ``output["pi"]`` is ``128x6``, which encodes the probability among 6 actions for 128 games. 
+* ``output["pi"]`` encodes the action probability of a batch of games. ``output["pi"]`` is ``128x6``, which encodes the probability among 6 actions for 128 games.
 
 Architecture
 ------------
+* :doc:`methods`. Implementation of ActorCritic Methods
+* :doc:`runner`. Running and communication with concurrency
+* :doc:`sampler`. Sample an action from an distribution
+* :doc:`stats`. Accumulate stats for training and evaluating.
+* :doc:`trainer`. Main for training and evaluating.
+* :doc:`utils`. Utils. ArgsProvider.
 
 .. currentmodule:: rlpytorch
 
-.. autoclass:: LearningMethod
+.. autoclass:: Model
+    :members:
+
+    .. automethod:: __init__
+.. autoclass:: ModelInterface
+    :members:
+
+    .. automethod:: __init__
+.. autoclass:: ModelLoader
     :members:
 
     .. automethod:: __init__
 
-
 Example: Actor-Critic in 30 lines
 ---------------------------------
 Here is an example of an actor-critic algorithm::
-   
+
     # A3C
     def update(self, batch):
         ''' Actor critic model '''

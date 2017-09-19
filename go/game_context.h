@@ -81,9 +81,23 @@ class GameContext {
         return EntryInfo();
     }
 
+    bool _check_game_idx(int game_idx) const {
+        return game_idx < 0 || game_idx >= (int)_games.size();
+    }
+
     std::string ShowBoard(int game_idx) const {
-        if (game_idx < 0 || game_idx >= (int)_games.size()) return "Invalid game_idx [" + std::to_string(game_idx) + "]";
+        if (_check_game_idx(game_idx)) return "Invalid game_idx [" + std::to_string(game_idx) + "]";
         return _games[game_idx].ShowBoard();
+    }
+
+    void ApplyHandicap(int game_idx, int handicap) {
+        if (_check_game_idx(game_idx)) return;
+        return _games[game_idx].ApplyHandicap(handicap);
+    }
+
+    void UndoMove(int game_idx) {
+        if (_check_game_idx(game_idx)) return;
+        _games[game_idx].UndoMove();
     }
 
     CONTEXT_CALLS(GC, _context);
