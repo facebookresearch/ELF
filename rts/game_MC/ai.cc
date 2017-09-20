@@ -13,7 +13,7 @@
 #include "engine/cmd_interface.h"
 
 #define _OFFSET(_c, _x, _y, _m) (((_c) * _m.GetYSize() + (_y)) * _m.GetXSize() + (_x))
-#define _XY(loc, m) ((loc) % m.GetXSize()), ((loc) / m.GetXSize()) 
+#define _XY(loc, m) ((loc) % m.GetXSize()), ((loc) / m.GetXSize())
 
 
 static inline int sampling(const std::vector<float> &v, std::mt19937 *gen) {
@@ -183,17 +183,14 @@ bool TrainedAI2::on_act(const GameEnv &env) {
         return _backup_ai->Act(env);
     }
     // Get the current action from the queue.
-    int num_action = NUM_AISTATE;
-    int h = num_action - 1;
     const auto &m = env.GetMap();
     const GameState& gs = _ai_comm->info().data.newest();
     // uint64_t hash_code;
 
-    switch(gs.action_type) {
+    switch(_action_type) {
         case ACTION_GLOBAL:
             // action
-            h = gs.a;
-            _state[h] = 1;
+            _state[gs.a] = 1;
 
             // hash_code = serializer::hash_obj(*_ai_comm->GetData());
             // cout << "[" << t << "]: hash = " << hex << hash_code << dec << ", h = " << h << endl;
@@ -201,24 +198,6 @@ bool TrainedAI2::on_act(const GameEnv &env) {
                 return _mc_rule_actor.ActByState(e, _state, s, assigned_cmds);
             });
 
-        case ACTION_PROB:
-            // parse probablity
-            // [TODO] This code is really not good, need refactoring.
-            {
-              if (_receiver->GetUseCmdComment()) {
-                string s;
-                for (int i = 0; i < NUM_AISTATE; ++i) {
-                    s += to_string(gs.pi[i]) + ",";
-                }
-                SendComment(s);
-              }
-
-              h = sampling(gs.pi, &_ai_comm->gen());
-              _state[h] = 1;
-              return gather_decide(env, [&](const GameEnv &e, string *s, AssignedCmds *assigned_cmds) {
-                  return _mc_rule_actor.ActByState(e, _state, s, assigned_cmds);
-              });
-            }
         case ACTION_UNIT_CMD:
             {
                 // Use gs.unit_cmds
@@ -226,7 +205,7 @@ bool TrainedAI2::on_act(const GameEnv &env) {
                 // Use data
                 std::vector<CmdInput> unit_cmds;
                 for (int i = 0; i < gs.n_max_cmd; ++i) {
-                    unit_cmds.emplace_back(_XY(gs.unit_loc[i], m), _XY(gs.target_loc[i], m), gs.cmd_type[i], gs.build_type[i]); 
+                    unit_cmds.emplace_back(_XY(gs.uloc[i], m), _XY(gs.tloc[i], m), gs.ct[i], gs.bt[i]);
                 }
                 std::for_each(unit_cmds.begin(), unit_cmds.end(), [&](CmdInput &ci) { ci.ApplyEnv(env); });
 
@@ -262,7 +241,7 @@ bool TrainedAI2::on_act(const GameEnv &env) {
             });
             */
         default:
-            throw std::range_error("action_type not valid! " + to_string(gs.action_type));
+            throw std::range_error("action_type not valid! " + to_string(_action_type));
     }
 }
 

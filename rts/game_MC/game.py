@@ -23,13 +23,13 @@ class Loader(CommonLoader):
         return dict(
             batchsize=self.args.batchsize,
             input=dict(T=1, keys=set(["s", "res", "last_r", "terminal"])),
-            reply=dict(T=1, keys=set(["rv", "pi", "V", "a"]))
+            reply=dict(T=1, keys=set(["rv", "V", "uloc", "tloc", "bt", "ct", "uloc_prob", "tloc_prob", "bt_prob", "ct_prob", "pi", "a"]))
         )
 
     def _get_train_spec(self):
         return dict(
             batchsize=self.args.batchsize,
-            input=dict(T=self.args.T, keys=set(["rv", "pi", "s", "res", "a", "last_r", "V", "terminal"])),
+            input=dict(T=self.args.T, keys=set(["rv", "s", "res", "last_r", "V", "terminal", "bt", "ct", "uloc", "tloc", "uloc_prob", "tloc_prob", "bt_prob", "ct_prob", "pi", "a"])),
             reply=None
         )
 

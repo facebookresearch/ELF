@@ -7,9 +7,11 @@
 
 import torch
 import torch.nn as nn
+from copy import deepcopy
 from collections import Counter
 
 from rlpytorch import Model, ActorCritic
+from actor_critic_changed import ActorCriticChanged
 from trunk import MiniRTSNet
 
 class Model_ActorCritic(Model):
@@ -32,6 +34,13 @@ class Model_ActorCritic(Model):
 
         self.linear_policy = nn.Linear(linear_in_dim, params["num_action"])
         self.linear_value = nn.Linear(linear_in_dim, 1)
+
+        self.relu = nn.LeakyReLU(0.1)
+
+        self.Wt = nn.Linear(linear_in_dim + params["num_action"], linear_in_dim)
+        self.Wt2 = nn.Linear(linear_in_dim, linear_in_dim)
+        self.Wt3 = nn.Linear(linear_in_dim, linear_in_dim)
+
         self.softmax = nn.Softmax()
 
     def get_define_args():
@@ -46,14 +55,47 @@ class Model_ActorCritic(Model):
             output = self._var(xreduced)
         else:
             s, res = x["s"], x["res"]
-            output = self.net(self._var(s), self._var(res))
+            output = self.net(self._var(x["s"]), self._var(x["res"]))
 
-        policy = self.softmax(self.linear_policy(output))
-        value = self.linear_value(output)
-        return dict(V=value, pi=policy)
+        return self.decision(output)
+
+    def decision(self, h):
+        policy = self.softmax(self.linear_policy(h))
+        value = self.linear_value(h)
+        return dict(h=h, V=value, pi=policy)
+
+    def decision_fix_weight(self, h):
+        # Copy linear policy and linear value
+        if not hasattr(self, "fixed"):
+            self.fixed = dict()
+            self.fixed["linear_policy"] = deepcopy(self.linear_policy)
+            self.fixed["linear_value"] = deepcopy(self.linear_value)
+
+        policy = self.softmax(self.fixed["linear_policy"](h))
+        value = self.fixed["linear_value"](h)
+        return dict(h=h, V=value, pi=policy)
+
+    def transition(self, h, a):
+        ''' A transition model that could predict the future given the current state and its action '''
+        na = self.params["num_action"]
+        a_onehot = h.data.clone().resize_(a.size(0), na).zero_()
+        a_onehot.scatter_(1, a.view(-1, 1), 1)
+        input = torch.cat((h, self._var(a_onehot)), 1)
+
+        h2 = self.relu(self.Wt(input))
+        h3 = self.relu(self.Wt2(h2))
+        h4 = self.relu(self.Wt3(h3))
+
+        return dict(hf=h4)
+
+    def reset_forward(self):
+        self.Wt.reset_parameters()
+        self.Wt2.reset_parameters()
+        self.Wt3.reset_parameters()
 
 # Format: key, [model, method]
 # if method is None, fall back to default mapping from key to method
 Models = {
     "actor_critic": [Model_ActorCritic, ActorCritic],
+    "actor_critic_changed": [Model_ActorCritic, ActorCriticChanged],
 }

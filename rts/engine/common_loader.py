@@ -2,6 +2,7 @@ import sys
 
 from elf import GCWrapper, ContextArgs, MoreLabels
 from rlpytorch import ArgsProvider
+import abc
 
 class CommonLoader:
     def __init__(self, module):
@@ -18,6 +19,7 @@ class CommonLoader:
                 ("shuffle_player", dict(action="store_true")),
                 ("mcts_threads", 64),
                 ("num_frames_in_state", 1),
+                ("max_unit_cmd", 1),
                 ("seed", 0),
                 ("actor_only", dict(action="store_true")),
                 ("model_no_spatial", dict(action="store_true")), # TODO, put it to model
@@ -74,6 +76,7 @@ class CommonLoader:
         opt.seed = args.seed
         opt.shuffle_player = args.shuffle_player
         opt.mcts_threads = args.mcts_threads
+        opt.max_unit_cmd = args.max_unit_cmd
         opt.mcts_rollout_per_thread = 50
         opt.max_tick = args.max_tick
         # [TODO] Put it to TD.
@@ -102,6 +105,14 @@ class CommonLoader:
 
     def _add_player_name(self, desc, player_name):
         desc["filters"] = dict(player_name=player_name)
+
+    @abc.abstractmethod
+    def _get_train_spec(self):
+        pass
+
+    @abc.abstractmethod
+    def _get_actor_spec(self):
+        pass
 
     def initialize(self):
         co, GC, params = self._init_gc()

@@ -4,11 +4,12 @@ from rlpytorch import Model
 from collections import Counter
 
 class MiniRTSNet(Model):
-    def __init__(self, args):
+    def __init__(self, args, output1d=True):
         # this is the place where you instantiate all your modules
         # you can later access them using the same names you've given them in here
         super(MiniRTSNet, self).__init__(args)
         self._init(args)
+        self.output1d = output1d
 
     def _init(self, args):
         self.m = args.params["num_unit_type"] + 7
@@ -69,7 +70,7 @@ class MiniRTSNet(Model):
             elif self.arch[i] == "p":
                 x = self.pool(x)
 
-        x = x.view(x.size(0), -1)
+        if self.output1d:
+            x = x.view(x.size(0), -1)
+
         return x
-
-
