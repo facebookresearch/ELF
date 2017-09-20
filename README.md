@@ -25,13 +25,13 @@ Supported Environments
 ========================
 Any game with C/C++ interface can be plugged into this framework by writing a simple wrapper. Currently we have the following environment:
 
-1. MiniRTS and its extensions.
+1. **MiniRTS and its extensions**
 A miniature real-time strategy game that captures the key dynamics of its genre, including building workers, collecting resources, exploring unseen territories, defend the enemy and attack them back. The game runs extremely fast (40K FPS per core on a laptop) to faciliate the usage of many existing on-policy reinforcement learning approaches.  
 
-2. Atari games.
+2. **Atari games** (`./atari`)
 We incorporate Arcade Learning Environment (ALE) into ELF so that you can load any rom and run 1000 concurrent game instances easily. 
 
-3. Go engine.
+3. **Go engine** (`./go`)
 We reimplement our [DarkForest Go engine](https://github.com/facebookresearch/darkforestGo) in ELF platform. Now you can easily load a bunch of .sgf files and train your own Go AI with minimal resource requirements (i.e., a single GPU plus a week). 
 
 
