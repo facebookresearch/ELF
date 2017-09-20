@@ -21,6 +21,45 @@ ELF has the following characteristics:
 
 * *Flexible*: Pairing between environments and actors is very flexible, e.g., one environment with one agent (e.g., Vanilla A3C), one environment with multiple agents (e.g., Self-play/MCTS), or multiple environment with one actor (e.g., BatchA3C, GA3C). Also, any game built on top of the RTS engine offers full access to its internal representation and dynamics. Besides efficient simulators, we also provide a lightweight yet powerful Reinforcement Learning framework. This framework can host most existing RL algorithms. In this open source release, we have provided state-of-the-art actor-critic algorithms, written in [PyTorch](https://github.com/pytorch/pytorch).
 
+Supported Environments   
+========================
+Any game with C/C++ interface can be plugged into this framework by writing a simple wrapper. Currently we have the following environment:
+
+1. **MiniRTS and its extensions** (`./rts`)  
+A miniature real-time strategy game that captures the key dynamics of its genre, including building workers, collecting resources, exploring unseen territories, defend the enemy and attack them back. The game runs extremely fast (40K FPS per core on a laptop) to faciliate the usage of many existing on-policy reinforcement learning approaches.  
+
+2. **Atari games** (`./atari`)  
+We incorporate Arcade Learning Environment (ALE) into ELF so that you can load any rom and run 1000 concurrent game instances easily. 
+
+3. **Go engine** (`./go`)  
+We reimplement our [DarkForest Go engine](https://github.com/facebookresearch/darkforestGo) in ELF platform. Now you can easily load a bunch of .sgf files and train your own Go AI with minimal resource requirements (i.e., a single GPU plus a week). 
+
+
+Reference  
+=============
+
+When you use ELF, please reference the [paper](https://arxiv.org/abs/1707.01067) with the following BibTex entry:
+
+```
+ELF: An Extensive, Lightweight and Flexible Research Platform for Real-time Strategy Games
+Yuandong Tian, Qucheng Gong, Wenling Shang, Yuxin Wu, C. Lawrence Zitnick
+NIPS 2017
+
+@article{tian2017elf, 
+  title={ELF: An Extensive, Lightweight and Flexible Research Platform for Real-time Strategy Games},
+  author={Yuandong Tian and Qucheng Gong and Wenling Shang and Yuxin Wu and C. Lawrence Zitnick},
+  journal={Advances in Neural Information Processing Systems (NIPS)},
+  year={2017}
+}
+```
+
+Relevant Materials 
+=============
+[Slides](http://www.yuandong-tian.com/icml17_workshop.pdf) in ICML Video Games and Machine Learning (VGML) workshop. 
+
+[Demo](https://www.youtube.com/watch?v=YgZyWobkqfw). Top-left is trained bot while bottom-right is rule-based bot.
+
+
 Documentation  
 =================
 Check [here](http://yuandong-tian.com/html_elf) for detailed documentation. You can also compile your version in `./doc` using `sphinx`. 
@@ -181,7 +220,3 @@ and open the webpage `./rts/frontend/minirts.html` to check the game. To load an
 ./minirts-backend replay_cmd --load_replay [your replay]
 ```
 
-Reference  
-=============
-
-When you use ELF, please reference the associated arXiv [paper](https://arxiv.org/abs/1707.01067).
