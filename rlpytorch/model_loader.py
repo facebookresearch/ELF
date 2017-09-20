@@ -9,6 +9,7 @@ import sys
 import argparse
 from .args_provider import ArgsProvider
 from .sampler import Sampler
+from .model_interface import ModelInterface
 # from .utils.utils import get_total_size
 
 def load_module(mod):
@@ -119,6 +120,7 @@ def load_env(envs, num_models=None, overrides=dict(), defaults=dict(), **kwargs)
 
     method = method_class()
     sampler = sampler_class()
+    mi = ModelInterface()
 
     # You might want multiple models loaded.
     if num_models is None:
@@ -126,7 +128,7 @@ def load_env(envs, num_models=None, overrides=dict(), defaults=dict(), **kwargs)
     else:
         model_loaders = [ ModelLoader(model_class, model_idx=i) for i in range(num_models) ]
 
-    env = dict(game=game, method=method, sampler=sampler, model_loaders=model_loaders)
+    env = dict(game=game, method=method, sampler=sampler, model_loaders=model_loaders, mi=mi)
     env.update(kwargs)
 
     parser = argparse.ArgumentParser()
