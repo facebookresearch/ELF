@@ -25,7 +25,7 @@ Supported Environments
 ========================
 Any game with C/C++ interface can be plugged into this framework by writing a simple wrapper. Currently we have the following environment:
 
-1. **MiniRTS and its extensions**
+1. **MiniRTS and its extensions** (`./rts`)
 A miniature real-time strategy game that captures the key dynamics of its genre, including building workers, collecting resources, exploring unseen territories, defend the enemy and attack them back. The game runs extremely fast (40K FPS per core on a laptop) to faciliate the usage of many existing on-policy reinforcement learning approaches.  
 
 2. **Atari games** (`./atari`)
