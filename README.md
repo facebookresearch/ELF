@@ -21,6 +21,30 @@ ELF has the following characteristics:
 
 * *Flexible*: Pairing between environments and actors is very flexible, e.g., one environment with one agent (e.g., Vanilla A3C), one environment with multiple agents (e.g., Self-play/MCTS), or multiple environment with one actor (e.g., BatchA3C, GA3C). Also, any game built on top of the RTS engine offers full access to its internal representation and dynamics. Besides efficient simulators, we also provide a lightweight yet powerful Reinforcement Learning framework. This framework can host most existing RL algorithms. In this open source release, we have provided state-of-the-art actor-critic algorithms, written in [PyTorch](https://github.com/pytorch/pytorch).
 
+Reference  
+=============
+
+When you use ELF, please reference the [paper](https://arxiv.org/abs/1707.01067) with the following BibTex entry:
+
+```
+ELF: An Extensive, Lightweight and Flexible Research Platform for Real-time Strategy Games
+Yuandong Tian, Qucheng Gong, Wenling Shang, Yuxin Wu, C. Lawrence Zitnick
+NIPS 2017
+
+@article{tian2017elf, 
+  title={ELF: An Extensive, Lightweight and Flexible Research Platform for Real-time Strategy Games},
+  author={Yuandong Tian and Qucheng Gong and Wenling Shang and Yuxin Wu and C. Lawrence Zitnick},
+  journal={Advances in Neural Information Processing Systems (NIPS)},
+  year={2017}
+}
+
+```
+
+Relevant Slides  
+=============
+[Slides](http://www.yuandong-tian.com/icml17_workshop.pdf) in ICML Video Games and Machine Learning (VGML) workshop. 
+
+
 Documentation  
 =================
 Check [here](http://yuandong-tian.com/html_elf) for detailed documentation. You can also compile your version in `./doc` using `sphinx`. 
@@ -181,7 +205,3 @@ and open the webpage `./rts/frontend/minirts.html` to check the game. To load an
 ./minirts-backend replay_cmd --load_replay [your replay]
 ```
 
-Reference  
-=============
-
-When you use ELF, please reference the associated arXiv [paper](https://arxiv.org/abs/1707.01067).
