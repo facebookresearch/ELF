@@ -22,12 +22,13 @@ class Model_ActorCritic(Model):
         assert isinstance(params["num_action"], int), "num_action has to be a number. action = " + str(params["num_action"])
         self.params = params
         self.net = MiniRTSNet(args)
+        last_num_channel = self.net.num_channels[-1]
 
         if self.params.get("model_no_spatial", False):
             self.num_unit = params["num_unit_type"]
-            linear_in_dim = (params["num_unit_type"] + 7)
+            linear_in_dim = last_num_channel
         else:
-            linear_in_dim = (params["num_unit_type"] + 7) * 25
+            linear_in_dim = last_num_channel * 25
 
         self.linear_policy = nn.Linear(linear_in_dim, params["num_action"])
         self.linear_value = nn.Linear(linear_in_dim, 1)
