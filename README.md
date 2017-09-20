@@ -37,12 +37,13 @@ NIPS 2017
   journal={Advances in Neural Information Processing Systems (NIPS)},
   year={2017}
 }
-
 ```
 
-Relevant Slides  
+Relevant Materials 
 =============
 [Slides](http://www.yuandong-tian.com/icml17_workshop.pdf) in ICML Video Games and Machine Learning (VGML) workshop. 
+
+[Demo](https://www.youtube.com/watch?v=YgZyWobkqfw). Top-left is trained bot while bottom-right is rule-based bot.
 
 
 Documentation  
