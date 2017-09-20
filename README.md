@@ -21,6 +21,20 @@ ELF has the following characteristics:
 
 * *Flexible*: Pairing between environments and actors is very flexible, e.g., one environment with one agent (e.g., Vanilla A3C), one environment with multiple agents (e.g., Self-play/MCTS), or multiple environment with one actor (e.g., BatchA3C, GA3C). Also, any game built on top of the RTS engine offers full access to its internal representation and dynamics. Besides efficient simulators, we also provide a lightweight yet powerful Reinforcement Learning framework. This framework can host most existing RL algorithms. In this open source release, we have provided state-of-the-art actor-critic algorithms, written in [PyTorch](https://github.com/pytorch/pytorch).
 
+Supported Environments   
+========================
+Any game with C/C++ interface can be plugged into this framework by writing a simple wrapper. Currently we have the following environment:
+
+1. MiniRTS and its extensions.
+A miniature real-time strategy game that captures the key dynamics of its genre, including building workers, collecting resources, exploring unseen territories, defend the enemy and attack them back. The game runs extremely fast (40K FPS per core on a laptop) to faciliate the usage of many existing on-policy reinforcement learning approaches.  
+
+2. Atari games.
+We incorporate Arcade Learning Environment (ALE) into ELF so that you can load any rom and run 1000 concurrent game instances easily. 
+
+3. Go engine.
+We reimplement our [DarkForest Go engine](https://github.com/facebookresearch/darkforestGo) in ELF platform. Now you can easily load a bunch of .sgf files and train your own Go AI with minimal resource requirements (i.e., a single GPU plus a week). 
+
+
 Reference  
 =============
 
