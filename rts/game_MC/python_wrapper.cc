@@ -75,7 +75,7 @@ public:
         if (key == "s") return EntryInfo(key, type_name, { _num_planes,  _context->options().map_size_y, _context->options().map_size_x});
         else if (key == "last_r" || key == "terminal" || key == "last_terminal" || key == "id" || key == "seq" || key == "game_counter" || key == "player_id") return EntryInfo(key, type_name);
         else if (key == "pi") return EntryInfo(key, type_name, {GameDef::GetNumAction()});
-        else if (key == "a" || key == "rv" || key == "V") return EntryInfo(key, type_name);
+        else if (key == "a" || key == "rv" || key == "V" || key == "action_type") return EntryInfo(key, type_name);
         else if (key == "res") return EntryInfo(key, type_name, {2, NUM_RES_SLOT});
         else if (key == "uloc") return EntryInfo(key, type_name, { max_unit_cmd });
         else if (key == "tloc") return EntryInfo(key, type_name, { max_unit_cmd });

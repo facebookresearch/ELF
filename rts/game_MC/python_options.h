@@ -48,6 +48,7 @@ struct GameState {
     // Reply
     int32_t rv;
 
+    int32_t action_type;
     int64_t a;
     float V;
     std::vector<float> pi;

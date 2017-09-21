@@ -64,7 +64,7 @@ class Model_ActorCritic(Model):
         build_types = self.softmax(self.build_types(flat_output))
         value = self.value(flat_output)
 
-        return dict(V=value, uloc_prob=unit_locs, tloc_prob=target_locs, ct_prob=cmd_types, bt_prob=build_types)
+        return dict(V=value, uloc_prob=unit_locs, tloc_prob=target_locs, ct_prob=cmd_types, bt_prob=build_types, action_type=1)
 
 
 # Format: key, [model, method]

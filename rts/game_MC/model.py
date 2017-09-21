@@ -73,7 +73,7 @@ class Model_ActorCritic(Model):
 
         policy = self.softmax(self.fixed["linear_policy"](h))
         value = self.fixed["linear_value"](h)
-        return dict(h=h, V=value, pi=policy)
+        return dict(h=h, V=value, pi=policy, action_type=0)
 
     def transition(self, h, a):
         ''' A transition model that could predict the future given the current state and its action '''

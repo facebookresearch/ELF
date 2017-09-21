@@ -186,8 +186,9 @@ bool TrainedAI2::on_act(const GameEnv &env) {
     const auto &m = env.GetMap();
     const GameState& gs = _ai_comm->info().data.newest();
     // uint64_t hash_code;
+    ActionType action_type = (ActionType) gs.action_type;
 
-    switch(_action_type) {
+    switch(action_type) {
         case ACTION_GLOBAL:
             // action
             _state[gs.a] = 1;
@@ -241,7 +242,7 @@ bool TrainedAI2::on_act(const GameEnv &env) {
             });
             */
         default:
-            throw std::range_error("action_type not valid! " + to_string(_action_type));
+            throw std::range_error("action_type not valid! " + to_string(action_type));
     }
 }
 

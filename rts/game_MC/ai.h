@@ -97,8 +97,7 @@ private:
     // After each game, latest_start is decayed by latest_start_decay.
     float _latest_start_decay;
 
-    enum ActionType { ACTION_GLOBAL = 0, ACTION_REGIONAL, ACTION_UNIT_CMD };
-    ActionType _action_type = ACTION_GLOBAL;
+    enum ActionType { ACTION_GLOBAL = 0, ACTION_UNIT_CMD, ACTION_REGIONAL};
 
 protected:
     bool on_act(const GameEnv &env) override;
@@ -151,14 +150,6 @@ public:
               for (const auto &kv : _parse(opt.args)) {
                   if (kv.first == "start") _latest_start = std::stoi(kv.second);
                   else if (kv.first == "decay") _latest_start_decay = std::stof(kv.second);
-                  else if (kv.first == "action_type") {
-                      if (kv.second == "global9") _action_type = ACTION_GLOBAL;
-                      else if (kv.second == "regional9") _action_type = ACTION_REGIONAL;
-                      else if (kv.second == "unit_cmd") _action_type = ACTION_UNIT_CMD;
-                      else {
-                          std::cout << "Unknown action type: " << kv.second << std::endl;
-                      }
-                  }
                   else if (kv.first == "backup") {
                       AIOptions opt2;
                       opt2.fs = opt.fs;
@@ -193,4 +184,3 @@ public:
         _backup_ai_tick_thres = _ai_comm->gen()() % (int(_latest_start + 0.5) + 1);
     }
 };
-
