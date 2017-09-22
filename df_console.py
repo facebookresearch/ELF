@@ -168,8 +168,8 @@ class DFConsole:
         GC = env["game"].initialize()
         model = env["model_loaders"][0].load_model(GC.params)
         mi = ModelInterface()
-        mi.add_model("model", model, optim_params={ "lr" : 0.001})
-        mi.add_model("actor", model, copy=True, cuda=True, gpu_id=args.gpu)
+        mi.add_model("model", model)
+        mi.add_model("actor", model, copy=True, cuda=args.gpu is not None, gpu_id=args.gpu)
         mi["model"].eval()
         mi["actor"].eval()
 
