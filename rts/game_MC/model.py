@@ -11,7 +11,6 @@ from copy import deepcopy
 from collections import Counter
 
 from rlpytorch import Model, ActorCritic
-from actor_critic_changed import ActorCriticChanged
 from trunk import MiniRTSNet
 
 class Model_ActorCritic(Model):
@@ -97,5 +96,4 @@ class Model_ActorCritic(Model):
 # if method is None, fall back to default mapping from key to method
 Models = {
     "actor_critic": [Model_ActorCritic, ActorCritic],
-    "actor_critic_changed": [Model_ActorCritic, ActorCriticChanged],
 }
