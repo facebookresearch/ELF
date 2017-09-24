@@ -11,6 +11,7 @@
 #define _CMD_RECEIVER_H_
 
 #include "cmd.h"
+#include "ui_cmd.h"
 #include "game_stats.h"
 
 #include "pq_extend.h"

@@ -60,6 +60,8 @@ private:
     std::vector<float> _ratio_failed_moves;
     GlobalStats *_gstats;
 
+    std::string _last_error;
+
 public:
     GameStats(GlobalStats *gstats = nullptr) : _gstats(nullptr) {
         Reset();
@@ -72,7 +74,8 @@ public:
         return _base_choice;
     }
 
-    bool CheckGameSmooth(Tick tick, std::ostream *output = nullptr) const {
+    bool CheckGameSmooth(Tick tick) const {
+        _last_error = "";
         // Check if the game goes smoothly.
         if (_ratio_failed_moves[tick] < 1.0) return true;
         float failed_summation = 0.0;
@@ -82,15 +85,17 @@ public:
             failed_summation += _ratio_failed_moves[tick - i];
         }
         if (failed_summation >= 250.0) {
-            if (output) {
-              *output<< "[" << tick << "]: The game is not in good shape! sum_failed = " << failed_summation << endl;
-              for (int i = 0; i < min(tick, 30); ++i) {
-                  *output << "  [" << tick - i << "]: " << _ratio_failed_moves[tick - i] << endl;
-              }
+            std::stringstream ss;
+            ss << "[" << tick << "]: The game is not in good shape! sum_failed = " << failed_summation << endl;
+            for (int i = 0; i < min(tick, 30); ++i) {
+                ss << "  [" << tick - i << "]: " << _ratio_failed_moves[tick - i] << endl;
             }
+            _last_error = ss.str();
             return false;
         } else return true;
     }
+
+    const std::string &GetLastError() const { return _last_error; }
 
     // Called by the move command, record #failed moves.
     void RecordFailedMove(Tick tick, float ratio_unit_failed) {

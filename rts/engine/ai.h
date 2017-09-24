@@ -159,6 +159,13 @@ public:
 template <typename AIComm>
 bool AIWithComm<AIComm>::Act(const GameEnv &env, bool must_act) {
     Tick t = _receiver->GetTick();
+
+    PlayerId winner_id = env.GetWinnerId();
+    if (winner_id != INVALID) {
+        if (_player_id == winner_id) SendComment("Won at " + std::to_string(t));
+        must_act = true;
+    }
+
     if (! must_act && ! NeedAct(t)) return false;
 
     bool perform_action = true;
