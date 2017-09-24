@@ -1,3 +1,12 @@
+/**
+* Copyright (c) 2017-present, Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD-style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
+*/
+
 #pragma once
 #include <vector>
 #include <functional>
@@ -12,15 +21,17 @@
 
 namespace mcts {
 
+struct TSOptions {
+    int max_num_moves;
+};
+
 template <typename S, typename A>
-struct TSOptionsT {
+struct TSThreadOptionsT {
     using VisitFunc = VisitFuncT<S>;
     using ForwardFunc = ForwardFuncT<S, A>;
     using EvalFunc = EvalFuncT<S>;
 
-    int num_thread = 16;
     int num_rollout_per_thread = 100;
-    int max_num_moves;
 
     VisitFunc stats_func = nullptr;
     ForwardFunc forward_func = nullptr;
@@ -28,16 +39,16 @@ struct TSOptionsT {
 };
 
 template <typename S, typename A>
-class TSOneThread {
+class TSOneThreadT {
 public:
     using Node = NodeT<S, A>;
     using NodeAlloc = NodeAllocT<S, A>;
     using VisitFunc = VisitFuncT<S>;
     using ForwardFunc = ForwardFuncT<S, A>;
     using EvalFunc = EvalFuncT<S>;
-    using TSOptions = TSOptionsT<S, A>;
+    using TSThreadOptions = TSThreadOptionsT<S, A>;
 
-    TSOneThread(const TSOptions& options) : options_(options) { }
+    TSOneThreadT(const TSThreadOptions& options) : options_(options) { }
     
     void Run(NodeAlloc &alloc) {
         for (int iter = 0; iter < options_.num_rollout_per_thread; ++iter) {
@@ -47,7 +58,7 @@ public:
             while (true) {
                 // Save trajectory.
                 if (! node->Visit(options_.stats_func)) break;
-                A a = ts_alg::UCT(node->sa_vals()).first;
+                A a = UCT(node->sa_vals(), node->count()).first;
 
                 traj.push_back(make_pair(node, a));
                 auto next = node->Expand(a, options_.forward_func, alloc);
@@ -68,17 +79,21 @@ public:
     }
 
 private:
-    TSOptions options_;
+    TSThreadOptions options_;
 };
 
 // Mcts algorithm
 template <typename S, typename A>
-class TreeSearch {
+class TreeSearchT {
 public:
-    TreeSearch(const TSOptions &options) : pool_(options.num_thread), options_(options) {
-        for (int i = 0; i < options.num_thread; ++i) {
-            pool_.push([this](int) {
-                TSOneThread game(this->options_);
+    using TSThreadOptions = TSThreadOptionsT<S, A>;
+    using Node = NodeT<S, A>;
+
+    TreeSearchT(const TSOptions &options, const vector<TSThreadOptions> &thread_options) 
+        : pool_(thread_options.size()), options_(options) {
+        for (size_t i = 0; i < thread_options.size(); ++i) {
+            pool_.push([i, this, thread_options](int) {
+                TSOneThreadT<S, A> game(thread_options[i]);
                 game.Run(this->alloc_);
                 all_threads_done_.notify();
             });
@@ -94,7 +109,7 @@ public:
         // Get the results. 
         Node *node = alloc_.root();
         // Pick the best solution.
-        return ts_alg::MostVisited(node->sa_vals());
+        return MostVisited(node->sa_vals());
     }
 
 private:

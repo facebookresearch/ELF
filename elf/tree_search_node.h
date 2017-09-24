@@ -1,3 +1,12 @@
+/**
+* Copyright (c) 2017-present, Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD-style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
+*/
+
 #pragma once
 
 #include <vector>
@@ -27,6 +36,7 @@ public:
 
     const S &state() const { return s_; } 
     const unordered_map<A, EdgeInfo> &sa_vals() const { return sa_val_; }
+    int count() const { return count_; }
 
     bool Visit(VisitFuncT<S> f) {
         if (visited_) return true;
@@ -48,7 +58,7 @@ public:
         return true;
     }
 
-    bool AccumulateStats(const Action &a, float reward) {
+    bool AccumulateStats(const A &a, float reward) {
         auto res = elf_utils::map_get(sa_val_, a);
         // Not found, skip
         if (! res.second) return false;
@@ -56,9 +66,9 @@ public:
         // Inc #visited 
         count_ ++;
 
-        EdgeInfo &info = res.first.second;
+        EdgeInfo &info = res.first->second;
         // Async modification (we probably need to add a locker in the future, or not for speed).
-        info.accu_reward += reward;
+        info.acc_reward += reward;
         info.n ++;
         return true;
     }
@@ -66,9 +76,9 @@ public:
     // Expand a new node.
     pair<NodeId, bool> Expand(const A &a, ForwardFuncT<S, A> f, NodeAllocT<S, A> &alloc) {
         auto init = [&](S *next_s) { return f(s_, a, next_s); };
-        auto res = elf_utils::sync_add_entry(sa_next_, lock_edge_, a, [&]() { return alloc.Alloc(init); }); 
+        auto res = elf_utils::sync_add_entry<A, NodeId>(sa_next_, lock_edge_, a, [&]() -> NodeId { return alloc.Alloc(init); }); 
         // <NodeId, whether it is new>
-        return make_pair(*res.first.second, res.second);
+        return make_pair(res.first->second, res.second);
     }
     
 private:
@@ -90,6 +100,7 @@ class NodeAllocT {
 public:
     using Node = NodeT<S, A>;
 
+    NodeAllocT() { }
     NodeAllocT(const NodeAllocT<S, A>&) = delete;
     NodeAllocT<S, A> &operator=(const NodeAllocT<S, A>&) = delete;
 
@@ -100,7 +111,7 @@ public:
     }
 
     void SetRootState(const S& s) {
-        root_.reset(new Node([&](S *_s) { *_s = s; }));
+        root_.reset(new Node([&](S *_s) { *_s = s; return true; }));
         root_ready_.notify(); 
     }
 

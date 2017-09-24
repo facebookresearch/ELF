@@ -72,6 +72,7 @@ struct GameState {
     int32_t winner = 0; // B +1, W -1, U 0
 
     int64_t a;
+    std::vector<float> pi;
     float V;
 
     std::string player_name;
@@ -103,7 +104,11 @@ struct GameState {
         last_terminal = 0;
     }
 
-    DECLARE_FIELD(GameState, id, seq, game_counter, last_terminal, s, offline_a, a, V, move_idx, winner, aug_code, game_record_idx);
+    DECLARE_FIELD(GameState, id, seq, game_counter, last_terminal, s, offline_a, a, V, pi, move_idx, winner, aug_code, game_record_idx);
     REGISTER_PYBIND_FIELDS(id, seq, game_counter, last_terminal, s, offline_a, a, V, move_idx, winner, aug_code);
 };
+
+using Context = ContextT<GameOptions, HistT<GameState>>;
+using Comm = typename Context::Comm;
+using AIComm = AICommT<Comm>;
 

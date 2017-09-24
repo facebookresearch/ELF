@@ -17,6 +17,7 @@
 #include "game.h"
 #include "../elf/pybind_interface.h"
 #include "../elf/tar_loader.h"
+#include "offpolicy_loader.h"
 #include "board_feature.h"
 
 class GameContext {
@@ -76,6 +77,7 @@ class GameContext {
         else if (key == "move_idx") return EntryInfo(key, type_name);
         else if (key == "winner") return EntryInfo(key, type_name);
         else if (key == "a" || key == "V") return EntryInfo(key, type_name);
+        else if (key == "pi") return EntryInfo(key, type_name, { BOARD_DIM * BOARD_DIM });
         else if (key == "aug_code" || key == "move_idx" || key == "game_record_idx") return EntryInfo(key, type_name);
 
         return EntryInfo();

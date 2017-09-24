@@ -3,6 +3,7 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
+#include <utility>
 
 namespace elf_utils {
 
@@ -16,7 +17,7 @@ const V &map_get(const unordered_map<K, V> &m, const K& k, const V &def) {
 }
 
 template <typename K, typename V>
-pair<unordered_map<K, V>::const_iterator, bool> map_get(const unordered_map<K, V> &m, const K& k) {
+pair<typename unordered_map<K, V>::const_iterator, bool> map_get(const unordered_map<K, V> &m, const K& k) {
     auto it = m.find(k);
     if (it == m.end()) {
         return make_pair(m.end(), false);
@@ -26,7 +27,7 @@ pair<unordered_map<K, V>::const_iterator, bool> map_get(const unordered_map<K, V
 }
 
 template <typename K, typename V>
-pair<unordered_map<K, V>::iterator, bool> map_get(unordered_map<K, V> &m, const K& k) {
+pair<typename unordered_map<K, V>::iterator, bool> map_get(unordered_map<K, V> &m, const K& k) {
     auto it = m.find(k);
     if (it == m.end()) {
         return make_pair(m.end(), false);
@@ -36,7 +37,7 @@ pair<unordered_map<K, V>::iterator, bool> map_get(unordered_map<K, V> &m, const 
 }
 
 template <typename K, typename V>
-pair<unordered_map<K, V>::iterator, bool> sync_add_entry(unordered_map<K, V> &m, mutex &mut, const K& k, function <V ()> gen) { 
+pair<typename unordered_map<K, V>::iterator, bool> sync_add_entry(unordered_map<K, V> &m, mutex &mut, const K& k, function <V ()> gen) { 
     auto res = map_get(m, k);
     if (res.second) return res;
 
@@ -44,7 +45,7 @@ pair<unordered_map<K, V>::iterator, bool> sync_add_entry(unordered_map<K, V> &m,
     lock_guard<mutex> lock(mut);
 
     // We need to do that again to enforce that one node does not get allocated twice. 
-    auto res = map_get(m, k);
+    res = map_get(m, k);
     if (res.second) return res;
 
     // Save it back. This visit doesn't count.

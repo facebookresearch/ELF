@@ -15,18 +15,15 @@
 
 #include "go_game_specific.h"
 #include "go_state.h"
+#include "go_loader.h"
 #include <random>
 #include <map>
-
-using Context = ContextT<GameOptions, HistT<GameState>>;
-using Comm = typename Context::Comm;
-using AIComm = AICommT<Comm>;
 
 // Game interface for Go.
 class GoGame {
 private:
     int _game_idx = -1;
-    AIComm* _ai_comm = nullptr;
+    uint64_t _seed = 0;
     GameOptions _options;
 
     std::vector<std::unique_ptr<Loader>> _loaders;
@@ -36,10 +33,7 @@ private:
 public:
     GoGame(int game_idx, const GameOptions& options);
 
-    void Init(AIComm *ai_comm) {
-        assert(ai_comm);
-        _ai_comm = ai_comm;
-    }
+    void Init(AIComm *ai_comm);
 
     void MainLoop(const std::atomic_bool& done) {
         // Main loop of the game.

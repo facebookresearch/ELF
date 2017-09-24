@@ -9,32 +9,35 @@
 
 #include "game.h"
 #include "go_game_specific.h"
-#include "../elf/tar_loader.h"
+#include "offpolicy_loader.h"
+#include "online_player.h"
 
 #include <fstream>
 
 ////////////////// GoGame /////////////////////
 GoGame::GoGame(int game_idx, const GameOptions& options) : _options(options), _curr_loader_idx(0) {
     _game_idx = game_idx;
-    uint64_t seed = 0;
     if (options.seed == 0) {
         auto now = chrono::system_clock::now();
         auto now_ms = chrono::time_point_cast<chrono::milliseconds>(now);
         auto value = now_ms.time_since_epoch();
         long duration = value.count();
-        seed = (time(NULL) * 1000 + duration + _game_idx * 2341479) % 100000000;
-        if (_options.verbose) std::cout << "[" << _game_idx << "] Seed:" << seed << std::endl;
+        _seed = (time(NULL) * 1000 + duration + _game_idx * 2341479) % 100000000;
+        if (_options.verbose) std::cout << "[" << _game_idx << "] Seed:" << _seed << std::endl;
     } else {
-        seed = options.seed;
+        _seed = options.seed;
     }
-    _rng.seed(seed);
+    _rng.seed(_seed);
+}
 
+void GoGame::Init(AIComm *ai_comm) {
+    assert(ai_comm);
     if (_options.online) {
-        _loaders.emplace_back(new OnlinePlayer());
+        _loaders.emplace_back(new OnlinePlayer(ai_comm));
     } else {
         // Open many offline instances.
         for (int i = 0; i < _options.num_games_per_thread; ++i) {
-            _loaders.emplace_back(new OfflineLoader(_options, seed + _game_idx * i * 997 + i * 13773 + 7));
+            _loaders.emplace_back(new OfflineLoader(_options, _seed + _game_idx * i * 997 + i * 13773 + 7, ai_comm));
         }
     }
     if (_options.verbose) std::cout << "[" << _game_idx << "] Done with initialization" << std::endl;
@@ -45,16 +48,5 @@ void GoGame::Act(const std::atomic_bool& done) {
   _curr_loader_idx = _rng() % _loaders.size();
   Loader *loader = _loaders[_curr_loader_idx].get();
 
-  if (! loader->Ready(done)) return;
-  if (loader->state().JustStarted()) _ai_comm->Restart();
-
-  // Send the current board situation.
-  auto& gs = _ai_comm->Prepare();
-
-  loader->SaveTo(gs);
-
-  // There is always only 1 player.
-  _ai_comm->SendDataWaitReply();
-
-  loader->Next(_ai_comm->info().data.newest().a);
+  loader->Act(done);
 }
