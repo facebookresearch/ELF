@@ -111,7 +111,7 @@ public:
               // std::cout << "Latest start = " << _latest_start << " decay = " << _latest_start_decay << std::endl;
               if (_backup_ai.get() != nullptr) {
                   _backup_ai->SetId(id());
-                  _backup_ai->SetState(s());
+                  if (s_ptr() != nullptr) _backup_ai->SetState(s());
               }
           }
           _rng.seed(time(NULL));
@@ -120,7 +120,7 @@ public:
     void SetMainAI(AI *main_ai) { 
         _main_ai.reset(main_ai); 
         _main_ai->SetId(id());
-        _main_ai->SetState(s());
+        if (s_ptr() != nullptr) _main_ai->SetState(s());
     }
 
     bool GameEnd(Tick t) override {

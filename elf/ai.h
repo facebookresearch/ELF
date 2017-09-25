@@ -41,6 +41,7 @@ public:
         }
         return *_state;
     }
+    const S* s_ptr() const { return _state; }
 
     // Given the current state, perform action and send the action to _a;
     // Return false if this procedure fails.
