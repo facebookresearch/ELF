@@ -1,8 +1,11 @@
 #pragma once
 #include <vector>
 #include <atomic>
+#include <memory>
 
 namespace elf {
+
+using namespace std;
 
 enum GameResult { GAME_NORMAL = 0, GAME_END = 1, GAME_ERROR = 2 };
 
@@ -17,7 +20,7 @@ public:
     using AI = _AI;
 
     /*
-    GameBaseT(const GameBaseOptions &options) : _options(options) { 
+    GameBaseT(const GameBaseOptions &options) : _options(options) {
     }
     */
     GameBaseT(S &s) : _state(s) { }
@@ -74,7 +77,7 @@ public:
             bot->GameEnd(t);
         }
         if (_spectator != nullptr) _spectator->GameEnd(t);
-        
+
         _state.Finalize();
     }
 
