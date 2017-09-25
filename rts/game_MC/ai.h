@@ -47,6 +47,9 @@ protected:
     // Feature extraction.
     void extract(Data *data) override;
     bool handle_response(const Data &data, RTSAction *a) override; 
+
+    void on_set_id() override { _mc_rule_actor.SetPlayerId(id()); }
+    void on_set_state() override { _mc_rule_actor.SetReceiver(&s().receiver()); }
 };
 
 // Simple AI, rule-based AI for Mini-RTS
@@ -60,6 +63,8 @@ public:
 private:
     MCRuleActor _mc_rule_actor;
     bool on_act(Tick, RTSAction *action, const atomic_bool *) override;
+    void on_set_id() override { _mc_rule_actor.SetPlayerId(id()); }
+    void on_set_state() override { _mc_rule_actor.SetReceiver(&s().receiver()); }
 };
 
 // HitAndRun AI, rule-based AI for Mini-RTS
@@ -73,6 +78,8 @@ public:
 private:
     MCRuleActor _mc_rule_actor;
     bool on_act(Tick, RTSAction *action, const atomic_bool *) override;
+    void on_set_id() override { _mc_rule_actor.SetPlayerId(id()); }
+    void on_set_state() override { _mc_rule_actor.SetReceiver(&s().receiver()); }
 };
 
 class MixedAI : public elf::AI_T<RTSState, RTSAction> {

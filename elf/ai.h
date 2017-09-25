@@ -19,8 +19,17 @@ public:
     AI_T() : _name("noname"), _frame_skip(1) { }
     AI_T(const std::string &name, int frame_skip) : _name(name), _id(-1), _frame_skip(frame_skip) { }
 
-    void SetId(int id) { _id = id; on_set_id(); }
-    void SetState(const S &s) { _state = &s; on_set_state(); }
+    void SetId(int id) { 
+        _id = id; 
+        on_set_id(); 
+        // cout << "SetId: " << id << endl;
+    }
+
+    void SetState(const S &s) { 
+        _state = &s; 
+        on_set_state(); 
+        // cout << "SetState " << endl;
+    }
 
     const std::string &name() const { return _name; }
     int id() const { return _id; }

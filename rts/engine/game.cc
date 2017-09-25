@@ -136,6 +136,8 @@ void RTSStateExtend::PreAct() {
             *_output_stream << "Acting ... " << flush << endl;
         }
     }
+
+    _clock.Record("PreAct");
     /*
        if (_output_stream) {
        uint64_t code = _env.CurrentHashCode();
@@ -168,6 +170,8 @@ elf::GameResult RTSStateExtend::PostAct() {
         // RTSState::receiver().SetPathPlanningVerbose(false);
     }
 
+    _clock.Record("PostAct");
+
     return res;
 }
 
@@ -180,6 +184,8 @@ void RTSStateExtend::IncTick() {
         if (_output_stream) *_output_stream << "[" << _prefix << "][" << t << "] Time/tick: " << _clock.Summary() << endl << flush;
         _clock.Restart();
     }
+
+    _clock.Record("IncTick");
 
     if (_options.main_loop_quota > 0) {
         this_thread::sleep_until(_time_loop_start + chrono::milliseconds(_options.main_loop_quota));
