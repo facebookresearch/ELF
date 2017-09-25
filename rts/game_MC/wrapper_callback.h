@@ -13,6 +13,7 @@
 #include "elf/pybind_interface.h"
 
 #include "engine/game.h"
+#include "engine/wrapper_template.h"
 #include "python_options.h"
 
 class WrapperCallbacks {

@@ -9,6 +9,8 @@
 
 #pragma once
 #include "engine/cmd_interface.h"
+#include "engine/game_action.h"
+
 class CmdReceiver;
 
 // RawMsgStatus. 
@@ -42,7 +44,7 @@ private:
 
 public:
     RawToCmd(PlayerId player_id = INVALID) : _player_id(player_id), _last_key('~') { setup_hotkeys(); }
-    RawMsgStatus Process(const GameEnv &env, const string&s, CmdReceiver *receiver);
+    RawMsgStatus Process(Tick t, const GameEnv &env, const string&s, RTSAction *action);
 
     void SetId(PlayerId id) { _player_id = id; clear_state();  }
 

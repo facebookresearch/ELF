@@ -14,12 +14,18 @@
 #include "cmd_specific.gen.h"
 #include "ai.h"
 
-typedef TrainedAI2 TrainAIType;
 static AI *get_ai(const AIOptions &opt, Context::AIComm *ai_comm) {
     // std::cout << "AI type = " << ai_type << " Backup AI type = " << backup_ai_type << std::endl;
-    if (opt.type == "AI_SIMPLE") return new SimpleAI(opt, nullptr);
-    else if (opt.type == "AI_HIT_AND_RUN") return new HitAndRunAI(opt, nullptr);
-    else if (opt.type == "AI_NN") return new TrainAIType(opt, nullptr, ai_comm);
+    if (opt.type == "AI_SIMPLE") return new SimpleAI(opt);
+    else if (opt.type == "AI_HIT_AND_RUN") return new HitAndRunAI(opt);
+    else if (opt.type == "AI_NN") {
+        TrainedAI *main_ai = new TrainedAI(opt);
+        main_ai->InitAIComm(ai_comm);
+
+        MixedAI *ai = new MixedAI(opt);
+        ai->SetMainAI(main_ai);
+        return ai;
+    }
     else return nullptr;
     /*
        std::string prompt = "Unknown ai_type! ai_type: " + std::to_string(ai_type) + " backup_ai_type: " + std::to_string(backup_ai_type);

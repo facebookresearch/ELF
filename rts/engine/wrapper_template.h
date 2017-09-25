@@ -10,7 +10,11 @@
 #pragma once
 
 #include "game.h"
+#include "ai.h"
+#include "../elf/game_base.h"
 #include "../elf/python_options_utils_cpp.h"
+
+using RTSGame = elf::GameBaseT<RTSState, AI>;
 
 template <typename WrapperCB, typename Comm, typename PythonOptions>
 class WrapperT {
@@ -46,9 +50,11 @@ public:
 
         // Note that all the bots created here will be owned by game.
         // Note that AddBot() will set its receiver. So there is no need to specify it here.
-        RTSGame game(op);
+        RTSStateExtend s(op);
+        RTSGame game(s);
         wrapper.OnGameInit(&game);
-        game.GetCmdReceiver()->GetGameStats().SetGlobalStats(&_gstats);
+
+        s.SetGlobalStats(&_gstats);
 
         unsigned long int seed = (op.seed == 0 ? time(NULL) : op.seed);
         std::mt19937 rng;

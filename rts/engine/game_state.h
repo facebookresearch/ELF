@@ -1,18 +1,18 @@
 #pragma once
+#include <iostream>
 #include "elf/ai.h"
+#include "elf/game_base.h"
 #include "game_env.h"
 #include "game_options.h"
-
-class RTSAction {
-    map<UnitId, CmdBPtr> assigned_cmds;
-    vector<UICmd> ui_cmds;
-};
+#include "game_action.h"
 
 class RTSState {
 public:
+    using UICallback = std::function<CmdReturn (const UICmd &)>;
+
     RTSState();
 
-    void Prepare(const RTSGameOptions &options);
+    bool Prepare(const RTSGameOptions &options, ostream *output = nullptr);
 
     void Save(string *s) const {
         serializer::saver saver(true);
@@ -51,22 +51,28 @@ public:
     const GameEnv &env() const { return _env; }
     const CmdReceiver &receiver() const { return _cmd_receiver; }
 
+    Tick GetTick() const { return _cmd_receiver.GetTick(); }
+
+    void SetGlobalStats(GlobalStats *stats) { 
+        _cmd_receiver.GetGameStats().SetGlobalStats(stats);
+    }
     void SetUICmdCB(UICallback cb) { _ui_cb = cb; } 
     void SetVerbose(bool verbose) { _verbose = verbose; }
     void SetReplayPrefix(const std::string &prefix) { _save_replay_prefix = prefix; }
 
     // Function used in GameLoop
-    void Init() { }
-    void PreAct() { }
-    void IncTick() { _cmd_receiver.IncTick(); }
-    void Forward(const RTSAction &a);
+    virtual bool Init() { return true; }
+    virtual void PreAct() { }
+    virtual void IncTick() { _cmd_receiver.IncTick(); }
 
-    elf::GameResult PostAct();
-    void Forward(const RTSAction &);
-    void Finalize();
+    virtual elf::GameResult PostAct();
+    virtual void Forward(RTSAction &);
+    virtual void Finalize();
 
-    void OnAddPlayer(int player_id);
-    void OnRemovePlayer(int player_id);
+    virtual bool Reset();
+
+    virtual void OnAddPlayer(int player_id);
+    virtual void OnRemovePlayer(int player_id);
 
 private:
     GameEnv _env;
@@ -76,9 +82,7 @@ private:
     std::string _save_replay_prefix;
     Tick _max_tick = 30000;
 
-    elf::GameResult _last_result = elf::GAME_NORMAL;
-
-    std::function<CmdReturn (const UICmd &)> _ui_cb = nullptr;  
+    UICallback _ui_cb = nullptr;  
 };
 
 

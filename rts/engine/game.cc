@@ -51,7 +51,7 @@ CmdReturn RTSStateExtend::dispatch_cmds(const UICmd& cmd) {
         case UI_SLIDEBAR:
             // UI controls, only works if there is a spectator.
             // cout << "Receive slider bar notification " << cmd.arg2 << endl;
-            _snapshot_to_load = RTSState::MoveToTick(cmd.arg2 / 100);
+            _snapshot_to_load = RTSState::MoveToTick(_options.snapshots, cmd.arg2 / 100);
             if (_snapshot_to_load >= 0) return CMD_QUEUE_RELOADED;
             break;
         case UI_FASTER_SIMULATION:
@@ -82,55 +82,57 @@ CmdReturn RTSStateExtend::dispatch_cmds(const UICmd& cmd) {
     return CMD_FAILED;
 }
 
-void RTSStateExtend::Init() {
-    if (! _state.Prepare(_options)) return INVALID;
+bool RTSStateExtend::Init() {
+    if (! RTSState::Prepare(_options, _output_stream)) return false;
 
     if (_output_stream) *_output_stream << "In the main loop " << endl << flush;
 
-    _state.SetUICmdCB([&](const UICmd& cmd) { return dispatch_cmds(cmd); });
-    _state.SetReplayPrefix(_options.save_replay_prefix);
+    RTSState::SetUICmdCB([&](const UICmd& cmd) { return dispatch_cmds(cmd); });
+    RTSState::SetReplayPrefix(_options.save_replay_prefix);
 
     _clock.Restart();
     _snapshot_to_load = -1;
     _paused = false;
 
-    const int game_counter = _state.env().GetGameCounter();
-    std::string prefix = _options.save_replay_prefix + std::to_string(game_counter);
-    if (_output_stream) *_output_stream << "Starting " << prefix << " Tick: " << _state.receiver().GetTick() << endl << flush;
+    const int game_counter = RTSState::env().GetGameCounter();
+    _prefix = _options.save_replay_prefix + std::to_string(game_counter);
+    if (_output_stream) *_output_stream << "Starting " << _prefix << " Tick: " << RTSState::receiver().GetTick() << endl << flush;
+
+    return true;
 }
 
 void RTSStateExtend::PreAct() {
     _time_loop_start = chrono::system_clock::now();
     _clock.SetStartPoint();
 
-    Tick t = _state.receiver().GetTick();
+    Tick t = RTSState::receiver().GetTick();
 
     _tick_verbose = (_options.peek_ticks.find(t) != _options.peek_ticks.end());
-    _tick_prompt = (tick_verbose && _output_stream != nullptr);
+    _tick_prompt = (_tick_verbose && _output_stream != nullptr);
 
-    _state.SetVerbose(_tick_verbose);
+    RTSState::SetVerbose(_tick_verbose);
 
     if (_tick_prompt) {
         *_output_stream << "Starting the loop. Tick = " << t << endl << flush;
-        // _state.receiver().SetPathPlanningVerbose(true);
+        // RTSState::receiver().SetPathPlanningVerbose(true);
     }
 
     if (! _options.snapshot_prefix.empty()) {
-        _state.SaveSnapshot(_options.snapshot_prefix + "-" + to_string(t) + ".bin");
+        RTSState::SaveSnapshot(_options.snapshot_prefix + "-" + to_string(t) + ".bin", _options.save_with_binary_format);
         _clock.Record("SaveSnapshot");
     }
     if (! _options.snapshot_load_prefix.empty() && _snapshot_to_load >= 0) {
         string filename = _options.snapshot_load_prefix + "-" + to_string(_snapshot_to_load) + ".bin";
-        _state.LoadSnapshot(filename);
+        RTSState::LoadSnapshot(filename, _options.save_with_binary_format);
         _snapshot_to_load = -1;
     }
 
     // Check bots input.
     // Check if we want to peek a specific tick, if so, we print them out.
     if (_tick_prompt) {
-        _state.env().Visualize();
+        RTSState::env().Visualize();
         if (_output_stream) {
-            *_output_stream << _state.env().PrintDebugInfo() << flush;
+            *_output_stream << RTSState::env().PrintDebugInfo() << flush;
             *_output_stream << "Acting ... " << flush << endl;
         }
     }
@@ -140,7 +142,6 @@ void RTSStateExtend::PreAct() {
      *_output_stream << "[" << t << "]: Current hash code: " << hex << code << dec << endl;
      }
      */
-    return elf::GAME_NORMAL;
 }
 
 elf::GameResult RTSStateExtend::PostAct() {
@@ -148,34 +149,35 @@ elf::GameResult RTSStateExtend::PostAct() {
 
     if (_tick_prompt) *_output_stream << "Forwarding ... " << endl << flush;
 
-    elf::GameResult res = _state.PostAct();
+    elf::GameResult res = RTSState::PostAct();
 
-    Tick t = _state.receiver().GetTick();
+    Tick t = RTSState::GetTick();
+    const GameEnv &env = RTSState::env();
 
-    if (res != GAME_NORMAL) {
+    if (res != elf::GAME_NORMAL) {
         if (_output_stream) {
-            *_output_stream << "[" << t << "][" << _env.GetGameCounter() << "] Player " << _state.env().GetWinnerId() << " won!" << endl << flush;
-            if (res == GAME_ERROR) {
-                *_output_stream << _state.receiver().GetGameStats().GetLastError();
+            *_output_stream << "[" << t << "][" << env.GetGameCounter() << "] Player " << env.GetWinnerId() << " won!" << endl << flush;
+            if (res == elf::GAME_ERROR) {
+                *_output_stream << RTSState::receiver().GetGameStats().GetLastError();
             }
         }
     }
 
     if (_tick_prompt) {
         *_output_stream << " Done with the loop " << endl << flush;
-        // _state.receiver().SetPathPlanningVerbose(false);
+        // RTSState::receiver().SetPathPlanningVerbose(false);
     }
 
     return res;
 }
 
 void RTSStateExtend::IncTick() {
-    if (! _pause) _state.IncTick();
+    if (! _paused) RTSState::IncTick();
 
-    Tick t = _state.receiver().GetTick();
+    Tick t = RTSState::GetTick();
 
-    if (_options._tick_prompt_n_step > 0 && t % _options._tick_prompt_n_step == 0) {
-        if (_output_stream) *_output_stream << "[" << prefix << "][" << t << "] Time/tick: " << _clock.Summary() << endl << flush;
+    if (_options.tick_prompt_n_step > 0 && t % _options.tick_prompt_n_step == 0) {
+        if (_output_stream) *_output_stream << "[" << _prefix << "][" << t << "] Time/tick: " << _clock.Summary() << endl << flush;
         _clock.Restart();
     }
 

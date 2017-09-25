@@ -13,47 +13,7 @@
 //#include "minirts2_state.h"
 //#include "minirts3_state.h"
 
-std::map<std::string, std::function<AI *(const std::string &spec)>> AI::_factories;
-std::mutex AI::_mutex;
+std::map<std::string, std::function<AI *(const std::string &spec)>> AIFactory::_factories;
+std::mutex AIFactory::_mutex;
 
-bool AI::gather_decide(const GameEnv &env, std::function<bool (const GameEnv&, string *, AssignedCmds *)> func) {
-    string state_string;
-    AssignedCmds assigned_cmds;
 
-    // cout << "Before gathering info" << endl << flush;
-    // cout << "rule_actor() = " << hex << rule_actor() << dec << endl;
-    bool gather_ok = rule_actor()->GatherInfo(env, &state_string, &assigned_cmds);
-
-    // cout << "Before running function" << endl << flush;
-    bool act_success = gather_ok ? func(env, &state_string, &assigned_cmds) : true;
-
-    // cout << "Send comments" << endl;
-    if (! state_string.empty()) SendComment(state_string);
-
-    // cout << "Actual send comments" << endl;
-    actual_send_cmds(env, assigned_cmds);
-    return act_success;
-}
-
-void AI::actual_send_cmds(const GameEnv &env, AssignedCmds &assigned_cmds) {
-    // Finally send these commands.
-    for (auto it = assigned_cmds.begin(); it != assigned_cmds.end(); ++it) {
-        const Unit *u = env.GetUnit(it->first);
-        if (u == nullptr) continue;
-        // Cannot give command to other units.
-        if (u->GetPlayerId() != _player_id) continue;
-        if (! env.GetGameDef().unit(u->GetUnitType()).CmdAllowed(it->second->type())) continue;
-
-        it->second->set_id(it->first);
-        // Note that after this command, it->second is not usable.
-        add_command(std::move(it->second));
-    }
-}
-
-void AI::SendComment(const string& s) {
-    // Finally send these commands.
-    if (_receiver != nullptr) {
-        auto cmt = "[" + std::to_string(_player_id) + ":" + _name + "] " + s;
-        _receiver->SendCmd(CmdBPtr(new CmdComment(INVALID, cmt)));
-    }
-}

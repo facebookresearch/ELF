@@ -14,6 +14,7 @@
 #include "engine/cmd.gen.h"
 #include "engine/cmd_specific.gen.h"
 #include "cmd_specific.gen.h"
+#include "engine/ai.h"
 #include "ai.h"
 
 int GameDef::GetNumUnitType() {
@@ -40,16 +41,16 @@ void GameDef::GlobalInit() {
     reg_minirts_specific();
 
     // InitAI.
-    AI::RegisterAI("simple", [](const std::string &spec) {
+    AIFactory::RegisterAI("simple", [](const std::string &spec) {
         AIOptions ai_options;
         ai_options.fs = std::stoi(spec);
-        return new SimpleAI(ai_options, nullptr);
+        return new SimpleAI(ai_options);
     });
 
-    AI::RegisterAI("hit_and_run", [](const std::string &spec) {
+    AIFactory::RegisterAI("hit_and_run", [](const std::string &spec) {
         AIOptions ai_options;
         ai_options.fs = std::stoi(spec);
-        return new HitAndRunAI(ai_options, nullptr);
+        return new HitAndRunAI(ai_options);
     });
 }
 

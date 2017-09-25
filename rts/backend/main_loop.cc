@@ -15,6 +15,7 @@
 #include "engine/game.h"
 #include "engine/cmd_util.h"
 #include "engine/ai.h"
+#include "elf/game_base.h"
 #include "ai.h"
 #include "comm_ai.h"
 
@@ -32,6 +33,7 @@
 #include <thread>
 
 using Parser = CmdLineUtils::CmdLineParser;
+using RTSGame = elf::GameBaseT<RTSStateExtend, AI>;
 
 bool add_players(const string &args, int frame_skip, RTSGame *game) {
     vector<AI*> bots;
@@ -41,7 +43,7 @@ bool add_players(const string &args, int frame_skip, RTSGame *game) {
         if (player.find("tcp") == 0) {
             vector<string> params = split(player, '=');
             int tick_start = (params.size() == 1 ? 0 : std::stoi(params[1]));
-            bots.push_back(new TCPAI("tcpai", tick_start, 8000, nullptr));
+            bots.push_back(new TCPAI("tcpai", tick_start, 8000));
         }
         /*else if (player.find("mcts") == 0) {
             vector<string> params = split(player, '=');
@@ -57,9 +59,9 @@ bool add_players(const string &args, int frame_skip, RTSGame *game) {
         else if (player.find("spectator") == 0) {
             vector<string> params = split(player, '=');
             int tick_start = (params.size() == 1 ? 0 : std::stoi(params[1]));
-            game->AddSpectator(new TCPAI("spectator", tick_start, 8000, game->GetCmdReceiver()));
+            game->AddSpectator(new TCPAI("spectator", tick_start, 8000));
         }
-        else if (player == "dummy") bots.push_back(new AI("dummy", frame_skip, nullptr));
+        else if (player == "dummy") bots.push_back(new AI("dummy", frame_skip));
         /*
         else if (player == "flag_simple") {
             //if (mcts) bots[0]->SetFactory([&](int r) -> AI* { return new FlagSimpleAI(INVALID, r, nullptr, nullptr);});
@@ -68,7 +70,7 @@ bool add_players(const string &args, int frame_skip, RTSGame *game) {
         //else if (player == "td_simple") bots.push_back(new TDSimpleAI(INVALID, frame_skip, nullptr));
         //else if (player == "td_built_in") bots.push_back(new TDBuiltInAI(INVALID, frame_skip, nullptr));
         else {
-            AI *ai = AI::CreateAI(player, std::to_string(frame_skip));
+            AI *ai = AIFactory::CreateAI(player, std::to_string(frame_skip));
             if (ai != nullptr) {
                 bots.push_back(ai);
             } else {
@@ -396,12 +398,15 @@ int main(int argc, char *argv[]) {
                 if (seed0 == 0) options.seed = 0;
                 else options.seed = seed0 + i * 241;
 
-                RTSGame game(options);
+                RTSStateExtend state(options);
+                RTSGame game(state);
                 //game.AddBot(new SimpleAI(INVALID, frame_skip, nullptr));
+                //
                 //game.AddBot(new SimpleAI(INVALID, frame_skip, nullptr));
-                game.AddBot(AI::CreateAI("simple", std::to_string(frame_skip)));
-                game.AddBot(AI::CreateAI("simple", std::to_string(frame_skip)));
-                game.GetCmdReceiver()->GetGameStats().SetGlobalStats(&gstats);
+                game.AddBot(AIFactory::CreateAI("simple", std::to_string(frame_skip)));
+                game.AddBot(AIFactory::CreateAI("simple", std::to_string(frame_skip)));
+
+                state.SetGlobalStats(&gstats);
                 bool infinite = (games == 0);
                 for (int j = 0; j < games || infinite; ++j) {
                     game.MainLoop();
@@ -413,7 +418,8 @@ int main(int argc, char *argv[]) {
         p.stop(true);
         std::cout << gstats.PrintInfo() << std::endl;
     } else {
-        RTSGame game(options);
+        RTSStateExtend state(options);
+        RTSGame game(state);
         cout << "Players: " << players << endl;
         add_players(players, frame_skip, &game);
         cout << "Finish adding players" << endl;

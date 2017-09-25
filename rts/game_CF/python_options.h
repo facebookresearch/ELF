@@ -14,7 +14,6 @@
 #include "elf/hist.h"
 #include "engine/python_common_options.h"
 
-
 #define ACTION_GLOBAL 0
 #define ACTION_PROB 1
 #define ACTION_REGIONAL 2

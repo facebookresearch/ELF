@@ -11,37 +11,40 @@
 #include "save2json.h"
 
 ///////////////////////////// Web TCP AI ////////////////////////////////
-bool TCPAI::Act(const GameEnv &env, bool /* must_act */) {
+bool TCPAI::on_act(Tick t, RTSAction *action, const std::atomic_bool *) {
   // First we send the visualization.
-  if (_receiver->GetTick() >= _vis_after) send_vis(save_vis_data(env));
+  if (t >= _vis_after) send_vis(save_vis_data());
 
   std::string msg;
   while (queue_.try_dequeue(msg)) {
-     _raw_converter.Process(env, msg, _receiver);
+     _raw_converter.Process(t, s().env(), msg, action);
   }
   return true;
 }
 
-string TCPAI::save_vis_data(const GameEnv& env) const {
-  bool is_spectator = (_player_id == INVALID);
+string TCPAI::save_vis_data() const {
+  bool is_spectator = (id() == INVALID);
+
+  const CmdReceiver &recv = s().receiver();
+  const GameEnv &env = s().env();
 
   json game;
-  env.FillHeader<save2json, json>(*_receiver, &game);
-  env.FillIn<save2json, json>(_player_id, *_receiver, &game);
+  env.FillHeader<save2json, json>(recv, &game);
+  env.FillIn<save2json, json>(id(), recv, &game);
 
   if (is_spectator) {
-    save2json::Save(*this, &game);
+    // save2json::Save(*this, &game);
     // Get all current issued commands.
-    save2json::SaveCmd(*_receiver, INVALID, &game);
+    save2json::SaveCmd(recv, INVALID, &game);
 
     // Save the current replay progress.
-    int replay_size = _receiver->GetLoadedReplaySize();
+    int replay_size = recv.GetLoadedReplaySize();
     if (replay_size > 0) {
-      game["progress_precent"] = _receiver->GetTick() * 100 / _receiver->GetLoadedReplayLastTick();
+      game["progress_precent"] = recv.GetTick() * 100 / recv.GetLoadedReplayLastTick();
     }
   } else {
-    save2json::Save(*this, &game);
-    save2json::SaveCmd(*_receiver, _player_id, &game);
+    // save2json::Save(*this, &game);
+    save2json::SaveCmd(recv, id(), &game);
   }
   return game.dump();
 }

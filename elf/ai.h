@@ -1,133 +1,102 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <iostream>
 #include "utils.h"
 
 namespace elf {
 
+using Tick = int;
+
+using namespace std;
+
 template <typename S, typename A>
 class AI_T {
 public:
-    AI_T(const std::string &name) : _name(name), _id(-1) { }
+    using Action = A;
+    using State = S;
 
-    void SetId(int32_t id) { _id = id; on_set_id(id); }
-    void SetState(const S &s) { _state = &s; }
-    const std::string &GetName() const { return _name; }
+    AI_T() : _name("noname"), _frame_skip(1) { }
+    AI_T(const std::string &name, int frame_skip) : _name(name), _id(-1), _frame_skip(frame_skip) { }
+
+    void SetId(int id) { _id = id; on_set_id(); }
+    void SetState(const S &s) { _state = &s; on_set_state(); }
+
+    const std::string &name() const { return _name; }
+    int id() const { return _id; }
+    const S& s() const { 
+        if (_state == nullptr) {
+            cout << "AI_T::_state is null! " << endl;
+            throw std::range_error("AI_T::_state is null!");
+        }
+        return *_state; 
+    }
 
     // Given the current state, perform action and send the action to _a;
     // Return false if this procedure fails.
-    virtual bool Act(const std::atomic_bool &done) = 0;
-    virtual void Reset() { }
+    bool Act(Tick t, A *a, const std::atomic_bool *done) {
+        if (t % _frame_skip == 0) return on_act(t, a, done); 
+        else return false;
+    }
 
-    const A &action() const { return _action;} 
+    virtual bool GameEnd(Tick) { return true; }
 
-private:
+protected:
     const std::string _name;
-    int32_t _id;
+    int _id;
+
+    // Run on_act() every _frame_skip
+    int _frame_skip;
 
     const S *_state = nullptr;
-    A _action;
 
-    virtual void on_set_id(int32_t id) { }
+    virtual void on_set_id() { }
+    virtual void on_set_state() { }
+    virtual bool on_act(Tick, A *, const std::atomic_bool *) { return true; }
 };
 
 template <typename S, typename A, typename AIComm>
 class AIWithCommT : public AI_T<S, A> {
 public:
-    void Init(AIComm *ai_comm) {
+    using Data = typename AIComm::Data;
+
+    AIWithCommT() { }
+    AIWithCommT(const std::string &name, int frame_skip) : AI_T<S, A>(name, frame_skip) { }
+
+    void InitAIComm(AIComm *ai_comm) {
         assert(ai_comm);
         _ai_comm = ai_comm;
     }
 
-    void Reset() override { if (_ai_comm != nullptr) _ai_comm->Reset(); }
+    // Get called when we start a new game.
+    bool GameEnd(Tick t) override { 
+        if (_ai_comm == nullptr) return false;
+
+        // Send final message. 
+        on_act(t, nullptr, nullptr);
+
+        // Restart _ai_comm.
+        _ai_comm->Restart(); 
+        return true;
+    }
 
 protected:
     AIComm *_ai_comm = nullptr;
-};
 
-enum GameResult { GAME_NORMAL = 0, GAME_END = 1, GAME_ERROR = 2 };
+    bool on_act(Tick, A *a, const std::atomic_bool *) override {
+        _ai_comm->Prepare();
+        Data *data = &_ai_comm->info().data;
+        extract(data);
+        if (! _ai_comm->SendDataWaitReply()) return false;
 
-typename <typename S, typename A>
-using InitFuncT = function<bool (S *)>; 
-
-typename <typename S, typename A>
-using DynamicsFuncT = function<bool (S *, const A &)>; 
-
-typename <typename S>
-using SelfDynamicsFuncT = function<GameResult (S *)>; 
-
-struct GameBaseOptions {
-};
-
-// Any games played by multiple AIs.
-template <typename S, typename A>
-class GameBaseT {
-public:
-    using GameBase = GameBaseT<S, A>;
-    using AI = AI_T<S, A>;
-
-    GameBaseT(const GameBaseOptions &options) : _options(options) { 
+        // Then deal with the response, if a != nullptr
+        if (a != nullptr) handle_response(_ai_comm->info().data, a);
+        return true;
     }
 
-    void AddBot(AI *bot) {
-        if (bot == nullptr) {
-            std::cout << "Bot at " << _bots.size() << " cannot be nullptr" << std::endl;
-            return;
-        }
-        bot->SetId(_bots.size());
-        bot->SetState(_state);
-        _bots.emplace_back(bot);
-        _state.OnAddPlayer(_bots.size() - 1);
-    }
-
-    void RemoveBot() {
-        _state.OnRemovePlayer(_bots.size() - 1);
-        _bots.pop_back();
-    }
-
-    void AddSpectator(AI *spectator) {
-        if (_spectator.get() == nullptr) {
-            spectator->SetId(-1);
-            spectator->SetState(_state);
-            _spectator.reset(spectator);
-        }
-    }
-
-    const S& GetState() const { return _state; }
-
-    void MainLoop(const std::atomic_bool &done) {
-        _state.Init();
-        while (! done) {
-            _state.PreAct();
-            for (const auto &bot : _bots) {
-                bot->Act(done);
-                const A& action = bot->action();
-                _state.Forward(actions);
-            }
-            if (_spectator != nullptr) _spectator->Act(done);
-
-            GameResult res = _state.PostAct();
-            if (res == GAME_END) break;
-
-            _state.IncTick();
-        }
-        _state.Finalize();
-    }
-
-    void Reset() {
-        _state.Reset();
-        // Send message to AIs.
-        for (const auto &bot : _bots) {
-            bot->Reset();
-        }
-    }
-
-private:
-    S _state;
-    std::vector<unique_ptr<AI>> _bots;
-    unique_ptr<AI> _spectator;
-
-    GameBaseOptions _options;
+    // Extract and save to data.
+    virtual void extract(Data *data) = 0;
+    virtual bool handle_response(const Data &data, A *a) = 0; 
 };
 
 }  // namespace elf

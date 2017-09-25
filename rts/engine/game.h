@@ -12,49 +12,45 @@
 #include <algorithm>
 #include <string>
 #include <iostream>
-#ifndef _WIN32
-#include <unistd.h>
-#else
-#include <windows.h>
-#define sleep(n)    Sleep(n)
-#endif
-
 #include <queue>
 #include <set>
 #include "game_options.h"
 #include "game_state.h"
-#include "ai.h"
 #include "elf/ai.h"
+#include "elf/utils.h"
+
+using namespace std;
 
 // A tick-based RTS game.
-class RTSStateExtend {
+class RTSStateExtend : public RTSState {
 public:
     // Initialize the game.
     explicit RTSStateExtend(const RTSGameOptions &options);
     ~RTSStateExtend();
 
     // Function used in GameLoop
-    void Init();
-    void PreAct();
-    void IncTick();
+    bool Init() override;
+    void PreAct() override;
+    void IncTick() override;
 
-    elf::GameResult PostAct();
-    void Forward(const RTSAction &a) { _state.Forward(a); }
-    void Finalize() { _state.Finalize(); }
-
-    void OnAddPlayer(int player_id) { _state.OnAddPlayer(player_id); }
-    void OnRemovePlayer(int player_id) { _state.OnRemovePlayer(player_id); }
+    elf::GameResult PostAct() override;
 
 private:
     // Options.
     RTSGameOptions _options;
 
-    RTSState _state; 
-
     // Next snapshot to load.
     int _snapshot_to_load;
 
     bool _paused;
+    bool _tick_prompt;
+    bool _tick_verbose;
+
+    chrono::time_point<std::chrono::system_clock> _time_loop_start;
+
+    elf_utils::MyClock _clock;
+
+    string _prefix;
 
     // Output file to save.
     bool _output_stream_owned;
@@ -63,10 +59,5 @@ private:
     // Dispatch commands received from gui.
     CmdReturn dispatch_cmds(const UICmd& cmd);
 
-    bool RTSGame::change_simulation_speed(float fraction) {
-        _options.main_loop_quota /= fraction;
-        return true;
-    }
+    bool change_simulation_speed(float fraction);
 };
-
-#endif

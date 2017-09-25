@@ -60,7 +60,7 @@ private:
     std::vector<float> _ratio_failed_moves;
     GlobalStats *_gstats;
 
-    std::string _last_error;
+    mutable std::string _last_error;
 
 public:
     GameStats(GlobalStats *gstats = nullptr) : _gstats(nullptr) {

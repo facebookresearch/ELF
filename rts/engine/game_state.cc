@@ -1,5 +1,8 @@
 #include "game_state.h"
 
+using namespace std;
+using namespace std::chrono;
+
 RTSState::RTSState() {
     _env.InitGameDef();
     // TODO Need to add players accordingly. 
@@ -16,7 +19,7 @@ void RTSState::OnRemovePlayer(int player_id) {
     _env.RemovePlayer();
 }
 
-bool RTSState::Prepare(const RTSGameOptions &options) {
+bool RTSState::Prepare(const RTSGameOptions &options, ostream *output) {
     _cmd_receiver.SetVerbose(options.cmd_verbose, 0);
 
     const unsigned int game_counter = _env.GetGameCounter();
@@ -24,7 +27,7 @@ bool RTSState::Prepare(const RTSGameOptions &options) {
     // Set the command dumper if there is any file specified.
     if (! options.cmd_dumper_prefix.empty()) {
         const string filename = options.cmd_dumper_prefix + "-" + std::to_string(game_counter) + ".cmd";
-        if (_output_stream) *_output_stream << "Setup cmd_dumper. filename = " << filename << endl << flush;
+        if (output) *output << "Setup cmd_dumper. filename = " << filename << endl << flush;
         _cmd_receiver.SetCmdDumper(filename);
     }
 
@@ -43,22 +46,22 @@ bool RTSState::Prepare(const RTSGameOptions &options) {
     // Load the replay.
     bool situation_loaded = false;
     if (! load_replay_filename.empty()) {
-        if (_output_stream) *_output_stream << "Load from replay, name = " << load_replay_filename << endl << flush;
+        if (output) *output << "Load from replay, name = " << load_replay_filename << endl << flush;
         if (_cmd_receiver.LoadReplay(load_replay_filename)) {
             situation_loaded = true;
         } else {
-            if (_output_stream) *_output_stream << "Failed to open " << load_replay_filename << endl << flush;
+            if (output) *output << "Failed to open " << load_replay_filename << endl << flush;
             return false;
         }
     }
     if (! situation_loaded && ! options.state_string.empty()) {
-        if (_output_stream) *_output_stream << "Load from state string, size = " << options.state_string.size() << endl << flush;
+        if (output) *output << "Load from state string, size = " << options.state_string.size() << endl << flush;
         Load(options.state_string);
-        if (_output_stream) *_output_stream << "Finish load from state string" << endl << flush;
+        if (output) *output << "Finish load from state string" << endl << flush;
         situation_loaded = true;
     }
     if (! situation_loaded && ! options.snapshot_load.empty()) {
-        if (_output_stream) *_output_stream << "Loading snapshot = " << options.snapshot_load << endl << flush;
+        if (output) *output << "Loading snapshot = " << options.snapshot_load << endl << flush;
         LoadSnapshot(options.snapshot_load, options.save_with_binary_format);
         situation_loaded = true;
     }
@@ -83,7 +86,7 @@ bool RTSState::Prepare(const RTSGameOptions &options) {
         }
 
         if (options.map_filename.empty()) {
-            if (_output_stream) *_output_stream << "Generate from scratch, seed = " << seed << endl << flush;
+            if (output) *output << "Generate from scratch, seed = " << seed << endl << flush;
             _cmd_receiver.SendCmdWithTick(CmdBPtr(new CmdRandomSeed(INVALID, seed)), 0);
         } else {
             // _cmd_receiver.SendCmdWithTick(CmdBPtr(new CmdLoadMap(INVALID, options.map_filename)));
@@ -121,15 +124,14 @@ bool RTSState::Reset() {
    _cmd_receiver.ResetTick();
    _cmd_receiver.ClearCmd();
    _env.Reset();
-   _last_result = elf::GAME_NORMAL;
+   return true;
 }
 
-void RTSState::Forward(const RTSAction &action) {
+void RTSState::Forward(RTSAction &action) {
+    action.Send(_env, _cmd_receiver);
 }
 
 elf::GameResult RTSState::PostAct() {
-    if (_last_result != elf:::GAME_NORMAL) return _last_result;
-
     _env.Forward(&_cmd_receiver);
     // if (_tick_prompt) *_output_stream << "Start executing cmds... " << endl << flush;
     _cmd_receiver.ExecuteDurativeCmds(_env, _verbose);
@@ -139,20 +141,20 @@ elf::GameResult RTSState::PostAct() {
     _env.ComputeFOW();
 
     // Check winner. 
-    PlayerId winner_id = _env.GetGameDef().CheckWinner(_env, _cmd_receiver.GetTick() >= _options.max_tick);
+    PlayerId winner_id = _env.GetGameDef().CheckWinner(_env, _cmd_receiver.GetTick() >= _max_tick);
     _env.SetWinnerId(winner_id);
 
+
+    Tick t = _cmd_receiver.GetTick();
     bool run_normal = _cmd_receiver.GetGameStats().CheckGameSmooth(t);
 
     // Check winning condition
-    if (winner_id != INVALID || _cmd_receiver.GetTick() >= _max_tick || ! run_normal) {
+    if (winner_id != INVALID || t >= _max_tick || ! run_normal) {
         _env.SetTermination();
         _cmd_receiver.GetGameStats().SetWinner(winner_id);
-        _last_result = run_normal ? elf::GAME_END : elf::GAME_ERROR; 
-    } else {
-        _last_result = elf::GAME_NORMAL;
-    }
-
+        return run_normal ? elf::GAME_END : elf::GAME_ERROR; 
+    } 
+    
     return elf::GAME_NORMAL;
 }
 
