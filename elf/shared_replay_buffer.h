@@ -1,6 +1,7 @@
 #include <vector>
 #include <map>
 #include <memory>
+#include <mutex>
 
 template <typename Key, typename Record>
 class SharedReplayBuffer {

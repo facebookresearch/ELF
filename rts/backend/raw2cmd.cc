@@ -85,7 +85,7 @@ void RawToCmd::setup_hotkeys() {
     add_hotkey("cbsmr", build_event);
 }
 
-RawMsgStatus RawToCmd::Process(const GameEnv &env, const string&s, CmdReceiver *receiver) {
+RawMsgStatus RawToCmd::Process(Tick tick, const GameEnv &env, const string&s, RTSAction *action) {
     // Raw command:
     //   t 'L' i j: left click at (i, j)
     //   t 'R' i j: right clock at (i, j)
@@ -106,7 +106,6 @@ RawMsgStatus RawToCmd::Process(const GameEnv &env, const string&s, CmdReceiver *
 
     cout << "Cmd: " << s << endl;
 
-    Tick tick = receiver->GetTick();
     const RTSMap& m = env.GetMap();
 
     istringstream ii(s);
@@ -130,21 +129,21 @@ RawMsgStatus RawToCmd::Process(const GameEnv &env, const string&s, CmdReceiver *
             selected = m.GetUnitIdInRegion(p, p2);
             break;
         case 'F':
-            receiver->SendCmd(UICmd::GetUIFaster());
+            action->ui_cmds().push_back(UICmd::GetUIFaster());
             return PROCESSED;
         case 'W':
-            receiver->SendCmd(UICmd::GetUISlower());
+            action->ui_cmds().push_back(UICmd::GetUISlower());
             return PROCESSED;
         case 'C':
-            receiver->SendCmd(UICmd::GetUICyclePlayer());
+            action->ui_cmds().push_back(UICmd::GetUICyclePlayer());
             return PROCESSED;
         case 'S':
             ii >> percent;
             // cout << "Get slider bar notification " << percent << endl;
-            receiver->SendCmd(UICmd::GetUISlideBar(percent));
+            action->ui_cmds().push_back(UICmd::GetUISlideBar(percent));
             return PROCESSED;
         case 'P':
-            receiver->SendCmd(UICmd::GetToggleGamePause());
+            action->ui_cmds().push_back(UICmd::GetToggleGamePause());
             return PROCESSED;
     }
 
@@ -177,7 +176,7 @@ RawMsgStatus RawToCmd::Process(const GameEnv &env, const string&s, CmdReceiver *
                 if (! cmd.get() || ! env.GetGameDef().unit(u->GetUnitType()).CmdAllowed(cmd->type())) continue;
 
                 // Command successful.
-                receiver->SendCmd(std::move(cmd));
+                action->cmds().emplace(std::make_pair(*it, std::move(cmd)));
                 cmd_success = true;
             }
         }

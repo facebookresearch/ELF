@@ -116,8 +116,5 @@ public:
 
     // Get implementation for different befaviors on dead units.
     void CmdOnDeadUnitImpl(GameEnv* env, CmdReceiver* receiver, UnitId _id, UnitId _target) const;
-
-    //bool ActByStateFunc(RuleActor rule_actor, const GameEnv& env, const vector<int>& state, string *s, AssignedCmds *cmds) const;
-
 };
 #endif

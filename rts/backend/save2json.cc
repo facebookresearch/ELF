@@ -101,7 +101,8 @@ void save2json::SaveStats(const Player& player, json *game) {
     pp["resource"] = player.GetResource();
     (*game)["players"].push_back(pp);
 }
-
+ 
+/*
 void save2json::Save(const AI &bot, json *game) {
     json mbot;
     vector<int> selected = bot.GetAllSelectedUnits();
@@ -114,6 +115,7 @@ void save2json::Save(const AI &bot, json *game) {
     }
     (*game)["bots"].push_back(mbot);
 }
+*/
 
 void save2json::Save(const Unit& unit, const CmdReceiver &receiver, json *game) {
     json u;
