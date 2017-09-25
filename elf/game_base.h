@@ -67,7 +67,7 @@ public:
             }
 
             GameResult res = _state.PostAct();
-            if (res == GAME_END) break;
+            if (res != GAME_NORMAL) break;
             if (done != nullptr && done->load()) break;
 
             _state.IncTick();

@@ -46,7 +46,7 @@ protected:
 
     // Feature extraction.
     void extract(Data *data) override;
-    bool handle_response(const Data &data, RTSAction *a) override; 
+    bool handle_response(const Data &data, RTSAction *a) override;
 
     void on_set_id() override { _mc_rule_actor.SetPlayerId(id()); }
     void on_set_state() override { _mc_rule_actor.SetReceiver(&s().receiver()); }
@@ -84,8 +84,8 @@ private:
 
 class MixedAI : public elf::AI_T<RTSState, RTSAction> {
 public:
-    using AI = elf::AI_T<RTSState, RTSAction>; 
-    
+    using AI = elf::AI_T<RTSState, RTSAction>;
+
     MixedAI(const AIOptions &opt) : AI(opt.name, opt.fs) {
           if (opt.args != "") {
               // TODO: Get some library to do this.
@@ -117,14 +117,18 @@ public:
           _rng.seed(time(NULL));
     }
 
-    void SetMainAI(AI *main_ai) { 
-        _main_ai.reset(main_ai); 
+    void SetMainAI(AI *main_ai) {
+        _main_ai.reset(main_ai);
         _main_ai->SetId(id());
         if (s_ptr() != nullptr) _main_ai->SetState(s());
     }
 
     bool GameEnd(Tick t) override {
-        bool res = AI::GameEnd(t);
+        AI::GameEnd(t);
+
+        // Always ended with main_ai.
+        bool res = _main_ai->GameEnd(t);
+
         // Decay latest_start.
         _latest_start *= _latest_start_decay;
 
@@ -138,7 +142,7 @@ protected:
     // Backup AI.
     // Used when we want the default ai to play for a while and then TrainedAI can take over.
     std::unique_ptr<AI> _backup_ai;
-    std::unique_ptr<AI> _main_ai; 
+    std::unique_ptr<AI> _main_ai;
 
     Tick _backup_ai_tick_thres = 0;
     std::mt19937 _rng;
@@ -176,9 +180,9 @@ protected:
 
     bool on_act(Tick t, RTSAction *a, const std::atomic_bool *done) override {
         if (_backup_ai != nullptr && t < _backup_ai_tick_thres) {
-            return _backup_ai->Act(t, a, done); 
+            return _backup_ai->Act(t, a, done);
         } else {
-            return _main_ai->Act(t, a, done); 
+            return _main_ai->Act(t, a, done);
         }
     }
 };
