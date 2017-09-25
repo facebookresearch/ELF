@@ -53,7 +53,7 @@ public:
 
     void MainLoop(const std::atomic_bool *done = nullptr) {
         _state.Init();
-        while (! done) {
+        while (true) {
             _state.PreAct();
             auto t = _state.GetTick();
             for (const auto &bot : _bots) {
@@ -68,6 +68,7 @@ public:
 
             GameResult res = _state.PostAct();
             if (res == GAME_END) break;
+            if (done != nullptr && done->load()) break;
 
             _state.IncTick();
         }
