@@ -179,9 +179,8 @@ void TrainedAI::compute_state(std::vector<float> *state) {
 #define ACTION_UNIT_CMD 1
 #define ACTION_REGIONAL 2
 
-bool TrainedAI::handle_response(const Data &data, RTSAction *a) { 
-    a->InitState9();
-    a->SetPlayer(id(), name());
+bool TrainedAI::handle_response(const Data &data, RTSMCAction *a) { 
+    a->Init(id(), name());
 
     // if (_receiver == nullptr) return false;
     const auto &env = s().env();
@@ -190,18 +189,11 @@ bool TrainedAI::handle_response(const Data &data, RTSAction *a) {
     const auto &m = env.GetMap();
     const GameState& gs = data.newest();
 
-    // uint64_t hash_code;
-    bool gather_ok = _mc_rule_actor.GatherInfo(env, &a->state_string(), &a->cmds());
-    if (! gather_ok) return false;
-
     switch(gs.action_type) {
         case ACTION_GLOBAL:
             // action
-            a->state()[gs.a] = 1;
-
-            // hash_code = serializer::hash_obj(*_ai_comm->GetData());
-            // cout << "[" << t << "]: hash = " << hex << hash_code << dec << ", h = " << h << endl;
-            return _mc_rule_actor.ActByState(env, a->state(), &a->state_string(), &a->cmds());
+            a->SetState9(gs.a);
+            break;
 
         case ACTION_UNIT_CMD:
             {
@@ -213,8 +205,7 @@ bool TrainedAI::handle_response(const Data &data, RTSAction *a) {
                     unit_cmds.emplace_back(_XY(gs.uloc[i], m), _XY(gs.tloc[i], m), gs.ct[i], gs.bt[i]);
                 }
                 std::for_each(unit_cmds.begin(), unit_cmds.end(), [&](CmdInput &ci) { ci.ApplyEnv(env); });
-
-                return _mc_rule_actor.ActByCmd(env, unit_cmds, &a->state_string(), &a->cmds());
+                a->SetUnitCmds(unit_cmds);
             }
 
             /*
@@ -244,29 +235,18 @@ bool TrainedAI::handle_response(const Data &data, RTSAction *a) {
         default:
             throw std::range_error("action_type not valid! " + to_string(gs.action_type));
     }
+    return true;
 }
 
 ///////////////////////////// Simple AI ////////////////////////////////
-bool SimpleAI::on_act(Tick, RTSAction *a, const std::atomic_bool *) {
-    a->InitState9();
-    a->SetPlayer(id(), name());
-    const auto &env = s().env();
-
-    bool gather_ok = _mc_rule_actor.GatherInfo(env, &a->state_string(), &a->cmds());
-    if (! gather_ok) return false;
-
-    _mc_rule_actor.GetActSimpleState(&a->state());
-    return _mc_rule_actor.ActByState(env, a->state(), &a->state_string(), &a->cmds());
+bool SimpleAI::on_act(Tick, RTSMCAction *a, const std::atomic_bool *) {
+    a->Init(id(), name());
+    a->SetSimpleAI();
+    return true;
 }
 
-bool HitAndRunAI::on_act(Tick, RTSAction *a, const std::atomic_bool *) {
-    a->InitState9();
-    a->SetPlayer(id(), name());
-    const auto &env = s().env();
-
-    bool gather_ok = _mc_rule_actor.GatherInfo(env, &a->state_string(), &a->cmds());
-    if (! gather_ok) return false;
-
-    _mc_rule_actor.GetActHitAndRunState(&a->state());
-    return _mc_rule_actor.ActByState(env, a->state(), &a->state_string(), &a->cmds());
+bool HitAndRunAI::on_act(Tick, RTSMCAction *a, const std::atomic_bool *) {
+    a->Init(id(), name());
+    a->SetHitAndRunAI();
+    return true;
 }

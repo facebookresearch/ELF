@@ -8,22 +8,20 @@
 #include "ui_cmd.h"
 #include "game_env.h"
 #include "cmd_receiver.h"
-#include "rule_actor.h"
 
-struct RTSAction {
+class RTSAction {
 public:
-    void InitState9() {
-        _state.resize(NUM_AISTATE);
-        std::fill (_state.begin(), _state.end(), 0);
+    void Init(PlayerId id, const string &name) {
+        _player_id = id; 
+        _name = name;
+        _cmds.clear();
+        _ui_cmds.clear();
     }
 
-    void SetPlayer(PlayerId id, const string &name) { _player_id = id; _name = name; }
     map<UnitId, CmdBPtr> &cmds() { return _cmds; }
     vector<UICmd> &ui_cmds() { return _ui_cmds; }
-    string &state_string() { return _state_string; }
-    vector<int> &state() { return _state; }
 
-    void Send(const GameEnv &env, CmdReceiver &receiver) {
+    virtual bool Send(const GameEnv &env, CmdReceiver &receiver) { 
         // Finally send these commands.
         for (auto it = _cmds.begin(); it != _cmds.end(); ++it) {
             const Unit *u = env.GetUnit(it->first);
@@ -38,6 +36,7 @@ public:
             // Note that after this command, it->second is not usable.
             receiver.SendCmd(std::move(it->second));
         }
+
         // Send UI cmds.
         for (auto &ui_cmd : _ui_cmds) {
             receiver.SendCmd(std::move(ui_cmd));
@@ -45,15 +44,15 @@ public:
 
         auto cmt = "[" + std::to_string(_player_id) + ":" + _name + "] " + _state_string;
         receiver.SendCmd(CmdBPtr(new CmdComment(INVALID, cmt)));
+        return true;
     }
 
-private:
+protected:
     PlayerId _player_id;
     std::string _name;
+    std::string _state_string;
+
     map<UnitId, CmdBPtr> _cmds;
     vector<UICmd> _ui_cmds;
-
-    std::string _state_string;
-    vector<int> _state;
 };
 

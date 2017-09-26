@@ -8,6 +8,9 @@
 */
 
 #include "save2json.h"
+#include "engine/cmd.h"
+#include "engine/cmd.gen.h"
+#include "engine/cmd_specific.gen.h"
 #include "engine/game_env.h"
 #include "engine/ai.h"
 #include "engine/cmd.h"

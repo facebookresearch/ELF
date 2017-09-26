@@ -14,17 +14,19 @@
 #include "engine/game_state.h"
 #include "elf/circular_queue.h"
 #include "elf/ai.h"
+#include "game_action.h"
 #include "python_options.h"
-#include "mc_rule_actor.h"
 #define NUM_RES_SLOT 5
 
 using Comm = Context::Comm;
 using AIComm = AICommT<Comm>;
 using Data = typename AIComm::Data;
 
-class TrainedAI : public elf::AIWithCommT<RTSState, RTSAction, AIComm> {
+using AIWithComm = elf::AIWithCommT<RTSState, RTSMCAction, AIComm>;
+using AI = elf::AI_T<RTSState, RTSMCAction>;
+
+class TrainedAI : public AIWithComm {
 public:
-    using AIWithComm = elf::AIWithCommT<RTSState, RTSAction, AIComm>;
     using Data = typename AIWithComm::Data;
 
     TrainedAI() : _respect_fow(true), _recent_states(1) { }
@@ -37,7 +39,6 @@ public:
 
 protected:
     const bool _respect_fow;
-    MCRuleActor _mc_rule_actor;
 
     // History to send.
     CircularQueue<std::vector<float>> _recent_states;
@@ -46,46 +47,33 @@ protected:
 
     // Feature extraction.
     void extract(Data *data) override;
-    bool handle_response(const Data &data, RTSAction *a) override;
-
-    void on_set_id() override { _mc_rule_actor.SetPlayerId(id()); }
-    void on_set_state() override { _mc_rule_actor.SetReceiver(&s().receiver()); }
+    bool handle_response(const Data &data, RTSMCAction *a) override;
 };
 
 // Simple AI, rule-based AI for Mini-RTS
-class SimpleAI : public elf::AI_T<RTSState, RTSAction> {
+class SimpleAI : public AI {
 public:
-    using AI = elf::AI_T<RTSState, RTSAction>;
     SimpleAI(const AIOptions &opt) : AI(opt.name, opt.fs)  { }
 
     // SERIALIZER_DERIVED(SimpleAI, AIBase, _state);
 
 private:
-    MCRuleActor _mc_rule_actor;
-    bool on_act(Tick, RTSAction *action, const atomic_bool *) override;
-    void on_set_id() override { _mc_rule_actor.SetPlayerId(id()); }
-    void on_set_state() override { _mc_rule_actor.SetReceiver(&s().receiver()); }
+    bool on_act(Tick, RTSMCAction *action, const atomic_bool *) override;
 };
 
 // HitAndRun AI, rule-based AI for Mini-RTS
-class HitAndRunAI : public elf::AI_T<RTSState, RTSAction> {
+class HitAndRunAI : public AI {
 public:
-    using AI = elf::AI_T<RTSState, RTSAction>;
     HitAndRunAI(const AIOptions &opt) : AI(opt.name, opt.fs)  { }
 
     // SERIALIZER_DERIVED(HitAndRunAI, AIBase, _state);
 
 private:
-    MCRuleActor _mc_rule_actor;
-    bool on_act(Tick, RTSAction *action, const atomic_bool *) override;
-    void on_set_id() override { _mc_rule_actor.SetPlayerId(id()); }
-    void on_set_state() override { _mc_rule_actor.SetReceiver(&s().receiver()); }
+    bool on_act(Tick, RTSMCAction *action, const atomic_bool *) override;
 };
 
-class MixedAI : public elf::AI_T<RTSState, RTSAction> {
+class MixedAI : public AI {
 public:
-    using AI = elf::AI_T<RTSState, RTSAction>;
-
     MixedAI(const AIOptions &opt) : AI(opt.name, opt.fs) {
           if (opt.args != "") {
               // TODO: Get some library to do this.
@@ -178,7 +166,7 @@ protected:
         if (_main_ai != nullptr) _main_ai->SetState(s());
     }
 
-    bool on_act(Tick t, RTSAction *a, const std::atomic_bool *done) override {
+    bool on_act(Tick t, RTSMCAction *a, const std::atomic_bool *done) override {
         if (_backup_ai != nullptr && t < _backup_ai_tick_thres) {
             return _backup_ai->Act(t, a, done);
         } else {

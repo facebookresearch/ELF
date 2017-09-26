@@ -10,7 +10,7 @@
 #pragma once
 #include <concurrentqueue.h>
 #include "ws_server.h"
-#include "engine/ai.h"
+#include "ai.h"
 #include "raw2cmd.h"
 
 class TCPAI : public AI {
@@ -31,7 +31,7 @@ protected:
         _raw_converter.SetId(id());
     }
 
-    bool on_act(Tick t, RTSAction *action, const std::atomic_bool *) override;
+    bool on_act(Tick t, RTSMCAction *action, const std::atomic_bool *) override;
 
 public:
     // If player_id == INVALID, then it will send the full information.

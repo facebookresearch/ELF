@@ -12,6 +12,7 @@
 #include "elf/comm_template.h"
 #include "elf/hist.h"
 #include "engine/python_common_options.h"
+#include "engine/cmd_interface.h"
 
 template <typename T>
 void fill_zero(std::vector<T> &v) {

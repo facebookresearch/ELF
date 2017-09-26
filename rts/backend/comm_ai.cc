@@ -11,7 +11,7 @@
 #include "save2json.h"
 
 ///////////////////////////// Web TCP AI ////////////////////////////////
-bool TCPAI::on_act(Tick t, RTSAction *action, const std::atomic_bool *) {
+bool TCPAI::on_act(Tick t, RTSMCAction *action, const std::atomic_bool *) {
   // First we send the visualization.
   if (t >= _vis_after) send_vis(save_vis_data());
 

@@ -15,6 +15,9 @@
 #include "engine/game.h"
 #include "engine/wrapper_template.h"
 #include "python_options.h"
+#include "ai.h"
+
+using RTSGame = elf::GameBaseT<RTSState, AI>;;
 
 class WrapperCallbacks {
 private:

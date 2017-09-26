@@ -10,16 +10,14 @@
 #pragma once
 
 #include "game.h"
-#include "ai.h"
 #include "../elf/game_base.h"
 #include "../elf/python_options_utils_cpp.h"
 
-using RTSGame = elf::GameBaseT<RTSState, AI>;
-
-template <typename WrapperCB, typename Comm, typename PythonOptions>
+template <typename WrapperCB, typename Comm, typename PythonOptions, typename AI>
 class WrapperT {
 public:
-    using Wrapper = WrapperT<WrapperCB, Comm, PythonOptions>;
+    using Wrapper = WrapperT<WrapperCB, Comm, PythonOptions, AI>;
+    using RTSGame = elf::GameBaseT<RTSState, AI>;
 
 private:
     GlobalStats _gstats;

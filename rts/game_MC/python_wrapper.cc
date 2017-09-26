@@ -21,7 +21,7 @@
 class GameContext {
 public:
     using GC = Context;
-    using Wrapper = WrapperT<WrapperCallbacks, GC::Comm, PythonOptions>;
+    using Wrapper = WrapperT<WrapperCallbacks, GC::Comm, PythonOptions, AI>;
 
 private:
     std::unique_ptr<GC> _context;

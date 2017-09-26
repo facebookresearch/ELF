@@ -66,16 +66,23 @@ private:
     vector<int> _cnt_under_construction;
 
     vector<int> _prices;
+    /*
+    int _resource = 0;
+    UnitId _base_id = INVALID;
+    UnitId _resource_id = INVALID;
+    UnitId _opponent_base_id = INVALID;
+    */
+
     int _resource;
     UnitId _base_id, _resource_id, _opponent_base_id;
     PointF _base_loc, _resource_loc;
 
-    const Unit *_base;
-    PlayerId _player_id;
-    int _num_unit_type;
-    Result _result;
-    const Unit *_enemy_at_resource;
-    const Unit *_enemy_at_base;
+    const Unit *_base = nullptr;
+    PlayerId _player_id = INVALID;
+    int _num_unit_type = 0;
+    Result _result = NOT_READY;
+    const Unit *_enemy_at_resource = nullptr;
+    const Unit *_enemy_at_base = nullptr;
 
     static bool InCmd(const CmdReceiver &receiver, const Unit &u, CmdType cmd) {
         const CmdDurative *c = receiver.GetUnitDurativeCmd(u.GetId());
@@ -97,9 +104,7 @@ private:
     void collect_stats(const GameEnv &env, int player_id, const CmdReceiver &receiver);
 
 public:
-    Preload() : _base(nullptr), _player_id(INVALID), _num_unit_type(0),
-                _result(NOT_READY), _enemy_at_resource(nullptr), _enemy_at_base(nullptr) {
-    }
+    Preload() { }
 
     void GatherInfo(const GameEnv &env, int player_id, const CmdReceiver &receiver);
     Result GetResult() const { return _result; }
