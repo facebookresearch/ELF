@@ -217,6 +217,7 @@ public:
 
             // Wait until all collectors have done their jobs.
             stats.counter->wait(selected_groups.size());
+            stats.counter->reset();
 
             V_PRINT(_verbose, "[k=" << key << "] All " << selected_groups.size() << " has done their jobs, Wait until the game is released");
 
