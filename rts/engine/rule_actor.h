@@ -66,13 +66,6 @@ private:
     vector<int> _cnt_under_construction;
 
     vector<int> _prices;
-    /*
-    int _resource = 0;
-    UnitId _base_id = INVALID;
-    UnitId _resource_id = INVALID;
-    UnitId _opponent_base_id = INVALID;
-    */
-
     int _resource;
     UnitId _base_id, _resource_id, _opponent_base_id;
     PointF _base_loc, _resource_loc;
