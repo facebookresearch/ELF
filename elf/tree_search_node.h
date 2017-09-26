@@ -23,43 +23,46 @@ namespace mcts {
 
 using namespace std;
 
-template <typename S, typename A>
+template <typename A>
 class NodeAllocT;
 
 // Tree node.
-template <typename S, typename A>
+template <typename A>
 class NodeT {
 public:
-    NodeT(VisitFuncT<S> f = nullptr) : visited_(false), count_(0) { f(&s_); }
-    NodeT(const NodeT<S, A>&) = delete;
-    NodeT<S, A> &operator=(const NodeT<S, A>&) = delete;
+    NodeT() : visited_(false), count_(0) { }
+    NodeT(const NodeT<A>&) = delete;
+    NodeT<A> &operator=(const NodeT<A>&) = delete;
 
-    const S &state() const { return s_; } 
-    const unordered_map<A, EdgeInfo> &sa_vals() const { return sa_val_; }
+    const unordered_map<A, EdgeInfo> &sa() const { return sa_; }
     int count() const { return count_; }
 
-    bool Visit(VisitFuncT<S> f) {
+    bool visited() const { return visited_; }
+
+    bool Expand(const vector<pair<A, float>> &pi, float V, NodeAllocT<A> &alloc) {
         if (visited_) return true;
 
         // Otherwise visit.  
         lock_guard<mutex> lock(lock_node_);
-        if (! f(&s_)) return false;
-
+        if (visited_) return true;
+        
         // Then we need to allocate sa_val_
-        // Assume S.pi() exists and is iteratable.
-        for (const pair<A, float> & action_pair : s_.pi()) {
-            sa_val_.insert(make_pair(action_pair.first, EdgeInfo(action_pair.second)));
+        for (const pair<A, float> & action_pair : pi) {
+            EdgeInfo edge(action_pair.second);
+            edge.next = alloc.Alloc();
+            sa_.insert(make_pair(action_pair.first, std::move(edge)));
         }
 
-        // Once sa_val_ is allocated, its structure won't change. 
-        if (sa_val_.empty()) return false;
+        // value
+        V_ = V;
 
+        // Once sa_ is allocated, its structure won't change. 
         visited_ = true;
         return true;
     }
 
     bool AccumulateStats(const A &a, float reward) {
-        auto res = elf_utils::map_get(sa_val_, a);
+        auto res = elf_utils::map_get(sa_, a);
         // Not found, skip
         if (! res.second) return false;
 
@@ -73,67 +76,96 @@ public:
         return true;
     }
 
-    // Expand a new node.
-    pair<NodeId, bool> Expand(const A &a, ForwardFuncT<S, A> f, NodeAllocT<S, A> &alloc) {
-        auto init = [&](S *next_s) { return f(s_, a, next_s); };
-        auto res = elf_utils::sync_add_entry<A, NodeId>(sa_next_, lock_edge_, a, [&]() -> NodeId { return alloc.Alloc(init); }); 
-        // <NodeId, whether it is new>
-        return make_pair(res.first->second, res.second);
+    NodeId Descent(const A &a) const {
+        auto res = elf_utils::map_get(sa_, a);
+        if (! res.second) return NodeIdInvalid;
+        return res.first->second.next;
     }
     
 private:
     // For state. 
     mutex lock_node_;
-    S s_;
     atomic_bool visited_;
-    unordered_map<A, EdgeInfo> sa_val_;
-
-    // For state and action.
-    mutex lock_edge_;
-    unordered_map<A, NodeId> sa_next_;
+    unordered_map<A, EdgeInfo> sa_;
 
     int count_;
+    float V_;
 };
 
-template <typename S, typename A>
+template <typename A>
 class NodeAllocT {
 public:
-    using Node = NodeT<S, A>;
+    using Node = NodeT<A>;
 
-    NodeAllocT() { }
-    NodeAllocT(const NodeAllocT<S, A>&) = delete;
-    NodeAllocT<S, A> &operator=(const NodeAllocT<S, A>&) = delete;
+    NodeAllocT() : allocated_node_count_(0) { 
+        root_id_ = Alloc(); 
+    }
+
+    NodeAllocT(const NodeAllocT<A>&) = delete;
+    NodeAllocT<A> &operator=(const NodeAllocT<A>&) = delete;
 
     void Clear() {
         allocated_.clear();
-        root_ready_.reset();
-        root_.reset(nullptr);
     }
 
-    void SetRootState(const S& s) {
-        root_.reset(new Node([&](S *_s) { *_s = s; return true; }));
-        root_ready_.notify(); 
+    void TreeAdvance(const A& a) {
+        NodeId next_root = NodeIdInvalid;
+        Node *r = root();
+
+        for (const auto &p : r->sa()) {
+            if (p.first == a) next_root = p.second.next;
+            else RecursiveFree(p.second.next);
+        }
+        // Free root.
+        Free(root_id_);
+        if (next_root == NodeIdInvalid) {
+            root_id_ = Alloc();
+        } else {
+            root_id_ = next_root;
+        }
     }
 
-    NodeId Alloc(VisitFuncT<S> f) {
-        allocated_.emplace_back(new Node(f));
-        return allocated_.size() - 1;
+    Node *root() { return (*this)[root_id_]; }
+
+    // Low level functions. 
+    NodeId Alloc() {
+        lock_guard<mutex> lock(alloc_mutex_);
+        allocated_[allocated_node_count_].reset(new Node());
+        return allocated_node_count_ ++;
     }
 
-    Node *root() { 
-        // Block if root is not set yet.
-        root_ready_.wait(1);
-        return root_.get();
+    void Free(NodeId id) {
+        allocated_.erase(id);
     }
 
-    const Node *operator[](NodeId i) const { return allocated_[i].get(); }
-    Node *operator[](NodeId i) { return allocated_[i].get(); }
+    void RecursiveFree(NodeId id) {
+        Node *root = (*this)[id];
+        for (const auto &p : root->sa()) {
+            RecursiveFree(p.second.next);
+        }
+        Free(id);
+    }
+
+    const Node *operator[](NodeId i) const { 
+        lock_guard<mutex> lock(alloc_mutex_);
+        auto it = allocated_.find(i);
+        if (it == allocated_.end()) return nullptr;
+        else return it->second.get();
+    }
+    Node *operator[](NodeId i) { 
+        lock_guard<mutex> lock(alloc_mutex_);
+        auto it = allocated_.find(i);
+        if (it == allocated_.end()) return nullptr;
+        else return it->second.get();
+    }
 
 private:
     // TODO: We might just allocate one chunk at a time. 
-    vector<unique_ptr<Node>> allocated_;
-    unique_ptr<Node> root_;
-    SemaCollector root_ready_; 
+    unordered_map<NodeId, unique_ptr<Node>> allocated_;
+    NodeId allocated_node_count_;
+    mutex alloc_mutex_;
+    NodeId root_id_;
 };
 
-}  // namespace std
+
+}  // namespace mcts

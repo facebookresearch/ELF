@@ -20,6 +20,14 @@ const V &map_get(const unordered_map<K, V> &m, const K& k, const V &def) {
 }
 
 template <typename K, typename V>
+V map_get(const unordered_map<K, V> &m, const K& k, V def) {
+    auto it = m.find(k);
+    if (it == m.end()) return def;
+    else return it->second;
+}
+
+
+template <typename K, typename V>
 pair<typename unordered_map<K, V>::const_iterator, bool> map_get(const unordered_map<K, V> &m, const K& k) {
     auto it = m.find(k);
     if (it == m.end()) {
