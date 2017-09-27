@@ -26,7 +26,7 @@ private:
     uint64_t _seed = 0;
     GameOptions _options;
 
-    std::vector<std::unique_ptr<AIWithComm>> _ais;
+    std::vector<std::unique_ptr<AI>> _ais;
     int _curr_loader_idx;
     std::mt19937 _rng;
     

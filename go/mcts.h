@@ -10,6 +10,7 @@
 #pragma once
 
 #include "elf/tree_search.h"
+#include "elf/mcts_ai.h"
 #include "go_state.h"
 
 using namespace std;
@@ -25,7 +26,7 @@ public:
         ai->SetState(*this);
         if (! ai->Act(GetPly(), nullptr, nullptr)) return false;
         ai->get_last_pi(&pi_);
-        V_ = ai->get_last_value();
+        value_ = ai->get_last_value();
         return true;
     }
 
@@ -50,7 +51,7 @@ public:
     MCTSStateMT(const GoState &state, const vector<DirectPredictAI *>& ai) 
         : MCTSState(state), ai_(ai), thread_id_(0) { }
 
-    void set_thread_id(int i) { thread_id_ = i; }
+    void set_thread(int i) { thread_id_ = i; }
 
     bool evaluate() {
         return MCTSState::evaluate(ai_[thread_id_]);
@@ -65,7 +66,7 @@ class MCTSGoAI : public AI {
 public:
     using MCTSAI = elf::MCTSAI<MCTSStateMT, Coord>;
 
-    MCTSGoAI(const mcts::TSOption &options) : mcts_ai_(options), ai_comm_(nullptr) {
+    MCTSGoAI(const mcts::TSOptions &options) : mcts_ai_(options), ai_comm_(nullptr) {
     }
 
     void InitAIComm(AIComm *ai_comm) {
@@ -77,7 +78,7 @@ public:
         ai_dup_.clear();
         ai_comms_.clear();
         for (int i = 0; i < options.num_threads; ++i) {
-            ai_comms_.emplace_back(ai_comm()->Spawn(i));
+            ai_comms_.emplace_back(ai_comm_->Spawn(i));
             ai_.emplace_back(new DirectPredictAI());
             ai_.back()->InitAIComm(ai_comms_.back().get());
             ai_dup_.emplace_back(ai_.back().get());
@@ -87,11 +88,11 @@ public:
 protected:
     void on_set_state() override {
         // Left the state to MCTSStateMT.
-        go_state_.reset(new MCTSStateMT(state, ai_dup_));
+        go_state_.reset(new MCTSStateMT(s(), ai_dup_));
         mcts_ai_.SetState(*go_state_);
     }
 
-    bool on_act(Tick t, Coord *c, const std::atomic_bool *done) override {
+    bool on_act(elf::Tick t, Coord *c, const std::atomic_bool *done) override {
         return mcts_ai_.Act(t, c, done);
     }
 

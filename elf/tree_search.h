@@ -60,6 +60,7 @@ public:
     
     template <typename S>
     bool Run(int run_id, const S *s, int num_rollout, NodeAlloc &alloc) {
+        (void)run_id;
         if (s == nullptr) return false;
         Node *root = alloc.root();
         if (root == nullptr) return false;
@@ -126,12 +127,12 @@ public:
     TreeSearchT(const TSOptions &options) 
         : pool_(options.num_threads), options_(options) {
 
-        for (size_t i = 0; i < options.num_threads; ++i) {
+        for (int i = 0; i < options.num_threads; ++i) {
             threads_.emplace_back(new TSOneThread(i));
         }
 
         // cout << "#Thread: " << options.num_threads << endl;
-        for (size_t i = 0; i < options.num_threads; ++i) {
+        for (int i = 0; i < options.num_threads; ++i) {
             TSOneThread *th = this->threads_[i].get();
             pool_.push([i, this, th](int) {
                 int counter = 0;
@@ -190,7 +191,7 @@ public:
         done_.wait(pool_.size());
     }
 
-    ~TreeSearch() {
+    ~TreeSearchT() {
         if (! done_.get()) Stop();
     }
 
