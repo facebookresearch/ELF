@@ -10,76 +10,97 @@
 #pragma once
 
 #include "elf/tree_search.h"
-#include "board.h"
-
-namespace go_mcts {
+#include "go_state.h"
 
 using namespace std;
 
-// Tree search specialization for Go.
-class State {
+// Tree search specialization for Go
+//
+class MCTSState : public GoState {
 public:
-    State() : value_(0.5) { }
-    State(const Board &board) : value_(0.5) { CopyBoard(&board_, &board); }
-
+    MCTSState(const GoState &state) : GoState(state), value_(0.5) { }
     const vector<pair<Coord, float>> &pi() const { return pi_; }
 
-    template <typename AIComm>
-    bool GetPi(AIComm *ai_comm) {
-        // ai_comm is from the current thread.
-        auto &gs = ai_comm->Prepare();
-        BoardFeature bf(board_);
-        bf.Extract(&gs.s);
-
-        if (!ai_comm->SendDataWaitReply()) return false;
-
-        const vector<float> &pi = ai_comm->info().data.newest().pi;
-
-        pi_.clear();
-        for (size_t i = 0; i < pi.size(); ++i) {
-            Coord m = bf.Action2Coord(i);
-            pi_.push_back(make_pair(m, pi[i])); 
-        }
+    bool evaluate(DirectPredictAI *ai) {
+        ai->SetState(*this);
+        if (! ai->Act(GetPly(), nullptr, nullptr)) return false;
+        ai->get_last_pi(&pi_);
+        V_ = ai->get_last_value();
         return true;
     }
 
-    bool forward(const Coord &c, State *next) const {
-        CopyBoard(&next->board_, &board_);
-        return next->forward(c);
-    }
-
-    bool forward(const Coord &c) {
-        GroupId4 ids;
-        if (TryPlay2(&board_, c, &ids)) {
-          Play(&board_, &ids);
-          return true;
-        } else {
-          return false;
-        }
+    vector<Coord> last_opponent_moves() const { 
+        Coord m = LastMove2();
+        if (m != M_PASS) return vector<Coord>{ LastMove2() }; 
+        else return vector<Coord>();
     }
 
     // Evaluate using random playout.
     // Right now just set it to 0.5
-    float evaluate() const { return value_; }
-    const Board &board() const { return board_; }
+    float reward() const { return value_; }
+    float value() const { return value_; }
 
 private:
-    Board board_;
     vector<pair<Coord, float>> pi_;
     float value_;
 };
 
-using GoMCTS = mcts::TreeSearchT<State, Coord>;
-using TSOptions = mcts::TSOptions;
-using TSThreadOptions = mcts::TSThreadOptionsT<State, Coord>;
+class MCTSStateMT : public MCTSState {
+public:
+    MCTSStateMT(const GoState &state, const vector<DirectPredictAI *>& ai) 
+        : MCTSState(state), ai_(ai), thread_id_(0) { }
 
-template <typename AIComm>
-TSThreadOptions GetTSThreadOptions(AIComm *ai_comm) {
-    TSThreadOptions options;
-    options.stats_func = [&](State *s) { return s->GetPi(ai_comm); };
-    options.forward_func = [](const State &s, const Coord &c, State *s_next) { return s.forward(c, s_next); };
-    options.evaluate = [](const State &s) { return s.evaluate(); };
-    return options;
-}
+    void set_thread_id(int i) { thread_id_ = i; }
 
-}  // namespace go_mcts
+    bool evaluate() {
+        return MCTSState::evaluate(ai_[thread_id_]);
+    }
+
+private:
+    vector<DirectPredictAI *> ai_;
+    int thread_id_;
+};
+
+class MCTSGoAI : public AI {
+public:
+    using MCTSAI = elf::MCTSAI<MCTSStateMT, Coord>;
+
+    MCTSGoAI(const mcts::TSOption &options) : mcts_ai_(options), ai_comm_(nullptr) {
+    }
+
+    void InitAIComm(AIComm *ai_comm) {
+        ai_comm_ = ai_comm;
+
+        // Construct a few DirectPredictAIs.
+        const auto &options = mcts_ai_.options();
+        ai_.clear(); 
+        ai_dup_.clear();
+        ai_comms_.clear();
+        for (int i = 0; i < options.num_threads; ++i) {
+            ai_comms_.emplace_back(ai_comm()->Spawn(i));
+            ai_.emplace_back(new DirectPredictAI());
+            ai_.back()->InitAIComm(ai_comms_.back().get());
+            ai_dup_.emplace_back(ai_.back().get());
+        }
+    } 
+
+protected:
+    void on_set_state() override {
+        // Left the state to MCTSStateMT.
+        go_state_.reset(new MCTSStateMT(state, ai_dup_));
+        mcts_ai_.SetState(*go_state_);
+    }
+
+    bool on_act(Tick t, Coord *c, const std::atomic_bool *done) override {
+        return mcts_ai_.Act(t, c, done);
+    }
+
+private:
+    MCTSAI mcts_ai_;
+    AIComm *ai_comm_;
+
+    unique_ptr<MCTSStateMT> go_state_;
+    vector<unique_ptr<AIComm>> ai_comms_;
+    vector<unique_ptr<DirectPredictAI>> ai_;
+    vector<DirectPredictAI *> ai_dup_;
+};

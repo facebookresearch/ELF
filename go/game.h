@@ -13,9 +13,9 @@
 #include "elf/comm_template.h"
 #include "elf/ai_comm.h"
 
+#include "ai.h"
 #include "go_game_specific.h"
 #include "go_state.h"
-#include "go_loader.h"
 #include <random>
 #include <map>
 
@@ -26,9 +26,12 @@ private:
     uint64_t _seed = 0;
     GameOptions _options;
 
-    std::vector<std::unique_ptr<Loader>> _loaders;
+    std::vector<std::unique_ptr<AIWithComm>> _ais;
     int _curr_loader_idx;
     std::mt19937 _rng;
+    
+    // Only used when we want to run online 
+    GoState _state;
 
 public:
     GoGame(int game_idx, const GameOptions& options);
@@ -44,7 +47,5 @@ public:
     }
 
     void Act(const std::atomic_bool& done);
-    string ShowBoard() const { return _loaders[_curr_loader_idx]->state().ShowBoard(); }
-    void UndoMove() {_loaders[_curr_loader_idx]->UndoMove();}
-    void ApplyHandicap(int handicap) {_loaders[_curr_loader_idx]->ApplyHandicap(handicap);}
+    string ShowBoard() const { return _state.ShowBoard(); }
 };

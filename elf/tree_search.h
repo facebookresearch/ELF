@@ -190,6 +190,10 @@ public:
         done_.wait(pool_.size());
     }
 
+    ~TreeSearch() {
+        if (! done_.get()) Stop();
+    }
+
 private:
     // Multiple threads.
     ctpl::thread_pool pool_;

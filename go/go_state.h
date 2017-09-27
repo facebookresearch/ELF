@@ -22,23 +22,26 @@ public:
 };
 
 class GoState {
-protected:
-    Board _board;
-    Board _last_board;
-    HandicapTable _handi_table;
-    BoardFeature _bf;
-
 public:
     GoState() : _bf(_board) { Reset(); }
-    bool ApplyMove(Coord c);
+    bool forward(const Coord &c);
+
     void Reset();
     void ApplyHandicap(int handi);
 
+    GoState(const GoState &s) : _bf(_board) {
+        CopyBoard(&_board, &s._board); 
+    }
+
+    static HandicapTable &handi_table() { return _handi_table; }
+
     Board &board() { return _board; }
-    Board &last_board() { return _last_board; }
-    HandicapTable &handi_table() { return _handi_table; }
     bool JustStarted() const { return _board._ply == 1; }
     int GetPly() const { return _board._ply; }
+
+    Coord LastMove() const { return _board._last_move; }
+    Coord LastMove2() const { return _board._last_move2; }
+    Stone NextPlayer() const { return _board._next_player; }
 
     const BoardFeature &extractor(BoardFeature::Rot new_rot, bool new_flip) {
         _bf.SetD4Group(new_rot, new_flip);
@@ -57,5 +60,11 @@ public:
         ShowBoard2Buf(&_board, SHOW_LAST_MOVE, buf);
         return string(buf);
     }
+
+protected:
+    Board _board;
+    BoardFeature _bf;
+
+    static HandicapTable _handi_table;
 };
 

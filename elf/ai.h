@@ -17,8 +17,8 @@ public:
     using Action = A;
     using State = S;
 
-    AI_T() : _name("noname"), _frame_skip(1) { }
-    AI_T(const std::string &name, int frame_skip) : _name(name), _id(-1), _frame_skip(frame_skip) { }
+    AI_T(const S* s = nullptr) : _name("noname"), _frame_skip(1), _state(s) { }
+    AI_T(const std::string &name, int frame_skip, const S *s = nullptr) : _name(name), _id(-1), _frame_skip(frame_skip), _state(s) { }
 
     void SetId(int id) {
         _id = id;
@@ -59,7 +59,7 @@ protected:
     // Run on_act() every _frame_skip
     int _frame_skip;
 
-    const S *_state = nullptr;
+    const S *_state;
 
     virtual void on_set_id() { }
     virtual void on_set_state() { }
@@ -69,15 +69,21 @@ protected:
 template <typename S, typename A, typename AIComm>
 class AIWithCommT : public AI_T<S, A> {
 public:
+    using AI = AI_T<S, A>;
     using Data = typename AIComm::Data;
 
-    AIWithCommT() { }
-    AIWithCommT(const std::string &name, int frame_skip) : AI_T<S, A>(name, frame_skip) { }
+    AIWithCommT(const S *s = nullptr) : AI(s) { }
+    AIWithCommT(const std::string &name, int frame_skip, const S *s = nullptr) : AI(name, frame_skip, s) { }
 
     void InitAIComm(AIComm *ai_comm) {
         assert(ai_comm);
         _ai_comm = ai_comm;
+        on_set_ai_comm();
     }
+
+    const Data& data() const { return _ai_comm->info().data; }
+    const AIComm *ai_comm() const { return _ai_comm; }
+    AIComm *ai_comm() { return _ai_comm; }
 
     // Get called when we start a new game.
     bool GameEnd(Tick t) override {
@@ -94,7 +100,8 @@ public:
 protected:
     AIComm *_ai_comm = nullptr;
 
-    bool on_act(Tick, A *a, const std::atomic_bool *) override {
+    bool on_act(Tick t, A *a, const std::atomic_bool *done) override {
+        before_act(t, done);
         _ai_comm->Prepare();
         Data *data = &_ai_comm->info().data;
         extract(data);
@@ -108,6 +115,8 @@ protected:
     // Extract and save to data.
     virtual void extract(Data *data) = 0;
     virtual bool handle_response(const Data &data, A *a) = 0;
+    virtual void on_set_ai_comm() { }
+    virtual void before_act(Tick, const std::atomic_bool *) { }
 };
 
 }  // namespace elf

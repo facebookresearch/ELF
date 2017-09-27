@@ -26,14 +26,14 @@ class GameContext {
 
   private:
     std::unique_ptr<GC> _context;
-    std::vector<GoGame> _games;
+    std::vector<std::unique_ptr<GoGame>> _games;
     const int _num_action = BOARD_DIM * BOARD_DIM;
 
   public:
     GameContext(const ContextOptions& context_options, const GameOptions& options) {
       _context.reset(new GC{context_options, options});
       for (int i = 0; i < context_options.num_games; ++i) {
-          _games.emplace_back(i, options);
+          _games.emplace_back(new GoGame(i, options));
       }
       if (! options.list_filename.empty()) OfflineLoader::InitSharedBuffer(options.list_filename);
     }
@@ -47,9 +47,9 @@ class GameContext {
             for (auto &s : state.v()) {
                 s.Init(game_idx, _num_action);
             }
-            auto& game = _games[game_idx];
-            game.Init(&ai_comm);
-            game.MainLoop(done);
+            auto* game = _games[game_idx].get();
+            game->Init(&ai_comm);
+            game->MainLoop(done);
         };
         _context->Start(f);
     }
@@ -89,9 +89,10 @@ class GameContext {
 
     std::string ShowBoard(int game_idx) const {
         if (_check_game_idx(game_idx)) return "Invalid game_idx [" + std::to_string(game_idx) + "]";
-        return _games[game_idx].ShowBoard();
+        return _games[game_idx]->ShowBoard();
     }
 
+    /*
     void ApplyHandicap(int game_idx, int handicap) {
         if (_check_game_idx(game_idx)) return;
         return _games[game_idx].ApplyHandicap(handicap);
@@ -101,6 +102,7 @@ class GameContext {
         if (_check_game_idx(game_idx)) return;
         _games[game_idx].UndoMove();
     }
+    */
 
     CONTEXT_CALLS(GC, _context);
 
