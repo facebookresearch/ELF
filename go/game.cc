@@ -11,9 +11,11 @@
 #include "go_game_specific.h"
 #include "offpolicy_loader.h"
 #include "go_ai.h"
-#include "mcts.h"
+#include "elf/mcts.h"
 
 #include <fstream>
+
+using MCTSGoAI = elf::MCTSAI_T<DirectPredictAI>;
 
 ////////////////// GoGame /////////////////////
 GoGame::GoGame(int game_idx, const GameOptions& options) : _options(options), _curr_loader_idx(0) {

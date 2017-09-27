@@ -43,6 +43,12 @@ public:
     Coord LastMove2() const { return _board._last_move2; }
     Stone NextPlayer() const { return _board._next_player; }
 
+    vector<Coord> last_opponent_moves() const { 
+        Coord m = LastMove2();
+        if (m != M_PASS) return vector<Coord>{ LastMove2() }; 
+        else return vector<Coord>();
+    }
+
     const BoardFeature &extractor(BoardFeature::Rot new_rot, bool new_flip) {
         _bf.SetD4Group(new_rot, new_flip);
         return _bf;
