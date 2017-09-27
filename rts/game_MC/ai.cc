@@ -250,8 +250,3 @@ bool HitAndRunAI::on_act(Tick, RTSMCAction *a, const std::atomic_bool *) {
     a->SetHitAndRunAI();
     return true;
 }
-
-////////////////////// MCTS AI //////////////////////
-bool MCTSAI::on_act(Tick t, RTSMCAction *a, const std::atomic_bool *done) {
-    _ts
-}

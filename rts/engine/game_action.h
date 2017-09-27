@@ -37,13 +37,10 @@ public:
             receiver.SendCmd(std::move(it->second));
         }
 
-        // Send UI cmds.
-        for (auto &ui_cmd : _ui_cmds) {
-            receiver.SendCmd(std::move(ui_cmd));
-        }
-
         auto cmt = "[" + std::to_string(_player_id) + ":" + _name + "] " + _state_string;
         receiver.SendCmd(CmdBPtr(new CmdComment(INVALID, cmt)));
+
+        // UI Cmds are handled separately (In RTSStateExtends::Forward).
         return true;
     }
 

@@ -8,8 +8,6 @@
 
 class RTSState {
 public:
-    using UICallback = std::function<CmdReturn (const UICmd &)>;
-
     RTSState();
 
     bool Prepare(const RTSGameOptions &options, ostream *output = nullptr);
@@ -56,7 +54,6 @@ public:
     void SetGlobalStats(GlobalStats *stats) { 
         _cmd_receiver.GetGameStats().SetGlobalStats(stats);
     }
-    void SetUICmdCB(UICallback cb) { _ui_cb = cb; } 
     void SetVerbose(bool verbose) { _verbose = verbose; }
     void SetReplayPrefix(const std::string &prefix) { _save_replay_prefix = prefix; }
 
@@ -66,7 +63,7 @@ public:
     virtual void IncTick() { _cmd_receiver.IncTick(); }
 
     virtual elf::GameResult PostAct();
-    virtual void Forward(RTSAction &);
+    virtual bool Forward(RTSAction &);
     virtual void Finalize();
 
     virtual bool Reset();
@@ -81,8 +78,6 @@ private:
     bool _verbose = false;
     std::string _save_replay_prefix;
     Tick _max_tick = 30000;
-
-    UICallback _ui_cb = nullptr;  
 };
 
 

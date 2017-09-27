@@ -127,8 +127,8 @@ bool RTSState::Reset() {
    return true;
 }
 
-void RTSState::Forward(RTSAction &action) {
-    action.Send(_env, _cmd_receiver);
+bool RTSState::Forward(RTSAction &action) {
+    return action.Send(_env, _cmd_receiver);
 }
 
 elf::GameResult RTSState::PostAct() {
@@ -136,14 +136,12 @@ elf::GameResult RTSState::PostAct() {
     // if (_tick_prompt) *_output_stream << "Start executing cmds... " << endl << flush;
     _cmd_receiver.ExecuteDurativeCmds(_env, _verbose);
     _cmd_receiver.ExecuteImmediateCmds(&_env, _verbose);
-    _cmd_receiver.ExecuteUICmds(_ui_cb);
     // cout << "Compute Fow" << endl;
     _env.ComputeFOW();
 
     // Check winner. 
     PlayerId winner_id = _env.GetGameDef().CheckWinner(_env, _cmd_receiver.GetTick() >= _max_tick);
     _env.SetWinnerId(winner_id);
-
 
     Tick t = _cmd_receiver.GetTick();
     bool run_normal = _cmd_receiver.GetGameStats().CheckGameSmooth(t);

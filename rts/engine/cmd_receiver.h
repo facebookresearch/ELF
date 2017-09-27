@@ -48,7 +48,6 @@ private:
 
     p_queue<CmdIPtr> _immediate_cmd_queue;
     p_queue<CmdDPtr> _durative_cmd_queue;
-    std::queue<UICmd> _ui_cmd_queue;
 
     vector<CmdBPtr> _cmd_history;
 
@@ -119,7 +118,6 @@ public:
     void ClearCmd() {
         while (! _immediate_cmd_queue.empty()) _immediate_cmd_queue.pop();
         while (! _durative_cmd_queue.empty()) _durative_cmd_queue.pop();
-        while (! _ui_cmd_queue.empty()) _ui_cmd_queue.pop();
         _cmd_history.clear();
         _unit_durative_cmd.clear();
         _cmd_next_id = 0;
@@ -129,7 +127,6 @@ public:
     bool SendCmd(CmdBPtr &&cmd);
     // Send command with a specific tick.
     bool SendCmdWithTick(CmdBPtr &&cmd, Tick tick);
-    bool SendCmd(UICmd &&cmd);
 
     // Set this to be true to prevent any command to be recorded in the history.
     void SetSaveToHistory(bool v) { _save_to_history = v; }
@@ -155,8 +152,6 @@ public:
     void ExecuteDurativeCmds(const GameEnv &env, bool force_verbose);
     // Execute Immediate Commands. This will change the game environment.
     void ExecuteImmediateCmds(GameEnv *env, bool force_verbose);
-    // Execute UI Commands from gui.
-    void ExecuteUICmds(function<void (const UICmd&)> default_f);
 
     // Send replay from this tick.
     void SendCurrentReplay();
