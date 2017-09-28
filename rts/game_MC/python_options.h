@@ -34,15 +34,18 @@ struct GameState {
 
     // Used for self-play.
     std::string player_name;
-
-    // Extra data.
-    int ai_start_tick;
+    
+    // Use for forward modeling on reduced space.
+    std::string category_name;
 
     // Extracted feature map.
     std::vector<float> s;
 
     // Resource for each player (one-hot representation). Not used now.
     std::vector<float> res;
+
+    std::vector<float> reduced_s;
+    std::vector<float> reduced_next_s;
 
     float last_r;
 
@@ -136,7 +139,7 @@ struct GameState {
     }
 
     // These fields are used to exchange with Python side using tensor interface.
-    DECLARE_FIELD(GameState, id, a, V, pi, last_r, s, res, rv, terminal, seq, game_counter, last_terminal, uloc, tloc, bt, ct, uloc_prob, tloc_prob, bt_prob, ct_prob);
+    DECLARE_FIELD(GameState, id, a, V, pi, last_r, s, res, rv, terminal, seq, game_counter, last_terminal, uloc, tloc, bt, ct, uloc_prob, tloc_prob, bt_prob, ct_prob, reduced_s, reduced_next_s);
     REGISTER_PYBIND_FIELDS(id);
 };
 

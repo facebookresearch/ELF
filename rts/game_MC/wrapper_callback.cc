@@ -12,7 +12,9 @@
 #include "engine/cmd.gen.h"
 #include "engine/cmd_specific.gen.h"
 #include "cmd_specific.gen.h"
-#include "ai.h"
+#include "rule_ai.h"
+#include "mcts.h"
+#include "mixed_ai.h"
 
 static AI *get_ai(const AIOptions &opt, Context::AIComm *ai_comm) {
     // std::cout << "AI type = " << ai_type << " Backup AI type = " << backup_ai_type << std::endl;
@@ -25,8 +27,13 @@ static AI *get_ai(const AIOptions &opt, Context::AIComm *ai_comm) {
         MixedAI *ai = new MixedAI(opt);
         ai->SetMainAI(main_ai);
         return ai;
-    }
-    else return nullptr;
+    // } else if (opt.type == "AI_MCTS") {
+    //    mcts::TSOptions options;
+    //    return MCTSRTSAI(options);
+    } else if (opt.type == "AI_REDUCE_MCTS") {
+        mcts::TSOptions options;
+        return new MCTSRTSReducedAI(options);
+    } else return nullptr;
     /*
        std::string prompt = "Unknown ai_type! ai_type: " + std::to_string(ai_type) + " backup_ai_type: " + std::to_string(backup_ai_type);
        std::cout << prompt << std::endl;

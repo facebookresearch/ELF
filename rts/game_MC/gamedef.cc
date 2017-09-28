@@ -15,7 +15,7 @@
 #include "engine/cmd_specific.gen.h"
 #include "cmd_specific.gen.h"
 #include "engine/ai.h"
-#include "ai.h"
+#include "rule_ai.h"
 
 int GameDef::GetNumUnitType() {
     return NUM_MINIRTS_UNITTYPE;
