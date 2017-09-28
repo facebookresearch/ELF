@@ -127,7 +127,7 @@ bool RTSState::Reset() {
    return true;
 }
 
-bool RTSState::Forward(RTSAction &action) {
+bool RTSState::forward(RTSAction &action) {
     return action.Send(_env, _cmd_receiver);
 }
 

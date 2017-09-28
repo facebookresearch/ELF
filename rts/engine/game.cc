@@ -82,8 +82,8 @@ CmdReturn RTSStateExtend::dispatch_cmds(const UICmd& cmd) {
     return CMD_FAILED;
 }
 
-bool RTSStateExtend::Forward(RTSAction &a) {
-    if (! RTSState::Forward(a)) return false;
+bool RTSStateExtend::forward(RTSAction &a) {
+    if (! RTSState::forward(a)) return false;
 
     // Then we also need to send UI commands, if there is any.
     for (const auto &cmd : a.ui_cmds()) {

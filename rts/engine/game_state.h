@@ -25,6 +25,14 @@ public:
         _env.LoadSnapshot(loader);
         _cmd_receiver.LoadCmdReceiver(loader);
     }
+    
+    // Copy construct. 
+    RTSState &operator=(const RTSState &s) {
+        string str;
+        s.Save(&str);
+        Load(str);
+        return *this;
+    }
 
     void LoadSnapshot(const string &filename, bool binary) {
         serializer::loader loader(binary);
@@ -63,7 +71,7 @@ public:
     virtual void IncTick() { _cmd_receiver.IncTick(); }
 
     virtual elf::GameResult PostAct();
-    virtual bool Forward(RTSAction &);
+    virtual bool forward(RTSAction &);
     virtual void Finalize();
 
     virtual bool Reset();
