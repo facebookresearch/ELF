@@ -78,8 +78,6 @@ struct GameState {
     std::vector<float> pi;
     float V;
 
-    std::string player_name;
-
     void Clear() { game_record_idx = -1; aug_code = 0; winner = 0; move_idx = -1; }
 
     void Init(int iid, int /*num_action*/) {

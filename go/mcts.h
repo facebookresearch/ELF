@@ -9,19 +9,18 @@ public:
     using Action = Coord;
     using State = GoState;
 
-    MCTSGoState(const State &state) : State(state), value_(0) { }
-    MCTSGoState() : value_(0) { }
-
     MCTSGoState &operator=(const State &state) {
         *((State *)this) = state;
         return *this;
     }
 
-    bool evaluate_by_ai(AI *ai) {
-        ai->SetState(*this);
-        if (! ai->Act(0, nullptr, nullptr)) return false;
-        ai->get_last_pi(&pi_);
-        value_ = ai->get_last_value();
+    void SetAI(AI *ai) { ai_ = ai; }
+
+    bool evaluate() {
+        ai_->SetState(*this);
+        if (! ai_->Act(0, nullptr, nullptr)) return false;
+        ai_->get_last_pi(&pi_);
+        value_ = ai_->get_last_value();
         return true;
     }
 
@@ -31,7 +30,8 @@ public:
 
 protected:
     vector<pair<Action, float>> pi_;
-    float value_;
+    float value_ = 0.0;
+    AI *ai_ = nullptr;
 };
 
 using MCTSGoAI = elf::MCTSAI_T<MCTSGoState>;
