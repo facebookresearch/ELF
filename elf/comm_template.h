@@ -27,21 +27,32 @@
 #include "state_collector.h"
 #include "ai_comm.h"
 #include "stats.h"
+#include "member_check.h"
 
 struct GroupStat {
     int gid;
     int hist_len;
     std::string player_name;
+    std::string category_name;
 
     GroupStat() : gid(-1), hist_len(1) { }
     std::string info() const {
-        return "[gid=" + std::to_string(gid) + "][T=" + std::to_string(hist_len) + "][player_name=" + player_name + "]";
+        return "[gid=" + std::to_string(gid) + "][T=" + std::to_string(hist_len) + "][player_name=\"" + player_name + "\"][category_name=\"" + category_name + "\"]";
     }
 
     // Note that gid will be set by C++ side.
-    REGISTER_PYBIND_FIELDS(hist_len, player_name);
+    REGISTER_PYBIND_FIELDS(hist_len, player_name, category_name);
 };
 
+#define ADD_COND_CHECK(field_name) \
+    MEMBER_CHECK(field_name);\
+    template <typename S_ = typename T::State, typename std::enable_if<has_##field_name<S_>::value>::type *U = nullptr> \
+    bool check_##field_name(const GroupStat &gstat, const S_ &record) {\
+        if (! gstat.field_name.empty() && gstat.field_name != record.field_name) return false;\
+        return true;\
+    }\
+    template <typename S_ = typename T::State, typename std::enable_if<! has_##field_name<S_>::value>::type *U = nullptr>\
+    bool check_##field_name(const GroupStat &, const S_ &) { return true; }
 
 template <typename T>
 struct CondPerGroupT {
@@ -53,12 +64,17 @@ struct CondPerGroupT {
 
     CondPerGroupT() : last_used_seq(0), last_seq(0), game_counter(0), freq_send(0) { }
 
+    ADD_COND_CHECK(category_name)
+    ADD_COND_CHECK(player_name)
+
     bool Check(const GroupStat &gstat, const T &info) {
         // Check whether this record is even relevant.
         // If we have specified player id and the player id from the info is irrelevant
         // from what is specified, then we skip.
         const auto &record = info.data.newest();
-        if (! gstat.player_name.empty() && gstat.player_name != record.player_name) return false;
+        if (! check_player_name(gstat, record)) return false;
+        if (! check_category_name(gstat, record)) return false;
+        
         // std::cout << "Check " << gstat.info() << " record.player_name = " << record.player_name << std::endl;
 
         // Update game counter.

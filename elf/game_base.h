@@ -59,7 +59,7 @@ public:
             for (const auto &bot : _bots) {
                 typename AI::Action actions;
                 bot->Act(t, &actions, done);
-                _state.Forward(actions);
+                _state.forward(actions);
             }
             if (_spectator != nullptr) {
                 typename AI::Action actions;

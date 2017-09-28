@@ -28,13 +28,20 @@ protected:
     unique_ptr<mcts::TreeSearchT<S, A>> _ts;
     bool _persistent_tree;
 
-    bool on_act(Tick, A *a, const std::atomic_bool *) override {
+    MEMBER_FUNC_CHECK(last_opponent_moves)
+    template <typename S_ = S, typename std::enable_if<has_func_last_opponent_moves<S_>::value>::type *U = nullptr> 
+    void pass_opponent_moves() {
         if (_persistent_tree) {
             for (const A &prev_move : this->s().last_opponent_moves()) {
                 _ts->TreeAdvance(prev_move);
             }
         }
+    }
+    template <typename S_ = S, typename std::enable_if<!has_func_last_opponent_moves<S_>::value>::type *U = nullptr> 
+    void pass_opponent_moves() { }
 
+    bool on_act(Tick, A *a, const std::atomic_bool *) override {
+        pass_opponent_moves();
         pair<A, float> res = _ts->Run(this->s());
         *a = res.first; 
         cout << "Action: " << *a << " Score:" << res.second << endl << flush;

@@ -29,7 +29,8 @@ void register_common_func(py::module &m) {
     .def(py::init<>());
 
   PYCLASS_WITH_FIELDS(m, GroupStat)
-    .def(py::init<>());
+    .def(py::init<>())
+    .def("info", &GroupStat::info);
 
   PYCLASS_WITH_FIELDS(m, Infos);
 

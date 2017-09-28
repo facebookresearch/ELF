@@ -14,7 +14,8 @@ class MCTSStateMT_T : public StateWithAI {
 public:
     using AI = typename StateWithAI::AI;
     using MCTSStateMT = MCTSStateMT_T<StateWithAI>;
-    using State = typename AI::State;
+    using State = typename StateWithAI::State;
+    using Action = typename StateWithAI::Action;
 
     MCTSStateMT_T() { }
 
@@ -28,10 +29,9 @@ public:
         return *this;
     }
 
-    void set_thread(int i) { thread_id_ = i; }
-
-    bool evaluate() {
-        return this->evaluate_by_ai(ai_[thread_id_]);
+    void set_thread(int i) { 
+        thread_id_ = i; 
+        this->SetAI(ai_[thread_id_]);
     }
 
 private:
@@ -67,7 +67,7 @@ public:
 
         for (int i = 0; i < options.num_threads; ++i) {
             ai_comms_.emplace_back(ai_comm_->Spawn(i));
-            ai_.emplace_back(new DirectPredictAI());
+            ai_.emplace_back(new AI());
             ai_.back()->InitAIComm(ai_comms_.back().get());
             ai_dup.emplace_back(ai_.back().get());
         }

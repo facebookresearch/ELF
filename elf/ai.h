@@ -50,6 +50,11 @@ public:
         else return false;
     }
 
+    bool ActImmediate(const S &s, A *a = nullptr, const std::atomic_bool *done = nullptr) {
+        SetState(s);
+        return on_act(0, a, done);
+    }
+
     virtual bool GameEnd(Tick) { return true; }
 
 protected:
