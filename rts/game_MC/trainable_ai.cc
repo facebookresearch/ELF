@@ -52,7 +52,7 @@ void TrainedAI::extract(Data *data) {
     game->tick = s().receiver().GetTick();
     game->winner = env.GetWinnerId();
     game->terminal = env.GetTermination() ? 1 : 0;
-    game->player_name = name();
+    game->name = name();
 
     // Extra data.
     game->ai_start_tick = 0;

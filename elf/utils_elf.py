@@ -230,13 +230,7 @@ class GCWrapper:
             gstat = GC.CreateGroupStat()
             gstat.hist_len = T
 
-            # If we specifiy filters, we need to put the info into gstat.
-            filters = v.get("filters", {})
-            if hasattr(gstat, "player_name"):
-                gstat.player_name = filters.get("player_name", "")
-            if hasattr(gstat, "category_name"):
-                gstat.category_name = filters.get("category_name", "")
-
+            gstat.name = v.get("name", "")
             print("Deal with connector. key = %s, info = %s" % (key, gstat.info()))
 
             gpu2gid.append(list())

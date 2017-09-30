@@ -32,11 +32,7 @@ struct GameState {
     int32_t tick;
     int32_t winner;
 
-    // Used for self-play.
-    std::string player_name;
-    
-    // Use for forward modeling on reduced space.
-    std::string category_name;
+    std::string name;
 
     // Extracted feature map.
     std::vector<float> s;

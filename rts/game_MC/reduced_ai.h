@@ -20,7 +20,7 @@ protected:
     void extract(Data *data) override {
         auto &gs = data->newest();
         MCExtract(s(), id(), true, &gs.s); 
-        gs.category_name = "reduced_project";
+        gs.name = "reduced_project";
     }
 
     bool handle_response(const Data &data, vector<float> *a) override { 
@@ -43,7 +43,7 @@ protected:
         auto &gs = data->newest();
         gs.reduced_s = s().state;
         gs.a = s().action;
-        gs.category_name = "reduced_forward";
+        gs.name = "reduced_forward";
     }
 
     bool handle_response(const Data &data, vector<float> *a) override { 
@@ -65,7 +65,7 @@ protected:
     void extract(Data *data) override {
         auto &gs = data->newest();
         gs.reduced_s = s();
-        gs.category_name = "reduced_predict";
+        gs.name = "reduced_predict";
     }
 
     bool handle_response(const Data &data, ReducedPred *a) override { 

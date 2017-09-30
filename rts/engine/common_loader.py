@@ -103,9 +103,6 @@ class CommonLoader:
 
         return co, GC, params
 
-    def _add_player_name(self, desc, player_name):
-        desc["filters"] = dict(player_name=player_name)
-
     @abc.abstractmethod
     def _get_train_spec(self):
         pass
@@ -152,15 +149,15 @@ class CommonLoader:
         desc["actor0"] = self._get_actor_spec()
         desc["actor1"] = self._get_actor_spec()
 
-        self._add_player_name(desc["actor0"], reference_name)
-        self._add_player_name(desc["actor1"], train_name)
+        desc["actor0"]["name"] = reference_name
+        desc["actor1"]["name"] = train_name
 
         if not args.actor_only:
             # For training, we want input, action (filled by actor models), value (filled by actor models) and reward.
             desc["train1"] = self._get_train_spec()
-            self._add_player_name(desc["train1"], train_name)
+            desc["train1"]["name"] = train_name
 
-        self._add_more_labels(desc)
+        self.more_labels.add_labels(desc)
 
         params.update(dict(
             num_group = 1 if args.actor_only else 2,
@@ -171,3 +168,18 @@ class CommonLoader:
         ))
 
         return GCWrapper(GC, co, desc, gpu=args.gpu, use_numpy=False, params=params)
+
+    def initialize_reduced_service(self):
+        args = self.args
+
+        co, GC, params = self._init_gc()
+
+        desc = {}
+        # For actor model, no reward needed, we only want to get input and return distribution of actions.
+        # sampled action and and value will be filled from the reply.
+        desc["reduced_project"] = self._get_reduced_project()
+        desc["reduced_forward"] = self._get_reduced_forward()
+        desc["reduced_predict"] = self._get_reduced_predict()
+
+        return GCWrapper(GC, co, desc, gpu=args.gpu, use_numpy=False, params=params)
+
