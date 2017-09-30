@@ -12,6 +12,7 @@
 #pragma once
 
 #include <iostream>
+#include <sstream>
 #include <string>
 
 #include "pybind_helper.h"
@@ -74,6 +75,12 @@ struct MetaInfo {
     void ChangeThreadID(int new_thread_id) {
         thread_id = new_thread_id;
         query_id = get_query_id(id, thread_id);
+    }
+
+    std::string info() const { 
+        std::stringstream ss;
+        ss << "Meta: [id=" << id << "][thread_id=" << thread_id << "][query_id=" << query_id << "]";
+        return ss.str();
     }
 
     REGISTER_PYBIND_FIELDS(id, thread_id, query_id);

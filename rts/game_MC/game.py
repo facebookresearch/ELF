@@ -51,7 +51,7 @@ class Loader(CommonLoader):
 
     def _get_reduced_project(self):
         return dict(
-            batchsize=self.args.batchsize,
+            batchsize=min(self.args.batchsize, max(self.args.num_games // 2, 1)),
             input=dict(T=1, keys=set(["s"])),
             reply=dict(T=1, keys=set(["reduced_s"])),
             name="reduced_project"
@@ -78,13 +78,16 @@ if __name__ == '__main__':
         return dict(a=[0]*batch["s"].size(1))
 
     def reduced_predict(batch):
-        print("in reduced_predict")
+        # print("in reduced_predict")
+        pass
 
     def reduced_forward(batch):
-        print("in reduced_forward")
+        # print("in reduced_forward")
+        pass
 
     def reduced_project(batch):
-        print("in reduced_project")
+        # print("in reduced_project")
+        pass
 
     # GC = loader.initialize()
     GC = loader.initialize_reduced_service()

@@ -47,7 +47,8 @@ public:
     }
 
     AICommT(const AIComm& parent, int child_id)
-        : _comm(parent._comm), _info(parent._info, child_id), _curr_seq(parent._curr_seq), _g(_info.meta.query_id) {
+        : _comm(parent._comm), _info(parent._info, child_id), 
+          _curr_seq(parent._curr_seq), _g(_info.meta.query_id) {
     }
 
     DataPrepareReturn Prepare() {
@@ -74,7 +75,7 @@ public:
                       << "Last_reward: " << curr().data.reward << std::endl;
         }
         */
-        // std::cout << "[" << _meta.id << "] Before SendDataWaitReply" << std::endl;
+        // std::cout << _info.meta.info() << std::endl;
         return _comm->SendDataWaitReply(_info.meta.query_id, _info);
         // std::cout << "[" << _meta.id << "] Done with SendDataWaitReply, continue" << std::endl;
     }

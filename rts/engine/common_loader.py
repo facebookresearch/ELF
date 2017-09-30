@@ -28,7 +28,7 @@ class CommonLoader:
                 ("cmd_dumper_prefix", dict(type=str, default=None)),
                 ("gpu", dict(type=int, help="gpu to use", default=None)),
             ],
-            more_args = ["batchsize", "T"],
+            more_args = ["num_games", "batchsize", "T"],
             child_providers = [ self.context_args.args, self.more_labels.args ]
         )
 
