@@ -13,7 +13,6 @@
 #include "engine/cmd_util.h"
 #include "python_options.h"
 #include "cf_rule_actor.h"
-#define NUM_RES_SLOT 5
 
 using Comm = Context::Comm;
 using AIComm = AICommT<Comm>;

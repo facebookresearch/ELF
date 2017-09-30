@@ -6,9 +6,6 @@
 #include "python_options.h"
 #include "state_feature.h"
 
-#define _OFFSET(_c, _x, _y, _m) (((_c) * _m.GetYSize() + (_y)) * _m.GetXSize() + (_x))
-#define _XY(loc, m) ((loc) % m.GetXSize()), ((loc) / m.GetXSize())
-
 /*
 static inline int sampling(const std::vector<float> &v, std::mt19937 *gen) {
     std::vector<float> accu(v.size() + 1);
@@ -27,16 +24,6 @@ static inline int sampling(const std::vector<float> &v, std::mt19937 *gen) {
 }
 */
 
-static inline void accu_value(int idx, float val, std::map<int, std::pair<int, float> > &idx2record) {
-    auto it = idx2record.find(idx);
-    if (it == idx2record.end()) {
-        idx2record.insert(make_pair(idx, make_pair(1, val)));
-    } else {
-        it->second.second += val;
-        it->second.first ++;
-    }
-}
-
 bool TrainedAI::GameEnd(Tick t) {
     AIWithComm::GameEnd(t);
     for (auto &v : _recent_states.v()) {
@@ -53,9 +40,6 @@ void TrainedAI::extract(Data *data) {
     game->winner = env.GetWinnerId();
     game->terminal = env.GetTermination() ? 1 : 0;
     game->name = name();
-
-    // Extra data.
-    game->ai_start_tick = 0;
 
     if (_recent_states.maxlen() == 1) {
         MCExtract(s(), id(), _respect_fow, &game->s);

@@ -1,5 +1,16 @@
 #include "state_feature.h"
 
+static inline void accu_value(int idx, float val, std::map<int, std::pair<int, float> > &idx2record) {
+    auto it = idx2record.find(idx);
+    if (it == idx2record.end()) {
+        idx2record.insert(make_pair(idx, make_pair(1, val)));
+    } else {
+        it->second.second += val;
+        it->second.first ++;
+    }
+}
+
+
 void MCExtract(const RTSState &s, PlayerId player_id, bool respect_fow, std::vector<float> *state) {
     const GameEnv &env = s.env();
 

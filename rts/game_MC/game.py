@@ -77,8 +77,21 @@ if __name__ == '__main__':
         '''
         return dict(a=[0]*batch["s"].size(1))
 
-    GC = loader.initialize()
+    def reduced_predict(batch):
+        pass
+
+    def reduced_forward(batch):
+        pass
+
+    def reduced_project(batch):
+        pass
+
+    # GC = loader.initialize()
+    GC = loader.initialize_reduced_service()
     GC.reg_callback("actor", actor)
+    GC.reg_callback("reduced_predict", reduced_predict)
+    GC.reg_callback("reduced_forward", reduced_forward)
+    GC.reg_callback("reduced_project", reduced_project)
 
     before = datetime.now()
     GC.Start()
