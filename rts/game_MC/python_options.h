@@ -37,9 +37,6 @@ struct GameState {
     // Extracted feature map.
     std::vector<float> s;
 
-    // Resource for each player (one-hot representation). Not used now.
-    std::vector<float> res;
-
     std::vector<float> reduced_s;
     std::vector<float> reduced_next_s;
 
@@ -135,7 +132,7 @@ struct GameState {
     }
 
     // These fields are used to exchange with Python side using tensor interface.
-    DECLARE_FIELD(GameState, id, a, V, pi, last_r, s, res, rv, terminal, seq, game_counter, last_terminal, uloc, tloc, bt, ct, uloc_prob, tloc_prob, bt_prob, ct_prob, reduced_s, reduced_next_s);
+    DECLARE_FIELD(GameState, id, a, V, pi, last_r, s, rv, terminal, seq, game_counter, last_terminal, uloc, tloc, bt, ct, uloc_prob, tloc_prob, bt_prob, ct_prob, reduced_s, reduced_next_s);
     REGISTER_PYBIND_FIELDS(id);
 };
 

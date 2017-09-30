@@ -62,9 +62,6 @@ void TrainedAI::extract(Data *data) {
         }
     }
 
-    // res is not used.
-    game->res.resize(s().env().GetNumOfPlayers() * NUM_RES_SLOT, 0.0);
-
     game->last_r = 0.0;
     int winner = s().env().GetWinnerId();
 

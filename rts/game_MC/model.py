@@ -53,8 +53,7 @@ class Model_ActorCritic(Model):
             xreduced[:, self.num_unit:] /= 20 * 20
             output = self._var(xreduced)
         else:
-            s, res = x["s"], x["res"]
-            output = self.net(self._var(x["s"]), self._var(x["res"]))
+            output = self.net(self._var(x["s"]))
 
         return self.decision(output)
 
