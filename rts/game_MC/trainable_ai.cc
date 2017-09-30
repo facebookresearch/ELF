@@ -24,29 +24,29 @@ static inline int sampling(const std::vector<float> &v, std::mt19937 *gen) {
 }
 */
 
-bool TrainedAI::GameEnd(Tick t) {
-    AIWithComm::GameEnd(t);
+bool TrainedAI::GameEnd(const State &s) {
+    AIWithComm::GameEnd(s);
     for (auto &v : _recent_states.v()) {
         v.clear();
     }
     return true;
 }
 
-void TrainedAI::extract(Data *data) {
-    const GameEnv &env = s().env();
+void TrainedAI::extract(const State &s, Data *data) {
+    const GameEnv &env = s.env();
 
     GameState *game = &data->newest();
-    game->tick = s().receiver().GetTick();
+    game->tick = s.receiver().GetTick();
     game->winner = env.GetWinnerId();
     game->terminal = env.GetTermination() ? 1 : 0;
     game->name = name();
 
     if (_recent_states.maxlen() == 1) {
-        MCExtract(s(), id(), _respect_fow, &game->s);
+        MCExtract(s, id(), _respect_fow, &game->s);
         // std::cout << "(1) size_s = " << game->s.size() << std::endl << std::flush;
     } else {
         std::vector<float> &state = _recent_states.GetRoom();
-        MCExtract(s(), id(), _respect_fow, &state);
+        MCExtract(s, id(), _respect_fow, &state);
 
         const size_t maxlen = _recent_states.maxlen();
         game->s.resize(maxlen * state.size());
@@ -63,7 +63,7 @@ void TrainedAI::extract(Data *data) {
     }
 
     game->last_r = 0.0;
-    int winner = s().env().GetWinnerId();
+    int winner = s.env().GetWinnerId();
 
     if (winner != INVALID) {
         if (winner == id()) game->last_r = 1.0;
@@ -75,11 +75,11 @@ void TrainedAI::extract(Data *data) {
 #define ACTION_UNIT_CMD 1
 #define ACTION_REGIONAL 2
 
-bool TrainedAI::handle_response(const Data &data, RTSMCAction *a) { 
+bool TrainedAI::handle_response(const State &s, const Data &data, RTSMCAction *a) { 
     a->Init(id(), name());
 
     // if (_receiver == nullptr) return false;
-    const auto &env = s().env();
+    const auto &env = s.env();
 
     // Get the current action from the queue.
     const auto &m = env.GetMap();

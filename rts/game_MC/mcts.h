@@ -67,20 +67,20 @@ public:
 
     MCTSReducedState &operator=(const FullState &state) {
         auto &ai = ai_->project;
-        ai.ActImmediate(state, &s_.state);
+        ai.Act(state, &s_.state, nullptr);
         return *this;
     }
 
     bool evaluate() {
         auto &ai = ai_->predict;
-        if (! ai.ActImmediate(s_.state, &pred_)) return false;
+        if (! ai.Act(s_.state, &pred_, nullptr)) return false;
         return true;
     }
 
     bool forward(const Action &a) {
         s_.action = a;
         auto &ai = ai_->forward;
-        if (! ai.ActImmediate(s_, &s_.state)) return false;
+        if (! ai.Act(s_, &s_.state, nullptr)) return false;
         return true;
     }
 

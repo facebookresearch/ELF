@@ -4,7 +4,9 @@
 
 class MixedAI : public AI {
 public:
-    MixedAI(const AIOptions &opt) : AI(opt.name, opt.fs) {
+    using State = AI::State;
+
+    MixedAI(const AIOptions &opt) : AI(opt.name) {
           if (opt.args != "") {
               // TODO: Get some library to do this.
               std::string backup_ai_name;
@@ -29,7 +31,6 @@ public:
               // std::cout << "Latest start = " << _latest_start << " decay = " << _latest_start_decay << std::endl;
               if (_backup_ai.get() != nullptr) {
                   _backup_ai->SetId(id());
-                  if (s_ptr() != nullptr) _backup_ai->SetState(s());
               }
           }
           _rng.seed(time(NULL));
@@ -38,14 +39,21 @@ public:
     void SetMainAI(AI *main_ai) {
         _main_ai.reset(main_ai);
         _main_ai->SetId(id());
-        if (s_ptr() != nullptr) _main_ai->SetState(s());
     }
 
-    bool GameEnd(Tick t) override {
-        AI::GameEnd(t);
+    bool Act(const State &s, RTSMCAction *a, const std::atomic_bool *done) override {
+        if (_backup_ai != nullptr && s.GetTick() < _backup_ai_tick_thres) {
+            return _backup_ai->Act(s, a, done);
+        } else {
+            return _main_ai->Act(s, a, done);
+        }
+    }
+
+    bool GameEnd(const State &s) override {
+        AI::GameEnd(s);
 
         // Always ended with main_ai.
-        bool res = _main_ai->GameEnd(t);
+        bool res = _main_ai->GameEnd(s);
 
         // Decay latest_start.
         _latest_start *= _latest_start_decay;
@@ -88,20 +96,6 @@ protected:
         this->AI::on_set_id();
         if (_backup_ai != nullptr) _backup_ai->SetId(id());
         if (_main_ai != nullptr) _main_ai->SetId(id());
-    }
-
-    void on_set_state() override {
-        this->AI::on_set_state();
-        if (_backup_ai != nullptr) _backup_ai->SetState(s());
-        if (_main_ai != nullptr) _main_ai->SetState(s());
-    }
-
-    bool on_act(Tick t, RTSMCAction *a, const std::atomic_bool *done) override {
-        if (_backup_ai != nullptr && t < _backup_ai_tick_thres) {
-            return _backup_ai->Act(t, a, done);
-        } else {
-            return _main_ai->Act(t, a, done);
-        }
     }
 };
 

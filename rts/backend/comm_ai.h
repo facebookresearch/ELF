@@ -14,34 +14,16 @@
 #include "raw2cmd.h"
 
 class TCPAI : public AI {
-
-private:
-    RawToCmd _raw_converter;
-    int _vis_after;
-
-    std::unique_ptr<WSServer> server_;
-    moodycamel::ConcurrentQueue<std::string> queue_;
-
-    string save_vis_data() const;
-    bool send_vis(const string &s);
-
-protected:
-    void on_set_id() override {
-        this->AI::on_set_id();
-        _raw_converter.SetId(id());
-    }
-
-    bool on_act(Tick t, RTSMCAction *action, const std::atomic_bool *) override;
-
 public:
     // If player_id == INVALID, then it will send the full information.
-    TCPAI(const std::string &name, int vis_after, int port)
-        : AI(name, 1), _vis_after(vis_after) {
-          server_.reset(
-              new WSServer{port, [this](const std::string& msg) {
+    TCPAI(const std::string &name, int vis_after, int port) : AI(name), _vis_after(vis_after) {
+        server_.reset(
+                new WSServer{port, [this](const std::string& msg) {
                 this->queue_.enqueue(msg);
-              }});
-        }
+                }});
+    }
+
+    bool Act(const State &s, RTSMCAction *action, const std::atomic_bool *) override;
 
     // This is for visualization.
     /*
@@ -51,4 +33,20 @@ public:
       return vector<int>(selected.begin(), selected.end());
     }
     */
+
+private:
+    RawToCmd _raw_converter;
+    int _vis_after;
+
+    std::unique_ptr<WSServer> server_;
+    moodycamel::ConcurrentQueue<std::string> queue_;
+
+    string save_vis_data(const State &state) const;
+    bool send_vis(const string &s);
+
+protected:
+    void on_set_id() override {
+        this->AI::on_set_id();
+        _raw_converter.SetId(id());
+    }
 };

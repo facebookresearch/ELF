@@ -11,22 +11,22 @@
 #include "save2json.h"
 
 ///////////////////////////// Web TCP AI ////////////////////////////////
-bool TCPAI::on_act(Tick t, RTSMCAction *action, const std::atomic_bool *) {
+bool TCPAI::Act(const State &s, RTSMCAction *action, const std::atomic_bool *) {
   // First we send the visualization.
-  if (t >= _vis_after) send_vis(save_vis_data());
+  if (s.GetTick() >= _vis_after) send_vis(save_vis_data(s));
 
   std::string msg;
   while (queue_.try_dequeue(msg)) {
-     _raw_converter.Process(t, s().env(), msg, action);
+     _raw_converter.Process(s.GetTick(), s.env(), msg, action);
   }
   return true;
 }
 
-string TCPAI::save_vis_data() const {
+string TCPAI::save_vis_data(const State &s) const {
   bool is_spectator = (id() == INVALID);
 
-  const CmdReceiver &recv = s().receiver();
-  const GameEnv &env = s().env();
+  const CmdReceiver &recv = s.receiver();
+  const GameEnv &env = s.env();
 
   json game;
   env.FillHeader<save2json, json>(recv, &game);

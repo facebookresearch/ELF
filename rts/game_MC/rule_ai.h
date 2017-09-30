@@ -5,12 +5,12 @@
 // Simple AI, rule-based AI for Mini-RTS
 class SimpleAI : public AI {
 public:
-    SimpleAI(const AIOptions &opt) : AI(opt.name, opt.fs)  { }
+    SimpleAI(const AIOptions &opt) : AI(opt.name)  { }
 
     // SERIALIZER_DERIVED(SimpleAI, AIBase, _state);
 
 private:
-    bool on_act(Tick, RTSMCAction *action, const atomic_bool *) override {
+    bool Act(const RTSState &, RTSMCAction *action, const atomic_bool *) override {
         action->Init(id(), name());
         action->SetSimpleAI();
         return true;
@@ -20,12 +20,12 @@ private:
 // HitAndRun AI, rule-based AI for Mini-RTS
 class HitAndRunAI : public AI {
 public:
-    HitAndRunAI(const AIOptions &opt) : AI(opt.name, opt.fs)  { }
+    HitAndRunAI(const AIOptions &opt) : AI(opt.name)  { }
 
     // SERIALIZER_DERIVED(HitAndRunAI, AIBase, _state);
 
 private:
-    bool on_act(Tick, RTSMCAction *action, const atomic_bool *) override {
+    bool Act(const RTSState &, RTSMCAction *action, const atomic_bool *) override {
         action->Init(id(), name());
         action->SetHitAndRunAI();
         return true;

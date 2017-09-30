@@ -42,14 +42,14 @@ void GameDef::GlobalInit() {
 
     // InitAI.
     AIFactory<AI>::RegisterAI("simple", [](const std::string &spec) {
+        (void)spec;
         AIOptions ai_options;
-        ai_options.fs = std::stoi(spec);
         return new SimpleAI(ai_options);
     });
 
     AIFactory<AI>::RegisterAI("hit_and_run", [](const std::string &spec) {
+        (void)spec;
         AIOptions ai_options;
-        ai_options.fs = std::stoi(spec);
         return new HitAndRunAI(ai_options);
     });
 }

@@ -79,7 +79,9 @@ void WrapperCallbacks::OnGameInit(RTSGame *game) {
         std::shuffle(ais.begin(), ais.end(), g);
     }
 
-    for (AI *ai : ais) game->AddBot(ai);
+    for (size_t i = 0; i < ais.size(); ++i) {
+        game->AddBot(ais[i], _options.ai_options[i].fs);
+    }
 }
 
 void WrapperCallbacks::OnEpisodeStart(int k, std::mt19937 *rng, RTSGame *game) {

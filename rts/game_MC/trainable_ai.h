@@ -5,15 +5,16 @@
 
 class TrainedAI : public AIWithComm {
 public:
+    using State = AIWithComm::State;
     using Data = typename AIWithComm::Data;
 
     TrainedAI() : _respect_fow(true), _recent_states(1) { }
     TrainedAI(const AIOptions &opt)
-        : AIWithComm(opt.name, opt.fs), _respect_fow(opt.fow), _recent_states(opt.num_frames_in_state) {
+        : AIWithComm(opt.name), _respect_fow(opt.fow), _recent_states(opt.num_frames_in_state) {
       for (auto &v : _recent_states.v()) v.clear();
     }
 
-    bool GameEnd(Tick) override;
+    bool GameEnd(const State &) override;
 
     void get_last_pred(ReducedPred *pred) const {
         const auto& gs = ai_comm()->info().data.newest();
@@ -29,7 +30,7 @@ protected:
     void compute_state(std::vector<float> *state);
 
     // Feature extraction.
-    void extract(Data *data) override;
-    bool handle_response(const Data &data, RTSMCAction *a) override;
+    void extract(const State &, Data *data) override;
+    bool handle_response(const State &, const Data &data, RTSMCAction *a) override;
 };
 
