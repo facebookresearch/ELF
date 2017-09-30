@@ -6,8 +6,8 @@
 std::unique_ptr<TarLoader> OfflineLoader::_tar_loader;
 std::unique_ptr<RBuffer> OfflineLoader::_rbuffer;
 
-OfflineLoader::OfflineLoader(const GameOptions &options, int seed, AIComm *ai_comm)
-    : Loader(ai_comm), _options(options), _game_loaded(0), _rng(seed) {
+OfflineLoader::OfflineLoader(const GameOptions &options, int seed)
+    : _options(options), _game_loaded(0), _rng(seed) {
     if (_options.verbose) std::cout << "Loading list_file: " << _options.list_filename << std::endl;
     if (file_is_tar(_options.list_filename)) {
       // Get all .sgf from tar
@@ -33,13 +33,13 @@ OfflineLoader::OfflineLoader(const GameOptions &options, int seed, AIComm *ai_co
     if (_options.verbose) std::cout << "Loaded: #Game: " << _games.size() << std::endl;
 }
 
-bool OfflineLoader::Ready(const std::atomic_bool &done) {
+bool OfflineLoader::ready(const std::atomic_bool *done) {
   // Act on the current game.
-  while ( need_reload() && !done.load() ) {
+  while ( need_reload() && (done == nullptr || !done->load()) ) {
       // std::cout << "Reloading games.." << std::endl;
       reload();
   }
-  if (done.load()) return false;
+  if (done->load()) return false;
 
   while (true) {
       if (_sgf_iter.StepLeft() >= _options.num_future_actions) break;
@@ -48,11 +48,6 @@ bool OfflineLoader::Ready(const std::atomic_bool &done) {
       reload();
   }
   return true;
-}
-
-void OfflineLoader::Next(int64_t action) {
-    (void)action;
-    if (!next_move()) reload();
 }
 
 void OfflineLoader::InitSharedBuffer(const std::string &list_filename) {
@@ -74,13 +69,13 @@ void OfflineLoader::InitSharedBuffer(const std::string &list_filename) {
 
 // Private functions.
 void OfflineLoader::reset(const Sgf &sgf) {
-    _state.Reset();
+    s().Reset();
     _sgf_iter = sgf.begin();
 
     // Place handicap stones if there is any.
     int handi = sgf.GetHandicapStones();
     if (_options.verbose) std::cout << "#Handi = " << handi << std::endl;
-    _state.ApplyHandicap(handi);
+    s().ApplyHandicap(handi);
 
     _game_loaded ++;
 }
@@ -123,18 +118,20 @@ void OfflineLoader::reload() {
 
 
 bool OfflineLoader::need_reload() const {
-    return (_sgf_iter.done() || _sgf_iter.StepLeft() < _options.num_future_actions || (_options.move_cutoff >= 0 && _sgf_iter.GetCurrIdx() >= _options.move_cutoff));
+    return (_sgf_iter.done() || _sgf_iter.StepLeft() < _options.num_future_actions 
+            || (_options.move_cutoff >= 0 && _sgf_iter.GetCurrIdx() >= _options.move_cutoff));
 }
 
 bool OfflineLoader::next_move() {
-    bool res = _state.ApplyMove(_sgf_iter.GetCoord());
+    bool res = s().forward(_sgf_iter.GetCoord());
     if (res) ++ _sgf_iter;
     return res;
 }
 
-void OfflineLoader::SaveTo(GameState& gs) {
+void OfflineLoader::extract(Data *data) {
+  auto& gs = data->newest();
   gs.game_record_idx = _curr_game;
-  gs.move_idx = _state.GetPly();
+  gs.move_idx = s().GetPly();
   Stone winner = _sgf_iter.GetSgf().GetWinner();
   gs.winner = (winner == S_BLACK ? 1 : (winner == S_WHITE ? -1 : 0));
 
@@ -144,10 +141,17 @@ void OfflineLoader::SaveTo(GameState& gs) {
 
   auto rot = (BoardFeature::Rot)(code % 4);
   bool flip = (code >> 2) == 1;
-  const BoardFeature &bf = _state.extractor(rot, flip);
+  const BoardFeature &bf = s().extractor(rot, flip);
 
   bf.Extract(&gs.s);
   save_forward_moves(bf, &gs.offline_a);
+}
+
+bool OfflineLoader::handle_response(const Data &data, Coord *c) {
+    (void)data;
+    *c = _sgf_iter.GetCoord();
+    if (!next_move()) reload();
+    return true;
 }
 
 bool OfflineLoader::save_forward_moves(const BoardFeature &bf, vector<int64_t> *actions) const {

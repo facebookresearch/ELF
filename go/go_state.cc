@@ -62,14 +62,11 @@ void HandicapTable::Apply(int handi, Board *board) const {
 }
 
 ///////////// GoState ////////////////////
-bool GoState::ApplyMove(Coord c) {
+bool GoState::forward(const Coord &c) {
     GroupId4 ids;
-    if (TryPlay2(&_board, c, &ids)) {
-      Play(&_board, &ids);
-      return true;
-    } else {
-      return false;
-    }
+    if (! TryPlay2(&_board, c, &ids)) return false;
+    Play(&_board, &ids);
+    return true;
 }
 
 void GoState::ApplyHandicap(int handi) {
@@ -80,4 +77,4 @@ void GoState::Reset() {
     ClearBoard(&_board);
 }
 
-
+HandicapTable GoState::_handi_table;

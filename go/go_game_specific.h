@@ -29,6 +29,9 @@ struct GameOptions {
     // Instead, it will get the action from the neural network to proceed.
     bool online = false;
 
+    // Use mcts engine.
+    bool use_mcts = false;
+
     // -1 is random, 0-7 mean specific data aug.
     int data_aug = -1;
 
@@ -74,8 +77,6 @@ struct GameState {
     int64_t a;
     std::vector<float> pi;
     float V;
-
-    std::string player_name;
 
     void Clear() { game_record_idx = -1; aug_code = 0; winner = 0; move_idx = -1; }
 

@@ -19,6 +19,10 @@ private:
     std::unique_ptr<CircularQueue<Data>> _h;
 
 public:
+    HistT() { } 
+    HistT(const HistT<Data> &other) {
+        _h.reset(new CircularQueue<Data>(*other._h));
+    }
     void InitHist(int len) {
         _h.reset(new CircularQueue<Data>(len));
     }

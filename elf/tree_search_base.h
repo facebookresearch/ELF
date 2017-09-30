@@ -31,12 +31,13 @@ using EvalFuncT = function<float (const S &s)>;
 struct EdgeInfo {
     // From state.
     const float prior;
+    NodeId next;
 
     // Accumulated reward and #trial.
     float acc_reward;
     int n;
 
-    EdgeInfo(float p) : prior(p), acc_reward(0), n(0) { }
+    EdgeInfo(float p) : prior(p), next(NodeIdInvalid), acc_reward(0), n(0) { }
 };
 
 } // namespace mcts

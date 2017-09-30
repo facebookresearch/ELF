@@ -82,12 +82,21 @@ CmdReturn RTSStateExtend::dispatch_cmds(const UICmd& cmd) {
     return CMD_FAILED;
 }
 
+bool RTSStateExtend::forward(RTSAction &a) {
+    if (! RTSState::forward(a)) return false;
+
+    // Then we also need to send UI commands, if there is any.
+    for (const auto &cmd : a.ui_cmds()) {
+        dispatch_cmds(cmd);
+    }
+    return true;
+}
+
 bool RTSStateExtend::Init() {
     if (! RTSState::Prepare(_options, _output_stream)) return false;
 
     if (_output_stream) *_output_stream << "In the main loop " << endl << flush;
 
-    RTSState::SetUICmdCB([&](const UICmd& cmd) { return dispatch_cmds(cmd); });
     RTSState::SetReplayPrefix(_options.save_replay_prefix);
 
     _clock.Restart();

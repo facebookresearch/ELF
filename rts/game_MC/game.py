@@ -33,6 +33,30 @@ class Loader(CommonLoader):
             reply=None
         )
 
+    def _get_reduced_predict(self):
+        return dict(
+            batchsize=self.args.batchsize,
+            input=dict(T=1, keys=set(["reduced_s"])),
+            reply=dict(T=1, keys=set(["pi", "V"])),
+            name="reduced_predict"
+        )
+
+    def _get_reduced_forward(self):
+        return dict(
+            batchsize=self.args.batchsize,
+            input=dict(T=1, keys=set(["reduced_s", "a"])),
+            reply=dict(T=1, keys=set(["reduced_next_s"])),
+            name="reduced_forward"
+        )
+
+    def _get_reduced_project(self):
+        return dict(
+            batchsize=min(self.args.batchsize, max(self.args.num_games // 2, 1)),
+            input=dict(T=1, keys=set(["s"])),
+            reply=dict(T=1, keys=set(["reduced_s"])),
+            name="reduced_project"
+        )
+
 nIter = 5000
 elapsed_wait_only = 0
 
@@ -53,8 +77,24 @@ if __name__ == '__main__':
         '''
         return dict(a=[0]*batch["s"].size(1))
 
-    GC = loader.initialize()
+    def reduced_predict(batch):
+        # print("in reduced_predict")
+        pass
+
+    def reduced_forward(batch):
+        # print("in reduced_forward")
+        pass
+
+    def reduced_project(batch):
+        # print("in reduced_project")
+        pass
+
+    # GC = loader.initialize()
+    GC = loader.initialize_reduced_service()
     GC.reg_callback("actor", actor)
+    GC.reg_callback("reduced_predict", reduced_predict)
+    GC.reg_callback("reduced_forward", reduced_forward)
+    GC.reg_callback("reduced_project", reduced_project)
 
     before = datetime.now()
     GC.Start()

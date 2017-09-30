@@ -15,8 +15,7 @@
 #include <chrono>
 #include <algorithm>
 
-using AI = elf::AI_T<RTSState, RTSAction>;
-
+template<typename AI>
 class AIFactory {
 public:
     using RegFunc = std::function<AI *(const std::string &spec)>;
@@ -36,4 +35,11 @@ private:
     static std::map<std::string, RegFunc> _factories;
     static std::mutex _mutex;
 };
+
+template<typename AI>
+std::map<std::string, std::function<AI *(const std::string &spec)>> AIFactory<AI>::_factories;
+
+template<typename AI>
+std::mutex AIFactory<AI>::_mutex;
+
 

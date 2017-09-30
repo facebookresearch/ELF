@@ -27,21 +27,31 @@
 #include "state_collector.h"
 #include "ai_comm.h"
 #include "stats.h"
+#include "member_check.h"
 
 struct GroupStat {
     int gid;
     int hist_len;
-    std::string player_name;
+    std::string name;
 
     GroupStat() : gid(-1), hist_len(1) { }
     std::string info() const {
-        return "[gid=" + std::to_string(gid) + "][T=" + std::to_string(hist_len) + "][player_name=" + player_name + "]";
+        return "[gid=" + std::to_string(gid) + "][T=" + std::to_string(hist_len) + "][name=\"" + name + "\"]";
     }
 
     // Note that gid will be set by C++ side.
-    REGISTER_PYBIND_FIELDS(hist_len, player_name);
+    REGISTER_PYBIND_FIELDS(hist_len, name);
 };
 
+#define ADD_COND_CHECK(field_name) \
+    MEMBER_CHECK(field_name);\
+    template <typename S_ = typename T::State, typename std::enable_if<has_##field_name<S_>::value>::type *U = nullptr> \
+    bool check_##field_name(const GroupStat &gstat, const S_ &record) {\
+        if (! gstat.field_name.empty() && gstat.field_name != record.field_name) return false;\
+        return true;\
+    }\
+    template <typename S_ = typename T::State, typename std::enable_if<! has_##field_name<S_>::value>::type *U = nullptr>\
+    bool check_##field_name(const GroupStat &, const S_ &) { return true; }
 
 template <typename T>
 struct CondPerGroupT {
@@ -53,13 +63,16 @@ struct CondPerGroupT {
 
     CondPerGroupT() : last_used_seq(0), last_seq(0), game_counter(0), freq_send(0) { }
 
+    ADD_COND_CHECK(name)
+
     bool Check(const GroupStat &gstat, const T &info) {
         // Check whether this record is even relevant.
         // If we have specified player id and the player id from the info is irrelevant
         // from what is specified, then we skip.
         const auto &record = info.data.newest();
-        if (! gstat.player_name.empty() && gstat.player_name != record.player_name) return false;
-        // std::cout << "Check " << gstat.info() << " record.player_name = " << record.player_name << std::endl;
+        if (! check_name(gstat, record)) return false;
+        
+        // std::cout << "Check " << gstat.info() << " record.name = " << record.name << std::endl;
 
         // Update game counter.
         int new_game_counter = record.game_counter;
@@ -272,13 +285,6 @@ public:
         _pool.stop();
     }
 };
-
-template <typename Key, typename Value>
-const Value &get_value(const std::map<Key, Value>& dict, const Key &key, const Value &default_val) {
-  auto it = dict.find(key);
-  if (it == dict.end()) return default_val;
-  else return it->second;
-}
 
 // The game context, which could include multiple games.
 template <typename _Options, typename _Data>

@@ -10,7 +10,8 @@
 #include "game.h"
 #include "go_game_specific.h"
 #include "offpolicy_loader.h"
-#include "online_player.h"
+#include "go_ai.h"
+#include "mcts.h"
 
 #include <fstream>
 
@@ -33,20 +34,39 @@ GoGame::GoGame(int game_idx, const GameOptions& options) : _options(options), _c
 void GoGame::Init(AIComm *ai_comm) {
     assert(ai_comm);
     if (_options.online) {
-        _loaders.emplace_back(new OnlinePlayer(ai_comm));
+        if (_options.use_mcts) {
+            mcts::TSOptions options;
+            auto *ai = new MCTSGoAI(options);
+            ai->InitAIComm(ai_comm);
+            _ai.reset(ai);
+        } else {
+            auto *ai = new DirectPredictAI();
+            ai->InitAIComm(ai_comm);
+            _ai.reset(ai);
+        }
     } else {
         // Open many offline instances.
         for (int i = 0; i < _options.num_games_per_thread; ++i) {
-            _loaders.emplace_back(new OfflineLoader(_options, _seed + _game_idx * i * 997 + i * 13773 + 7, ai_comm));
+            auto *loader = new OfflineLoader(_options, _seed + _game_idx * i * 997 + i * 13773 + 7);
+            loader->InitAIComm(ai_comm);
+            _loaders.emplace_back(loader);
         }
     }
     if (_options.verbose) std::cout << "[" << _game_idx << "] Done with initialization" << std::endl;
 }
 
 void GoGame::Act(const std::atomic_bool& done) {
-  // Randomly pick one loader
-  _curr_loader_idx = _rng() % _loaders.size();
-  Loader *loader = _loaders[_curr_loader_idx].get();
-
-  loader->Act(done);
+    // Randomly pick one loader
+    Coord c;
+    if (_options.online) {
+        _ai->Act(_state, &c, &done);
+        if (! _state.forward(c)) {
+            cout << "Invalid move: x = " << X(c) << " y = " << Y(c) << coord2str(c) << " please try again" << endl;
+        }
+    } else {
+        // Replays hold a state by itself.
+        _curr_loader_idx = _rng() % _loaders.size();
+        auto *loader = _loaders[_curr_loader_idx].get();
+        loader->Act(&c, &done);
+    }
 }

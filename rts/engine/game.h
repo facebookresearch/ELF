@@ -33,6 +33,8 @@ public:
     void PreAct() override;
     void IncTick() override;
 
+    bool forward(RTSAction &a) override;
+
     elf::GameResult PostAct() override;
 
 private:

@@ -1,14 +1,21 @@
 #pragma once
 
 #include "elf/shared_replay_buffer.h"
-#include "go_loader.h"
 #include "elf/tar_loader.h"
+#include "ai.h"
 
 using namespace std;
 
 using RBuffer = SharedReplayBuffer<std::string, Sgf>;
 
-class OfflineLoader : public Loader {
+class OfflineLoader : public AIHoldStateWithComm {
+public:
+    using Data = AIHoldStateWithComm::Data;
+
+public:
+    OfflineLoader(const GameOptions &options, int seed);
+    static void InitSharedBuffer(const std::string &list_filename);
+
 protected:
     // Shared buffer for OfflineLoader.
     static std::unique_ptr<RBuffer> _rbuffer;
@@ -34,6 +41,16 @@ protected:
     bool need_reload() const;
     void reload();
 
+    void before_act(const std::atomic_bool *done) override { 
+        if (! ready(done)) return;
+        if (s().JustStarted()) ai_comm()->Restart();
+    }
+
+    void extract(Data *data) override;
+    bool handle_response(const Data &data, Coord *c) override;
+
+    bool ready(const std::atomic_bool *done);
+
     std::string info() const {
         std::stringstream ss;
         Coord m = _sgf_iter.GetCoord();
@@ -46,13 +63,5 @@ protected:
     }
 
     bool save_forward_moves(const BoardFeature &bf, vector<int64_t> *actions) const;
-
-public:
-    OfflineLoader(const GameOptions &options, int seed, AIComm *ai_comm);
-    static void InitSharedBuffer(const std::string &list_filename);
-
-    bool Ready(const std::atomic_bool &done) override;
-    void SaveTo(GameState &state) override;
-    void Next(int64_t action) override;
 };
 

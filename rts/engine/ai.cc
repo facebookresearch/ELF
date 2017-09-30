@@ -12,8 +12,4 @@
 #include "cmd.gen.h"
 //#include "minirts2_state.h"
 //#include "minirts3_state.h"
-
-std::map<std::string, std::function<AI *(const std::string &spec)>> AIFactory::_factories;
-std::mutex AIFactory::_mutex;
-
-
+//

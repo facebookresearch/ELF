@@ -79,11 +79,6 @@ bool CmdReceiver::SendCmdWithTick(CmdBPtr &&cmd, Tick tick) {
     return true;
 }
 
-bool CmdReceiver::SendCmd(UICmd &&cmd) {
-    _ui_cmd_queue.push(cmd);
-    return true;
-}
-
 const CmdDurative *CmdReceiver::GetUnitDurativeCmd(UnitId id) const {
     auto it = _unit_durative_cmd.find(id);
     if (it == _unit_durative_cmd.end()) return nullptr;
@@ -190,16 +185,6 @@ void CmdReceiver::ExecuteImmediateCmds(GameEnv *env, bool force_verbose) {
 
     // cout << "Ending ExecutiveImmediateCmds[" << _tick << "]" << endl;
     SetSaveToHistory(true);
-}
-
-void CmdReceiver::ExecuteUICmds(function<void (const UICmd&)> default_f) {
-    // cout << "Starting ExecuteUICmds" << endl;
-    while (! _ui_cmd_queue.empty()) {
-        const UICmd &cmd = _ui_cmd_queue.front();
-        default_f(cmd);
-        _ui_cmd_queue.pop();
-    }
-    // cout << "Ending ExecuteUICmds" << endl;
 }
 
 void CmdReceiver::SendCurrentReplay() {

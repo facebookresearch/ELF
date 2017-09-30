@@ -1,85 +1,37 @@
-/**
-* Copyright (c) 2017-present, Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD-style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*/
-
 #pragma once
 
-#include "elf/tree_search.h"
-#include "board.h"
+#include "elf/mcts.h"
+#include "go_ai.h"
 
-namespace go_mcts {
-
-using namespace std;
-
-// Tree search specialization for Go.
-class State {
+class MCTSGoState : public GoState {
 public:
-    State() : value_(0.5) { }
-    State(const Board &board) : value_(0.5) { CopyBoard(&board_, &board); }
+    using AI = DirectPredictAI;
+    using Action = Coord;
+    using State = GoState;
 
-    const vector<pair<Coord, float>> &pi() const { return pi_; }
+    MCTSGoState &operator=(const State &state) {
+        *((State *)this) = state;
+        return *this;
+    }
 
-    template <typename AIComm>
-    bool GetPi(AIComm *ai_comm) {
-        // ai_comm is from the current thread.
-        auto &gs = ai_comm->Prepare();
-        BoardFeature bf(board_);
-        bf.Extract(&gs.s);
+    void SetAI(AI *ai) { ai_ = ai; }
 
-        if (!ai_comm->SendDataWaitReply()) return false;
-
-        const vector<float> &pi = ai_comm->info().data.newest().pi;
-
-        pi_.clear();
-        for (size_t i = 0; i < pi.size(); ++i) {
-            Coord m = bf.Action2Coord(i);
-            pi_.push_back(make_pair(m, pi[i])); 
-        }
+    bool evaluate() {
+        if (! ai_->Act(*this, nullptr, nullptr)) return false;
+        ai_->get_last_pi(&pi_);
+        value_ = ai_->get_last_value();
         return true;
     }
 
-    bool forward(const Coord &c, State *next) const {
-        CopyBoard(&next->board_, &board_);
-        return next->forward(c);
-    }
+    const vector<pair<Action, float>> &pi() const { return pi_; }
+    float value() const { return value_; }
+    float reward() const { return value_; }
 
-    bool forward(const Coord &c) {
-        GroupId4 ids;
-        if (TryPlay2(&board_, c, &ids)) {
-          Play(&board_, &ids);
-          return true;
-        } else {
-          return false;
-        }
-    }
-
-    // Evaluate using random playout.
-    // Right now just set it to 0.5
-    float evaluate() const { return value_; }
-    const Board &board() const { return board_; }
-
-private:
-    Board board_;
-    vector<pair<Coord, float>> pi_;
-    float value_;
+protected:
+    vector<pair<Action, float>> pi_;
+    float value_ = 0.0;
+    AI *ai_ = nullptr;
 };
 
-using GoMCTS = mcts::TreeSearchT<State, Coord>;
-using TSOptions = mcts::TSOptions;
-using TSThreadOptions = mcts::TSThreadOptionsT<State, Coord>;
+using MCTSGoAI = elf::MCTSAI_T<MCTSGoState>;
 
-template <typename AIComm>
-TSThreadOptions GetTSThreadOptions(AIComm *ai_comm) {
-    TSThreadOptions options;
-    options.stats_func = [&](State *s) { return s->GetPi(ai_comm); };
-    options.forward_func = [](const State &s, const Coord &c, State *s_next) { return s.forward(c, s_next); };
-    options.evaluate = [](const State &s) { return s.evaluate(); };
-    return options;
-}
-
-}  // namespace go_mcts

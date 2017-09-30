@@ -10,16 +10,14 @@
 #pragma once
 
 #include "game.h"
-#include "ai.h"
 #include "../elf/game_base.h"
 #include "../elf/python_options_utils_cpp.h"
 
-using RTSGame = elf::GameBaseT<RTSState, AI>;
-
-template <typename WrapperCB, typename Comm, typename PythonOptions>
+template <typename WrapperCB, typename Comm, typename PythonOptions, typename AI>
 class WrapperT {
 public:
-    using Wrapper = WrapperT<WrapperCB, Comm, PythonOptions>;
+    using Wrapper = WrapperT<WrapperCB, Comm, PythonOptions, AI>;
+    using RTSGame = elf::GameBaseT<RTSState, AI>;
 
 private:
     GlobalStats _gstats;
@@ -28,7 +26,9 @@ public:
     WrapperT() {
     }
 
-    void thread_main(int game_idx, const ContextOptions &context_options, const PythonOptions &options, const std::atomic_bool &done, Comm *comm) {
+    void thread_main(int game_idx, const ContextOptions &context_options, 
+            const PythonOptions &options, const std::atomic_bool &done, 
+            const std::map<std::string, int> *more_params, Comm *comm) {
         const string& replay_prefix = options.save_replay_prefix;
 
         // Create a game.
@@ -52,7 +52,7 @@ public:
         // Note that AddBot() will set its receiver. So there is no need to specify it here.
         RTSStateExtend s(op);
         RTSGame game(s);
-        wrapper.OnGameInit(&game);
+        wrapper.OnGameInit(&game, more_params);
 
         s.SetGlobalStats(&_gstats);
 
