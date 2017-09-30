@@ -63,7 +63,7 @@ public:
         if (! _ai_comm->SendDataWaitReply()) return false;
 
         // Then deal with the response, if a != nullptr
-        if (a != nullptr) handle_response(_ai_comm->info().data, a);
+        if (a != nullptr) handle_response(s, _ai_comm->info().data, a);
         return true;
     }
 
@@ -88,7 +88,7 @@ protected:
 
     // Extract and save to data.
     virtual void extract(const S &s, Data *data) = 0;
-    virtual bool handle_response(const Data &data, A *a) = 0;
+    virtual bool handle_response(const S &s, const Data &data, A *a) = 0;
     virtual void on_set_ai_comm() { }
     virtual void before_act(const S &, const std::atomic_bool *) { }
 };

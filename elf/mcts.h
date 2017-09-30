@@ -101,6 +101,10 @@ public:
     MCTSAI_Embed_T(const mcts::TSOptions &options) : mcts_embed_ai_(options) { 
     }
 
+    void InitAIComm(AIComm *ai_comm) {
+        mcts_embed_ai_.InitAIComm(ai_comm);
+    }
+
     bool Act(const S &s, A *a, const std::atomic_bool *done) override {
         low_state_ = s;
         LowAction low_a;

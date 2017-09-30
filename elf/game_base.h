@@ -79,7 +79,6 @@ public:
             _state.IncTick();
         }
         // Send message to AIs.
-        auto t = _state.GetTick();
         for (const auto &bot : _bots) {
             bot->GameEnd(_state);
         }

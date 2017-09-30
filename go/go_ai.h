@@ -37,9 +37,9 @@ protected:
         last_state_ = &state;
     }
 
-    bool handle_response(const Data &data, Coord *c) override {
+    bool handle_response(const GoState &s, const Data &data, Coord *c) override {
         auto action = data.newest().a;
-        if (c != nullptr) *c = last_state_->last_extractor().Action2Coord(action);
+        if (c != nullptr) *c = s.last_extractor().Action2Coord(action);
         return true;
     }
 };
