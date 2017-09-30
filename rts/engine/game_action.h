@@ -45,7 +45,7 @@ public:
     }
 
 protected:
-    PlayerId _player_id;
+    PlayerId _player_id = -1;
     std::string _name;
     std::string _state_string;
 

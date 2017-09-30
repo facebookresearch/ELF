@@ -79,7 +79,7 @@ struct GameState {
     void Restart() {
     }
 
-    void Init(int iid, int num_action, int num_max_cmd, int mapx, int mapy, int num_ct, int num_units) {
+    void Init(int iid, int num_action, int num_max_cmd, int mapx, int mapy, int num_ct, int num_units, int reduced_size) {
         id = iid;
         pi.resize(num_action, 0.0);
         n_action = num_action;
@@ -94,6 +94,8 @@ struct GameState {
         tloc_prob.resize(num_max_cmd * mapx * mapy, 0.0);
         bt_prob.resize(num_max_cmd * num_units, 0.0);
         ct_prob.resize(num_max_cmd * num_ct, 0.0);
+        reduced_s.resize(reduced_size, 0.0);
+        reduced_next_s.resize(reduced_size, 0.0);
     }
 
     void Clear() {

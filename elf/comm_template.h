@@ -285,13 +285,6 @@ public:
     }
 };
 
-template <typename Key, typename Value>
-const Value &get_value(const std::map<Key, Value>& dict, const Key &key, const Value &default_val) {
-  auto it = dict.find(key);
-  if (it == dict.end()) return default_val;
-  else return it->second;
-}
-
 // The game context, which could include multiple games.
 template <typename _Options, typename _Data>
 class ContextT {

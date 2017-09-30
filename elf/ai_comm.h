@@ -18,7 +18,8 @@ struct InfoT {
     Data data;
 
     InfoT(int id) : meta(id) { }
-    InfoT(const InfoT<Data> &parent, int child_id) : meta(parent.meta, child_id) { }
+    InfoT(const InfoT<Data> &parent, int child_id) 
+        : meta(parent.meta, child_id), data(parent.data) { }
 };
 
 // Communication between main_loop and AI (which is in a separate thread).

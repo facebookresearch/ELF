@@ -7,6 +7,7 @@
 * of patent rights can be found in the PATENTS file in the same directory.
 */
 
+#include "elf/utils.h"
 #include "wrapper_callback.h"
 #include "engine/cmd.h"
 #include "engine/cmd.gen.h"
@@ -16,7 +17,7 @@
 #include "mcts.h"
 #include "mixed_ai.h"
 
-static AI *get_ai(const AIOptions &opt, Context::AIComm *ai_comm) {
+static AI *get_ai(const PythonOptions &options, const AIOptions &opt, Context::AIComm *ai_comm) {
     // std::cout << "AI type = " << ai_type << " Backup AI type = " << backup_ai_type << std::endl;
     if (opt.type == "AI_SIMPLE") return new SimpleAI(opt);
     else if (opt.type == "AI_HIT_AND_RUN") return new HitAndRunAI(opt);
@@ -29,14 +30,16 @@ static AI *get_ai(const AIOptions &opt, Context::AIComm *ai_comm) {
         return ai;
     /*
     } else if (opt.type == "AI_MCTS") {
-        mcts::TSOptions options;
-        MCTSRTSAI *ai = new MCTSRTSAI(options);
+        mcts::TSOptions opt;
+        opt.num_threads = options.mcts_threads;
+        MCTSRTSAI *ai = new MCTSRTSAI(opt);
         ai->InitAIComm(ai_comm);
         return ai;
     */
     } else if (opt.type == "AI_REDUCED_MCTS") {
-        mcts::TSOptions options;
-        MCTSRTSReducedAI *ai = new MCTSRTSReducedAI(options);
+        mcts::TSOptions opt;
+        opt.num_threads = options.mcts_threads;
+        MCTSRTSReducedAI *ai = new MCTSRTSReducedAI(opt);
         ai->InitAIComm(ai_comm);
         return ai;
     } else {
@@ -50,11 +53,14 @@ static AI *get_ai(const AIOptions &opt, Context::AIComm *ai_comm) {
        */
 }
 
-void WrapperCallbacks::initialize_ai_comm(Context::AIComm &ai_comm) {
+void WrapperCallbacks::initialize_ai_comm(Context::AIComm &ai_comm, const std::map<std::string, int> *more_params) {
+    int reduced_dim = elf_utils::map_get(*more_params, "reduced_dim", 1);
     auto &hstate = ai_comm.info().data;
     hstate.InitHist(_context_options.T);
     for (auto &item : hstate.v()) {
-        item.Init(_game_idx, GameDef::GetNumAction(), _options.max_unit_cmd, _options.map_size_x, _options.map_size_y, CmdInput::CI_NUM_CMDS, GameDef::GetNumUnitType());
+        // [TODO] This design is really not good..
+        item.Init(_game_idx, GameDef::GetNumAction(), _options.max_unit_cmd, _options.map_size_x, _options.map_size_y, 
+                  CmdInput::CI_NUM_CMDS, GameDef::GetNumUnitType(), reduced_dim);
     }
 }
 
@@ -62,14 +68,14 @@ void WrapperCallbacks::OnGameOptions(RTSGameOptions *rts_options) {
     rts_options->handicap_level = _options.handicap_level;
 }
 
-void WrapperCallbacks::OnGameInit(RTSGame *game) {
+void WrapperCallbacks::OnGameInit(RTSGame *game, const std::map<std::string, int> *more_params) {
     // std::cout << "Initialize opponent" << std::endl;
     std::vector<AI *> ais;
     for (const AIOptions &ai_opt : _options.ai_options) {
         Context::AIComm *ai_comm = new Context::AIComm(_game_idx, _comm);
         _ai_comms.emplace_back(ai_comm);
-        initialize_ai_comm(*ai_comm);
-        ais.push_back(get_ai(ai_opt, ai_comm));
+        initialize_ai_comm(*ai_comm, more_params);
+        ais.push_back(get_ai(_options, ai_opt, ai_comm));
     }
 
     // std::cout << "Initialize ai" << std::endl;

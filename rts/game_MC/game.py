@@ -78,13 +78,13 @@ if __name__ == '__main__':
         return dict(a=[0]*batch["s"].size(1))
 
     def reduced_predict(batch):
-        pass
+        print("in reduced_predict")
 
     def reduced_forward(batch):
-        pass
+        print("in reduced_forward")
 
     def reduced_project(batch):
-        pass
+        print("in reduced_project")
 
     # GC = loader.initialize()
     GC = loader.initialize_reduced_service()

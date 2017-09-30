@@ -71,6 +71,7 @@ class CommonLoader:
 
         co = self.module.ContextOptions()
         self.context_args.initialize(co)
+        co.max_num_threads = args.mcts_threads
 
         opt = self.module.PythonOptions()
         opt.seed = args.seed

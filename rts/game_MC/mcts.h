@@ -63,21 +63,28 @@ public:
     using State = MCTSReducedState;
     using FullState = RTSState;
 
-    void SetAI(AI *ai) { ai_ = ai; }
+    void SetAI(AI *ai) { 
+        ai_ = ai; 
+        // cout << "[this=]" << hex << this << dec << " Set ai address to " << hex << ai_ << dec << endl;
+    }
 
     MCTSReducedState &operator=(const FullState &state) {
+        // cout << "[this=]" << hex << this << dec << endl;
+        assert(ai_);
         auto &ai = ai_->project;
         ai.Act(state, &s_.state, nullptr);
         return *this;
     }
 
     bool evaluate() {
+        assert(ai_);
         auto &ai = ai_->predict;
         if (! ai.Act(s_.state, &pred_, nullptr)) return false;
         return true;
     }
 
     bool forward(const Action &a) {
+        assert(ai_);
         s_.action = a;
         auto &ai = ai_->forward;
         if (! ai.Act(s_, &s_.state, nullptr)) return false;
@@ -95,5 +102,15 @@ protected:
 };
 
 // using MCTSRTSAI = elf::MCTSAI_T<MCTSState>;
-using MCTSRTSReducedAI = elf::MCTSAI_Embed_T<RTSState, RTSMCAction, MCTSReducedState>;
+class MCTSRTSReducedAI : public elf::MCTSAI_Embed_T<RTSState, RTSMCAction, MCTSReducedState> {
+public:
+    using BaseClass = elf::MCTSAI_Embed_T<RTSState, RTSMCAction, MCTSReducedState>;
+
+    MCTSRTSReducedAI(const mcts::TSOptions &options) : BaseClass(options) { }
+
+    bool Act(const RTSState &s, RTSMCAction *a, const std::atomic_bool *done) override {
+        a->Init(id(), name());
+        return BaseClass::Act(s, a, done);
+    }
+};
 

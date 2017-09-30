@@ -29,7 +29,7 @@ private:
 
     std::vector<std::unique_ptr<Context::AIComm>> _ai_comms;
 
-    void initialize_ai_comm(Context::AIComm &ai_comm);
+    void initialize_ai_comm(Context::AIComm &ai_comm, const std::map<std::string, int> *more_params);
 
 public:
     explicit WrapperCallbacks(int game_idx, const ContextOptions &context_options, const PythonOptions &options, Context::Comm *comm)
@@ -37,6 +37,7 @@ public:
     }
 
     void OnGameOptions(RTSGameOptions *rts_options);
-    void OnGameInit(RTSGame *game);
+    void OnGameInit(RTSGame *game, const std::map<std::string, int> *more_params);
+
     void OnEpisodeStart(int k, std::mt19937 *rng, RTSGame *game);
 };

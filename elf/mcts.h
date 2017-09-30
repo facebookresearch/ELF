@@ -19,24 +19,25 @@ public:
 
     MCTSStateMT_T() { }
 
-    void SetThreadAIs(const vector<AI *>& ai) {
-        ai_ = ai;
-        thread_id_ = 0;
+    void SetThreadAIs(const vector<AI *>& ais) {
+        ais_ = ais;
+        set_thread(0);
     }
 
-    MCTSStateMT &operator=(const State &state) {
+    template <typename U>
+    MCTSStateMT &operator=(const U &state) {
         *((State *)this) = state;
         return *this;
     }
 
     void set_thread(int i) { 
         thread_id_ = i; 
-        this->SetAI(ai_[thread_id_]);
+        this->SetAI(ais_[thread_id_]);
     }
 
 private:
-    vector<AI *> ai_;
-    int thread_id_;
+    vector<AI *> ais_;
+    int thread_id_ = -1;
 };
 
 // 
@@ -63,17 +64,25 @@ public:
         ai_comms_.clear();
 
         vector<AI *> ai_dup;
-
         for (int i = 0; i < options.num_threads; ++i) {
             ai_comms_.emplace_back(ai_comm_->Spawn(i));
             ai_.emplace_back(new AI());
             ai_.back()->InitAIComm(ai_comms_.back().get());
             ai_dup.emplace_back(ai_.back().get());
         }
+        // cout << "#ai = " << ai_dup.size() << endl;
         mcts_state_.SetThreadAIs(ai_dup);
+
+        // cout << "Done with MCTSAI_T::InitAIComm" << endl;
     } 
 
     bool Act(const State &s, Action *a, const std::atomic_bool *done) override {
+        mcts_state_ = s;
+        return mcts_ai_.Act(mcts_state_, a, done);
+    }
+
+    template <typename U>
+    bool ActOnOtherType(const U &s, Action *a, const std::atomic_bool *done) {
         mcts_state_ = s;
         return mcts_ai_.Act(mcts_state_, a, done);
     }
@@ -106,17 +115,14 @@ public:
     }
 
     bool Act(const S &s, A *a, const std::atomic_bool *done) override {
-        low_state_ = s;
         LowAction low_a;
-        if (! mcts_embed_ai_.Act(low_state_, &low_a, done)) return false;
+        if (! mcts_embed_ai_.ActOnOtherType(s, &low_a, done)) return false;
         *a = low_a;
         return true;
     }
 
 protected:
     MCTSAI_low mcts_embed_ai_; 
-    LowState low_state_;
-
 };
 
 } // namespace elf

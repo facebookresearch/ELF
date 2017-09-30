@@ -34,6 +34,6 @@ public:
     }
 
     void OnGameOptions(RTSGameOptions *rts_options);
-    void OnGameInit(RTSGame *game);
+    void OnGameInit(RTSGame *game, const std::map<std::string, int> *more_params);
     void OnEpisodeStart(int k, std::mt19937 *rng, RTSGame *game);
 };

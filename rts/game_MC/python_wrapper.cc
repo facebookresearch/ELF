@@ -45,8 +45,9 @@ public:
 
     void Start() {
         _context->Start(
-            [&](int game_idx, const ContextOptions &context_options, const PythonOptions &options, const std::atomic_bool &done, Comm *comm) {
-                    _wrapper.thread_main(game_idx, context_options, options, done, comm);
+            [this](int game_idx, const ContextOptions &context_options, const PythonOptions &options, const std::atomic_bool &done, Comm *comm) {
+                    auto params = this->GetParams();
+                    this->_wrapper.thread_main(game_idx, context_options, options, done, &params, comm);
             });
     }
 
@@ -59,7 +60,8 @@ public:
             { "max_unit_cmd", _context->options().max_unit_cmd },
             { "map_x", _context->options().map_size_x },
             { "map_y", _context->options().map_size_y },
-            { "num_cmd_type", CmdInput::CI_NUM_CMDS }
+            { "num_cmd_type", CmdInput::CI_NUM_CMDS },
+            { "reduced_dim", _reduced_size }
         };
     }
 
