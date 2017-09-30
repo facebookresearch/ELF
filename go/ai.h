@@ -6,3 +6,4 @@
 
 using AI = elf::AI_T<GoState, Coord>;
 using AIWithComm = elf::AIWithCommT<GoState, Coord, AIComm>;
+using AIHoldStateWithComm = elf::AIHoldStateWithCommT<GoState, Coord, AIComm>;

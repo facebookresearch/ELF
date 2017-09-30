@@ -16,6 +16,7 @@
 #include "ai.h"
 #include "go_game_specific.h"
 #include "go_state.h"
+#include "offpolicy_loader.h"
 #include <random>
 #include <map>
 
@@ -26,10 +27,11 @@ private:
     uint64_t _seed = 0;
     GameOptions _options;
 
-    std::vector<std::unique_ptr<AI>> _ais;
+    std::vector<std::unique_ptr<OfflineLoader>> _loaders;
     int _curr_loader_idx;
     std::mt19937 _rng;
-    
+
+    std::unique_ptr<AI> _ai;
     // Only used when we want to run online 
     GoState _state;
 

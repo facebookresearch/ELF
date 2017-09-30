@@ -8,9 +8,9 @@ using namespace std;
 
 using RBuffer = SharedReplayBuffer<std::string, Sgf>;
 
-class OfflineLoader : public AIWithComm {
+class OfflineLoader : public AIHoldStateWithComm {
 public:
-    using Data = AIWithComm::Data;
+    using Data = AIHoldStateWithComm::Data;
 
 public:
     OfflineLoader(const GameOptions &options, int seed);
@@ -20,8 +20,6 @@ protected:
     // Shared buffer for OfflineLoader.
     static std::unique_ptr<RBuffer> _rbuffer;
     static std::unique_ptr<TarLoader> _tar_loader;
-
-    GoState _state;
 
     Sgf::SgfIterator _sgf_iter;
     string _list_filename;
@@ -43,17 +41,13 @@ protected:
     bool need_reload() const;
     void reload();
 
-    void before_act(elf::Tick, const std::atomic_bool *done) override { 
+    void before_act(const std::atomic_bool *done) override { 
         if (! ready(done)) return;
         if (s().JustStarted()) ai_comm()->Restart();
     }
 
     void extract(Data *data) override;
     bool handle_response(const Data &data, Coord *c) override;
-    void on_set_state() override {
-        cout << "OfflineLoader does not have SetState!" << endl;
-        throw std::range_error("OfflineLoader has no SetState()");
-    }
 
     bool ready(const std::atomic_bool *done);
 

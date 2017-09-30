@@ -52,7 +52,6 @@ public:
     using MCTSAI_Internal = MCTSAI_Internal_T<MCTSStateMT, Action>; 
 
     MCTSAI_T(const mcts::TSOptions &options) : mcts_ai_(options), ai_comm_(nullptr) {
-        mcts_ai_.SetState(mcts_state_);
     }
 
     void InitAIComm(AIComm *ai_comm) {
@@ -74,14 +73,9 @@ public:
         mcts_state_.SetThreadAIs(ai_dup);
     } 
 
-protected:
-    void on_set_state() override {
-        // left the state to MCTSStateMT.
-        mcts_state_ = this->s();
-    }
-
-    bool on_act(Tick t, Action *a, const std::atomic_bool *done) override {
-        return mcts_ai_.Act(t, a, done);
+    bool Act(const State &s, Action *a, const std::atomic_bool *done) override {
+        mcts_state_ = s;
+        return mcts_ai_.Act(mcts_state_, a, done);
     }
 
 private:
@@ -105,25 +99,20 @@ public:
     using LowAction = typename LowStateWithAI::Action;
 
     MCTSAI_Embed_T(const mcts::TSOptions &options) : mcts_embed_ai_(options) { 
-        mcts_embed_ai_.SetState(low_state_);
+    }
+
+    bool Act(const S &s, A *a, const std::atomic_bool *done) override {
+        low_state_ = s;
+        LowAction low_a;
+        if (! mcts_embed_ai_.Act(low_state_, &low_a, done)) return false;
+        *a = low_a;
+        return true;
     }
 
 protected:
     MCTSAI_low mcts_embed_ai_; 
     LowState low_state_;
 
-    void on_set_state() override {
-        // Convert the full state to LowState.
-        // Note that MCTS engine has already linked to this state so it can run.
-        low_state_ = this->s();
-    }
-
-    bool on_act(Tick t, A *a, const std::atomic_bool *done) override {
-        LowAction low_a;
-        if (! mcts_embed_ai_.Act(t, &low_a, done)) return false;
-        *a = low_a;
-        return true;
-    }
 };
 
 } // namespace elf

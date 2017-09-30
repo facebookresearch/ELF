@@ -17,8 +17,7 @@ public:
     void SetAI(AI *ai) { ai_ = ai; }
 
     bool evaluate() {
-        ai_->SetState(*this);
-        if (! ai_->Act(0, nullptr, nullptr)) return false;
+        if (! ai_->Act(*this, nullptr, nullptr)) return false;
         ai_->get_last_pi(&pi_);
         value_ = ai_->get_last_value();
         return true;
