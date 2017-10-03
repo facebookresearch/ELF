@@ -24,7 +24,7 @@ class Sampler:
                 ("sample_policy", dict(type=str, choices=["epsilon-greedy", "multinomial", "uniform"], help="Sample policy", default="epsilon-greedy")),
                 ("greedy", dict(action="store_true")),
                 ("epsilon", dict(type=float, help="Used in epsilon-greedy approach", default=0.00)),
-                ("sample_nodes", dict(type=str, help=";-separated nodes to be sampled and saved", default="pi,a"))
+                ("sample_nodes", dict(type=str, help=";-separated nodes to be sampled and saved", default="pi,a")),
             ],
             on_get_args = self._on_get_args,
         )
