@@ -14,8 +14,8 @@
 #include "engine/cmd_specific.gen.h"
 #include "cmd_specific.gen.h"
 #include "rule_ai.h"
-#include "mcts.h"
 #include "mixed_ai.h"
+#include "trainable_ai.h"
 
 static AI *get_ai(const PythonOptions &options, const AIOptions &opt, Context::AIComm *ai_comm) {
     // std::cout << "AI type = " << ai_type << " Backup AI type = " << backup_ai_type << std::endl;
@@ -27,20 +27,6 @@ static AI *get_ai(const PythonOptions &options, const AIOptions &opt, Context::A
 
         MixedAI *ai = new MixedAI(opt);
         ai->SetMainAI(main_ai);
-        return ai;
-    /*
-    } else if (opt.type == "AI_MCTS") {
-        mcts::TSOptions opt;
-        opt.num_threads = options.mcts_threads;
-        MCTSRTSAI *ai = new MCTSRTSAI(opt);
-        ai->InitAIComm(ai_comm);
-        return ai;
-    */
-    } else if (opt.type == "AI_REDUCED_MCTS") {
-        mcts::TSOptions opt;
-        opt.num_threads = options.mcts_threads;
-        MCTSRTSReducedAI *ai = new MCTSRTSReducedAI(opt);
-        ai->InitAIComm(ai_comm);
         return ai;
     } else {
         cout << "Unknown opt.type: " + opt.type << endl;

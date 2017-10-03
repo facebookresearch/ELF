@@ -5,13 +5,13 @@ using namespace std::chrono;
 
 RTSState::RTSState() {
     _env.InitGameDef();
-    // TODO Need to add players accordingly. 
+    // TODO Need to add players accordingly.
     _env.ClearAllPlayers();
 }
 
-void RTSState::OnAddPlayer(int player_id) {
+void RTSState::OnAddPlayer(const string &name, int player_id) {
     (void)player_id;
-    _env.AddPlayer(PV_KNOW_ALL);
+    _env.AddPlayer(name, PV_KNOW_ALL);
 }
 
 void RTSState::OnRemovePlayer(int player_id) {
@@ -139,7 +139,7 @@ elf::GameResult RTSState::PostAct() {
     // cout << "Compute Fow" << endl;
     _env.ComputeFOW();
 
-    // Check winner. 
+    // Check winner.
     PlayerId winner_id = _env.GetGameDef().CheckWinner(_env, _cmd_receiver.GetTick() >= _max_tick);
     _env.SetWinnerId(winner_id);
 
@@ -149,10 +149,11 @@ elf::GameResult RTSState::PostAct() {
     // Check winning condition
     if (winner_id != INVALID || t >= _max_tick || ! run_normal) {
         _env.SetTermination();
-        _cmd_receiver.GetGameStats().SetWinner(winner_id);
-        return run_normal ? elf::GAME_END : elf::GAME_ERROR; 
-    } 
-    
+        std::string player_name = (winner_id == INVALID ? "failed" : _env.GetPlayer(winner_id).GetName());
+        _cmd_receiver.GetGameStats().SetWinner(player_name, winner_id);
+        return run_normal ? elf::GAME_END : elf::GAME_ERROR;
+    }
+
     return elf::GAME_NORMAL;
 }
 

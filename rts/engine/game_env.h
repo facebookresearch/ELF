@@ -100,7 +100,7 @@ public:
     void Reset();
 
     // Add and remove players.
-    void AddPlayer(PlayerPrivilege pv);
+    void AddPlayer(const std::string &name, PlayerPrivilege pv);
     void RemovePlayer();
 
     int GetNumOfPlayers() const { return _players.size(); }
@@ -163,8 +163,14 @@ public:
     bool FindClosestPlaceWithDistance(const PointF &p, int l1_radius,
             const vector<const Unit *>& units, PointF *res_p) const;
 
-    const Player &GetPlayer(PlayerId player_id) const { return _players[player_id]; }
-    Player &GetPlayer(PlayerId player_id) { return _players[player_id]; }
+    const Player &GetPlayer(PlayerId player_id) const {
+      assert(player_id >= 0 && player_id < (int)_players.size());
+      return _players[player_id];
+    }
+    Player &GetPlayer(PlayerId player_id) {
+      assert(player_id >= 0 && player_id < (int)_players.size());
+      return _players[player_id];
+    }
 
     // Add and remove units.
     bool AddUnit(Tick tick, UnitType type, const PointF &p, PlayerId player_id);

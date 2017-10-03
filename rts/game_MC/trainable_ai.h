@@ -16,11 +16,6 @@ public:
 
     bool GameEnd(const State &) override;
 
-    void get_last_pred(ReducedPred *pred) const {
-        const auto& gs = ai_comm()->info().data.newest();
-        pred->SetPiAndV(gs.pi, gs.V);
-    }
-
 protected:
     const bool _respect_fow;
 

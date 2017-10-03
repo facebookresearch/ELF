@@ -18,6 +18,10 @@ class CommonLoader:
                 ("max_tick", dict(type=int, default=30000, help="Maximal tick")),
                 ("shuffle_player", dict(action="store_true")),
                 ("mcts_threads", 64),
+                ("mcts_rollout_per_thread", 50),
+                ("mcts_verbose", dict(action="store_true")),
+                ("mcts_baseline",  3.0),
+                ("mcts_baseline_sigma", 0.3),
                 ("num_frames_in_state", 1),
                 ("max_unit_cmd", 1),
                 ("seed", 0),
@@ -78,7 +82,8 @@ class CommonLoader:
         opt.shuffle_player = args.shuffle_player
         opt.mcts_threads = args.mcts_threads
         opt.max_unit_cmd = args.max_unit_cmd
-        opt.mcts_rollout_per_thread = 50
+        opt.mcts_rollout_per_thread = args.mcts_rollout_per_thread
+        opt.mcts_verbose = args.mcts_verbose
         opt.max_tick = args.max_tick
         # [TODO] Put it to TD.
         opt.handicap_level = args.handicap_level
@@ -103,6 +108,14 @@ class CommonLoader:
         params["rts_engine_version"] = GC.Version()
 
         return co, GC, params
+
+    @abc.abstractmethod
+    def _get_train_spec(self):
+        pass
+
+    @abc.abstractmethod
+    def _get_actor_spec(self):
+        pass
 
     @abc.abstractmethod
     def _get_train_spec(self):
@@ -181,6 +194,8 @@ class CommonLoader:
         desc["reduced_project"] = self._get_reduced_project()
         desc["reduced_forward"] = self._get_reduced_forward()
         desc["reduced_predict"] = self._get_reduced_predict()
+
+        self.more_labels.add_labels(desc)
 
         return GCWrapper(GC, co, desc, gpu=args.gpu, use_numpy=False, params=params)
 
