@@ -15,6 +15,7 @@
 #include <chrono>
 #include <thread>
 #include <string>
+#include "selene.h"
 
 using namespace std::chrono;
 
@@ -388,4 +389,3 @@ PlayerId RTSStateExtend::Step(int num_ticks, std::string *state) {
     return INVALID;
 }
 */
-

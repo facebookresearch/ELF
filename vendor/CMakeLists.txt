@@ -25,6 +25,11 @@ target_include_directories(json SYSTEM INTERFACE
 	 $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>
 )
 
+add_library(selene INTERFACE)
+target_include_directories(selene SYSTEM INTERFACE
+	 $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>
+)
+
 add_library(microtar INTERFACE)
 target_sources(microtar INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/microtar.c)
 target_include_directories(microtar SYSTEM INTERFACE
