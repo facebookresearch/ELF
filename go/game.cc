@@ -36,8 +36,7 @@ void GoGame::Init(AIComm *ai_comm) {
     if (_options.online) {
         if (_options.use_mcts) {
             mcts::TSOptions options;
-            auto *ai = new MCTSGoAI(options);
-            ai->InitAIComm(ai_comm);
+            auto *ai = new MCTSGoAI(ai_comm, options);
             _ai.reset(ai);
         } else {
             auto *ai = new DirectPredictAI();

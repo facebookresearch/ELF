@@ -2,6 +2,7 @@
 #include <vector>
 #include <atomic>
 #include <memory>
+#include <typeinfo>
 
 namespace elf {
 
@@ -28,6 +29,10 @@ public:
     GameBaseT(S &s) : _state(s) { }
 
     void AddBot(AI *bot, Tick frame_skip) {
+        AddBot(bot, typeid(bot).name(), frame_skip);
+    }
+
+    void AddBot(AI *bot, const string &name, Tick frame_skip) {
         if (bot == nullptr) {
             std::cout << "Bot at " << _bots.size() << " cannot be nullptr" << std::endl;
             return;
@@ -35,7 +40,7 @@ public:
         bot->SetId(_bots.size());
         _bots.emplace_back(bot);
         _frame_skips.emplace_back(frame_skip);
-        _state.OnAddPlayer(_bots.size() - 1);
+        _state.OnAddPlayer(name, _bots.size() - 1);
     }
 
     void RemoveBot() {
@@ -60,7 +65,7 @@ public:
             auto t = _state.GetTick();
             for (size_t i = 0; i < _bots.size(); ++i) {
                 AI *bot = _bots[i].get();
-                if (t % _frame_skips[i] == 0) { 
+                if (t % _frame_skips[i] == 0) {
                     typename AI::Action actions;
                     bot->Act(_state, &actions, done);
                     _state.forward(actions);

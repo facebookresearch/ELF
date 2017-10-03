@@ -105,6 +105,14 @@ class Batch:
             else:
                 raise KeyError("Batch(): specified key: %s or %s not found!" % (key, key_with_last))
 
+    def add(self, key, value):
+        '''
+        Add key=value in Batch. This is used when you want to send additional state to the
+        learning algorithm, e.g., hidden state collected from the previous iterations.
+        '''
+        self.batch[key] = value
+        return self
+
     def __contains__(self, key):
         return key in self.batch or "last_" + key in self.batch
 
@@ -231,11 +239,12 @@ class GCWrapper:
             gstat.hist_len = T
 
             gstat.name = v.get("name", "")
-            print("Deal with connector. key = %s, info = %s" % (key, gstat.info()))
+            timeout_usec = v.get("timeout_usec", 0)
+            print("Deal with connector. key = %s, batchsize = %d, info = %s" % (key, batchsize, gstat.info()))
 
             gpu2gid.append(list())
             for i in range(num_recv_thread):
-                group_id = GC.AddCollectors(batchsize, len(gpu2gid) - 1, gstat)
+                group_id = GC.AddCollectors(batchsize, len(gpu2gid) - 1, timeout_usec, gstat)
 
                 inputs.append(Batch.load(GC, "input", input, group_id, use_gpu=use_gpu, use_numpy=use_numpy))
                 if reply is not None:

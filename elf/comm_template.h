@@ -71,7 +71,7 @@ struct CondPerGroupT {
         // from what is specified, then we skip.
         const auto &record = info.data.newest();
         if (! check_name(gstat, record)) return false;
-        
+
         // std::cout << "Check " << gstat.info() << " record.name = " << record.name << std::endl;
 
         // Update game counter.
@@ -167,8 +167,9 @@ public:
         init_stats();
     }
 
-    int AddCollectors(int batchsize, int exclusive_id, const GroupStat &gstat) {
-        _groups.emplace_back(new CollectorGroup(_groups.size(), _keys, batchsize, _signal.get(), _context_options.verbose_collector));
+    int AddCollectors(int batchsize, int exclusive_id, int timeout_usec, const GroupStat &gstat) {
+        _groups.emplace_back(new CollectorGroup(_groups.size(), _keys, batchsize, _signal.get(),
+                    _context_options.verbose_collector, timeout_usec));
         int gid = _groups.size() - 1;
 
         if ((int)_exclusive_groups.size() <= exclusive_id) {
@@ -376,6 +377,7 @@ public:
         });
 
         // First set all batchsize to be 1.
+        std::cout << "Prepare to stop ..." << std::endl;
         _comm.PrepareStop();
 
         // Then stop all game threads.
@@ -388,6 +390,7 @@ public:
         std::cout << "Stop all collectors ..." << std::endl;
         _comm.Stop();
 
+        std::cout << "Stop tmp pool..." << std::endl;
         tmp_thread_done = true;
         tmp_pool.stop();
         _game_started = false;

@@ -56,8 +56,8 @@ void register_common_func(py::module &m) {
   std::string Version() const { return context->Version(); } \
   void PrintSummary() const { context->PrintSummary(); } \
   GroupStat CreateGroupStat() const { return GroupStat(); } \
-  int AddCollectors(int batchsize, int exclusive_id, const GroupStat &gstat) { \
-    return context->comm().AddCollectors(batchsize, exclusive_id, gstat); \
+  int AddCollectors(int batchsize, int exclusive_id, int timeout_usec, const GroupStat &gstat) { \
+    return context->comm().AddCollectors(batchsize, exclusive_id, timeout_usec, gstat); \
   } \
   int size() const { return context->size(); } \
   EntryInfo GetTensorSpec(int gid, const std::string &key, int T) { \

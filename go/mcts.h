@@ -3,35 +3,32 @@
 #include "elf/mcts.h"
 #include "go_ai.h"
 
-class MCTSGoState : public GoState {
+class MCTSActor {
 public:
     using AI = DirectPredictAI;
     using Action = Coord;
     using State = GoState;
+    using NodeResponse = mcts::NodeResponseT<Action>;
 
-    MCTSGoState &operator=(const State &state) {
-        *((State *)this) = state;
-        return *this;
+    MCTSActor(AI *ai) { ai_ = ai; }
+
+    NodeResponse &evaluate(const GoState &s) {
+        ai_->Act(s, nullptr, nullptr);
+        ai_->get_last_pi(&resp_.pi);
+        resp_.value = ai_->get_last_value();
+        return resp_;
     }
 
-    void SetAI(AI *ai) { ai_ = ai; }
-
-    bool evaluate() {
-        if (! ai_->Act(*this, nullptr, nullptr)) return false;
-        ai_->get_last_pi(&pi_);
-        value_ = ai_->get_last_value();
-        return true;
+    bool forward(GoState &s, Coord a) {
+        return s.forward(a);
     }
 
-    const vector<pair<Action, float>> &pi() const { return pi_; }
-    float value() const { return value_; }
-    float reward() const { return value_; }
+    string info() const { return string(); }
 
 protected:
-    vector<pair<Action, float>> pi_;
-    float value_ = 0.0;
+    NodeResponse resp_; 
     AI *ai_ = nullptr;
 };
 
-using MCTSGoAI = elf::MCTSAI_T<MCTSGoState>;
+using MCTSGoAI = elf::MCTSAIWithCommT<MCTSActor, AIComm>;
 

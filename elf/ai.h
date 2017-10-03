@@ -33,10 +33,11 @@ public:
 
     virtual bool GameEnd(const S &) { return true; }
 
-protected:
+private:
     const std::string _name;
     int _id;
 
+protected:
     virtual void on_set_id() { }
 };
 
