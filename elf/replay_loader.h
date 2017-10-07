@@ -54,4 +54,7 @@ protected:
     virtual K get_key() = 0;
 };
 
+template <typename K, typename Record>
+std::unique_ptr<SharedReplayBuffer<K, Record>> ReplayLoaderT<K, Record>::_rbuffer;
+
 }  // namespace elf
