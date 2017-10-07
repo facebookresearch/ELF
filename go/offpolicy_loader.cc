@@ -10,6 +10,7 @@ string OfflineLoader::_path;
 
 OfflineLoader::OfflineLoader(const GameOptions &options, int seed)
     : _options(options), _game_loaded(0), _rng(seed) {
+      ReplayLoader::Init();
 }
 
 void OfflineLoader::InitSharedBuffer(const std::string &list_filename) {
@@ -98,7 +99,7 @@ std::string OfflineLoader::get_key() {
 }
 
 bool OfflineLoader::need_reload(const Sgf::iterator &it) const {
-   return (it.done() || it.StepLeft() < _options.num_future_actions 
+   return (it.done() || it.StepLeft() < _options.num_future_actions
             || (_options.move_cutoff >= 0 && it.GetCurrIdx() >= _options.move_cutoff));
 }
 

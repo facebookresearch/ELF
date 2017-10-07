@@ -13,16 +13,11 @@ public:
     using RBuffer = SharedReplayBuffer<K, Record>;
     using GenFunc = typename RBuffer::GenFunc;
 
-private:
-    // Shared buffer for OfflineLoader.
-    static std::unique_ptr<RBuffer> _rbuffer;
-
-    RIterator _it;
-
-public:
     static void Init(GenFunc func) {
         _rbuffer.reset(new RBuffer(func));
     }
+
+    void Init() { reload(); }
 
     const RIterator &curr() const { return _it; }
 
@@ -36,6 +31,11 @@ public:
     }
 
 private:
+    // Shared buffer for OfflineLoader.
+    static std::unique_ptr<RBuffer> _rbuffer;
+
+    RIterator _it;
+
     void reload() {
         while (true) {
             K k = get_key();
