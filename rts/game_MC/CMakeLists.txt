@@ -1,7 +1,7 @@
 add_rts_command_gen(${CMAKE_CURRENT_SOURCE_DIR}/cmd_specific minirts_specific)
 
 # don't build python stuff together with the game, so we list the sources manually
-set(SOURCES ai.cc game_action.cc reduced_ai.cc trainable_ai.cc cmd_specific.cc gamedef.cc mc_rule_actor.cc state_extract.cc)
+set(SOURCES ai.cc game_action.cc trainable_ai.cc cmd_specific.cc gamedef.cc mc_rule_actor.cc state_extract.cc)
 prepend_each(SOURCES ${CMAKE_CURRENT_SOURCE_DIR} ${SOURCES})
 
 add_library(minirts-game INTERFACE)

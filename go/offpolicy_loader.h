@@ -1,32 +1,26 @@
 #pragma once
 
-#include "elf/shared_replay_buffer.h"
+#include "elf/replay_loader.h"
 #include "elf/tar_loader.h"
 #include "ai.h"
 
 using namespace std;
 
-using RBuffer = SharedReplayBuffer<std::string, Sgf>;
-
-class OfflineLoader : public AIHoldStateWithComm {
+class OfflineLoader : public elf::ReplayLoaderT<std::string, Sgf>, public AIHoldStateWithComm {
 public:
-    using Data = AIHoldStateWithComm::Data;
+    using Data = typename AIHoldStateWithComm::Data;
+    using ReplayLoader = elf::ReplayLoaderT<std::string, Sgf>; 
 
 public:
     OfflineLoader(const GameOptions &options, int seed);
     static void InitSharedBuffer(const std::string &list_filename);
 
 protected:
-    // Shared buffer for OfflineLoader.
-    static std::unique_ptr<RBuffer> _rbuffer;
-    static std::unique_ptr<TarLoader> _tar_loader;
-
-    Sgf::SgfIterator _sgf_iter;
-    string _list_filename;
-    string _path;
-
     // Database
-    vector<string> _games;
+    static std::unique_ptr<TarLoader> _tar_loader;
+    static vector<string> _games;
+    static string _list_filename;
+    static string _path;
 
     GameOptions _options;
 
@@ -35,26 +29,27 @@ protected:
     int _game_loaded;
     std::mt19937 _rng;
 
-    bool next_move();
-    const Sgf &pick_sgf();
-    void reset(const Sgf &sgf);
-    bool need_reload() const;
-    void reload();
+    // Virtual function for ReplayLoader:
+    std::string get_key() override;
+    bool before_next_action(const Sgf::iterator &it) override;
+    bool after_reload(const std::string &full_name, Sgf::iterator &it) override;
 
-    void before_act(const std::atomic_bool *done) override { 
-        if (! ready(done)) return;
+    // Helper function.
+    bool need_reload(const Sgf::iterator &it) const;
+
+    // Virtual function for AIHoldStateWithComm
+    void before_act(const std::atomic_bool *) override { 
         if (s().JustStarted()) ai_comm()->Restart();
     }
 
     void extract(Data *data) override;
     bool handle_response(const Data &data, Coord *c) override;
 
-    bool ready(const std::atomic_bool *done);
-
     std::string info() const {
         std::stringstream ss;
-        Coord m = _sgf_iter.GetCoord();
-        ss << _sgf_iter.GetCurrIdx() << "/" << _sgf_iter.GetSgf().NumMoves() << ": " << coord2str(m) << ", " << coord2str2(m) << " (" << m << ")" << std::endl;
+        const auto &it = this->curr();
+        Coord m = it.GetCoord();
+        ss << it.GetCurrIdx() << "/" << it.GetSgf().NumMoves() << ": " << coord2str(m) << ", " << coord2str2(m) << " (" << m << ")" << std::endl;
         return ss.str();
     }
 

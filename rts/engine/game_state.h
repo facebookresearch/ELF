@@ -25,8 +25,8 @@ public:
         _env.LoadSnapshot(loader);
         _cmd_receiver.LoadCmdReceiver(loader);
     }
-    
-    // Copy construct. 
+
+    // Copy construct.
     RTSState &operator=(const RTSState &s) {
         string str;
         s.Save(&str);
@@ -59,7 +59,7 @@ public:
 
     Tick GetTick() const { return _cmd_receiver.GetTick(); }
 
-    void SetGlobalStats(GlobalStats *stats) { 
+    void SetGlobalStats(GlobalStats *stats) {
         _cmd_receiver.GetGameStats().SetGlobalStats(stats);
     }
     void SetVerbose(bool verbose) { _verbose = verbose; }
@@ -76,7 +76,7 @@ public:
 
     virtual bool Reset();
 
-    virtual void OnAddPlayer(int player_id);
+    virtual void OnAddPlayer(const std::string &name, int player_id);
     virtual void OnRemovePlayer(int player_id);
 
 private:

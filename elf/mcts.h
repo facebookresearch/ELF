@@ -1,128 +1,123 @@
 #pragma once
-
-#include "tree_search.h"
-#include "mcts_ai.h"
+#include <vector>
+#include <string>
+#include <iostream>
+#include <atomic>
 #include <type_traits>
+#include "tree_search.h"
 #include "member_check.h"
+#include "ai.h"
 
 namespace elf {
 
 using namespace std;
 
-template <typename StateWithAI>
-class MCTSStateMT_T : public StateWithAI {
+template <typename Actor>
+class MCTSAI_T : public AI_T<typename Actor::State, typename Actor::Action> {
 public:
-    using AI = typename StateWithAI::AI;
-    using MCTSStateMT = MCTSStateMT_T<StateWithAI>;
-    using State = typename StateWithAI::State;
-    using Action = typename StateWithAI::Action;
+    using AI = typename Actor::AI;
+    using State = typename Actor::State;
+    using Action = typename Actor::Action;
 
-    MCTSStateMT_T() { }
+    using MCTSAI = MCTSAI_T<Actor>;
+    using TreeSearch = mcts::TreeSearchT<State, Action, Actor>;
 
-    void SetThreadAIs(const vector<AI *>& ais) {
-        ais_ = ais;
-        set_thread(0);
+    MCTSAI_T(const mcts::TSOptions &options, std::function<Actor (int)> gen) : options_(options) {
+        ts_.reset(new TreeSearch(options_, gen));
     }
 
-    template <typename U>
-    MCTSStateMT &operator=(const U &state) {
-        *((State *)this) = state;
-        return *this;
-    }
+    const mcts::TSOptions &options() const { return options_; }
+    TreeSearch *GetEngine() { return ts_.get(); }
 
-    void set_thread(int i) { 
-        thread_id_ = i; 
-        this->SetAI(ais_[thread_id_]);
+    bool Act(const State &s, Action *a, const std::atomic_bool *) override {
+        pass_opponent_moves(s);
+        pair<Action, float> res = ts_->Run(s);
+        *a = res.first;
+        ts_->TreeAdvance(*a);
+        return true;
     }
 
 private:
-    vector<AI *> ais_;
-    int thread_id_ = -1;
+    mcts::TSOptions options_;
+    unique_ptr<TreeSearch> ts_;
+
+    MEMBER_FUNC_CHECK(last_opponent_moves)
+    template <typename S_ = State, typename std::enable_if<has_func_last_opponent_moves<S_>::value>::type *U = nullptr>
+    void pass_opponent_moves(const S_ &s) {
+        if (options_.persistent_tree) {
+            for (const Action &prev_move : s.last_opponent_moves()) {
+                ts_->TreeAdvance(prev_move);
+            }
+        } else {
+            // Clear the tree.
+            ts_->Clear();
+       }
+    }
+    template <typename S_ = State, typename std::enable_if<!has_func_last_opponent_moves<S_>::value>::type *U = nullptr>
+    void pass_opponent_moves(const S_ &) {
+        ts_->Clear();
+    }
 };
 
-// 
-template <typename StateWithAI> 
-class MCTSAI_T : public AI_T<typename StateWithAI::State, typename StateWithAI::Action> {
+template <typename Actor, typename AIComm>
+class MCTSAIWithCommT : public AI_T<typename Actor::State, typename Actor::Action> {
 public:
-    using AI = typename StateWithAI::AI;
-    using State = typename StateWithAI::State;
-    using Action = typename StateWithAI::Action;
+    using MCTSAI = MCTSAI_T<Actor>;
+    using AI = typename Actor::AI;
+    using State = typename Actor::State;
+    using Action = typename Actor::Action;
 
-    using MCTSStateMT = MCTSStateMT_T<StateWithAI>;
-    using MCTSAI = MCTSAI_T<StateWithAI>;
-    using MCTSAI_Internal = MCTSAI_Internal_T<MCTSStateMT, Action>; 
-
-    MCTSAI_T(const mcts::TSOptions &options) : mcts_ai_(options), ai_comm_(nullptr) {
-    }
-
-    void InitAIComm(AIComm *ai_comm) {
-        ai_comm_ = ai_comm;
-
+    MCTSAIWithCommT(AIComm *ai_comm, const mcts::TSOptions &options)
+        : ai_comm_(ai_comm) {
         // Construct a few DirectPredictAIs.
-        const auto &options = mcts_ai_.options();
-        ai_.clear(); 
+        ai_.clear();
         ai_comms_.clear();
 
-        vector<AI *> ai_dup;
         for (int i = 0; i < options.num_threads; ++i) {
             ai_comms_.emplace_back(ai_comm_->Spawn(i));
             ai_.emplace_back(new AI());
             ai_.back()->InitAIComm(ai_comms_.back().get());
-            ai_dup.emplace_back(ai_.back().get());
         }
-        // cout << "#ai = " << ai_dup.size() << endl;
-        mcts_state_.SetThreadAIs(ai_dup);
 
+        // cout << "#ai = " << ai_dup.size() << endl;
+        auto actor_gen = [&](int i) { return Actor(ai_[i].get()); };
         // cout << "Done with MCTSAI_T::InitAIComm" << endl;
-    } 
+        mcts_ai_.reset(new MCTSAI(options, actor_gen));
+    }
 
     bool Act(const State &s, Action *a, const std::atomic_bool *done) override {
-        mcts_state_ = s;
-        return mcts_ai_.Act(mcts_state_, a, done);
+        return mcts_ai_->Act(s, a, done);
     }
 
-    template <typename U>
-    bool ActOnOtherType(const U &s, Action *a, const std::atomic_bool *done) {
-        mcts_state_ = s;
-        return mcts_ai_.Act(mcts_state_, a, done);
-    }
+    MCTSAI *get() { return mcts_ai_.get(); }
 
-private:
-    MCTSAI_Internal mcts_ai_;
-    AIComm *ai_comm_;
-    MCTSStateMT mcts_state_;
+    bool GameEnd(const State &s) override {
+        // Send final message.
+        Action action;
+        Act(s, &action, nullptr);
 
-    vector<unique_ptr<AIComm>> ai_comms_;
-    vector<unique_ptr<AI>> ai_;
-};
-
-// S = full state
-// A = full action space.
-template <typename S, typename A, typename LowStateWithAI>
-class MCTSAI_Embed_T : public AI_T<S, A> {
-public:
-    using MCTSAI_Embed = MCTSAI_Embed_T<S, A, LowStateWithAI>;
-
-    using MCTSAI_low = MCTSAI_T<LowStateWithAI>;
-    using LowState = typename LowStateWithAI::State; 
-    using LowAction = typename LowStateWithAI::Action;
-
-    MCTSAI_Embed_T(const mcts::TSOptions &options) : mcts_embed_ai_(options) { 
-    }
-
-    void InitAIComm(AIComm *ai_comm) {
-        mcts_embed_ai_.InitAIComm(ai_comm);
-    }
-
-    bool Act(const S &s, A *a, const std::atomic_bool *done) override {
-        LowAction low_a;
-        if (! mcts_embed_ai_.ActOnOtherType(s, &low_a, done)) return false;
-        *a = low_a;
+        // Restart _ai_comm.
+        ai_comm_->Restart();
+        for (size_t i = 0; i < ai_comms_.size(); ++i) {
+            ai_comms_[i]->Restart();
+        }
         return true;
     }
 
 protected:
-    MCTSAI_low mcts_embed_ai_; 
+    void on_set_id() override {
+        for (size_t i = 0; i < ai_.size(); ++i) {
+            ai_[i]->SetId(this->id());
+        }
+    }
+
+private:
+    AIComm *ai_comm_;
+
+    vector<unique_ptr<AIComm>> ai_comms_;
+    vector<unique_ptr<AI>> ai_;
+
+    unique_ptr<MCTSAI> mcts_ai_;
 };
 
-} // namespace elf
+}  // namespace elf

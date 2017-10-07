@@ -11,6 +11,7 @@
 
 #include "comm_template.h"
 #include "hist.h"
+#include "tree_search_options.h"
 #include <pybind11/pybind11.h>
 
 namespace py = pybind11;
@@ -24,6 +25,9 @@ void register_common_func(py::module &m) {
   PYCLASS_WITH_FIELDS(m, ContextOptions)
     .def(py::init<>())
     .def("print", &ContextOptions::print);
+
+  PYCLASS_WITH_FIELDS(m, mcts::TSOptions)
+    .def(py::init<>());
 
   PYCLASS_WITH_FIELDS(m, EntryInfo)
     .def(py::init<>());
@@ -56,8 +60,8 @@ void register_common_func(py::module &m) {
   std::string Version() const { return context->Version(); } \
   void PrintSummary() const { context->PrintSummary(); } \
   GroupStat CreateGroupStat() const { return GroupStat(); } \
-  int AddCollectors(int batchsize, int exclusive_id, const GroupStat &gstat) { \
-    return context->comm().AddCollectors(batchsize, exclusive_id, gstat); \
+  int AddCollectors(int batchsize, int exclusive_id, int timeout_usec, const GroupStat &gstat) { \
+    return context->comm().AddCollectors(batchsize, exclusive_id, timeout_usec, gstat); \
   } \
   int size() const { return context->size(); } \
   EntryInfo GetTensorSpec(int gid, const std::string &key, int T) { \

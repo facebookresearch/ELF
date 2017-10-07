@@ -15,12 +15,6 @@ public:
         _action = action;
     }
 
-    // [TODO] A hack. need to do proper overloading.
-    RTSMCAction &operator=(int action) {
-        SetState9(action);
-        return *this;
-    }
-
     void SetSimpleAI() { _type = SIMPLE; }
     void SetHitAndRunAI() { _type = HIT_AND_RUN; }
 

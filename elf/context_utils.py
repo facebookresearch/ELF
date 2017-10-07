@@ -22,7 +22,12 @@ class ContextArgs:
                 ("eval", dict(action="store_true")),
                 ("wait_per_group", dict(action="store_true")),
                 ("verbose_comm", dict(action="store_true")),
-                ("verbose_collector", dict(action="store_true"))
+                ("verbose_collector", dict(action="store_true")),
+                ("mcts_threads", 64),
+                ("mcts_rollout_per_thread", 50),
+                ("mcts_verbose", dict(action="store_true")),
+                ("mcts_baseline",  3.0),
+                ("mcts_baseline_sigma", 0.3),
             ],
             on_get_args = self._on_get_args
         )
@@ -44,4 +49,15 @@ class ContextArgs:
         co.wait_per_group = args.wait_per_group
         co.verbose_comm = args.verbose_comm
         co.verbose_collector = args.verbose_collector
+
+        co.max_num_threads = args.mcts_threads
+
+        mcts = co.mcts_options
+
+        mcts.num_threads = args.mcts_threads
+        mcts.num_rollout_per_thread = args.mcts_rollout_per_thread
+        mcts.verbose = args.mcts_verbose
+        mcts.baseline = args.mcts_baseline
+        mcts.baseline_sigma = args.mcts_baseline_sigma
+
 

@@ -20,7 +20,7 @@ using NodeId = int;
 const NodeId NodeIdInvalid = -1;
 
 template<typename S, typename A>
-using ForwardFuncT = function<bool (const S &s, const A &a, S *next)>; 
+using ForwardFuncT = function<bool (const S &s, const A &a, S *next)>;
 
 template<typename S>
 using VisitFuncT = function<bool (S *s)>;

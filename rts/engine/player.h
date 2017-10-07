@@ -38,6 +38,7 @@ private:
 
     // Player information.
     PlayerId _player_id;
+    std::string _name;
 
     // Type of players, different player could have different privileges.
     PlayerPrivilege _privilege;
@@ -101,14 +102,15 @@ private:
 public:
     Player() : _map(nullptr), _player_id(INVALID), _privilege(PV_NORMAL), _resource(0) {
     }
-    Player(const RTSMap& m, int player_id)
-        : _map(&m), _player_id(player_id), _privilege(PV_NORMAL), _resource(0) {
+    Player(const RTSMap& m, const std::string &name, int player_id)
+        : _map(&m), _player_id(player_id), _name(name), _privilege(PV_NORMAL), _resource(0) {
         _fogs.assign(_map->GetPlaneSize(), Fog());
     }
 
     const RTSMap& GetMap() const { return *_map; }
     const RTSMap *ResetMap(const RTSMap *new_map) { auto tmp = _map; _map = new_map; return tmp; }
     PlayerId GetId() const { return _player_id; }
+    const std::string &GetName() const { return _name; }
     int GetResource() const { return _resource; }
 
     string Draw() const;
@@ -149,7 +151,7 @@ public:
     static PlayerId ExtractPlayerId(UnitId id) { return (id >> 24); }
     static UnitId CombinePlayerId(UnitId raw_id, PlayerId player_id) { return (raw_id & 0xffffff) | (player_id << 24); }
 
-    SERIALIZER(Player, _player_id, _privilege, _resource, _fogs, _heuristics, _cache);
+    SERIALIZER(Player, _player_id, _name, _privilege, _resource, _fogs, _heuristics, _cache);
     HASH(Player, _player_id, _privilege, _resource);
 };
 

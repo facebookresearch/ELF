@@ -47,8 +47,8 @@ void GameEnv::Reset() {
     }
 }
 
-void GameEnv::AddPlayer(PlayerPrivilege pv) {
-    _players.emplace_back(*_map, _players.size());
+void GameEnv::AddPlayer(const std::string &name, PlayerPrivilege pv) {
+    _players.emplace_back(*_map, name, _players.size());
     _players.back().SetPrivilege(pv);
 }
 

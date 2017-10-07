@@ -23,23 +23,3 @@ using Data = typename AIComm::Data;
 
 using AIWithComm = elf::AIWithCommT<RTSState, RTSMCAction, AIComm>;
 using AI = elf::AI_T<RTSState, RTSMCAction>;
-
-struct ReducedState {
-    vector<float> state;
-    int action;
-};
-
-struct ReducedPred {
-    vector<pair<int, float>> pi;
-    float value = 0;
-
-    void SetPiAndV(const vector<float>& new_pi, float new_v) {
-        pi.resize(new_pi.size());
-        for (size_t i = 0; i < new_pi.size(); ++i) {
-            pi[i].first = i;
-            pi[i].second = new_pi[i];
-        }
-        value = new_v;
-    }
-};
-

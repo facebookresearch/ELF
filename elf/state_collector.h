@@ -171,6 +171,7 @@ private:
     SyncSignal *_signal;
 
     bool _verbose;
+    int _timeout_usec;
 
     // Statistics
     int _num_enqueue;
@@ -190,8 +191,8 @@ private:
     }
 
 public:
-    CollectorGroupT(int gid, const std::vector<Key> &keys, int batchsize, SyncSignal *signal, bool verbose)
-        : _gid(gid), _batchsize(batchsize), _batch_collector(keys), _signal(signal), _verbose(verbose) {
+    CollectorGroupT(int gid, const std::vector<Key> &keys, int batchsize, SyncSignal *signal, bool verbose, int timeout_usec)
+        : _gid(gid), _batchsize(batchsize), _batch_collector(keys), _signal(signal), _verbose(verbose), _timeout_usec(timeout_usec) {
     }
 
     EntryInfo GetEntry(const std::string &key, int hist_len, EntryFunc entry_func) const {
@@ -250,7 +251,7 @@ public:
                 _batchsize_back.notify(0);
                 // std::cout << "CollectorGroup: After notification. batchsize = " << _batchsize << std::endl;
             }
-            _batch = _batch_collector.waitBatch(_batchsize);
+            _batch = _batch_collector.waitBatch(_batchsize, _timeout_usec);
             _batch_data.clear();
             for (In *b : _batch) {
                 _batch_data.push_back(&b->data);

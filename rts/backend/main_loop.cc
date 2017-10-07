@@ -295,7 +295,7 @@ void test() {
     RTSMap m;
     vector<Player> players;
     for (int i = 0; i < 2; ++i) {
-        players.emplace_back(m, i);
+        players.emplace_back(m, std::to_string(i), i);
     }
 
     serializer::saver saver(false);

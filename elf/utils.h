@@ -19,6 +19,18 @@ const typename Map::mapped_type &map_get(const Map &m, const typename Map::key_t
     else return it->second;
 }
 
+template <typename Map>
+const typename Map::mapped_type &map_inc(Map &m, const typename Map::key_type& k, const typename Map::mapped_type &default_value) {
+    auto it = m.find(k);
+    if (it == m.end()) {
+      auto res = m.insert(make_pair(k, default_value));
+      return res.first->second;
+    } else {
+      it->second ++;
+      return it->second;
+    }
+}
+
 /*
 template <typename Map>
 typename Map::mapped_type map_get(const Map &m, const typename Map::key_type& k, typename Map::mapped_type def) {

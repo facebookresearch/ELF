@@ -53,7 +53,7 @@ class CollectorWithCCQueue {
     if (it == _index_map.end()) {
         std::cout << "key [" << key << "] not found! this should never happen! " << std::endl;
         return -1;
-    }   
+    }
     return it->second;
   }
 
@@ -134,22 +134,22 @@ class CollectorWithCCQueue {
 #endif
   }
 
-  inline Value* waitOneUntil(int timeout_sec) {
+  inline std::pair<Value*, bool> waitOneUntil(int timeout_usec) {
 #ifdef USE_TBB
     int k;
     if (!Q.try_pop(k)) {
       // Sleep would not efficiently return the element.
-      std::this_thread::sleep_for(std::chrono::seconds(timeout_sec));
+      std::this_thread::sleep_for(std::chrono::microseconds(timeout_usec));
       if (!Q.try_pop(k))
-        return nullptr;
+        return std::make_pair(nullptr, false);
     }
-    return (_data[k]->val);
+    return std::make_pair(_data[k]->val, true);
 #else
     int k;
     if (Q.wait_dequeue_timed(k, timeout_sec))
-      return (_data[k]->val);
+      return std::make_pair(_data[k]->val, true);
     else
-      return nullptr;
+      return std::make_pair(nullptr, false);
 #endif
   }
 
@@ -195,13 +195,26 @@ class BatchCollectorT: public CollectorT<Key, Value> {
       CollectorT<Key, Value>{keys} {}
 
     // non reentrable
-    BatchValue waitBatch(int batch_size) {
-      while ((int)_batch.size() < batch_size) {
-        _batch.emplace_back(this->waitOne());
-      }
-      BatchValue ret;
-      ret.swap(_batch);
-      return ret;
+    BatchValue waitBatch(int batch_size, int timeout_usec = 0) {
+        if (timeout_usec == 0) {
+            while ((int)_batch.size() < batch_size) {
+                _batch.emplace_back(this->waitOne());
+            }
+        } else {
+            while ((int)_batch.size() < batch_size) {
+                Value *v = nullptr;
+                if (_batch.empty()) v = this->waitOne();
+                else {
+                   auto res = this->waitOneUntil(timeout_usec);
+                   if (! res.second) break;
+                   v = res.first;
+                }
+                _batch.emplace_back(v);
+            }
+        }
+        BatchValue ret;
+        ret.swap(_batch);
+        return ret;
     }
 
   private:

@@ -11,7 +11,7 @@
 #include "go_game_specific.h"
 #include "offpolicy_loader.h"
 #include "go_ai.h"
-#include "mcts.h"
+// #include "mcts.h"
 
 #include <fstream>
 
@@ -35,10 +35,9 @@ void GoGame::Init(AIComm *ai_comm) {
     assert(ai_comm);
     if (_options.online) {
         if (_options.use_mcts) {
-            mcts::TSOptions options;
-            auto *ai = new MCTSGoAI(options);
-            ai->InitAIComm(ai_comm);
-            _ai.reset(ai);
+            // mcts::TSOptions options;
+            // auto *ai = new MCTSGoAI(ai_comm, options);
+            // _ai.reset(ai);
         } else {
             auto *ai = new DirectPredictAI();
             ai->InitAIComm(ai_comm);
