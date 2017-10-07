@@ -11,6 +11,7 @@
 
 #include "comm_template.h"
 #include "hist.h"
+#include "tree_search_options.h"
 #include <pybind11/pybind11.h>
 
 namespace py = pybind11;
@@ -24,6 +25,9 @@ void register_common_func(py::module &m) {
   PYCLASS_WITH_FIELDS(m, ContextOptions)
     .def(py::init<>())
     .def("print", &ContextOptions::print);
+
+  PYCLASS_WITH_FIELDS(m, mcts::TSOptions)
+    .def(py::init<>());
 
   PYCLASS_WITH_FIELDS(m, EntryInfo)
     .def(py::init<>());

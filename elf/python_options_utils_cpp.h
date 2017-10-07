@@ -16,6 +16,7 @@
 #include <string>
 
 #include "pybind_helper.h"
+#include "tree_search_options.h"
 
 struct ContextOptions {
     // How many simulation threads we are running.
@@ -34,6 +35,8 @@ struct ContextOptions {
     // Whether we wait for each group or we wait jointly.
     bool wait_per_group = false;
 
+    mcts::TSOptions mcts_options;
+
     ContextOptions() {}
 
     void print() const {
@@ -43,9 +46,10 @@ struct ContextOptions {
       if (verbose_comm) std::cout << "Comm Verbose On" << std::endl;
       if (verbose_collector) std::cout << "Comm Collector On" << std::endl;
       std::cout << "Wait per group: " << (wait_per_group ? "True" : "False") << std::endl;
+      std::cout << mcts_options.info() << std::endl;
     }
 
-    REGISTER_PYBIND_FIELDS(num_games, max_num_threads, T, verbose_comm, verbose_collector, wait_per_group);
+    REGISTER_PYBIND_FIELDS(num_games, max_num_threads, T, verbose_comm, verbose_collector, wait_per_group, mcts_options);
 };
 
 inline constexpr int get_query_id(int game_id, int thread_id) {
@@ -77,7 +81,7 @@ struct MetaInfo {
         query_id = get_query_id(id, thread_id);
     }
 
-    std::string info() const { 
+    std::string info() const {
         std::stringstream ss;
         ss << "Meta: [id=" << id << "][thread_id=" << thread_id << "][query_id=" << query_id << "]";
         return ss.str();

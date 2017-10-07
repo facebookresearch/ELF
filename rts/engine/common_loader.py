@@ -17,11 +17,6 @@ class CommonLoader:
                 ("players", dict(type=str, help=";-separated player infos. For example: type=AI_NN,fs=50,args=backup/AI_SIMPLE|decay/0.99|start/1000,fow=True;type=AI_SIMPLE,fs=50")),
                 ("max_tick", dict(type=int, default=30000, help="Maximal tick")),
                 ("shuffle_player", dict(action="store_true")),
-                ("mcts_threads", 64),
-                ("mcts_rollout_per_thread", 50),
-                ("mcts_verbose", dict(action="store_true")),
-                ("mcts_baseline",  3.0),
-                ("mcts_baseline_sigma", 0.3),
                 ("num_frames_in_state", 1),
                 ("max_unit_cmd", 1),
                 ("seed", 0),
@@ -75,15 +70,11 @@ class CommonLoader:
 
         co = self.module.ContextOptions()
         self.context_args.initialize(co)
-        co.max_num_threads = args.mcts_threads
 
         opt = self.module.PythonOptions()
         opt.seed = args.seed
         opt.shuffle_player = args.shuffle_player
-        opt.mcts_threads = args.mcts_threads
         opt.max_unit_cmd = args.max_unit_cmd
-        opt.mcts_rollout_per_thread = args.mcts_rollout_per_thread
-        opt.mcts_verbose = args.mcts_verbose
         opt.max_tick = args.max_tick
         # [TODO] Put it to TD.
         opt.handicap_level = args.handicap_level
@@ -98,7 +89,12 @@ class CommonLoader:
             opt.output_filename = args.output_file.encode("ascii")
         if args.cmd_dumper_prefix is not None:
             opt.cmd_dumper_prefix = args.cmd_dumper_prefix.encode("ascii")
+
+        print("Options:")
         opt.Print()
+
+        print("ContextOptions:")
+        co.print()
 
         GC = self.module.GameContext(co, opt)
         params = GC.GetParams()
