@@ -116,10 +116,10 @@ private:
     bool load_game(const string& filename, const string& game);
 
 public:
-    class SgfIterator {
+    class iterator {
       public:
-          SgfIterator() : _curr(nullptr), _sgf(nullptr), _move_idx(-1) { }
-          SgfIterator(const Sgf &sgf) : _curr(sgf._root.get()), _sgf(&sgf), _move_idx(0) { }
+          iterator() : _curr(nullptr), _sgf(nullptr), _move_idx(-1) { }
+          iterator(const Sgf &sgf) : _curr(sgf._root.get()), _sgf(&sgf), _move_idx(0) { }
 
           SgfMove GetCurrMove() const {
               if (done()) return SgfMove();
@@ -132,7 +132,7 @@ public:
 
           bool done() const { return _curr == nullptr; }
 
-          SgfIterator &operator ++() {
+          iterator &operator ++() {
             if (! done()) {
               _curr = _curr->sibling.get();
               _move_idx ++;
@@ -150,7 +150,7 @@ public:
           const Sgf &GetSgf() const { return *_sgf; }
 
           vector<SgfMove> GetForwardMoves(int k) const {
-              SgfIterator iter = *this;
+              auto iter = *this;
               vector<SgfMove> res;
               for (int i = 0; i < k; ++i) {
                   res.push_back(iter.GetCurrMove());
@@ -170,7 +170,7 @@ public:
     bool Load(const string& filename);
     bool Load(const string& gamename, TarLoader& tar_loader);
 
-    SgfIterator begin() const { return SgfIterator(*this); }
+    iterator begin() const { return iterator(*this); }
 
     Stone GetWinner() const { return _header.winner; }
     int GetHandicapStones() const { return _header.handi; }
