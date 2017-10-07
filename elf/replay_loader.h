@@ -39,11 +39,9 @@ private:
     void reload() {
         while (true) {
             K k = get_key();
-            if (_rbuffer->HasKey(k)) {
-                const auto &record = _rbuffer->Get(k);
-                _it = record.begin();
-                if (after_reload(k, _it)) return;
-            }
+            const auto &record = _rbuffer->Get(k);
+            _it = record.begin();
+            if (after_reload(k, _it)) return;
         }
     }
 
