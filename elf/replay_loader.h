@@ -17,26 +17,7 @@ public:
         _rbuffer.reset(new RBuffer(func));
     }
 
-    void Init() { reload(); }
-
-    const RIterator &curr() const { return _it; }
-
-    void Next() {
-        if (! before_next_action(_it)) {
-            // Reload stuff.
-            reload();
-        } else {
-            ++ _it;
-        }
-    }
-
-private:
-    // Shared buffer for OfflineLoader.
-    static std::unique_ptr<RBuffer> _rbuffer;
-
-    RIterator _it;
-
-    void reload() {
+    void Reload() {
         while (true) {
             K k = get_key();
             const auto &record = _rbuffer->Get(k);
@@ -45,10 +26,18 @@ private:
         }
     }
 
+    const RIterator &curr() const { return _it; }
+    void increment() { ++ _it; }
+
+private:
+    // Shared buffer for OfflineLoader.
+    static std::unique_ptr<RBuffer> _rbuffer;
+
+    RIterator _it;
+
 protected:
     // The function return true if the load is valid, otherwise return false.
     virtual bool after_reload(const K& k, RIterator &it) = 0;
-    virtual bool before_next_action(const RIterator &it) = 0;
     virtual K get_key() = 0;
 };
 

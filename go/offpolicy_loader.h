@@ -31,11 +31,11 @@ protected:
 
     // Virtual function for ReplayLoader:
     std::string get_key() override;
-    bool before_next_action(const Sgf::iterator &it) override;
     bool after_reload(const std::string &full_name, Sgf::iterator &it) override;
 
     // Helper function.
     bool need_reload(const Sgf::iterator &it) const;
+    void next();
 
     // Virtual function for AIHoldStateWithComm
     void before_act(const std::atomic_bool *) override { 

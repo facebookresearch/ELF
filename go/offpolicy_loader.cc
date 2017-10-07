@@ -10,7 +10,7 @@ string OfflineLoader::_path;
 
 OfflineLoader::OfflineLoader(const GameOptions &options, int seed)
     : _options(options), _game_loaded(0), _rng(seed) {
-      ReplayLoader::Init();
+      ReplayLoader::Reload();
 }
 
 void OfflineLoader::InitSharedBuffer(const std::string &list_filename) {
@@ -84,7 +84,7 @@ bool OfflineLoader::after_reload(const std::string & /*full_name*/, Sgf::iterato
     if (random_base == 0) random_base ++;
     int pre_moves = _rng() % random_base;
 
-    for (int i = 0; i < pre_moves; ++i) ReplayLoader::Next();
+    for (int i = 0; i < pre_moves; ++i) next();
 
     if (_options.verbose) {
         std::cout << "PreMove: " << pre_moves << std::endl;
@@ -103,12 +103,12 @@ bool OfflineLoader::need_reload(const Sgf::iterator &it) const {
             || (_options.move_cutoff >= 0 && it.GetCurrIdx() >= _options.move_cutoff));
 }
 
-bool OfflineLoader::before_next_action(const Sgf::iterator &it) {
-    if (need_reload(it)) return false;
+void OfflineLoader::next() {
+    if (need_reload(curr())) ReplayLoader::Reload();
 
-    bool res = s().forward(it.GetCoord());
-    if (! res) return false;
-    return true;
+    bool res = s().forward(curr().GetCoord());
+    if (! res) ReplayLoader::Reload();
+    else ReplayLoader::increment();
 }
 
 void OfflineLoader::extract(Data *data) {
@@ -133,7 +133,7 @@ void OfflineLoader::extract(Data *data) {
 bool OfflineLoader::handle_response(const Data &data, Coord *c) {
     (void)data;
     *c = curr().GetCoord();
-    ReplayLoader::Next();
+    next();
     return true;
 }
 
