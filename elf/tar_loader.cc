@@ -33,3 +33,17 @@ std::string TarLoader::Load(const std::string &filename) {
 TarLoader::~TarLoader() {
     mtar_close(&tar);
 }
+
+TarWriter::TarWriter(const std::string &tar_filename) {
+  mtar_open(&tar, tar_filename.c_str(), "w");
+}
+
+void TarWriter::Write(const std::string& filename, const std::string& contents) {
+  mtar_write_file_header(&tar, filename.c_str(), contents.length());
+  mtar_write_data(&tar, contents.c_str(), contents.length());
+}
+
+TarWriter::~TarWriter() {
+    mtar_finalize(&tar);
+    mtar_close(&tar);
+}
