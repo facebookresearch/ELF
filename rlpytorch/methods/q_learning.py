@@ -15,7 +15,7 @@ from .discounted_reward import DiscountedReward
 from .value_matcher import ValueMatcher
 from .utils import add_err
 
-# Actor critic model.
+# Q learning
 class Q_learning:
     ''' An actor critic model '''
     def __init__(self):
@@ -55,7 +55,9 @@ class Q_learning:
         T = batch["s"].size(0)
 
         state_curr = m(batch.hist(T - 1))
-        self.discounted_reward.setR(state_curr[Q_node].squeeze().data, stats)
+        Q = state_curr[Q_node].squeeze().data
+        V = Q.max(1)
+        self.discounted_reward.setR(V, stats)
 
         err = None
 
