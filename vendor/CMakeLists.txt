@@ -25,6 +25,8 @@ target_include_directories(json SYSTEM INTERFACE
 	 $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>
 )
 
+# compile lua with make MYCFLAGS="$CFLAGS -fPIC" linux
+# compile this with cmake -DLUA_LIBRARY=/usr/local/lib/liblua.a -DLUA_INCLUDE_DIR=/usr/local/include/
 find_package(Lua REQUIRED)
 add_library(selene INTERFACE)
 target_include_directories(selene SYSTEM INTERFACE
