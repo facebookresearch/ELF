@@ -179,7 +179,7 @@ void TrainedAI::compute_state(std::vector<float> *state) {
 #define ACTION_UNIT_CMD 1
 #define ACTION_REGIONAL 2
 
-bool TrainedAI::handle_response(const Data &data, RTSMCAction *a) { 
+bool TrainedAI::handle_response(const Data &data, RTSMCAction *a) {
     a->Init(id(), name());
 
     // if (_receiver == nullptr) return false;
@@ -248,5 +248,11 @@ bool SimpleAI::on_act(Tick, RTSMCAction *a, const std::atomic_bool *) {
 bool HitAndRunAI::on_act(Tick, RTSMCAction *a, const std::atomic_bool *) {
     a->Init(id(), name());
     a->SetHitAndRunAI();
+    return true;
+}
+
+bool LuaAI::on_act(Tick, RTSMCAction *a, const std::atomic_bool *) {
+    a->Init(id(), name());
+    a->SetLuaAI();
     return true;
 }

@@ -16,6 +16,8 @@
 #include "map.h"
 #include "player.h"
 #include <random>
+#include "selene.h"
+
 
 class GameEnv {
 private:
@@ -49,6 +51,10 @@ private:
     // Whether the game is terminated.
     // This happens if the time tick exceeds max_tick, or there is anything wrong.
     bool _terminated;
+
+    mutable sel::State _sel_state;
+
+    bool _use_sel = true;
 
 public:
     class UnitIterator {
@@ -90,6 +96,18 @@ public:
     };
 
     GameEnv();
+
+    sel::State &GetSelState() const {
+        return _sel_state;
+    }
+
+    bool GetUseSel() const {
+        return _use_sel;
+    }
+
+    void SetUseSel(bool use_sel) {
+        _use_sel = use_sel;
+    }
 
     void Visualize() const;
 

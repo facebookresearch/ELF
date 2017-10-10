@@ -11,6 +11,8 @@
 #include "cmd.h"
 
 GameEnv::GameEnv() {
+    if (_use_sel) _sel_state.Load("test.lua");
+
     // Load the map.
     _map = unique_ptr<RTSMap>(new RTSMap());
     _game_counter = -1;

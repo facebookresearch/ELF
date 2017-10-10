@@ -15,7 +15,6 @@
 #include <chrono>
 #include <thread>
 #include <string>
-#include "selene.h"
 
 using namespace std::chrono;
 

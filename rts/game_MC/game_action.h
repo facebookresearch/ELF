@@ -5,7 +5,7 @@
 
 class RTSMCAction : public RTSAction {
 private:
-    enum ActionType { STATE9 = 0, SIMPLE = 1, HIT_AND_RUN = 2, CMD_INPUT = 3 };
+    enum ActionType { STATE9 = 0, SIMPLE = 1, HIT_AND_RUN = 2, CMD_INPUT = 3, LUA = 4 };
 
 public:
     RTSMCAction() : _type(CMD_INPUT), _action(-1) { }
@@ -17,6 +17,7 @@ public:
 
     void SetSimpleAI() { _type = SIMPLE; }
     void SetHitAndRunAI() { _type = HIT_AND_RUN; }
+    void SetLuaAI() { _type = LUA; }
 
     void SetUnitCmds(const std::vector<CmdInput> &unit_cmds) {
         _type = CMD_INPUT;
@@ -24,14 +25,16 @@ public:
     }
 
     bool Send(const GameEnv &env, CmdReceiver &receiver) override {
-        // Apply command. 
+        // Apply command.
         MCRuleActor rule_actor;
         rule_actor.SetPlayerId(_player_id);
         rule_actor.SetReceiver(&receiver);
 
         vector<int> state(NUM_AISTATE);
         std::fill(state.begin(), state.end(), 0);
-        if (_type == CMD_INPUT) {
+        if (_type == LUA) {
+            rule_actor.ActByLua(env, &_state_string, &_cmds);
+        } else if (_type == CMD_INPUT) {
             rule_actor.ActByCmd(env, _unit_cmds, &_state_string, &_cmds);
         } else {
             bool gather_ok = rule_actor.GatherInfo(env, &_state_string, &_cmds);
@@ -40,7 +43,7 @@ public:
             }
 
             switch(_type) {
-                case STATE9: 
+                case STATE9:
                     state[_action] = 1;
                     break;
                 case SIMPLE:
@@ -63,4 +66,3 @@ protected:
     int _action;
     std::vector<CmdInput> _unit_cmds;
 };
-
