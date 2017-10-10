@@ -15,6 +15,7 @@
 #include "cmd_interface.h"
 #include "game_env.h"
 #include <sstream>
+#include <algorithm>
 
 custom_enum(AIState, STATE_START = 0, STATE_BUILD_WORKER, STATE_BUILD_BARRACK,
   STATE_BUILD_MELEE_TROOP, STATE_BUILD_RANGE_TROOP, STATE_ATTACK,
@@ -184,12 +185,11 @@ public:
         const Units& units = env.GetUnits();
         int i = 0;
         for (auto it = units.begin(); it != units.end(); ++it) {
-            const Unit *u = it->second.get();
+            Unit *u = it->second.get();
             // Let lua deal with properties
             std::ostringstream oss;
             oss << "unit" << i;
-            const Unit &uu = *u;
-            sel_state["unit"/*oss.str().c_str()*/].SetObj<Unit>(uu, "property", &Unit::GetProperty);
+            sel_state["unit"/*oss.str().c_str()*/].SetObj<Unit>(*u);
             i++;
         }
         std::vector<CmdInput> unit_cmds;

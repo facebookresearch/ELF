@@ -16,6 +16,7 @@
 #include "map.h"
 #include "player.h"
 #include <random>
+#include "lua.hpp"
 #include "selene.h"
 
 

@@ -35,6 +35,7 @@ file(GLOB RTS_ENGINE_SOURCES *.cc)
 add_library(minirts-engine INTERFACE)
 target_sources(minirts-engine INTERFACE ${RTS_ENGINE_SOURCES})
 target_include_directories(minirts-engine INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/../)
+target_link_libraries(minirts-engine INTERFACE selene)
 
 add_custom_target(minirts-engine-headers DEPENDS
 	${CMAKE_CURRENT_SOURCE_DIR}/cmd.gen.h
