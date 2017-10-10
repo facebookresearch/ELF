@@ -52,7 +52,7 @@ struct GameOptions {
     std::string list_filename;
     bool verbose = false;
 
-    REGISTER_PYBIND_FIELDS(seed, online, data_aug, start_ratio_pre_moves, ratio_pre_moves, move_cutoff, num_planes, num_future_actions, list_filename, verbose, num_games_per_thread);
+    REGISTER_PYBIND_FIELDS(seed, online, data_aug, start_ratio_pre_moves, ratio_pre_moves, move_cutoff, num_planes, num_future_actions, list_filename, verbose, num_games_per_thread, use_mcts);
 };
 
 struct GameState {

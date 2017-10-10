@@ -14,12 +14,18 @@ OfflineLoader::OfflineLoader(const GameOptions &options, int seed)
 }
 
 void OfflineLoader::InitSharedBuffer(const std::string &list_filename) {
+    if (list_filename.empty()) return;
+
     if (file_is_tar(list_filename)) {
         _tar_loader.reset(new TarLoader(list_filename));
         _games = _tar_loader->List();
     } else {
         // Get all .sgf file in the directory.
         ifstream iFile(list_filename);
+        if (! iFile.is_open()) {
+            std::cout << "Loading " << list_filename << " failed!" << std::endl;
+            return;
+        }
         _games.clear();
         for (string this_game; std::getline(iFile, this_game) ; ) {
             _games.push_back(this_game);

@@ -85,7 +85,7 @@ public:
             bool is_terminal = false;
             int depth = 0;
 
-            while (node->visited()) {
+            while (node != nullptr && node->visited()) {
                 A a = UCT(node->sa(), node->count(), options_.use_prior).first;
                 PRINT_TS("[depth=" << depth << "] Action: " << a);
 
@@ -99,7 +99,7 @@ public:
                 Node *next_node = alloc[next];
 
                 PRINT_TS("[depth=" << depth << "] Before forward. ");
-                is_terminal = ! _forward(node, a, actor, next_node);
+                is_terminal = next_node == nullptr || ! _forward(node, a, actor, next_node);
                 PRINT_TS("[depth=" << depth << "] After forward. ");
                 node = next_node;
                 PRINT_TS("[depth=" << depth << "] Next node address: " << hex << node << dec);
@@ -118,6 +118,7 @@ public:
 
             // Now the node points to a recently created node.
             // Evaluate it and backpropagate.
+            if (node == nullptr) continue;
             float reward = get_reward(actor, node);
 
             PRINT_TS("Reward: " << reward << " Start backprop");

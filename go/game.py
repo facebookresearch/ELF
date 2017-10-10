@@ -31,6 +31,7 @@ class Loader:
                 ("num_games_per_thread", dict(type=int, default=5, help="number of concurrent games per threads, used to increase diversity of games")),
                 ("move_cutoff", dict(type=int, default=-1, help="Cutoff ply in replay")),
                 ("online", dict(action="store_true", help="Set game to online mode")),
+                ("use_mcts", dict(action="store_true")),
                 ("gpu", dict(type=int, default=None))
             ],
             more_args = ["batchsize", "T"],
@@ -46,6 +47,7 @@ class Loader:
         opt.seed = 0
         opt.list_filename = args.list_file
         opt.online = args.online
+        opt.use_mcts = args.use_mcts
         opt.verbose = args.verbose
         opt.data_aug = args.data_aug
         opt.ratio_pre_moves = args.ratio_pre_moves

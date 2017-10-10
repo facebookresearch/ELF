@@ -41,6 +41,7 @@ public:
 
     const S *s_ptr() const { return s_.get(); }
     bool SetStateIfNull(function<S *()> func) {
+      if (func == nullptr) return false;
       // The node is invalid.
       int curr_state = s_state_.load();
       if (curr_state == NODE_INVALID) return false;
