@@ -33,7 +33,7 @@ class GameContext {
     GameContext(const ContextOptions& context_options, const GameOptions& options) {
       _context.reset(new GC{context_options, options});
       for (int i = 0; i < context_options.num_games; ++i) {
-          _games.emplace_back(new GoGame(i, options));
+          _games.emplace_back(new GoGame(i, context_options, options));
       }
       if (! options.list_filename.empty()) OfflineLoader::InitSharedBuffer(options.list_filename);
     }

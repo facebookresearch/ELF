@@ -41,6 +41,10 @@ namespace mcts {
 
 using namespace std;
 
+struct RunInfo {
+    int num_rollout;
+};
+
 template <typename S, typename A>
 class TSOneThreadT {
 public:
@@ -53,17 +57,15 @@ public:
         }
     }
 
-    void WaitReady() {
-        state_ready_.wait(1);
-        state_ready_.reset();
-    }
-
-    void NotifyReady() {
-        state_ready_.notify();
+    void NotifyReady(const RunInfo &info) {
+        state_ready_.notify(info);
     }
 
     template <typename Actor>
-    bool Run(int run_id, Actor &actor, int num_rollout, NodeAlloc &alloc) {
+    bool Run(int run_id, Actor &actor, NodeAlloc &alloc) {
+        RunInfo info;
+        state_ready_.wait_and_reset(&info);
+
         (void)run_id;
         Node *root = alloc.root();
         if (root == nullptr || root->s_ptr() == nullptr) {
@@ -73,11 +75,11 @@ public:
 
 #define PRINT_MAIN(args) if (output_ != nullptr) { *output_ << "[run=" << run_id << "] " << args << endl << flush; }
 
-#define PRINT_TS(args) if (output_ != nullptr) { *output_ << "[run=" << run_id << "][iter=" << iter << "/" << num_rollout << "]" << args << endl << flush; }
+#define PRINT_TS(args) if (output_ != nullptr) { *output_ << "[run=" << run_id << "][iter=" << iter << "/" << info.num_rollout << "]" << args << endl << flush; }
 
         PRINT_MAIN("Start. actor thread_id: " << actor.info());
 
-        for (int iter = 0; iter < num_rollout; ++iter) {
+        for (int iter = 0; iter < info.num_rollout; ++iter) {
             // Start from the root and run one path
             vector<pair<Node *, A>> traj;
             Node *node = root;
@@ -85,7 +87,7 @@ public:
             bool is_terminal = false;
             int depth = 0;
 
-            while (node != nullptr && node->visited()) {
+            while (node->visited()) {
                 A a = UCT(node->sa(), node->count(), options_.use_prior).first;
                 PRINT_TS("[depth=" << depth << "] Action: " << a);
 
@@ -96,10 +98,15 @@ public:
 
                 assert(node->s_ptr());
 
+                // Note that next might be invalid, if there is not valid move.
                 Node *next_node = alloc[next];
+                if (next_node == nullptr) {
+                    is_terminal = true;
+                    break;
+                }
 
                 PRINT_TS("[depth=" << depth << "] Before forward. ");
-                is_terminal = next_node == nullptr || ! _forward(node, a, actor, next_node);
+                is_terminal = ! _forward(node, a, actor, next_node);
                 PRINT_TS("[depth=" << depth << "] After forward. ");
                 node = next_node;
                 PRINT_TS("[depth=" << depth << "] Next node address: " << hex << node << dec);
@@ -118,7 +125,6 @@ public:
 
             // Now the node points to a recently created node.
             // Evaluate it and backpropagate.
-            if (node == nullptr) continue;
             float reward = get_reward(actor, node);
 
             PRINT_TS("Reward: " << reward << " Start backprop");
@@ -142,7 +148,7 @@ private:
     int thread_id_;
     const TSOptions &options_;
 
-    SemaCollector state_ready_;
+    Semaphore<RunInfo> state_ready_;
     std::unique_ptr<ostream> output_;
 
     static float sigmoid(float x) {
@@ -184,10 +190,6 @@ public:
     using TSOneThread = TSOneThreadT<S, A>;
     using NodeAlloc = NodeAllocT<S, A>;
 
-    struct RunInfo {
-        int num_rollout = 0;
-    };
-
     TreeSearchT(const TSOptions &options, std::function<Actor (int)> actor_gen)
         : pool_(options.num_threads), options_(options) {
 
@@ -202,9 +204,8 @@ public:
             pool_.push([i, this, th](int) {
                 int counter = 0;
                 while (! this->done_.get()) {
-                    th->WaitReady();
                     // cout << "Wake up, counter = " << counter << endl;
-                    th->Run(counter, this->actors_[i], this->run_info_.num_rollout, this->alloc_);
+                    th->Run(counter, this->actors_[i], this->alloc_);
                     // if (! ret) cout << "Thread " << i << " got corrupted data" << endl;
                     this->tree_ready_.notify();
                     counter ++;
@@ -224,8 +225,7 @@ public:
         }
         root->SetStateIfNull([&]() { return new S(root_state); });
 
-        run_info_.num_rollout = options_.num_rollout_per_thread;
-        notify_state_ready();
+        notify_state_ready(options_.num_rollout_per_thread);
 
         // Wait until all tree searches are done.
         tree_ready_.wait(pool_.size());
@@ -253,9 +253,8 @@ public:
     void Stop() {
         done_.set();
 
-        run_info_.num_rollout = 0;
         // cout << "About to send notify in Stop " << endl;
-        notify_state_ready();
+        notify_state_ready(0);
 
         tree_ready_.wait(pool_.size());
 
@@ -280,9 +279,11 @@ private:
     Notif done_;
     SemaCollector tree_ready_;
 
-    void notify_state_ready() {
+    void notify_state_ready(int num_rollout) {
+        RunInfo info;
+        info.num_rollout = num_rollout;
         for (size_t i = 0; i < threads_.size(); ++i) {
-            threads_[i]->NotifyReady();
+            threads_[i]->NotifyReady(info);
         }
     }
 };

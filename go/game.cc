@@ -16,7 +16,8 @@
 #include <fstream>
 
 ////////////////// GoGame /////////////////////
-GoGame::GoGame(int game_idx, const GameOptions& options) : _options(options), _curr_loader_idx(0) {
+GoGame::GoGame(int game_idx, const ContextOptions &context_options, const GameOptions& options)
+  : _options(options), _context_options(context_options), _curr_loader_idx(0) {
     _game_idx = game_idx;
     if (options.seed == 0) {
         auto now = chrono::system_clock::now();
@@ -35,8 +36,7 @@ void GoGame::Init(AIComm *ai_comm) {
     assert(ai_comm);
     if (_options.online) {
         if (_options.use_mcts) {
-            mcts::TSOptions options;
-            auto *ai = new MCTSGoAI(ai_comm, options);
+            auto *ai = new MCTSGoAI(ai_comm, _context_options.mcts_options);
             _ai.reset(ai);
         } else {
             auto *ai = new DirectPredictAI();
