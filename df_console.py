@@ -68,7 +68,7 @@ class DFConsole:
             self.check_stats[i] += v
         if sum(topk) == 0: self.check_stats[-1] += 1
 
-    def mcts_actor(self, batch):
+    def actor(self, batch):
         reply = self.evaluator.actor(batch)
         return reply
 
@@ -100,9 +100,12 @@ class DFConsole:
             if len(items) < 1:
                 print("Invalid input")
 
+            reply = dict(pi=None, a=None)
+
             try:
                 if items[0] == 'p':
-                    return dict(a=move2action(items[1]))
+                    reply["a"] = move2action(items[1])
+                    return reply
                 elif items[0] == 'c':
                     return self.evaluator.actor(batch)
                 elif items[0] == "s":
@@ -158,7 +161,7 @@ class DFConsole:
                         print("No offline_a available!")
                 elif items[0] == "exit":
                     self.exit = True
-                    return
+                    return reply
                 else:
                     print("Invalid input: " + cmd + ". Please try again")
             except Exception as e:
@@ -180,20 +183,23 @@ class DFConsole:
         self.evaluator = evaluator
         self.last_move_idx = None
 
-        def actor(batch):
+        def human_actor(batch):
+            print("In human_actor")
             return self.prompt("DF> ", batch)
 
-        def mcts_actor(batch):
-            return self.mcts_actor(batch)
+        def actor(batch):
+            return self.actor(batch)
 
         def train(batch):
             self.prompt("DF Train> ", batch)
 
         evaluator.setup(sampler=env["sampler"], mi=mi)
 
-        GC.reg_callback("actor", actor)
-        GC.reg_callback("train", train)
-        GC.reg_callback("mcts_actor", mcts_actor)
+        if args.online:
+            GC.reg_callback("actor", actor)
+            GC.reg_callback("human_actor", human_actor)
+        else:
+            GC.reg_callback("train", train)
         GC.Start()
 
         evaluator.episode_start(0)

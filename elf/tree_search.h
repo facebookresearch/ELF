@@ -62,7 +62,7 @@ public:
     }
 
     template <typename Actor>
-    bool Run(int run_id, Actor &actor, NodeAlloc &alloc) {
+    bool Run(int run_id, const atomic_bool *done, Actor &actor, NodeAlloc &alloc) {
         RunInfo info;
         state_ready_.wait_and_reset(&info);
 
@@ -79,7 +79,7 @@ public:
 
         PRINT_MAIN("Start. actor thread_id: " << actor.info());
 
-        for (int iter = 0; iter < info.num_rollout; ++iter) {
+        for (int iter = 0; iter < info.num_rollout && (done == nullptr || ! done->load()); ++iter) {
             // Start from the root and run one path
             vector<pair<Node *, A>> traj;
             Node *node = root;
@@ -88,7 +88,7 @@ public:
             int depth = 0;
 
             while (node->visited()) {
-                A a = UCT(node->sa(), node->count(), options_.use_prior).first;
+                A a = UCT(node->sa(), node->count(), options_.use_prior, output_.get()).first;
                 PRINT_TS("[depth=" << depth << "] Action: " << a);
 
                 // Save trajectory.
@@ -205,7 +205,7 @@ public:
                 int counter = 0;
                 while (! this->done_.get()) {
                     // cout << "Wake up, counter = " << counter << endl;
-                    th->Run(counter, this->actors_[i], this->alloc_);
+                    th->Run(counter, &this->done_.flag(), this->actors_[i], this->alloc_);
                     // if (! ret) cout << "Thread " << i << " got corrupted data" << endl;
                     this->tree_ready_.notify();
                     counter ++;
@@ -253,7 +253,7 @@ public:
     void Stop() {
         done_.set();
 
-        // cout << "About to send notify in Stop " << endl;
+        cout << "About to send notify in Stop " << endl;
         notify_state_ready(0);
 
         tree_ready_.wait(pool_.size());

@@ -33,6 +33,8 @@ private:
     std::mt19937 _rng;
 
     std::unique_ptr<AI> _ai;
+    std::unique_ptr<AI> _human_player;
+
     // Only used when we want to run online
     GoState _state;
 

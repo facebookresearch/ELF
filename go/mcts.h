@@ -12,7 +12,7 @@ public:
 
     MCTSActor(AI *ai) {
         ai_ = ai;
-        ai_->SetActorName("mcts_actor");
+        ai_->SetActorName("actor");
     }
 
     NodeResponse &evaluate(const GoState &s) {

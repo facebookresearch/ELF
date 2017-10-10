@@ -63,18 +63,21 @@ class Loader:
 
         desc = {}
         if args.online:
-            desc["actor"] = dict(
-                batchsize=args.batchsize,
-                input=dict(T=args.T, keys=set(["s"])),
-                reply=dict(T=args.T, keys=set(["V", "pi", "a"]))
-            )
-            desc["mcts_actor"] = dict(
+            desc["human_actor"] = dict(
                 batchsize=args.batchsize,
                 input=dict(T=1, keys=set(["s"])),
-                reply=dict(T=1, keys=set(["V", "pi", "a"])),
-                name="mcts_actor",
-                timeout_usec = 100
+                reply=dict(T=1, keys=set(["pi", "a"])),
+                name="human_actor",
             )
+
+            # Used for MCTS/Direct play.
+            desc["actor"] = dict(
+                batchsize=args.batchsize,
+                input=dict(T=1, keys=set(["s"])),
+                reply=dict(T=1, keys=set(["pi", "a"])),
+                name="actor",
+            )
+
         else:
             desc["train"] = dict(
                 batchsize=args.batchsize,

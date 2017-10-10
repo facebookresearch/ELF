@@ -41,6 +41,7 @@ void GoGame::Init(AIComm *ai_comm) {
         } else {
             auto *ai = new DirectPredictAI();
             ai->InitAIComm(ai_comm);
+            ai->SetActorName("actor");
             _ai.reset(ai);
         }
     } else {
@@ -51,6 +52,11 @@ void GoGame::Init(AIComm *ai_comm) {
             _loaders.emplace_back(loader);
         }
     }
+    HumanPlayer *player = new HumanPlayer;
+    player->InitAIComm(ai_comm);
+    player->SetActorName("human_actor");
+    _human_player.reset(player);
+
     if (_options.verbose) std::cout << "[" << _game_idx << "] Done with initialization" << std::endl;
 }
 
@@ -58,9 +64,16 @@ void GoGame::Act(const std::atomic_bool& done) {
     // Randomly pick one loader
     Coord c;
     if (_options.online) {
+        while (! done) {
+            _human_player->Act(_state, &c, &done);
+            if (_state.forward(c)) break;
+            // cout << "Invalid move: x = " << X(c) << " y = " << Y(c) << " move: " << coord2str(c) << " please try again" << endl;
+        }
+
         _ai->Act(_state, &c, &done);
         if (! _state.forward(c)) {
-            cout << "Invalid move: x = " << X(c) << " y = " << Y(c) << coord2str(c) << " please try again" << endl;
+            cout << "No valid move, restarting the game" << endl;
+            _state.Reset();
         }
     } else {
         // Replays hold a state by itself.
