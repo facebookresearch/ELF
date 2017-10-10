@@ -84,10 +84,9 @@ public:
             vector<pair<Node *, A>> traj;
             Node *node = root;
 
-            bool is_terminal = false;
             int depth = 0;
 
-            while (node->visited()) {
+            while (_visit(actor, node, alloc) == Node::NODE_ALREADY_VISITED) {
                 A a = UCT(node->sa(), node->count(), options_.use_prior, output_.get()).first;
                 PRINT_TS("[depth=" << depth << "] Action: " << a);
 
@@ -100,27 +99,14 @@ public:
 
                 // Note that next might be invalid, if there is not valid move.
                 Node *next_node = alloc[next];
-                if (next_node == nullptr) {
-                    is_terminal = true;
-                    break;
-                }
+                if (next_node == nullptr) break;
 
                 PRINT_TS("[depth=" << depth << "] Before forward. ");
-                is_terminal = ! _forward(node, a, actor, next_node);
+                if (! _forward(node, a, actor, next_node)) break;
                 PRINT_TS("[depth=" << depth << "] After forward. ");
                 node = next_node;
                 PRINT_TS("[depth=" << depth << "] Next node address: " << hex << node << dec);
                 depth ++;
-            }
-
-            if (! is_terminal) {
-                PRINT_TS("Before evaluation. Node: " << hex << node << dec);
-                NodeResponseT<A> &resp = actor.evaluate(*node->s_ptr());
-
-                PRINT_TS("After evaluation. Node: " << hex << node << dec);
-                node->Expand(resp, alloc);
-
-                PRINT_TS("Expand complete");
             }
 
             // Now the node points to a recently created node.
@@ -180,6 +166,16 @@ private:
 
       return next_node->SetStateIfNull(func);
     }
+
+    template <typename Actor>
+    typename Node::VisitType _visit(Actor &actor, Node *node, NodeAlloc &alloc) {
+        // Check
+        auto func = [&](const Node *n) -> NodeResponseT<A> & {
+            return actor.evaluate(*n->s_ptr());
+        };
+        return node->ExpandIfNecessary(func, alloc);
+    }
+
 };
 
 // Mcts algorithm

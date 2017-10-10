@@ -76,6 +76,8 @@ public:
     using Node = NodeT<S, A>;
     using NodeAlloc = NodeAllocT<S, A>;
 
+    enum VisitType { NODE_NOT_VISITED = 0, NODE_JUST_VISITED, NODE_ALREADY_VISITED };
+
     NodeT() : visited_(false), count_(0) { }
     NodeT(const Node&) = delete;
     Node &operator=(const Node&) = delete;
@@ -84,14 +86,15 @@ public:
     int count() const { return count_; }
     float value() const { return V_; }
 
-    bool visited() const { return visited_; }
-
-    bool Expand(const NodeResponseT<A> &resp, NodeAlloc &alloc) {
-        if (visited_) return true;
+    template <typename ExpandFunc>
+    VisitType ExpandIfNecessary(ExpandFunc func, NodeAlloc &alloc) {
+        if (visited_) return NODE_ALREADY_VISITED;
 
         // Otherwise visit.
         lock_guard<mutex> lock(lock_node_);
-        if (visited_) return true;
+        if (visited_) return NODE_ALREADY_VISITED;
+
+        auto resp = func(this);
 
         // Then we need to allocate sa_val_
         for (const pair<A, float> & action_pair : resp.pi) {
@@ -104,7 +107,7 @@ public:
 
         // Once sa_ is allocated, its structure won't change.
         visited_ = true;
-        return true;
+        return NODE_JUST_VISITED;
     }
 
     bool AccumulateStats(const A &a, float reward) {
