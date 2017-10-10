@@ -42,6 +42,7 @@ class Loader:
         args = self.args
         co = go.ContextOptions()
         self.context_args.initialize(co)
+        co.print()
 
         opt = go.GameOptions()
         opt.seed = 0
@@ -65,7 +66,14 @@ class Loader:
             desc["actor"] = dict(
                 batchsize=args.batchsize,
                 input=dict(T=args.T, keys=set(["s"])),
-                reply=dict(T=args.T, keys=set(["V", "a"]))
+                reply=dict(T=args.T, keys=set(["V", "pi", "a"]))
+            )
+            desc["mcts_actor"] = dict(
+                batchsize=args.batchsize,
+                input=dict(T=1, keys=set(["s"])),
+                reply=dict(T=1, keys=set(["V", "pi", "a"])),
+                name="mcts_actor",
+                timeout_usec = 100
             )
         else:
             desc["train"] = dict(

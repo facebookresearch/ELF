@@ -74,14 +74,17 @@ struct GameState {
     int32_t aug_code = 0;
     int32_t winner = 0; // B +1, W -1, U 0
 
+    std::string name;
+
     int64_t a;
     std::vector<float> pi;
     float V;
 
     void Clear() { game_record_idx = -1; aug_code = 0; winner = 0; move_idx = -1; }
 
-    void Init(int iid, int /*num_action*/) {
+    void Init(int iid, int num_action) {
         id = iid;
+        pi.resize(num_action, 0.0);
     }
 
     GameState &Prepare(const SeqInfo &seq_info) {

@@ -8,6 +8,10 @@ class DirectPredictAI: public AIWithComm {
 public:
     using Data = AIWithComm::Data;
 
+    void SetActorName(const std::string &name) {
+        actor_name_ = name;
+    }
+
     void get_last_pi(vector<pair<Coord, float>> *output_pi) const {
         if (data().size() == 0) {
             cout << "DirectPredictAI: history empty!" << endl;
@@ -19,17 +23,19 @@ public:
         const auto &bf = last_state_->last_extractor();
         for (size_t i = 0; i < pi.size(); ++i) {
             Coord m = bf.Action2Coord(i);
-            output_pi->push_back(make_pair(m, pi[i])); 
+            output_pi->push_back(make_pair(m, pi[i]));
         }
     }
 
     float get_last_value() const { return data().newest().V; }
 
 protected:
+    std::string actor_name_;
     const GoState *last_state_ = nullptr;
 
     void extract(const GoState &state, Data *data) override {
         auto &gs = data->newest();
+        gs.name = actor_name_;
         gs.move_idx = state.GetPly();
         gs.winner = 0;
         const auto &bf = state.last_extractor();

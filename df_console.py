@@ -68,6 +68,10 @@ class DFConsole:
             self.check_stats[i] += v
         if sum(topk) == 0: self.check_stats[-1] += 1
 
+    def mcts_actor(self, batch):
+        reply = self.evaluator.actor(batch)
+        return reply
+
     def prompt(self, prompt_str, batch):
         if self.last_move_idx is not None:
             curr_move_idx = batch["move_idx"][0][0]
@@ -179,6 +183,9 @@ class DFConsole:
         def actor(batch):
             return self.prompt("DF> ", batch)
 
+        def mcts_actor(batch):
+            return self.mcts_actor(batch)
+
         def train(batch):
             self.prompt("DF Train> ", batch)
 
@@ -186,6 +193,7 @@ class DFConsole:
 
         GC.reg_callback("actor", actor)
         GC.reg_callback("train", train)
+        GC.reg_callback("mcts_actor", mcts_actor)
         GC.Start()
 
         evaluator.episode_start(0)

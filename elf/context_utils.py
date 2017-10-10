@@ -26,6 +26,7 @@ class ContextArgs:
                 ("mcts_threads", 64),
                 ("mcts_rollout_per_thread", 50),
                 ("mcts_verbose", dict(action="store_true")),
+                ("mcts_use_prior", dict(action="store_true")),
                 ("mcts_baseline",  3.0),
                 ("mcts_baseline_sigma", 0.3),
             ],
@@ -57,6 +58,7 @@ class ContextArgs:
         mcts.num_threads = args.mcts_threads
         mcts.num_rollout_per_thread = args.mcts_rollout_per_thread
         mcts.verbose = args.mcts_verbose
+        mcts.use_prior = args.mcts_use_prior
         mcts.baseline = args.mcts_baseline
         mcts.baseline_sigma = args.mcts_baseline_sigma
 
