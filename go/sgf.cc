@@ -48,7 +48,7 @@ bool Sgf::load_game(const string& filename, const string& game_string) {
     return false;
 }
 
-bool Sgf::Load(const string& filename, TarLoader& tar_loader) {
+bool Sgf::Load(const string& filename, elf::TarLoader& tar_loader) {
   return load_game(filename, tar_loader.Load(filename));
 }
 

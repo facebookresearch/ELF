@@ -3,7 +3,7 @@
 #include <fstream>
 
 ///////////// OfflineLoader ////////////////////
-std::unique_ptr<TarLoader> OfflineLoader::_tar_loader;
+std::unique_ptr<elf::TarLoader> OfflineLoader::_tar_loader;
 vector<string> OfflineLoader::_games;
 string OfflineLoader::_list_filename;
 string OfflineLoader::_path;
@@ -14,10 +14,11 @@ OfflineLoader::OfflineLoader(const GameOptions &options, int seed)
 }
 
 void OfflineLoader::InitSharedBuffer(const std::string &list_filename) {
+
     if (list_filename.empty()) return;
 
-    if (file_is_tar(list_filename)) {
-        _tar_loader.reset(new TarLoader(list_filename));
+    if (elf::file_is_tar(list_filename)) {
+        _tar_loader.reset(new elf::TarLoader(list_filename));
         _games = _tar_loader->List();
     } else {
         // Get all .sgf file in the directory.
@@ -45,7 +46,7 @@ void OfflineLoader::InitSharedBuffer(const std::string &list_filename) {
     std::cout << "Loading list_file: " << list_filename << std::endl;
     std::cout << "Loaded: #Game: " << _games.size() << std::endl;
 
-    TarLoader *tar_loader = _tar_loader.get();
+    elf::TarLoader *tar_loader = _tar_loader.get();
     auto gen = [tar_loader](const std::string &name) {
                 std::unique_ptr<Sgf> sgf(new Sgf());
                 if (tar_loader != nullptr) {
@@ -101,7 +102,7 @@ bool OfflineLoader::after_reload(const std::string & /*full_name*/, Sgf::iterato
 
 std::string OfflineLoader::get_key() {
     _curr_game = _rng() % _games.size();
-    return file_is_tar(_list_filename) ? _games[_curr_game] : _path + _games[_curr_game];
+    return elf::file_is_tar(_list_filename) ? _games[_curr_game] : _path + _games[_curr_game];
 }
 
 bool OfflineLoader::need_reload(const Sgf::iterator &it) const {
