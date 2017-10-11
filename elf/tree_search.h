@@ -51,7 +51,8 @@ public:
     using Node = NodeT<S, A>;
     using NodeAlloc = NodeAllocT<S, A>;
 
-    TSOneThreadT(int thread_id, const TSOptions& options) : thread_id_(thread_id), options_(options) {
+    TSOneThreadT(int thread_id, const TSOptions& options)
+      : thread_id_(thread_id), options_(options), rng_(thread_id) {
         if (options_.verbose) {
             output_.reset(new ofstream("tree_search_" + std::to_string(thread_id) + ".txt"));
         }
@@ -137,6 +138,8 @@ private:
     Semaphore<RunInfo> state_ready_;
     std::unique_ptr<ostream> output_;
 
+    std::mt19937 rng_;
+
     static float sigmoid(float x) {
         return 1.0 / (1 + exp(-x));
     }
@@ -173,9 +176,12 @@ private:
         auto func = [&](const Node *n) -> NodeResponseT<A> & {
             return actor.evaluate(*n->s_ptr());
         };
-        return node->ExpandIfNecessary(func, alloc);
+        auto init = [&](EdgeInfo &info) {
+             info.acc_reward = rng_() % (options_.pseudo_games + 1);
+             info.n = options_.pseudo_games;
+        };
+        return node->ExpandIfNecessary(func, init, alloc);
     }
-
 };
 
 // Mcts algorithm

@@ -86,8 +86,8 @@ public:
     int count() const { return count_; }
     float value() const { return V_; }
 
-    template <typename ExpandFunc>
-    VisitType ExpandIfNecessary(ExpandFunc func, NodeAlloc &alloc) {
+    template <typename ExpandFunc, typename InitFunc>
+    VisitType ExpandIfNecessary(ExpandFunc func, InitFunc init, NodeAlloc &alloc) {
         if (visited_) return NODE_ALREADY_VISITED;
 
         // Otherwise visit.
@@ -100,6 +100,7 @@ public:
         for (const pair<A, float> & action_pair : resp.pi) {
             auto res = sa_.insert(make_pair(action_pair.first, EdgeInfo(action_pair.second)));
             res.first->second.next = alloc.Alloc();
+            init(res.first->second);
         }
 
         // value

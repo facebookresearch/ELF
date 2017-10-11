@@ -29,6 +29,7 @@ class ContextArgs:
                 ("mcts_use_prior", dict(action="store_true")),
                 ("mcts_baseline",  3.0),
                 ("mcts_baseline_sigma", 0.3),
+                ("mcts_pseudo_games", 0),
             ],
             on_get_args = self._on_get_args
         )
@@ -61,5 +62,6 @@ class ContextArgs:
         mcts.use_prior = args.mcts_use_prior
         mcts.baseline = args.mcts_baseline
         mcts.baseline_sigma = args.mcts_baseline_sigma
+        mcts.pseudo_games = args.pseudo_games
 
 
