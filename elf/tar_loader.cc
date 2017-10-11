@@ -1,6 +1,8 @@
 #include "tar_loader.h"
 #include <memory.h>
 
+namespace elf {
+
 bool file_is_tar(const std::string& filename) {
   return filename.substr(filename.find_last_of(".") + 1) == "tar";
 }
@@ -46,4 +48,6 @@ void TarWriter::Write(const std::string& filename, const std::string& contents) 
 TarWriter::~TarWriter() {
     mtar_finalize(&tar);
     mtar_close(&tar);
+}
+
 }

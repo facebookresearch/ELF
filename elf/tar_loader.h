@@ -4,6 +4,8 @@
 #include <vector>
 #include "microtar.h"
 
+namespace elf {
+
 extern bool file_is_tar(const std::string& filename);
 
 class TarLoader {
@@ -24,3 +26,5 @@ public:
   void Write(const std::string &filename, const std::string &contents);
   ~TarWriter();
 };
+
+}
