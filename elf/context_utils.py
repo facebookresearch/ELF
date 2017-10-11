@@ -62,6 +62,6 @@ class ContextArgs:
         mcts.use_prior = args.mcts_use_prior
         mcts.baseline = args.mcts_baseline
         mcts.baseline_sigma = args.mcts_baseline_sigma
-        mcts.pseudo_games = args.pseudo_games
+        mcts.pseudo_games = args.mcts_pseudo_games
 
 
