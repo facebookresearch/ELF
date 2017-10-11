@@ -26,17 +26,20 @@ private:
     int _game_idx = -1;
     uint64_t _seed = 0;
     GameOptions _options;
+    ContextOptions _context_options;
 
     std::vector<std::unique_ptr<OfflineLoader>> _loaders;
     int _curr_loader_idx;
     std::mt19937 _rng;
 
     std::unique_ptr<AI> _ai;
-    // Only used when we want to run online 
+    std::unique_ptr<AI> _human_player;
+
+    // Only used when we want to run online
     GoState _state;
 
 public:
-    GoGame(int game_idx, const GameOptions& options);
+    GoGame(int game_idx, const ContextOptions &context_options, const GameOptions& options);
 
     void Init(AIComm *ai_comm);
 

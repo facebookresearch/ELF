@@ -10,7 +10,10 @@ public:
     using State = GoState;
     using NodeResponse = mcts::NodeResponseT<Action>;
 
-    MCTSActor(AI *ai) { ai_ = ai; }
+    MCTSActor(AI *ai) {
+        ai_ = ai;
+        ai_->SetActorName("actor");
+    }
 
     NodeResponse &evaluate(const GoState &s) {
         ai_->Act(s, nullptr, nullptr);
@@ -26,7 +29,7 @@ public:
     string info() const { return string(); }
 
 protected:
-    NodeResponse resp_; 
+    NodeResponse resp_;
     AI *ai_ = nullptr;
 };
 

@@ -128,11 +128,15 @@ class Batch:
             src(dict or `Batch`): batch data to be copied
         '''
         this_src = src if isinstance(src, dict) else src.batch
+        key_assigned = { k : False for k in self.batch.keys() }
 
         for k, v in this_src.items():
             # Copy it down to cpu.
             if k in self.batch:
                 bk = self.batch[k]
+                key_assigned[k] = True
+                if v is None:
+                    continue
                 if isinstance(v, list) and bk.numel() == len(v):
                     bk = bk.view(-1)
                     for i, vv in enumerate(v):
@@ -141,6 +145,14 @@ class Batch:
                     bk.fill_(v)
                 else:
                     bk[:] = v
+
+            else:
+               raise ValueError("\"%s\" in reply is missing in batch specification" % k)
+
+        # Check whether there is any key missing.
+        for k, assigned in key_assigned.items():
+            if not assigned:
+                raise ValueError("Batch.copy_from. Reply[%s] is not assigned" % k)
 
     def cpu2gpu(self, gpu=0):
         ''' call ``cuda()`` on all batch data
@@ -280,12 +292,21 @@ class GCWrapper:
               The callback function has the signature ``cb(input_batch, input_batch_gpu, reply_batch)``.
         '''
         if key not in self.name2idx:
-            return False
+            raise ValueError("Callback[%s] is not in the specification" % key)
+        if cb is None:
+            print("Warning: Callback[%s] is registered to None" % key)
+
         for gid in self.name2idx[key]:
             self._cb[gid] = cb
         return True
 
     def _call(self, infos):
+        if infos.gid not in self._cb:
+            raise ValueError("info.gid[%d] is not in callback functions" % infos.gid)
+
+        if self._cb[infos.gid] is None:
+            return;
+
         sel = self.inputs[infos.gid]
         if self.inputs_gpu is not None:
             sel_gpu = self.inputs_gpu[self.gid2gpu[infos.gid]]
@@ -304,13 +325,18 @@ class GCWrapper:
         else:
             sel_reply = None
 
-        # Call
-        if infos.gid in self._cb:
-            reply = self._cb[infos.gid](picked)
-            # If reply is meaningful, send them back.
-            if isinstance(reply, dict) and sel_reply is not None:
-                # Current we only support reply to the most recent history.
-                sel_reply.copy_from(reply)
+        reply = self._cb[infos.gid](picked)
+        # If reply is meaningful, send them back.
+        if isinstance(reply, dict) and sel_reply is not None:
+            # Current we only support reply to the most recent history.
+            sel_reply.copy_from(reply)
+
+    def _check_callbacks(self):
+        # Check whether all callbacks are assigned properly.
+        for key, gids in self.name2idx.items():
+            for gid in gids:
+                if gid not in self._cb:
+                    raise ValueError("GCWrapper.Start(): No callback function for key = %s and gid = %d" % (key, gid))
 
     def Run(self):
         '''Wait group of an arbitrary collector key. Samples in a returned batch are always from the same group, but the group key of the batch may be arbitrary.'''
@@ -324,6 +350,7 @@ class GCWrapper:
 
     def Start(self):
         '''Start all game environments'''
+        self._check_callbacks()
         self.GC.Start()
 
     def Stop(self):

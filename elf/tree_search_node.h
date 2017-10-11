@@ -41,6 +41,7 @@ public:
 
     const S *s_ptr() const { return s_.get(); }
     bool SetStateIfNull(function<S *()> func) {
+      if (func == nullptr) return false;
       // The node is invalid.
       int curr_state = s_state_.load();
       if (curr_state == NODE_INVALID) return false;
@@ -75,6 +76,8 @@ public:
     using Node = NodeT<S, A>;
     using NodeAlloc = NodeAllocT<S, A>;
 
+    enum VisitType { NODE_NOT_VISITED = 0, NODE_JUST_VISITED, NODE_ALREADY_VISITED };
+
     NodeT() : visited_(false), count_(0) { }
     NodeT(const Node&) = delete;
     Node &operator=(const Node&) = delete;
@@ -83,19 +86,21 @@ public:
     int count() const { return count_; }
     float value() const { return V_; }
 
-    bool visited() const { return visited_; }
-
-    bool Expand(const NodeResponseT<A> &resp, NodeAlloc &alloc) {
-        if (visited_) return true;
+    template <typename ExpandFunc, typename InitFunc>
+    VisitType ExpandIfNecessary(ExpandFunc func, InitFunc init, NodeAlloc &alloc) {
+        if (visited_) return NODE_ALREADY_VISITED;
 
         // Otherwise visit.
         lock_guard<mutex> lock(lock_node_);
-        if (visited_) return true;
+        if (visited_) return NODE_ALREADY_VISITED;
+
+        auto resp = func(this);
 
         // Then we need to allocate sa_val_
         for (const pair<A, float> & action_pair : resp.pi) {
             auto res = sa_.insert(make_pair(action_pair.first, EdgeInfo(action_pair.second)));
             res.first->second.next = alloc.Alloc();
+            init(res.first->second);
         }
 
         // value
@@ -103,7 +108,7 @@ public:
 
         // Once sa_ is allocated, its structure won't change.
         visited_ = true;
-        return true;
+        return NODE_JUST_VISITED;
     }
 
     bool AccumulateStats(const A &a, float reward) {

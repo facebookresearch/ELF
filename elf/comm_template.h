@@ -217,7 +217,7 @@ public:
             const GroupStat &gstat = _exclusive_groups[i][idx];
 
             if (stats.conds[i].Check(gstat, info)) {
-                V_PRINT(_verbose, "[k=" << key << "] Pass test for group " << gstat.gid << " hist_len = " << gstat.hist_len);
+                V_PRINT(_verbose, "[k=" << key << "] Pass test for group " << gstat.gid << " name = " << gstat.name << " hist_len = " << gstat.hist_len);
                 stats.conds[i].freq_send ++;
 
                 _groups[gstat.gid]->SendData(key, &info);

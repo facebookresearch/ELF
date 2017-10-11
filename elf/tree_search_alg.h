@@ -16,7 +16,7 @@ using namespace std;
 
 // Algorithms.
 template <typename Map>
-pair<typename Map::key_type, float> UCT(const Map& vals, float count, bool use_prior = true) {
+pair<typename Map::key_type, float> UCT(const Map& vals, float count, bool use_prior = true, ostream *oo = nullptr) {
     // Simple PUCT algorithm.
     using A = typename Map::key_type;
     static_assert(is_same<typename Map::mapped_type, EdgeInfo>::value, "key type must be EdgeInfo");
@@ -24,14 +24,18 @@ pair<typename Map::key_type, float> UCT(const Map& vals, float count, bool use_p
     A best_a = A();
     float max_score = -1.0;
     const float c_puct = 5.0;
-    float sqrt_count = sqrt(count);
+    const float sqrt_count1 = sqrt(count + 1);
+
+    if (oo) *oo << "UCT prior = " << (use_prior ? "True" : "False") << endl;
 
     for (const auto& action_pair : vals) {
         const A& a = action_pair.first;
         const EdgeInfo &info = action_pair.second;
 
         float score = (info.acc_reward + 0.5) / (info.n + 1);
-        if (use_prior) score += c_puct * info.prior / (1 + info.n) * sqrt_count;
+        if (use_prior) score += c_puct * info.prior / (1 + info.n) * sqrt_count1;
+
+        if (oo) *oo << "UCT [a=" << a << "] prior: " << info.prior << " score: " <<  score << endl;
 
         if (score > max_score) {
             max_score = score;

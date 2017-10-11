@@ -11,12 +11,13 @@
 #include "go_game_specific.h"
 #include "offpolicy_loader.h"
 #include "go_ai.h"
-// #include "mcts.h"
+#include "mcts.h"
 
 #include <fstream>
 
 ////////////////// GoGame /////////////////////
-GoGame::GoGame(int game_idx, const GameOptions& options) : _options(options), _curr_loader_idx(0) {
+GoGame::GoGame(int game_idx, const ContextOptions &context_options, const GameOptions& options)
+  : _options(options), _context_options(context_options), _curr_loader_idx(0) {
     _game_idx = game_idx;
     if (options.seed == 0) {
         auto now = chrono::system_clock::now();
@@ -35,12 +36,12 @@ void GoGame::Init(AIComm *ai_comm) {
     assert(ai_comm);
     if (_options.online) {
         if (_options.use_mcts) {
-            // mcts::TSOptions options;
-            // auto *ai = new MCTSGoAI(ai_comm, options);
-            // _ai.reset(ai);
+            auto *ai = new MCTSGoAI(ai_comm, _context_options.mcts_options);
+            _ai.reset(ai);
         } else {
             auto *ai = new DirectPredictAI();
             ai->InitAIComm(ai_comm);
+            ai->SetActorName("actor");
             _ai.reset(ai);
         }
     } else {
@@ -51,6 +52,11 @@ void GoGame::Init(AIComm *ai_comm) {
             _loaders.emplace_back(loader);
         }
     }
+    HumanPlayer *player = new HumanPlayer;
+    player->InitAIComm(ai_comm);
+    player->SetActorName("human_actor");
+    _human_player.reset(player);
+
     if (_options.verbose) std::cout << "[" << _game_idx << "] Done with initialization" << std::endl;
 }
 
@@ -58,9 +64,16 @@ void GoGame::Act(const std::atomic_bool& done) {
     // Randomly pick one loader
     Coord c;
     if (_options.online) {
+        while (! done) {
+            _human_player->Act(_state, &c, &done);
+            if (_state.forward(c)) break;
+            // cout << "Invalid move: x = " << X(c) << " y = " << Y(c) << " move: " << coord2str(c) << " please try again" << endl;
+        }
+
         _ai->Act(_state, &c, &done);
         if (! _state.forward(c)) {
-            cout << "Invalid move: x = " << X(c) << " y = " << Y(c) << coord2str(c) << " please try again" << endl;
+            cout << "No valid move, restarting the game" << endl;
+            _state.Reset();
         }
     } else {
         // Replays hold a state by itself.

@@ -35,6 +35,7 @@ class Evaluator:
         self.args = ArgsProvider(
             call_from = self,
             define_args = [
+                ("rv_in_reply", dict(action="store_true"))
             ],
             more_args = ["num_games", "batchsize", "num_minibatch"],
             on_get_args = self._on_get_args,
@@ -77,7 +78,8 @@ class Evaluator:
         if self.stats is not None:
             self.stats.feed_batch(batch)
 
-        reply_msg["rv"] = self.mi["actor"].step
+        if self.args.rv_in_reply:
+            reply_msg["rv"] = self.mi["actor"].step
 
         self.actor_count += 1
         return reply_msg
