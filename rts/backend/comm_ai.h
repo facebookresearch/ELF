@@ -9,7 +9,7 @@
 
 #pragma once
 #include <concurrentqueue.h>
-#include "ws_server.h"
+#include "vendor/ws_server.h"
 #include "ai.h"
 #include "raw2cmd.h"
 

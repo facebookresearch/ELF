@@ -1,7 +1,7 @@
 #include "game_action.h"
 
 bool RTSMCAction::Send(const GameEnv &env, CmdReceiver &receiver) {
-    // Apply command. 
+    // Apply command.
     MCRuleActor rule_actor;
     rule_actor.SetPlayerId(_player_id);
     rule_actor.SetReceiver(&receiver);
@@ -17,7 +17,10 @@ bool RTSMCAction::Send(const GameEnv &env, CmdReceiver &receiver) {
         }
 
         switch(_type) {
-            case STATE9: 
+            case STATE9:
+                if (_action < 0 || _action >= (int) state.size()) {
+                    cout << "RTSMCAction: action invalid! action = " << _action << " / " << state.size() << endl;
+                }
                 state[_action] = 1;
                 break;
             case SIMPLE:

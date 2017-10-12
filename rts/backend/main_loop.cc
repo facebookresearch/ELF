@@ -17,6 +17,7 @@
 #include "engine/ai.h"
 #include "elf/game_base.h"
 #include "ai.h"
+#include "../game_MC/mcts.h"
 #include "comm_ai.h"
 
 #include <iostream>
@@ -43,24 +44,31 @@ bool add_players(const string &args, int frame_skip, RTSGame *game) {
             vector<string> params = split(player, '=');
             int tick_start = (params.size() == 1 ? 0 : std::stoi(params[1]));
             game->AddBot(new TCPAI("tcpai", tick_start, 8000), 1);
-        }
-        /*else if (player.find("mcts") == 0) {
+            game->GetState().AppendPlayer("tcpai");
+        } else if (player.find("mcts") == 0) {
             vector<string> params = split(player, '=');
-            int mcts_thread = std::stoi(params[1]);
-            int mcts_rollout_per_thread = std::stoi(params[2]);
+
+            mcts::TSOptions opt;
+            opt.num_threads = std::stoi(params[1]);
+            opt.num_rollout_per_thread = std::stoi(params[2]);
+
+            /*
             vector<string> prerun_cmds;
             if (params.size() >= 4) {
                 prerun_cmds = split(params[3], '-');
             }
-            bots.push_back(new MCTSAI(INVALID, frame_skip, nullptr, mcts_thread, mcts_rollout_per_thread, false, &prerun_cmds));
-            mcts = true;
-        }*/
-        else if (player.find("spectator") == 0) {
+            */
+            game->AddBot(new MCTSRTSAI(opt), frame_skip);
+            game->GetState().AppendPlayer("mcts_ai");
+            // mcts = true;
+        } else if (player.find("spectator") == 0) {
             vector<string> params = split(player, '=');
             int tick_start = (params.size() == 1 ? 0 : std::stoi(params[1]));
             game->AddSpectator(new TCPAI("spectator", tick_start, 8000));
+        } else if (player == "dummy") {
+            game->AddBot(new AI("dummy"), frame_skip);
+            game->GetState().AppendPlayer("dummy");
         }
-        else if (player == "dummy") game->AddBot(new AI("dummy"), frame_skip);
         /*
         else if (player == "flag_simple") {
             //if (mcts) bots[0]->SetFactory([&](int r) -> AI* { return new FlagSimpleAI(INVALID, r, nullptr, nullptr);});
@@ -72,6 +80,7 @@ bool add_players(const string &args, int frame_skip, RTSGame *game) {
             AI *ai = AIFactory<AI>::CreateAI(player, "");
             if (ai != nullptr) {
                 game->AddBot(ai, frame_skip);
+                game->GetState().AppendPlayer(player);
             } else {
                 cout << "Unknown player! " << player << endl;
                 return false;
@@ -147,7 +156,7 @@ RTSGameOptions ai_vs_ai2(const Parser &parser, string *players) {
 
     return options;
 }
-/*
+
 RTSGameOptions ai_vs_mcts(const Parser &parser, string *players) {
     RTSGameOptions options = GetOptions(parser);
     int mcts_threads = parser.GetItem<int>("mcts_threads");
@@ -163,7 +172,7 @@ RTSGameOptions ai_vs_mcts(const Parser &parser, string *players) {
 
     return options;
 }
-*/
+
 RTSGameOptions flag_ai_vs_ai(const Parser &parser, string *players) {
     RTSGameOptions options = GetOptions(parser);
     *players = "flag_simple,flag_simple,dummy";
@@ -240,7 +249,9 @@ void replay_mcts(const Parser &parser) {
     cout << "Loading game " << endl;
     RTSGame game(options);
     game.AddBot(new MCTSAI(INVALID, frame_skip, nullptr, mcts_threads, mcts_rollout_per_thread, mcts_verbose, &prerun_cmds));
+    game.GetState().AppendPlayer("MCTSAI");
     game.AddBot(new SimpleAI(INVALID, frame_skip, nullptr, nullptr));
+    game.GetState().AppendPlayer("SimpleAI");
 
     cout << "Starting main loop " << endl;
     PlayerId winner = game.MainLoop();
@@ -283,7 +294,10 @@ void replay_rollout(const Parser &parser) {
     cout << "Loading game " << endl;
     RTSGame game(options);
     game.AddBot(new MCTS_ROLLOUT_AI(0, frame_skip, nullptr, selected_moves));
+    game.GetState().AppendPlayer("MCTS_ROLLOUT_AI");
+
     game.AddBot(new SimpleAI(1, frame_skip, nullptr, nullptr));
+    game.GetState().AppendPlayer("SimpleAI");
 
     cout << "Starting main loop " << endl;
     PlayerId winner = game.MainLoop();
@@ -319,7 +333,7 @@ int main(int argc, char *argv[]) {
     const map<string, function<RTSGameOptions (const Parser &, string *)> > func_mapping = {
         { "selfplay", ai_vs_ai },
         { "selfplay2", ai_vs_ai2 },
-        //{ "mcts", ai_vs_mcts },
+        { "mcts", ai_vs_mcts },
 
         { "replay", replay },
         { "replay_cmd", replay_cmd },
@@ -337,7 +351,7 @@ int main(int argc, char *argv[]) {
     };
 
     GameDef::GlobalInit();
-    
+
     CmdLineUtils::CmdLineParser parser("playstyle --save_replay --load_replay --vis_after[-1] --save_snapshot_prefix --load_snapshot_prefix --seed[0] \
 --load_snapshot_length --max_tick[30000] --binary_io[1] --games[16] --frame_skip[1] --tick_prompt_n_step[2000] --cmd_verbose[0] --peek_ticks --cmd_dumper_prefix \
 --output_file[cout] --mcts_threads[16] --mcts_rollout_per_thread[100] --threads[64] --load_binary_string --mcts_verbose --mcts_prerun_cmds --handicap_level[0]");
@@ -395,12 +409,14 @@ int main(int argc, char *argv[]) {
                 else options.seed = seed0 + i * 241;
 
                 RTSStateExtend state(options);
-                RTSGame game(state);
+                RTSGame game(&state);
                 //game.AddBot(new SimpleAI(INVALID, frame_skip, nullptr));
                 //
                 //game.AddBot(new SimpleAI(INVALID, frame_skip, nullptr));
                 game.AddBot(AIFactory<AI>::CreateAI("simple", ""), frame_skip);
                 game.AddBot(AIFactory<AI>::CreateAI("simple", ""), frame_skip);
+                state.AppendPlayer("simple1");
+                state.AppendPlayer("simple2");
 
                 state.SetGlobalStats(&gstats);
                 bool infinite = (games == 0);
@@ -415,7 +431,7 @@ int main(int argc, char *argv[]) {
         std::cout << gstats.PrintInfo() << std::endl;
     } else {
         RTSStateExtend state(options);
-        RTSGame game(state);
+        RTSGame game(&state);
         cout << "Players: " << players << endl;
         add_players(players, frame_skip, &game);
         cout << "Finish adding players" << endl;

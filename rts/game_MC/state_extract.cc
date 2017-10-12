@@ -10,6 +10,19 @@ static inline void accu_value(int idx, float val, std::map<int, std::pair<int, f
     }
 }
 
+void MCSaveInfo(const RTSState &s, PlayerId player_id, GameState *gs) {
+    gs->tick = s.GetTick();
+    gs->winner = s.env().GetWinnerId();
+    gs->terminal = s.env().GetTermination() ? 1 : 0;
+
+    gs->last_r = 0.0;
+    int winner = s.env().GetWinnerId();
+    if (winner != INVALID) {
+      if (winner == player_id) gs->last_r = 1.0;
+      else gs->last_r = -1.0;
+      // cout << "player_id: " << player_id << " " << (gs->last_r > 0 ? "Won" : "Lose") << endl;
+    }
+}
 
 void MCExtract(const RTSState &s, PlayerId player_id, bool respect_fow, std::vector<float> *state) {
     const GameEnv &env = s.env();

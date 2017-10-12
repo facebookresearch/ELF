@@ -51,7 +51,7 @@ public:
         // Note that all the bots created here will be owned by game.
         // Note that AddBot() will set its receiver. So there is no need to specify it here.
         RTSStateExtend s(op);
-        RTSGame game(s);
+        RTSGame game(&s);
         wrapper.OnGameInit(&game, more_params);
 
         s.SetGlobalStats(&_gstats);

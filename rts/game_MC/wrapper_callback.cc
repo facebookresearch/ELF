@@ -16,8 +16,9 @@
 #include "rule_ai.h"
 #include "mixed_ai.h"
 #include "trainable_ai.h"
+#include "mcts.h"
 
-static AI *get_ai(const PythonOptions &options, const AIOptions &opt, Context::AIComm *ai_comm) {
+static AI *get_ai(const mcts::TSOptions &mcts_opt, const AIOptions &opt, Context::AIComm *ai_comm) {
     // std::cout << "AI type = " << ai_type << " Backup AI type = " << backup_ai_type << std::endl;
     if (opt.type == "AI_SIMPLE") return new SimpleAI(opt);
     else if (opt.type == "AI_HIT_AND_RUN") return new HitAndRunAI(opt);
@@ -27,6 +28,13 @@ static AI *get_ai(const PythonOptions &options, const AIOptions &opt, Context::A
 
         MixedAI *ai = new MixedAI(opt);
         ai->SetMainAI(main_ai);
+        return ai;
+    } else if (opt.type == "AI_MCTS") {
+        MCTSRTSAI *ai = new MCTSRTSAI(mcts_opt);
+        return ai;
+    } else if (opt.type == "AI_REDUCED_MCTS") {
+        // cout << opt.info() << endl;
+        MCTSRTSReducedAI *ai = new MCTSRTSReducedAI(ai_comm, mcts_opt);
         return ai;
     } else {
         cout << "Unknown opt.type: " + opt.type << endl;
@@ -45,7 +53,7 @@ void WrapperCallbacks::initialize_ai_comm(Context::AIComm &ai_comm, const std::m
     hstate.InitHist(_context_options.T);
     for (auto &item : hstate.v()) {
         // [TODO] This design is really not good..
-        item.Init(_game_idx, GameDef::GetNumAction(), _options.max_unit_cmd, _options.map_size_x, _options.map_size_y, 
+        item.Init(_game_idx, GameDef::GetNumAction(), _options.max_unit_cmd, _options.map_size_x, _options.map_size_y,
                   CmdInput::CI_NUM_CMDS, GameDef::GetNumUnitType(), reduced_dim);
     }
 }
@@ -61,18 +69,24 @@ void WrapperCallbacks::OnGameInit(RTSGame *game, const std::map<std::string, int
         Context::AIComm *ai_comm = new Context::AIComm(_game_idx, _comm);
         _ai_comms.emplace_back(ai_comm);
         initialize_ai_comm(*ai_comm, more_params);
-        ais.push_back(get_ai(_options, ai_opt, ai_comm));
+        ais.push_back(get_ai(_context_options.mcts_options, ai_opt, ai_comm));
     }
 
     // std::cout << "Initialize ai" << std::endl;
     // Shuffle the bot.
+    std::vector<int> orders(ais.size());
+    for (size_t i = 0; i < ais.size(); ++i) orders[i] = i;
+
     if (_options.shuffle_player) {
         std::mt19937 g(_game_idx);
-        std::shuffle(ais.begin(), ais.end(), g);
+        std::shuffle(orders.begin(), orders.end(), g);
+        // cout << "[" << _game_idx << "] Shuffle is done: " << orders[0] << " " << orders[1] << endl;
     }
 
     for (size_t i = 0; i < ais.size(); ++i) {
-        game->AddBot(ais[i], _options.ai_options[i].fs);
+        int idx = orders[i];
+        game->AddBot(ais[idx], _options.ai_options[idx].fs);
+        game->GetState().AppendPlayer("players " + std::to_string(idx));
     }
 }
 

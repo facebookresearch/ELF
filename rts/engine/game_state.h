@@ -27,6 +27,10 @@ public:
     }
 
     // Copy construct.
+    RTSState(const RTSState &s) {
+        _env.InitGameDef();
+        *this = s;
+    }
     RTSState &operator=(const RTSState &s) {
         string str;
         s.Save(&str);
@@ -76,8 +80,10 @@ public:
 
     virtual bool Reset();
 
-    virtual void OnAddPlayer(const std::string &name, int player_id);
-    virtual void OnRemovePlayer(int player_id);
+    virtual ~RTSState() { }
+
+    void AppendPlayer(const std::string &name);
+    void RemoveLastPlayer();
 
 private:
     GameEnv _env;

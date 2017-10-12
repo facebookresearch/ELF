@@ -50,7 +50,6 @@ struct GameState {
     float V;
     std::vector<float> pi;
 
-    //
     std::vector<int64_t> uloc, tloc;
     std::vector<int64_t> bt, ct;
 

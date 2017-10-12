@@ -33,12 +33,9 @@ bool TrainedAI::GameEnd(const State &s) {
 }
 
 void TrainedAI::extract(const State &s, Data *data) {
-    const GameEnv &env = s.env();
-
     GameState *game = &data->newest();
-    game->tick = s.receiver().GetTick();
-    game->winner = env.GetWinnerId();
-    game->terminal = env.GetTermination() ? 1 : 0;
+
+    MCSaveInfo(s, id(), game);
     game->name = name();
 
     if (_recent_states.maxlen() == 1) {
@@ -61,21 +58,13 @@ void TrainedAI::extract(const State &s, Data *data) {
             }
         }
     }
-
-    game->last_r = 0.0;
-    int winner = s.env().GetWinnerId();
-
-    if (winner != INVALID) {
-        if (winner == id()) game->last_r = 1.0;
-        else game->last_r = -1.0;
-    }
 }
 
 #define ACTION_GLOBAL 0
 #define ACTION_UNIT_CMD 1
 #define ACTION_REGIONAL 2
 
-bool TrainedAI::handle_response(const State &s, const Data &data, RTSMCAction *a) { 
+bool TrainedAI::handle_response(const State &s, const Data &data, RTSMCAction *a) {
     a->Init(id(), name());
 
     // if (_receiver == nullptr) return false;

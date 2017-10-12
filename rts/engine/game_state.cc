@@ -9,13 +9,11 @@ RTSState::RTSState() {
     _env.ClearAllPlayers();
 }
 
-void RTSState::OnAddPlayer(const string &name, int player_id) {
-    (void)player_id;
+void RTSState::AppendPlayer(const string &name) {
     _env.AddPlayer(name, PV_KNOW_ALL);
 }
 
-void RTSState::OnRemovePlayer(int player_id) {
-    (void)player_id;
+void RTSState::RemoveLastPlayer() {
     _env.RemovePlayer();
 }
 
