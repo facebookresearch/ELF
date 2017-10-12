@@ -31,7 +31,7 @@ class ContextArgs:
                 ("mcts_baseline_sigma", 0.3),
                 ("mcts_pseudo_games", 0),
                 ("mcts_pick_method", "most_visited"),
-                ("mcts_vebose_time", dict(action="store_true"))
+                ("mcts_verbose_time", dict(action="store_true"))
             ],
             on_get_args = self._on_get_args
         )
