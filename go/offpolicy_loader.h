@@ -17,7 +17,7 @@ public:
 
 protected:
     // Database
-    static std::unique_ptr<TarLoader> _tar_loader;
+    static std::unique_ptr<elf::TarLoader> _tar_loader;
     static vector<string> _games;
     static string _list_filename;
     static string _path;
