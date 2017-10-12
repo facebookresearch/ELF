@@ -5,13 +5,13 @@
 
 class MCTSActor {
 public:
-    using AI = DirectPredictAI;
     using Action = Coord;
     using State = GoState;
     using NodeResponse = mcts::NodeResponseT<Action>;
 
-    MCTSActor(AI *ai) {
-        ai_ = ai;
+    MCTSActor(AIComm *ai_comm) {
+        ai_.reset(new DirectPredictAI);
+        ai_->InitAIComm(ai_comm);
         ai_->SetActorName("actor");
     }
 
@@ -26,11 +26,15 @@ public:
         return s.forward(a);
     }
 
+    void SetId(int id) {
+        ai_->SetId(id);
+    }
+
     string info() const { return string(); }
 
 protected:
     NodeResponse resp_;
-    AI *ai_ = nullptr;
+    unique_ptr<DirectPredictAI> ai_;
 };
 
 using MCTSGoAI = elf::MCTSAIWithCommT<MCTSActor, AIComm>;

@@ -105,7 +105,7 @@ std::string OfflineLoader::get_key() {
 }
 
 bool OfflineLoader::need_reload(const Sgf::iterator &it) const {
-   return (it.done() || it.StepLeft() < _options.num_future_actions
+   return (it.done() || it.StepLeft() < _options.num_future_actions 
             || (_options.move_cutoff >= 0 && it.GetCurrIdx() >= _options.move_cutoff));
 }
 
