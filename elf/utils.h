@@ -2,6 +2,7 @@
 
 #include <mutex>
 #include <string>
+#include <vector>
 #include <unordered_map>
 #include <utility>
 #include <map>
@@ -11,6 +12,22 @@
 namespace elf_utils {
 
 using namespace std;
+
+inline string trim(string& str) {
+    str.erase(0, str.find_first_not_of(' '));       //prefixing spaces
+    str.erase(str.find_last_not_of(' ')+1);         //surfixing spaces
+    return str;
+}
+
+inline vector<string> split(const string &s, char delim) {
+    stringstream ss(s);
+    string item;
+    vector<string> elems;
+    while (getline(ss, item, delim)) {
+        elems.push_back(move(item));
+    }
+    return elems;
+}
 
 template <typename Map>
 const typename Map::mapped_type &map_get(const Map &m, const typename Map::key_type& k, const typename Map::mapped_type &def) {

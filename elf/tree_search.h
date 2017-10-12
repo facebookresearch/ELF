@@ -145,12 +145,12 @@ private:
     }
 
     MEMBER_FUNC_CHECK(reward)
-    template <typename Actor, typename S_ = S, typename std::enable_if<has_func_reward<Actor>::value>::type *U = nullptr>
+    template <typename Actor, typename std::enable_if<has_func_reward<Actor>::value>::type *U = nullptr>
     float get_reward(const Actor &actor, const Node *node) {
         return actor.reward(*node->s_ptr());
     }
 
-    template <typename Actor, typename S_ = S, typename std::enable_if<! has_func_reward<Actor>::value>::type *U = nullptr>
+    template <typename Actor, typename std::enable_if<! has_func_reward<Actor>::value>::type *U = nullptr>
     float get_reward(const Actor &actor, const Node *node) {
         (void)actor;
         return sigmoid((node->value() - options_.baseline) / options_.baseline_sigma);
@@ -191,8 +191,9 @@ public:
     using Node = NodeT<S, A>;
     using TSOneThread = TSOneThreadT<S, A>;
     using NodeAlloc = NodeAllocT<S, A>;
+    using MCTSResult = MCTSResultT<A>;
 
-    TreeSearchT(const TSOptions &options, std::function<Actor (int)> actor_gen)
+    TreeSearchT(const TSOptions &options, std::function<Actor *(int)> actor_gen)
         : pool_(options.num_threads), options_(options) {
 
         for (int i = 0; i < options.num_threads; ++i) {
@@ -207,7 +208,7 @@ public:
                 int counter = 0;
                 while (! this->done_.get()) {
                     // cout << "Wake up, counter = " << counter << endl;
-                    th->Run(counter, &this->done_.flag(), this->actors_[i], this->alloc_);
+                    th->Run(counter, &this->done_.flag(), *this->actors_[i], this->alloc_);
                     // if (! ret) cout << "Thread " << i << " got corrupted data" << endl;
                     this->tree_ready_.notify();
                     counter ++;
@@ -217,9 +218,11 @@ public:
         }
     }
 
-    Actor &actor(int i) { return actors_[i]; }
+    Actor &actor(int i) { return *actors_[i]; }
+    size_t size() const { return actors_.size(); }
+    string info() const { return alloc_.root()->info(alloc_); }
 
-    pair<A, float> Run(const S& root_state) {
+    MCTSResult Run(const S& root_state) {
         Node *root = alloc_.root();
         if (root == nullptr) {
             cout << "TreeSearch::root cannot be null!" << endl;
@@ -255,7 +258,7 @@ public:
     void Stop() {
         done_.set();
 
-        cout << "About to send notify in Stop " << endl;
+        // cout << "About to send notify in Stop " << endl;
         notify_state_ready(0);
 
         tree_ready_.wait(pool_.size());
@@ -271,7 +274,7 @@ private:
     // Multiple threads.
     ctpl::thread_pool pool_;
     vector<unique_ptr<TSOneThread>> threads_;
-    vector<Actor> actors_;
+    vector<unique_ptr<Actor>> actors_;
 
     NodeAlloc alloc_;
 

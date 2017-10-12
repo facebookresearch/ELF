@@ -121,7 +121,7 @@ class Batch:
         for _, v in self.batch.items():
             v[:] = 0
 
-    def copy_from(self, src):
+    def copy_from(self, src, batch_key=""):
         ''' copy all keys and values from another dict or `Batch` object
 
         Args:
@@ -147,12 +147,12 @@ class Batch:
                     bk[:] = v
 
             else:
-               raise ValueError("\"%s\" in reply is missing in batch specification" % k)
+                raise ValueError("Batch[%s]: \"%s\" in reply is missing in batch specification" % (batch_key, k))
 
         # Check whether there is any key missing.
         for k, assigned in key_assigned.items():
             if not assigned:
-                raise ValueError("Batch.copy_from. Reply[%s] is not assigned" % k)
+                raise ValueError("Batch[%s].copy_from: Reply[%s] is not assigned" % (batch_key, k))
 
     def cpu2gpu(self, gpu=0):
         ''' call ``cuda()`` on all batch data
@@ -282,6 +282,9 @@ class GCWrapper:
         self.gid2gpu = gid2gpu
         self.gpu2gid = gpu2gid
 
+    def reg_has_callback(self, key):
+        return key in self.name2idx
+
     def reg_callback(self, key, cb):
         '''Set callback function for key
 
@@ -307,6 +310,8 @@ class GCWrapper:
         if self._cb[infos.gid] is None:
             return;
 
+        batchsize = len(infos.s)
+
         sel = self.inputs[infos.gid]
         if self.inputs_gpu is not None:
             sel_gpu = self.inputs_gpu[self.gid2gpu[infos.gid]]
@@ -318,6 +323,7 @@ class GCWrapper:
         # Save the infos structure, if people want to have access to state
         # directly, they can use infos.s[i], which is a state pointer.
         picked.infos = infos
+        picked.batchsize = batchsize
 
         # Get the reply array
         if len(self.replies) > infos.gid and self.replies[infos.gid] is not None:
@@ -329,7 +335,8 @@ class GCWrapper:
         # If reply is meaningful, send them back.
         if isinstance(reply, dict) and sel_reply is not None:
             # Current we only support reply to the most recent history.
-            sel_reply.copy_from(reply)
+            batch_key = "%s-%d" % (self.idx2name[infos.gid], infos.gid)
+            sel_reply.copy_from(reply, batch_key=batch_key)
 
     def _check_callbacks(self):
         # Check whether all callbacks are assigned properly.

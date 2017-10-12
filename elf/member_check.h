@@ -1,6 +1,7 @@
 #pragma once
 
 #include <type_traits>
+#include <string>
 
 #define MEMBER_CHECK(member) \
                         \
@@ -12,11 +13,10 @@ struct has_##member <__T, decltype((void) __T::member, 0)> : std::true_type { };
 
 
 #define MEMBER_FUNC_CHECK(func) \
-\
-template<typename __T>\
-struct has_func_##func {\
-    template<typename __U, size_t (__U::*)() const> struct SFINAE {}; \
-    template<typename __U> static char Test(SFINAE<__U, &__U::func>*); \
-    template<typename __U> static int Test(...); \
-    enum { value = sizeof(Test<__T>(0)) == sizeof(char) }; \
+template <typename __T> \
+struct has_func_##func \
+{ \
+    template <typename __C> static char test( decltype(&__C::func) ) ; \
+    template <typename __C> static long test(...); \
+    enum { value = sizeof(test<__T>(0)) == sizeof(char) }; \
 };

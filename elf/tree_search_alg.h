@@ -46,41 +46,33 @@ pair<typename Map::key_type, float> UCT(const Map& vals, float count, bool use_p
 };
 
 template <typename Map>
-pair<typename Map::key_type, float> MostVisited(const Map& vals) {
+MCTSResultT<typename Map::key_type> MostVisited(const Map& vals) {
     using A = typename Map::key_type;
+    using MCTSResult = MCTSResultT<A>;
     static_assert(is_same<typename Map::mapped_type, EdgeInfo>::value, "key type must be EdgeInfo");
 
-    A best_a = A();
-    float max_score = -1.0;
+    MCTSResult res;
     for (const pair<A, EdgeInfo> & action_pair : vals) {
-        const A& a = action_pair.first;
         const EdgeInfo &info = action_pair.second;
 
-        if (info.n > max_score) {
-            max_score = info.n;
-            best_a = a;
-        }
+        res.feed(info.n, action_pair);
     }
-    return make_pair(best_a, max_score);
+    return res;
 };
 
 template <typename Map>
-pair<typename Map::key_type, float> StrongestPrior(const Map& vals) {
+MCTSResultT<typename Map::key_type> StrongestPrior(const Map& vals) {
     using A = typename Map::key_type;
+    using MCTSResult = MCTSResultT<A>;
     static_assert(is_same<typename Map::mapped_type, EdgeInfo>::value, "key type must be EdgeInfo");
 
-    A best_a = A();
-    float max_score = -1.0;
+    MCTSResult res;
     for (const pair<A, EdgeInfo> & action_pair : vals) {
-        const A& a = action_pair.first;
         const EdgeInfo &info = action_pair.second;
 
-        if (info.prior > max_score) {
-            max_score = info.prior;
-            best_a = a;
-        }
+        res.feed(info.prior, action_pair);
     }
-    return make_pair(best_a, max_score);
+    return res;
 };
 
 } // namespace mcts

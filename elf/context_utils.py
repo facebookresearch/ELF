@@ -30,6 +30,8 @@ class ContextArgs:
                 ("mcts_baseline",  3.0),
                 ("mcts_baseline_sigma", 0.3),
                 ("mcts_pseudo_games", 0),
+                ("mcts_pick_method", "most_visited"),
+                ("mcts_vebose_time", dict(action="store_true"))
             ],
             on_get_args = self._on_get_args
         )
@@ -59,9 +61,11 @@ class ContextArgs:
         mcts.num_threads = args.mcts_threads
         mcts.num_rollout_per_thread = args.mcts_rollout_per_thread
         mcts.verbose = args.mcts_verbose
+        mcts.verbose_time = args.mcts_verbose_time
         mcts.use_prior = args.mcts_use_prior
         mcts.baseline = args.mcts_baseline
         mcts.baseline_sigma = args.mcts_baseline_sigma
         mcts.pseudo_games = args.mcts_pseudo_games
+        mcts.pick_method = args.mcts_pick_method
 
 

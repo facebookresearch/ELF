@@ -133,6 +133,24 @@ public:
         return res.first->second.next;
     }
 
+    string _info(int indent, const NodeAlloc &alloc) const {
+        std::stringstream ss;
+        std::string indent_str;
+        for (int i = 0; i < indent; ++i) indent_str += ' ';
+
+        for (const auto & p : sa_) {
+            if (p.second.n > 0) {
+                ss << indent_str << "[" << p.first << "] " << p.second.info() << endl;
+                ss << alloc[p.second.next]->_info(indent + 2, alloc);
+            }
+        }
+        return ss.str();
+    }
+
+    string info(const NodeAlloc &alloc) const {
+        return _info(0, alloc);
+    }
+
 private:
     // For state.
     mutex lock_node_;
@@ -178,6 +196,7 @@ public:
     }
 
     Node *root() { return (*this)[root_id_]; }
+    const Node *root() const { return (*this)[root_id_]; }
 
     // Low level functions.
     NodeId Alloc() {
@@ -198,13 +217,14 @@ public:
         Free(id);
     }
 
-    const Node *operator[](NodeId i) const {
+    Node *operator[](NodeId i) {
         lock_guard<mutex> lock(alloc_mutex_);
         auto it = allocated_.find(i);
         if (it == allocated_.end()) return nullptr;
         else return it->second.get();
     }
-    Node *operator[](NodeId i) {
+
+    const Node *operator[](NodeId i) const {
         lock_guard<mutex> lock(alloc_mutex_);
         auto it = allocated_.find(i);
         if (it == allocated_.end()) return nullptr;
@@ -215,7 +235,7 @@ private:
     // TODO: We might just allocate one chunk at a time.
     unordered_map<NodeId, unique_ptr<Node>> allocated_;
     NodeId allocated_node_count_;
-    mutex alloc_mutex_;
+    mutable mutex alloc_mutex_;
     NodeId root_id_;
 };
 

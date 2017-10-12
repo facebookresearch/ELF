@@ -33,6 +33,8 @@ public:
 
     virtual bool GameEnd(const S &) { return true; }
 
+    virtual ~AI_T() { }
+
 private:
     const std::string _name;
     int _id;
@@ -57,6 +59,7 @@ public:
     }
 
     bool Act(const S &s, A *a, const std::atomic_bool *done) override {
+        assert(_ai_comm);
         before_act(s, done);
         _ai_comm->Prepare();
         Data *data = &_ai_comm->info().data;
@@ -68,7 +71,10 @@ public:
         return true;
     }
 
-    const Data& data() const { return _ai_comm->info().data; }
+    const Data& data() const { 
+        assert(_ai_comm);
+        return _ai_comm->info().data; 
+    }
     const AIComm *ai_comm() const { return _ai_comm; }
     AIComm *ai_comm() { return _ai_comm; }
 
@@ -144,6 +150,7 @@ public:
     }
 
     bool Act(A *a, const std::atomic_bool *done) override {
+        assert(_ai_comm);
         before_act(done);
         _ai_comm->Prepare();
         Data *data = &_ai_comm->info().data;
@@ -155,7 +162,10 @@ public:
         return true;
     }
 
-    const Data& data() const { return _ai_comm->info().data; }
+    const Data& data() const { 
+        assert(_ai_comm);
+        return _ai_comm->info().data; 
+    }
     const AIComm *ai_comm() const { return _ai_comm; }
     AIComm *ai_comm() { return _ai_comm; }
 

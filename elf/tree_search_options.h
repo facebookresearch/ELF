@@ -14,6 +14,7 @@ struct TSOptions {
     int num_threads = 16;
     int num_rollout_per_thread = 100;
     bool verbose = false;
+    bool verbose_time = false;
     bool persistent_tree = false;
     // [TODO] Not a good design.
     // string pick_method = "strongest_prior";
@@ -41,7 +42,7 @@ struct TSOptions {
       return ss.str();
     }
 
-    REGISTER_PYBIND_FIELDS(max_num_moves, num_threads, num_rollout_per_thread, verbose, persistent_tree, pick_method, use_prior, baseline, baseline_sigma, pseudo_games);
+    REGISTER_PYBIND_FIELDS(max_num_moves, num_threads, num_rollout_per_thread, verbose, persistent_tree, pick_method, use_prior, baseline, baseline_sigma, pseudo_games, verbose_time);
 };
 
 } // namespace mcts
