@@ -8,7 +8,6 @@
 */
 
 //File: game_context.h
-//Author: Yuxin Wu <ppwwyyxxc@gmail.com>
 
 #pragma once
 #include <pybind11/pybind11.h>

@@ -8,7 +8,6 @@
 */
 
 //File: python_wrapper.cc
-//Author: Yuxin Wu <ppwwyyxxc@gmail.com>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl_bind.h>
