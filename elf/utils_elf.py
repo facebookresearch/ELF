@@ -32,6 +32,7 @@ class Batch:
         ''' Initialize `Batch` class. Pass in a dict and wrap it into ``self.batch``'''
         self.batch = kwargs
 
+    @staticmethod
     def _request(GC, group_id, key, T):
         info = GC.GetTensorSpec(group_id, key, T)
         # print("Key = \"%s\"" % str(key))
@@ -43,6 +44,7 @@ class Batch:
                 raise ValueError("key[%s] or last_key[%s] is not specified!" % (key, last_key))
         return info
 
+    @staticmethod
     def _alloc(info, use_gpu=True, use_numpy=True):
         if not use_numpy:
             v = Batch.torch_types[info.type](*info.sz)
@@ -59,6 +61,7 @@ class Batch:
 
         return v, info
 
+    @staticmethod
     def load(GC, input_reply, desc, group_id, use_gpu=True, use_numpy=False):
         '''load Batch from the specifications
 
@@ -237,7 +240,7 @@ class GCWrapper:
             print("Deal with connector. key = %s, hist_len = %d, player_name = %s" % (key, gstat.hist_len, gstat.player_name))
 
             gpu2gid.append(list())
-            for i in range(num_recv_thread):
+            for i in range(int(num_recv_thread)):
                 group_id = GC.AddCollectors(batchsize, len(gpu2gid) - 1, gstat)
 
                 inputs.append(Batch.load(GC, "input", input, group_id, use_gpu=use_gpu, use_numpy=use_numpy))
@@ -335,4 +338,3 @@ class GCWrapper:
     def PrintSummary(self):
         '''Print summary'''
         self.GC.PrintSummary()
-
