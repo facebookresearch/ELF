@@ -15,8 +15,8 @@ from .timer import RLTimer
 from .utils import ModelSaver, MultiCounter
 from datetime import datetime
 
-import torch.multiprocessing as _mp
-mp = _mp.get_context('spawn')
+# import torch.multiprocessing as _mp
+# mp = _mp.get_context('spawn')
 
 class Evaluator:
     def __init__(self, name="eval", stats=True, verbose=False, actor_name="actor"):
