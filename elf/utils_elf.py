@@ -28,10 +28,17 @@ class Batch:
         'char': 'byte'
     }
 
-    def __init__(self, **kwargs):
+    def __init__(self, _batchsize=None, **kwargs):
         ''' Initialize `Batch` class. Pass in a dict and wrap it into ``self.batch``'''
-        self.batch = kwargs
+        if isinstance(_batchsize, int):
+            self.batch = { k : v[:, :_batchsize] for k, v in kwargs.items() }
+        else:
+            self.batch = kwargs
 
+    def first_k(self, batchsize):
+        return Batch(_batchsize=batchsize, **self.batch)
+
+    @staticmethod
     def _request(GC, group_id, key, T):
         info = GC.GetTensorSpec(group_id, key, T)
         # print("Key = \"%s\"" % str(key))
@@ -43,6 +50,7 @@ class Batch:
                 raise ValueError("key[%s] or last_key[%s] is not specified!" % (key, last_key))
         return info
 
+    @staticmethod
     def _alloc(info, use_gpu=True, use_numpy=True):
         if not use_numpy:
             v = Batch.torch_types[info.type](*info.sz)
@@ -59,6 +67,7 @@ class Batch:
 
         return v, info
 
+    @staticmethod
     def load(GC, input_reply, desc, group_id, use_gpu=True, use_numpy=False):
         '''load Batch from the specifications
 
@@ -257,9 +266,13 @@ class GCWrapper:
             for i in range(num_recv_thread):
                 group_id = GC.AddCollectors(batchsize, len(gpu2gid) - 1, timeout_usec, gstat)
 
-                inputs.append(Batch.load(GC, "input", input, group_id, use_gpu=use_gpu, use_numpy=use_numpy))
+                input_batch = Batch.load(GC, "input", input, group_id, use_gpu=use_gpu, use_numpy=use_numpy)
+                input_batch.batchsize = batchsize
+                inputs.append(input_batch)
                 if reply is not None:
-                    replies.append(Batch.load(GC, "reply", reply, group_id, use_gpu=use_gpu, use_numpy=use_numpy))
+                    reply_batch = Batch.load(GC, "reply", reply, group_id, use_gpu=use_gpu, use_numpy=use_numpy)
+                    reply_batch.batchsize= batchsize
+                    replies.append(reply_batch)
                 else:
                     replies.append(None)
 
@@ -320,9 +333,9 @@ class GCWrapper:
 
         batchsize = len(infos.s)
 
-        sel = self.inputs[infos.gid]
+        sel = self.inputs[infos.gid].first_k(batchsize)
         if self.inputs_gpu is not None:
-            sel_gpu = self.inputs_gpu[self.gid2gpu[infos.gid]]
+            sel_gpu = self.inputs_gpu[self.gid2gpu[infos.gid]].first_k(batchsize)
             sel.transfer_cpu2gpu(sel_gpu)
             picked = sel_gpu
         else:
@@ -332,10 +345,11 @@ class GCWrapper:
         # directly, they can use infos.s[i], which is a state pointer.
         picked.infos = infos
         picked.batchsize = batchsize
+        picked.max_batchsize = self.inputs[infos.gid].batchsize
 
         # Get the reply array
         if len(self.replies) > infos.gid and self.replies[infos.gid] is not None:
-            sel_reply = self.replies[infos.gid]
+            sel_reply = self.replies[infos.gid].first_k(batchsize)
         else:
             sel_reply = None
 

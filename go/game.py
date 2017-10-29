@@ -83,7 +83,7 @@ class Loader:
                 input=dict(T=1, keys=set(["s"])),
                 reply=dict(T=1, keys=set(["pi", "V"])),
                 name="actor",
-                timeout_usec = 100,
+                timeout_usec = 10,
             )
         else:
             desc["train"] = dict(

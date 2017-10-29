@@ -36,7 +36,9 @@ void register_common_func(py::module &m) {
     .def(py::init<>())
     .def("info", &GroupStat::info);
 
-  PYCLASS_WITH_FIELDS(m, Infos);
+  PYCLASS_WITH_FIELDS(m, Infos)
+    .def(py::init<>())
+    .def("batchsize", &Infos::batchsize);
 
   using HistState = HistT<State>;
   PYCLASS_WITH_FIELDS(m, HistState)

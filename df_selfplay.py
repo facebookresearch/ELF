@@ -18,8 +18,20 @@ if __name__ == '__main__':
 
     evaluator.setup(mi=mi)
 
+    total_batchsize = 0
+    total_sel_batchsize = 0
+
     def actor(batch):
+        global total_batchsize, total_sel_batchsize
         reply = evaluator.actor(batch)
+        total_sel_batchsize += batch.batchsize
+        total_batchsize += batch.max_batchsize
+
+        if total_batchsize >= 5000:
+            print("Batch usage: %d/%d (%.2f%%)" %
+                  (total_sel_batchsize, total_batchsize, 100.0 * total_sel_batchsize / total_batchsize))
+            total_sel_batchsize = 0
+            total_batchsize = 0
         # import pdb
         # pdb.set_trace()
         return reply

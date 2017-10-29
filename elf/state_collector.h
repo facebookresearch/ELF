@@ -35,6 +35,7 @@ struct InfosT {
 
     InfosT(int gid, const std::vector<Data *> &s) : gid(gid), s(s) { }
     InfosT() : gid(-1) { }
+    int batchsize() const { return (int)s.size(); }
 
     REGISTER_PYBIND_FIELDS(gid, s);
 };
