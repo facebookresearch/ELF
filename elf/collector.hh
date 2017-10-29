@@ -212,7 +212,7 @@ class BatchCollectorT: public CollectorT<Key, Value> {
     std::vector<Value*> _batch;
 
     std::pair<Value *, bool> _wait(int timeout_usec) {
-        return (timeout_usec == 0 ? make_pair(this->waitOne(), true) : this->waitOneUntil(timeout_usec));
+        return (timeout_usec == 0 ? std::make_pair(this->waitOne(), true) : this->waitOneUntil(timeout_usec));
     }
 };
 

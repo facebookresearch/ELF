@@ -23,7 +23,7 @@ bool ReplayLoader::Load(const string& replay_filename) {
         // Tar file.
         const string tar_file = replay_filename.substr(0, pos) + ".tar";
         const string sub_file = replay_filename.substr(pos + 5, string::npos);
-        TarLoader tar_loader(tar_file);
+        elf::tar::TarLoader tar_loader(tar_file);
         loader.set_str(tar_loader.Load(sub_file));
     } else {
         if (! loader.read_from_file(replay_filename)) {

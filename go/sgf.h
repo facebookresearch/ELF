@@ -168,7 +168,7 @@ public:
 
     Sgf() : _num_moves(0) { }
     bool Load(const string& filename);
-    bool Load(const string& gamename, elf::TarLoader& tar_loader);
+    bool Load(const string& gamename, elf::tar::TarLoader& tar_loader);
 
     iterator begin() const { return iterator(*this); }
 

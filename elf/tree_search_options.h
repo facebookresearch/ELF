@@ -4,6 +4,7 @@
 #include <sstream>
 
 #include "pybind_helper.h"
+#include "utils.h"
 
 namespace mcts {
 
