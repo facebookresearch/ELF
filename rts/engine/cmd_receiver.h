@@ -51,10 +51,6 @@ private:
 
     vector<CmdBPtr> _cmd_history;
 
-    // Idx for the next replay to send to the queue.
-    unsigned int _next_replay_idx;
-    vector<CmdBPtr> _loaded_replay;
-
     // Record current state of each unit. Note that this pointer does not own anything.
     // When the command is destroyed, we should manually delete the entry as well.
     map<UnitId, CmdDurative *> _unit_durative_cmd;
@@ -91,8 +87,7 @@ private:
 
 public:
     CmdReceiver()
-        : _tick(0), _cmd_next_id(0), _next_replay_idx(-1),
-          _cmd_dumper(nullptr), _save_to_history(true),
+        : _tick(0), _cmd_next_id(0), _cmd_dumper(nullptr), _save_to_history(true),
           _verbose_player_id(INVALID), _verbose_choice(CR_NO_VERBOSE), _path_planning_verbose(false), _use_cmd_comment(false)  {
     }
 
@@ -140,22 +135,15 @@ public:
     bool FinishDurativeCmdIfDone(UnitId id);
 
     const CmdDurative *GetUnitDurativeCmd(UnitId id) const;
-    int GetLoadedReplaySize() const { return _loaded_replay.size(); }
-    int GetLoadedReplayLastTick() const { return _loaded_replay.back()->tick(); }
     vector<CmdDurative*> GetHistoryAtCurrentTick() const;
 
-    // Save and load Replay from a file
-    bool LoadReplay(const string& replay_filename);
+    // Save replay to a file
     bool SaveReplay(const string& replay_filename) const;
 
     // Execute Durative Commands. This will not change the game environment.
     void ExecuteDurativeCmds(const GameEnv &env, bool force_verbose);
     // Execute Immediate Commands. This will change the game environment.
     void ExecuteImmediateCmds(GameEnv *env, bool force_verbose);
-
-    // Send replay from this tick.
-    void SendCurrentReplay();
-    void AlignReplayIdx();
 
     // CmdReceiver has its specialized Save and Load function.
     // No SERIALIZER(...) is needed.

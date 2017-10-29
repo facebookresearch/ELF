@@ -20,8 +20,8 @@ protected:
     // Feature extraction.
     void extract(const State &s, Data *data) override {
         auto &gs = data->newest();
-        MCExtract(s, id(), true, &gs.s);
-        MCSaveInfo(s, id(), &gs);
+        MCExtractor::Extract(s, id(), true, &gs.s);
+        MCExtractor::SaveInfo(s, id(), &gs);
         gs.name = "reduced_project";
     }
 

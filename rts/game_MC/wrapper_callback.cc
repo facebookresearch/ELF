@@ -18,7 +18,7 @@
 #include "trainable_ai.h"
 #include "mcts.h"
 
-static AI *get_ai(const mcts::TSOptions &mcts_opt, const AIOptions &opt, Context::AIComm *ai_comm) {
+static AI *get_ai(int game_idx, const mcts::TSOptions &mcts_opt, const AIOptions &opt, Context::AIComm *ai_comm) {
     // std::cout << "AI type = " << ai_type << " Backup AI type = " << backup_ai_type << std::endl;
     if (opt.type == "AI_SIMPLE") return new SimpleAI(opt);
     else if (opt.type == "AI_HIT_AND_RUN") return new HitAndRunAI(opt);
@@ -30,11 +30,15 @@ static AI *get_ai(const mcts::TSOptions &mcts_opt, const AIOptions &opt, Context
         ai->SetMainAI(main_ai);
         return ai;
     } else if (opt.type == "AI_MCTS") {
-        MCTSRTSAI *ai = new MCTSRTSAI(mcts_opt);
+        mcts::TSOptions opt = mcts_opt;
+        opt.save_tree_filename = mcts_opt.save_tree_filename + "_" + std::to_string(game_idx) + ".txt";
+        MCTSRTSAI *ai = new MCTSRTSAI(opt);
         return ai;
     } else if (opt.type == "AI_REDUCED_MCTS") {
         // cout << opt.info() << endl;
-        MCTSRTSReducedAI *ai = new MCTSRTSReducedAI(ai_comm, mcts_opt);
+        mcts::TSOptions opt = mcts_opt;
+        opt.save_tree_filename = mcts_opt.save_tree_filename + "_" + std::to_string(game_idx) + ".txt";
+        MCTSRTSReducedAI *ai = new MCTSRTSReducedAI(ai_comm, opt);
         return ai;
     } else {
         cout << "Unknown opt.type: " + opt.type << endl;
@@ -69,7 +73,7 @@ void WrapperCallbacks::OnGameInit(RTSGame *game, const std::map<std::string, int
         Context::AIComm *ai_comm = new Context::AIComm(_game_idx, _comm);
         _ai_comms.emplace_back(ai_comm);
         initialize_ai_comm(*ai_comm, more_params);
-        ais.push_back(get_ai(_context_options.mcts_options, ai_opt, ai_comm));
+        ais.push_back(get_ai(_game_idx, _context_options.mcts_options, ai_opt, ai_comm));
     }
 
     // std::cout << "Initialize ai" << std::endl;
@@ -86,7 +90,7 @@ void WrapperCallbacks::OnGameInit(RTSGame *game, const std::map<std::string, int
     for (size_t i = 0; i < ais.size(); ++i) {
         int idx = orders[i];
         game->AddBot(ais[idx], _options.ai_options[idx].fs);
-        game->GetState().AppendPlayer("players " + std::to_string(idx));
+        game->GetState().AppendPlayer("player " + std::to_string(idx));
     }
 }
 

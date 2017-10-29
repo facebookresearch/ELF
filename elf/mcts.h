@@ -54,7 +54,7 @@ public:
     /*
     MEMBER_FUNC_CHECK(Restart)
     template <typename Actor_ = Actor, typename std::enable_if<has_func_Restart<Actor_>::value>::type *U = nullptr>
-    bool GameEnd(const State &) override {
+    bool GameEnd() override {
         for (size_t i = 0; i < ts_->size(); ++i) {
             ts_->actor(i).Restart();
         }
@@ -117,17 +117,13 @@ public:
 
     MCTSAI *get() { return mcts_ai_.get(); }
 
-    bool GameEnd(const State &s) override {
-        // Send final message.
-        Action action;
-        Act(s, &action, nullptr);
-
+    bool GameEnd() override {
         // Restart _ai_comm.
         ai_comm_->Restart();
         for (auto &ai_comm : ai_comms_) {
             ai_comm->Restart();
         }
-        return mcts_ai_->GameEnd(s);
+        return mcts_ai_->GameEnd();
     }
 
 protected:

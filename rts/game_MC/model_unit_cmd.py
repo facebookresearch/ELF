@@ -66,7 +66,6 @@ class Model_ActorCritic(Model):
 
         return dict(V=value, uloc_prob=unit_locs, tloc_prob=target_locs, ct_prob=cmd_types, bt_prob=build_types, action_type=1)
 
-
 # Format: key, [model, method]
 # if method is None, fall back to default mapping from key to method
 Models = {

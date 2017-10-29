@@ -129,11 +129,8 @@ public:
         return true;
     }
 
-    bool GameEnd(const RTSState &s) override {
-        // Send final message.
-        ReducedState reduced_s;
-        mcts_ai_.get()->GetEngine()->actor(0).project(s, &reduced_s);
-        return mcts_ai_.GameEnd(reduced_s);
+    bool GameEnd() override {
+        return mcts_ai_.GameEnd();;
     }
 
 protected:
@@ -236,7 +233,7 @@ public:
     }
 
 protected:
-    void on_set_id() {
+    void on_set_id() override {
         mcts_ai_.SetId(id());
     }
 

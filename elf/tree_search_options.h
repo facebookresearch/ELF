@@ -15,6 +15,9 @@ struct TSOptions {
     int num_rollout_per_thread = 100;
     bool verbose = false;
     bool verbose_time = false;
+
+    string save_tree_filename;
+
     bool persistent_tree = false;
     // [TODO] Not a good design.
     // string pick_method = "strongest_prior";
@@ -33,16 +36,18 @@ struct TSOptions {
       ss << "Maximal #moves (0 = no constraint): " << max_num_moves << endl;
       ss << "#Threads: " << num_threads << endl;
       ss << "#Rollout per thread: " << num_rollout_per_thread << endl;
-      ss << "Verbose: " << (verbose ? "True" : "False") << endl;
-      ss << "Use prior: " << (use_prior ? "True" : "False") << endl;
-      ss << "Persistent tree: " << (persistent_tree ? "True" : "False") << endl;
+      ss << "Verbose: " << elf_utils::print_bool(verbose) << ", Verbose_time: " << elf_utils::print_bool(verbose_time) << endl;
+      if (! save_tree_filename.empty())
+        ss << "Save tree filename: " << save_tree_filename << endl;
+      ss << "Use prior: " << elf_utils::print_bool(use_prior) << endl;
+      ss << "Persistent tree: " << elf_utils::print_bool(persistent_tree) << endl;
       ss << "#Pseudo game: " << pseudo_games << endl;
       ss << "Pick method: " << pick_method << endl;
       ss << "Baseline: " << baseline << ", baseline_sigma: " << baseline_sigma << endl;
       return ss.str();
     }
 
-    REGISTER_PYBIND_FIELDS(max_num_moves, num_threads, num_rollout_per_thread, verbose, persistent_tree, pick_method, use_prior, baseline, baseline_sigma, pseudo_games, verbose_time);
+    REGISTER_PYBIND_FIELDS(max_num_moves, num_threads, num_rollout_per_thread, verbose, persistent_tree, pick_method, use_prior, baseline, baseline_sigma, pseudo_games, verbose_time, save_tree_filename);
 };
 
 } // namespace mcts

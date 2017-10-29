@@ -22,7 +22,8 @@ void GameEnv::Visualize() const {
         std::cout << player.PrintInfo() << std::endl;
     }
     // No FoW, everything.
-    auto unit_iter = GetUnitIterator(INVALID);
+    GameEnvAspect aspect(*this, INVALID);
+    UnitIterator unit_iter(aspect, UnitIterator::ALL);
     while (! unit_iter.end()) {
         const Unit &u = *unit_iter;
         std::cout << u.PrintInfo(*_map) << std::endl;
@@ -264,6 +265,28 @@ void GameEnv::ComputeFOW() {
     for (Player &p : _players) {
         p.ComputeFOW(_units);
     }
+}
+
+int GameEnv::GetPrevSeenCount(PlayerId player_id) const {
+    GameEnvAspect aspect(*this, player_id);
+    const Player &player = aspect.GetPlayer();
+
+    set<UnitId> unit_ids;
+
+    // cout << "GetPrevSeenCount: " << endl;
+
+    for (int x = 0; x < _map->GetXSize(); ++x) {
+        for (int y = 0; y < _map->GetYSize(); ++y) {
+            Loc loc = _map->GetLoc(x, y);
+            const Fog &f = player.GetFog(loc);
+            if (f.CanSeeTerrain()) continue;
+            for (const Unit &u : f.seen_units()) {
+                // cout << u.PrintInfo(*_map) << endl;
+                unit_ids.insert(u.GetId());
+            }
+        }
+    }
+    return unit_ids.size();
 }
 
 bool GameEnv::GenerateMap(int num_obstacles, int init_resource) {

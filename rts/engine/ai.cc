@@ -9,7 +9,4 @@
 
 #include "ai.h"
 #include "float.h"
-#include "cmd.gen.h"
-//#include "minirts2_state.h"
-//#include "minirts3_state.h"
-//
+

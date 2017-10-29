@@ -5,6 +5,7 @@
 class MixedAI : public AI {
 public:
     using State = AI::State;
+    using Action = AI::Action;
 
     MixedAI(const AIOptions &opt) : AI(opt.name) {
           if (opt.args != "") {
@@ -49,11 +50,11 @@ public:
         }
     }
 
-    bool GameEnd(const State &s) override {
-        AI::GameEnd(s);
+    bool GameEnd() override {
+        AI::GameEnd();
 
         // Always ended with main_ai.
-        bool res = _main_ai->GameEnd(s);
+        bool res = _main_ai->GameEnd();
 
         // Decay latest_start.
         _latest_start *= _latest_start_decay;

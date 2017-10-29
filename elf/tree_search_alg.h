@@ -22,8 +22,8 @@ pair<typename Map::key_type, float> UCT(const Map& vals, float count, bool use_p
     static_assert(is_same<typename Map::mapped_type, EdgeInfo>::value, "key type must be EdgeInfo");
 
     A best_a = A();
-    float max_score = -1.0;
-    const float c_puct = 5.0;
+    float max_score = std::numeric_limits<float>::lowest();
+    const float c_puct = 0.5;
     const float sqrt_count1 = sqrt(count + 1);
 
     if (oo) *oo << "UCT prior = " << (use_prior ? "True" : "False") << endl;
@@ -72,6 +72,29 @@ MCTSResultT<typename Map::key_type> StrongestPrior(const Map& vals) {
 
         res.feed(info.prior, action_pair);
     }
+    return res;
+};
+
+template <typename Map>
+MCTSResultT<typename Map::key_type> UniformRandom(const Map& vals) {
+    using A = typename Map::key_type;
+    using MCTSResult = MCTSResultT<A>;
+    static_assert(is_same<typename Map::mapped_type, EdgeInfo>::value, "key type must be EdgeInfo");
+
+    static std::mt19937 rng(time(NULL));
+    static std::mutex mu;
+
+    MCTSResult res;
+
+    int idx = 0;
+    {
+        lock_guard<mutex> lock(mu);
+        idx = rng() % vals.size();
+    }
+    auto it = vals.begin();
+    while (--idx >= 0) ++ it;
+
+    res.feed(it->second.n, *it);
     return res;
 };
 

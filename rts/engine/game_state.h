@@ -5,6 +5,7 @@
 #include "game_env.h"
 #include "game_options.h"
 #include "game_action.h"
+#include "replay_loader.h"
 
 class RTSState {
 public:
@@ -75,12 +76,15 @@ public:
     virtual void IncTick() { _cmd_receiver.IncTick(); }
 
     virtual elf::GameResult PostAct();
-    virtual bool forward(RTSAction &);
+    bool forward(RTSAction &);
     virtual void Finalize();
 
     virtual bool Reset();
 
     virtual ~RTSState() { }
+
+    // You can also directly send the command. Used for spectator.
+    virtual bool forward(ReplayLoader::Action &);
 
     void AppendPlayer(const std::string &name);
     void RemoveLastPlayer();

@@ -43,7 +43,7 @@ struct EdgeInfo {
 
     string info() const {
         std::stringstream ss;
-        ss << acc_reward << "/" << n << ", Pr: " << prior << ", next: " << next;
+        ss << acc_reward << "/" << n << " (" << acc_reward / n << "), Pr: " << prior << ", next: " << next;
         return ss.str();
     }
 };
@@ -54,7 +54,7 @@ struct MCTSResultT {
     float max_score;
     EdgeInfo edge_info;
 
-    MCTSResultT() : best_a(A()), max_score(-1.0) {
+    MCTSResultT() : best_a(A()), max_score(std::numeric_limits<float>::lowest()) {
     }
 
     bool feed(float score, const pair<A, EdgeInfo> &e) {

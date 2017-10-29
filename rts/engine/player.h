@@ -20,12 +20,25 @@ class Unit;
 struct Fog {
     // Fog level: 0 no fog, 100 completely invisible.
     int _fog = 100;
-    void Reset() {  _fog = 100; }
-    void SetClear() { _fog = 0; }
+    vector<Unit> _prev_seen_units;
+
+    void MakeInvisible() {  _fog = 100; }
+    void SetClear() { _fog = 0; _prev_seen_units.clear(); }
     bool CanSeeTerrain() const { return _fog < 50; }
     bool CanSeeUnit() const { return _fog < 30; }
 
-    SERIALIZER(Fog, _fog);
+    void SaveUnit(const Unit &u) {
+        _prev_seen_units.push_back(u);
+    }
+
+    void ResetFog() {
+        _fog = 100;
+        _prev_seen_units.clear(); 
+    }
+
+    const vector<Unit> &seen_units() const { return _prev_seen_units; }
+
+    SERIALIZER(Fog, _fog, _prev_seen_units);
 };
 
 // PlayerPrivilege, Normal player only see within the Fog of War.
@@ -90,6 +103,8 @@ private:
         }
     };
 
+    Loc _filter_with_fow(const Unit& u) const;
+
     bool line_passable(UnitId id, const PointF &curr, const PointF &target) const;
     float get_line_dist(const Loc &p1, const Loc &p2) const;
 
@@ -139,9 +154,16 @@ public:
         return make_string("p", _player_id, _resource);
     }
 
-    void ClearCache() { _heuristics.clear(); _cache.clear(); _resource = 0; }
+    void ClearCache() { 
+        _heuristics.clear(); 
+        _cache.clear(); 
+        _resource = 0; 
+        for (auto &fog : _fogs) {
+            fog.ResetFog();
+        }
+    }
 
-    bool CanSeeTerrain(Loc loc) const { return _fogs[loc].CanSeeTerrain(); }
+    const Fog &GetFog(Loc loc) const { return _fogs[loc]; }
 
     string PrintInfo() const;
 

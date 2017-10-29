@@ -16,11 +16,12 @@ struct GameBaseOptions {
 };
 
 // Any games played by multiple AIs.
-template <typename S, typename _AI>
+template <typename S, typename _AI, typename _Spectator = _AI>
 class GameBaseT {
 public:
-    using GameBase = GameBaseT<S, _AI>;
+    using GameBase = GameBaseT<S, _AI, _Spectator>;
     using AI = _AI;
+    using Spectator = _Spectator;
 
     struct Bot {
         unique_ptr<AI> ai;
@@ -50,9 +51,8 @@ public:
         _bots.pop_back();
     }
 
-    void AddSpectator(AI *spectator) {
+    void AddSpectator(Spectator *spectator) {
         if (_spectator.get() == nullptr) {
-            spectator->SetId(-1);
             _spectator.reset(spectator);
         }
     }
@@ -63,20 +63,7 @@ public:
 
     GameResult Step(const std::atomic_bool *done = nullptr) {
         _state->PreAct();
-        auto t = _state->GetTick();
-        for (const Bot &bot : _bots) {
-            if (t % bot.frame_skip == 0) {
-                typename AI::Action actions;
-                bot.ai->Act(*_state, &actions, done);
-                _state->forward(actions);
-            }
-        }
-        if (_spectator != nullptr) {
-            typename AI::Action actions;
-            _spectator->Act(*_state, &actions, done);
-            _state->forward(actions);
-        }
-
+        _act(true, done);
         GameResult res = _state->PostAct();
         _state->IncTick();
 
@@ -90,10 +77,8 @@ public:
             if (done != nullptr && done->load()) break;
         }
         // Send message to AIs.
-        for (const Bot &bot : _bots) {
-            bot.ai->GameEnd(*_state);
-        }
-        if (_spectator != nullptr) _spectator->GameEnd(*_state);
+        _act(false, done);
+        _game_end();
         _state->Finalize();
     }
 
@@ -104,9 +89,34 @@ public:
 private:
     S *_state;
     std::vector<Bot> _bots;
-    unique_ptr<AI> _spectator;
+    unique_ptr<Spectator> _spectator;
 
     GameBaseOptions _options;
+
+    void _act(bool check_frameskip, const std::atomic_bool *done) {
+        auto t = _state->GetTick();
+        for (const Bot &bot : _bots) {
+            if (! check_frameskip || t % bot.frame_skip == 0) {
+                typename AI::Action actions;
+                bot.ai->Act(*_state, &actions, done);
+                _state->forward(actions);
+            }
+        }
+        if (_spectator != nullptr) {
+            typename Spectator::Action actions;
+            _spectator->Act(*_state, &actions, done);
+            _state->forward(actions);
+        }
+    }
+
+    void _game_end() {
+        for (const Bot &bot : _bots) {
+            bot.ai->GameEnd();
+        }
+        if (_spectator != nullptr) {
+            _spectator->GameEnd();
+        }
+    }
 };
 
 }  // namespace elf

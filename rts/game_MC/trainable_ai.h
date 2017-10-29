@@ -1,11 +1,13 @@
 #pragma once
 
+#include <sstream>
 #include "ai.h"
 #include "elf/circular_queue.h"
 
 class TrainedAI : public AIWithComm {
 public:
     using State = AIWithComm::State;
+    using Action = AIWithComm::Action;
     using Data = typename AIWithComm::Data;
 
     TrainedAI() : _respect_fow(true), _recent_states(1) { }
@@ -14,7 +16,7 @@ public:
       for (auto &v : _recent_states.v()) v.clear();
     }
 
-    bool GameEnd(const State &) override;
+    bool GameEnd() override;
 
 protected:
     const bool _respect_fow;

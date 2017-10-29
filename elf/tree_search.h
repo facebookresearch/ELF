@@ -153,7 +153,8 @@ private:
     template <typename Actor, typename std::enable_if<! has_func_reward<Actor>::value>::type *U = nullptr>
     float get_reward(const Actor &actor, const Node *node) {
         (void)actor;
-        return sigmoid((node->value() - options_.baseline) / options_.baseline_sigma);
+        // return sigmoid((node->value() - options_.baseline) / options_.baseline_sigma);
+        return node->value();
     }
 
     template <typename Actor>
@@ -201,6 +202,10 @@ public:
             actors_.emplace_back(actor_gen(i));
         }
 
+        if (! options.save_tree_filename.empty()) {
+            output_.reset(new ofstream(options.save_tree_filename));
+        }
+
         // cout << "#Thread: " << options.num_threads << endl;
         for (int i = 0; i < options.num_threads; ++i) {
             TSOneThread *th = this->threads_[i].get();
@@ -243,8 +248,23 @@ public:
         }
 
         // Pick the best solution.
-        if (options_.pick_method == "strongest_prior") return StrongestPrior(root->sa());
-        else return MostVisited(root->sa());
+        MCTSResult result;
+        if (options_.pick_method == "strongest_prior") result = StrongestPrior(root->sa());
+        else if (options_.pick_method == "most_visited") result = MostVisited(root->sa());
+        else if (options_.pick_method == "uniform_random") result = UniformRandom(root->sa());
+        else {
+            cout << "MCTS Pick method unknown! " << options_.pick_method << endl;
+            throw std::range_error("MCTS Pick method unknown! " + options_.pick_method);
+        }
+
+        if (output_ != nullptr) {
+            *output_ << "===================" << endl;
+            *output_ << options_.info() << endl;
+            *output_ << info() << endl;
+            *output_ << "Choice: " << result.info() << endl;
+        }
+
+        return result;
     }
 
     void TreeAdvance(const A &a) {
@@ -275,6 +295,8 @@ private:
     ctpl::thread_pool pool_;
     vector<unique_ptr<TSOneThread>> threads_;
     vector<unique_ptr<Actor>> actors_;
+
+    unique_ptr<ostream> output_;
 
     NodeAlloc alloc_;
 

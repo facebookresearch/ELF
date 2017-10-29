@@ -12,41 +12,66 @@
 #include "vendor/ws_server.h"
 #include "ai.h"
 #include "raw2cmd.h"
+#include "engine/replay_loader.h"
+#include "save2json.h"
 
-class TCPAI : public AI {
+class WebCtrl {
 public:
-    // If player_id == INVALID, then it will send the full information.
-    TCPAI(const std::string &name, int vis_after, int port) : AI(name), _vis_after(vis_after) {
+    WebCtrl(int port) {
         server_.reset(
-                new WSServer{port, [this](const std::string& msg) {
+            new WSServer{port, [this](const std::string& msg) {
                 this->queue_.enqueue(msg);
-                }});
+        }});
     }
 
-    bool Act(const State &s, RTSMCAction *action, const std::atomic_bool *) override;
-
-    // This is for visualization.
-    /*
-    bool IsUnitSelected(UnitId id) const override { return _raw_converter.IsUnitSelected(id); }
-    vector<int> GetAllSelectedUnits() const override {
-      auto selected = _raw_converter.GetAllSelectedUnits();
-      return vector<int>(selected.begin(), selected.end());
+    PlayerId GetId() const {
+        return _raw_converter.GetPlayerId();
     }
-    */
+
+    void SetId(PlayerId id) {
+        _raw_converter.SetId(id);
+    }
+
+    void Receive(const RTSState &s, vector<CmdBPtr> *cmds, vector<UICmd> *ui_cmds);
+    void Send(const string &s) { server_->send(s); }
+    void Extract(const RTSState &s, json *game);
 
 private:
     RawToCmd _raw_converter;
-    int _vis_after;
-
     std::unique_ptr<WSServer> server_;
     moodycamel::ConcurrentQueue<std::string> queue_;
+};
 
-    string save_vis_data(const State &state) const;
-    bool send_vis(const string &s);
+
+class TCPAI : public AI {
+public:
+    TCPAI(const std::string &name, int port) : AI(name), _ctrl(port) { }
+    bool Act(const State &s, RTSMCAction *action, const std::atomic_bool *) override;
+
+private:
+    WebCtrl _ctrl;
 
 protected:
     void on_set_id() override {
         this->AI::on_set_id();
-        _raw_converter.SetId(id());
+        _ctrl.SetId(id());
     }
+};
+
+class TCPSpectator : public Replayer {
+public:
+    using Action = typename Replayer::Action;
+
+    TCPSpectator(const string &replay_filename, int vis_after, int port)
+      : Replayer(replay_filename), _ctrl(port), _vis_after(vis_after) {
+       _ctrl.SetId(INVALID);
+    }
+
+    bool Act(const RTSState &s, Action *action, const std::atomic_bool *) override;
+
+private:
+    WebCtrl _ctrl;
+    int _vis_after;
+
+    vector<string> _history_states;
 };

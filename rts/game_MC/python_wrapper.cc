@@ -17,6 +17,7 @@
 #include "engine/wrapper_template.h"
 #include "wrapper_callback.h"
 #include "ai.h"
+#include "state_feature.h"
 
 class GameContext {
 public:
@@ -27,8 +28,6 @@ private:
     std::unique_ptr<GC> _context;
     Wrapper _wrapper;
     int _num_frames_in_state;
-    int _num_planes;
-    int _reduced_size;
 
 public:
     GameContext(const ContextOptions& context_options, const PythonOptions& options) {
@@ -39,8 +38,6 @@ public:
         for (const AIOptions& opt : options.ai_options) {
             _num_frames_in_state = max(_num_frames_in_state, opt.num_frames_in_state);
         }
-        _num_planes = (GameDef::GetNumUnitType() + 7) * _num_frames_in_state;
-        _reduced_size = (GameDef::GetNumUnitType() + 7) * 5 * 5; 
     }
 
     void Start() {
@@ -55,13 +52,14 @@ public:
         return std::map<std::string, int>{
             { "num_action", GameDef::GetNumAction() },
             { "num_unit_type", GameDef::GetNumUnitType() },
-            { "num_planes", _num_planes },
+            { "num_planes_per_time_stamp", MCExtractor::Size() },
+            { "num_planes", MCExtractor::Size() * _num_frames_in_state },
             { "resource_dim", 2 * NUM_RES_SLOT },
             { "max_unit_cmd", _context->options().max_unit_cmd },
             { "map_x", _context->options().map_size_x },
             { "map_y", _context->options().map_size_y },
             { "num_cmd_type", CmdInput::CI_NUM_CMDS },
-            { "reduced_dim", _reduced_size }
+            { "reduced_dim", MCExtractor::Size() * 5 * 5 }
         };
     }
 
@@ -75,8 +73,9 @@ public:
         const int mapx = _context->options().map_size_x;
         const int mapy = _context->options().map_size_y;
         const int max_unit_cmd = _context->options().max_unit_cmd;
+        const int reduced_size = MCExtractor::Size() * 5 * 5;
 
-        if (key == "s") return EntryInfo(key, type_name, { _num_planes,  _context->options().map_size_y, _context->options().map_size_x});
+        if (key == "s") return EntryInfo(key, type_name, { (int)MCExtractor::Size() * _num_frames_in_state,  _context->options().map_size_y, _context->options().map_size_x});
         else if (key == "last_r" || key == "terminal" || key == "last_terminal" || key == "id" || key == "seq" || key == "game_counter" || key == "player_id") return EntryInfo(key, type_name);
         else if (key == "pi") return EntryInfo(key, type_name, {GameDef::GetNumAction()});
         else if (key == "a" || key == "rv" || key == "V" || key == "action_type") return EntryInfo(key, type_name);
@@ -88,10 +87,20 @@ public:
         else if (key == "tloc_prob") return EntryInfo(key, type_name, { max_unit_cmd, mapx * mapy });
         else if (key == "bt_prob") return EntryInfo(key, type_name, { max_unit_cmd, GameDef::GetNumUnitType() });
         else if (key == "ct_prob") return EntryInfo(key, type_name, { max_unit_cmd, CmdInput::CI_NUM_CMDS });
-        else if (key == "reduced_s") return EntryInfo(key, type_name, { _reduced_size });
-        else if (key == "reduced_next_s") return EntryInfo(key, type_name, { _reduced_size });
+        else if (key == "reduced_s") return EntryInfo(key, type_name, { reduced_size });
+        else if (key == "reduced_next_s") return EntryInfo(key, type_name, { reduced_size });
 
         return EntryInfo();
+    }
+
+    void ApplyExtractorParams(const MCExtractorOptions &opt) {
+        std::cout << opt.info() << std::endl;
+        MCExtractor::Init(opt);
+    }
+
+    void ApplyExtractorUsage(const MCExtractorUsageOptions &opt) {
+        std::cout << opt.info() << std::endl;
+        MCExtractor::InitUsage(opt);
     }
 
     void Stop() {
@@ -107,7 +116,9 @@ public:
 PYBIND11_MODULE(minirts, m) {
   register_common_func<GameContext>(m);
   CONTEXT_REGISTER(GameContext)
-    .def("GetParams", &GameContext::GetParams);
+    .def("GetParams", &GameContext::GetParams)
+    .def("ApplyExtractorParams", &GameContext::ApplyExtractorParams)
+    .def("ApplyExtractorUsage", &GameContext::ApplyExtractorUsage);
 
   // Also register other objects.
   PYCLASS_WITH_FIELDS(m, AIOptions)
@@ -120,4 +131,11 @@ PYBIND11_MODULE(minirts, m) {
     .def(py::init<>())
     .def("Print", &PythonOptions::Print)
     .def("AddAIOptions", &PythonOptions::AddAIOptions);
+
+  PYCLASS_WITH_FIELDS(m, MCExtractorOptions)
+    .def(py::init<>());
+
+  PYCLASS_WITH_FIELDS(m, MCExtractorUsageOptions)
+    .def(py::init<>())
+    .def("Set", &MCExtractorUsageOptions::Set);
 }

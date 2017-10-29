@@ -50,6 +50,14 @@ void save2json::SetWinner(PlayerId id, json *game) {
     (*game)["winner"] = id;
 }
 
+void save2json::SetPlayerId(PlayerId id, json *game) {
+    (*game)["player_id"] = id;
+}
+
+void save2json::SetSpectator(bool is_spectator, json *game) {
+    (*game)["spectator"] = is_spectator;
+}
+
 void save2json::SetTermination(bool t, json *game) {
     (*game)["terminated"] = t;
 }
@@ -85,11 +93,19 @@ void save2json::SavePlayerMap(const Player& player, json *game) {
     for (int y = 0; y < m.GetYSize(); y ++) {
         for (int x = 0; x < m.GetXSize(); x ++) {
             Loc loc = m.GetLoc(x, y, 0);
+            const Fog &f = player.GetFog(loc);
+
             Terrain t = FOG;
-            if (player.CanSeeTerrain(loc)) {
+            if (f.CanSeeTerrain()) {
                 if (m(loc).type == NORMAL) t = NORMAL;
                 else if (m(loc).type == IMPASSABLE) t = IMPASSABLE;
+            } else {
+                // Add prev seen units.
+                for (const auto &u : f.seen_units()) {
+                    Save(u, nullptr, &rts_map);
+                }
             }
+
             slots.push_back(t);
         }
     }
@@ -104,7 +120,7 @@ void save2json::SaveStats(const Player& player, json *game) {
     pp["resource"] = player.GetResource();
     (*game)["players"].push_back(pp);
 }
- 
+
 /*
 void save2json::Save(const AI &bot, json *game) {
     json mbot;
@@ -120,7 +136,7 @@ void save2json::Save(const AI &bot, json *game) {
 }
 */
 
-void save2json::Save(const Unit& unit, const CmdReceiver &receiver, json *game) {
+void save2json::Save(const Unit& unit, const CmdReceiver *receiver, json *game) {
     json u;
     u["id"] = unit.GetId();
     u["player_id"] = unit.GetPlayerId();
@@ -139,13 +155,15 @@ void save2json::Save(const Unit& unit, const CmdReceiver &receiver, json *game) 
     set_p(unit.GetLastPointF(), &u["last_p"]);
 
     // Save commands.
-    const CmdDurative *cmd = receiver.GetUnitDurativeCmd(unit.GetId());
-    if (cmd != nullptr) {
-        set_cmd(cmd, &u["cmd"]);
-    } else {
-        u["cmd"]["cmd"] = "I";
-        u["cmd"]["id"] = unit.GetId();
-        u["cmd"]["state"] = 0;
+    if (receiver != nullptr) {
+        const CmdDurative *cmd = receiver->GetUnitDurativeCmd(unit.GetId());
+        if (cmd != nullptr) {
+            set_cmd(cmd, &u["cmd"]);
+        } else {
+            u["cmd"]["cmd"] = "I";
+            u["cmd"]["id"] = unit.GetId();
+            u["cmd"]["state"] = 0;
+        }
     }
 
     // Set cds.

@@ -25,13 +25,16 @@ class ContextArgs:
                 ("verbose_collector", dict(action="store_true")),
                 ("mcts_threads", 64),
                 ("mcts_rollout_per_thread", 50),
+
                 ("mcts_verbose", dict(action="store_true")),
+                ("mcts_save_tree_filename", ""),
+                ("mcts_verbose_time", dict(action="store_true")),
+
                 ("mcts_use_prior", dict(action="store_true")),
                 ("mcts_baseline",  3.0),
                 ("mcts_baseline_sigma", 0.3),
                 ("mcts_pseudo_games", 0),
                 ("mcts_pick_method", "most_visited"),
-                ("mcts_verbose_time", dict(action="store_true"))
             ],
             on_get_args = self._on_get_args
         )
@@ -62,6 +65,7 @@ class ContextArgs:
         mcts.num_rollout_per_thread = args.mcts_rollout_per_thread
         mcts.verbose = args.mcts_verbose
         mcts.verbose_time = args.mcts_verbose_time
+        mcts.save_tree_filename = args.mcts_save_tree_filename
         mcts.use_prior = args.mcts_use_prior
         mcts.baseline = args.mcts_baseline
         mcts.baseline_sigma = args.mcts_baseline_sigma

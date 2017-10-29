@@ -179,6 +179,8 @@ private:
     // Wakeup signal.
     Semaphore<int> _wakeup;
 
+    static constexpr int kTimeOutuSecNoBatch = 0;
+
     void send_batch() {
         _wakeup.reset();
         _signal->push(_gid, _batch_data);
@@ -217,13 +219,19 @@ public:
 
     int gid() const { return _gid; }
 
+    std::string info() const {
+        std::stringstream ss;
+        ss << "Collector[" << _gid << "] Batchsize: " << _batchsize;
+        return ss.str();
+    }
+
     void SetBatchSize(int batchsize) {
-        // std::cout << "Before send batchsize " << batchsize << std::endl;
+        // std::cout << "[" << _gid << "] Before send batchsize " << batchsize << std::endl;
         _batchsize_q.enqueue(batchsize);
         int dummy;
-        // std::cout << "After send batchsize " << batchsize << " Waiting for reply" << std::endl;
+        // std::cout << "[" << _gid << "] After send batchsize " << batchsize << " Waiting for reply" << std::endl;
         _batchsize_back.wait(&dummy);
-        // std::cout << "Reply got. batchsize " << batchsize << std::endl;
+        // std::cout << "[" << _gid << "] Reply got. batchsize " << batchsize << std::endl;
     }
 
     // Game side.
@@ -251,7 +259,7 @@ public:
                 _batchsize_back.notify(0);
                 // std::cout << "CollectorGroup: After notification. batchsize = " << _batchsize << std::endl;
             }
-            _batch = _batch_collector.waitBatch(_batchsize, _timeout_usec);
+            _batch = _batch_collector.waitBatch(_batchsize, _timeout_usec, kTimeOutuSecNoBatch);
             _batch_data.clear();
             for (In *b : _batch) {
                 _batch_data.push_back(&b->data);
@@ -259,6 +267,7 @@ public:
 
             // Time to leave the loop.
             if (_batch.size() == 1 && _batch[0] == nullptr) break;
+            if (_batch.empty()) continue;
 
             V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Compute input. batchsize = " << _batch.size());
 

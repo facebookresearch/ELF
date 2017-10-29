@@ -180,6 +180,18 @@ public:
         return gid;
     }
 
+    std::string GetCollectorInfos() const {
+        std::stringstream ss;
+        for (size_t i = 0; i < _exclusive_groups.size(); ++i) {
+            ss << "Group " << i << ": " << std::endl;
+            for (size_t idx = 0; idx < _exclusive_groups[i].size(); ++idx) {
+                const GroupStat &gstat = _exclusive_groups[i][idx];
+                ss << "  " << _groups[gstat.gid]->info() << " Info: " << gstat.info() << std::endl;
+            }
+        }
+        return ss.str();
+    }
+
     CollectorGroup &GetCollectorGroup(int gid) { return *_groups[gid]; }
     int num_groups() const { return _groups.size(); }
 

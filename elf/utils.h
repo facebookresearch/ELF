@@ -13,6 +13,8 @@ namespace elf_utils {
 
 using namespace std;
 
+inline string print_bool(bool b) { return b ? "True" : "False"; }
+
 inline string trim(string& str) {
     str.erase(0, str.find_first_not_of(' '));       //prefixing spaces
     str.erase(str.find_last_not_of(' ')+1);         //surfixing spaces

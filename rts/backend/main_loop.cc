@@ -15,6 +15,7 @@
 #include "engine/game.h"
 #include "engine/cmd_util.h"
 #include "engine/ai.h"
+#include "engine/replay_loader.h"
 #include "elf/game_base.h"
 #include "ai.h"
 #include "../game_MC/mcts.h"
@@ -34,7 +35,7 @@
 #include <thread>
 
 using Parser = CmdLineUtils::CmdLineParser;
-using RTSGame = elf::GameBaseT<RTSStateExtend, AI>;
+using RTSGame = elf::GameBaseT<RTSStateExtend, AI, Replayer>;
 
 bool add_players(const string &args, int frame_skip, RTSGame *game) {
     //bool mcts = false;
@@ -42,8 +43,8 @@ bool add_players(const string &args, int frame_skip, RTSGame *game) {
         cout << "Dealing with player = " << player << endl;
         if (player.find("tcp") == 0) {
             vector<string> params = split(player, '=');
-            int tick_start = (params.size() == 1 ? 0 : std::stoi(params[1]));
-            game->AddBot(new TCPAI("tcpai", tick_start, 8000), 1);
+            // int tick_start = (params.size() == 1 ? 0 : std::stoi(params[1]));
+            game->AddBot(new TCPAI("tcpai", 8000), 1);
             game->GetState().AppendPlayer("tcpai");
         } else if (player.find("mcts") == 0) {
             vector<string> params = split(player, '=');
@@ -61,12 +62,16 @@ bool add_players(const string &args, int frame_skip, RTSGame *game) {
             game->AddBot(new MCTSRTSAI(opt), frame_skip);
             game->GetState().AppendPlayer("mcts_ai");
             // mcts = true;
+        } else if (player.find("replayer") == 0) {
+            vector<string> params = split(player, '=');
+            string replay_name = params[1];
+            game->AddSpectator(new Replayer(replay_name));
         } else if (player.find("spectator") == 0) {
             vector<string> params = split(player, '=');
-            int tick_start = (params.size() == 1 ? 0 : std::stoi(params[1]));
-            game->AddSpectator(new TCPAI("spectator", tick_start, 8000));
+            int tick_start = (params.size() >= 2 ? 0 : std::stoi(params[1]));
+            string replay_name = (params.size() >= 3 ? params[2] : "");
+            game->AddSpectator(new TCPSpectator(replay_name, tick_start, 8000));
         } else if (player == "dummy") {
-            game->AddBot(new AI("dummy"), frame_skip);
             game->GetState().AppendPlayer("dummy");
         }
         /*
@@ -99,11 +104,14 @@ RTSGameOptions GetOptions(const Parser &parser) {
     options.main_loop_quota = vis_after >= 0 ? 20 : 0;
 
     string replays = parser.GetItem<string>("load_replay", "");
+    // [TODO]: Fix the bug here.
+    /*
     if (replays != "") {
         for (const auto &replay : split(replays, ',')) {
             options.load_replay_filenames.push_back(replay);
         }
     }
+    */
 
     options.save_replay_prefix = parser.GetItem<string>("save_replay", "replay");
     options.snapshot_load_prefix = parser.GetItem<string>("load_snapshot_prefix", "");
@@ -206,16 +214,14 @@ RTSGameOptions td_simple(const Parser &parser, string *players) {
 
 RTSGameOptions replay_cmd(const Parser &parser, string *players) {
     RTSGameOptions options = GetOptions(parser);
-    *players = "dummy,dummy";
+    *players = "dummy,dummy,replayer=" + parser.GetItem<string>("load_replay");
     options.main_loop_quota = 0;
-    options.bypass_bot_actions = true;
     return options;
 }
 
 RTSGameOptions replay(const Parser &parser, string *players) {
     RTSGameOptions options = GetOptions(parser);
-    *players = "dummy,dummy,spectator=0";
-    options.bypass_bot_actions = true;
+    *players = "dummy,dummy,spectator=" + std::to_string(parser.GetItem<int>("vis_after")) + "=" + parser.GetItem<string>("load_replay");
     return options;
 }
 /*
@@ -438,15 +444,15 @@ int main(int argc, char *argv[]) {
 
         chrono::duration<double> duration = chrono::system_clock::now() - time_start;
         cout << "Total time spent = " << duration.count() << "s" << endl;
-        if (options.load_replay_filenames.empty()) {
-             game.MainLoop();
-        } else {
+        game.MainLoop();
+        /*
             // Load replay etc.
             for (size_t i = 0; i < options.load_replay_filenames.size(); ++i) {
                 game.MainLoop();
                 game.Reset();
             }
         }
+        */
     }
 
     return 0;

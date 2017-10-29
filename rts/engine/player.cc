@@ -10,6 +10,8 @@
 #include "player.h"
 #include "unit.h"
 
+#include <set>
+
 template <typename T>
 static bool GetValue(const map< pair<Loc, Loc>, T > &m, const Loc &p1, const Loc &p2, T *value) {
     auto it = m.find(make_pair(p1, p2));
@@ -58,25 +60,47 @@ void Player::ComputeFOW(const Units &units) {
     // [TODO]: We could do better with LocalitySearch.
     // Clear fogs.
     for (Fog &f : _fogs) {
-        f.Reset();
+        f.MakeInvisible();
     }
+
+    // First pass, get the fog region.
+    set<Loc> clear_regions;
     for (auto it = units.begin(); it != units.end(); ++it) {
         const Unit *u = it->second.get();
         if (ExtractPlayerId(u->GetId()) == _player_id) {
             const int vis_r = u->GetProperty()._vis_r;
             Loc l = _map->GetLoc(u->GetPointF());
             for (const Loc &loc : _map->GetSight(l, vis_r)) {
-                _fogs[loc].SetClear();
+                clear_regions.insert(loc);
             }
+        }
+    }
+
+    // Clear these fog unit.
+    for (const Loc &l : clear_regions) {
+        _fogs[l].SetClear();
+    }
+
+    // Second pass, remember the units that was in FoW
+    for (auto it = units.begin(); it != units.end(); ++it) {
+        const Unit *u = it->second.get();
+        if (ExtractPlayerId(u->GetId()) != _player_id) {
+            Loc l = _filter_with_fow(*u);
+            // Add the unit info to the loc.
+            if (l != -1) _fogs[l].SaveUnit(*u);
         }
     }
 }
 
-bool Player::FilterWithFOW(const Unit& u) const {
-    if (! _map->IsIn(u.GetPointF())) return false;
+Loc Player::_filter_with_fow(const Unit& u) const {
+    if (! _map->IsIn(u.GetPointF())) return -1;
     // [TODO]: Could we do better?
     Loc l = _map->GetLoc(u.GetPointF());
-    return _fogs[l].CanSeeUnit();
+    return (_fogs[l].CanSeeUnit() ? l : -1);
+}
+
+bool Player::FilterWithFOW(const Unit& u) const {
+    return _filter_with_fow(u) != -1;
 }
 
 string Player::PrintInfo() const {

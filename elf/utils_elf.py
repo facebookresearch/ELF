@@ -252,7 +252,6 @@ class GCWrapper:
 
             gstat.name = v.get("name", "")
             timeout_usec = v.get("timeout_usec", 0)
-            print("Deal with connector. key = %s, batchsize = %d, info = %s" % (key, batchsize, gstat.info()))
 
             gpu2gid.append(list())
             for i in range(num_recv_thread):
@@ -268,6 +267,8 @@ class GCWrapper:
                 name2idx[key].append(group_id)
                 gpu2gid[-1].append(group_id)
                 gid2gpu[group_id] = len(gpu2gid) - 1
+
+        print(GC.GetCollectorInfos())
 
         # Zero out all replies.
         for reply in replies:

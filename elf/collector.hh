@@ -195,22 +195,13 @@ class BatchCollectorT: public CollectorT<Key, Value> {
       CollectorT<Key, Value>{keys} {}
 
     // non reentrable
-    BatchValue waitBatch(int batch_size, int timeout_usec = 0) {
-        if (timeout_usec == 0) {
-            while ((int)_batch.size() < batch_size) {
-                _batch.emplace_back(this->waitOne());
-            }
-        } else {
-            while ((int)_batch.size() < batch_size) {
-                Value *v = nullptr;
-                if (_batch.empty()) v = this->waitOne();
-                else {
-                   auto res = this->waitOneUntil(timeout_usec);
-                   if (! res.second) break;
-                   v = res.first;
-                }
-                _batch.emplace_back(v);
-            }
+    BatchValue waitBatch(int batch_size, int timeout_usec = 0, int timeout_usec_first_item = 0) {
+        while ((int)_batch.size() < batch_size) {
+            Value *v = nullptr;
+            auto res = (_batch.empty() ? _wait(timeout_usec_first_item) : _wait(timeout_usec));
+            if (! res.second) break;
+            v = res.first;
+            _batch.emplace_back(v);
         }
         BatchValue ret;
         ret.swap(_batch);
@@ -219,6 +210,10 @@ class BatchCollectorT: public CollectorT<Key, Value> {
 
   private:
     std::vector<Value*> _batch;
+
+    std::pair<Value *, bool> _wait(int timeout_usec) {
+        return (timeout_usec == 0 ? make_pair(this->waitOne(), true) : this->waitOneUntil(timeout_usec));
+    }
 };
 
 }  // namespace elf

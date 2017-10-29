@@ -24,8 +24,8 @@ static inline int sampling(const std::vector<float> &v, std::mt19937 *gen) {
 }
 */
 
-bool TrainedAI::GameEnd(const State &s) {
-    AIWithComm::GameEnd(s);
+bool TrainedAI::GameEnd() {
+    AIWithComm::GameEnd();
     for (auto &v : _recent_states.v()) {
         v.clear();
     }
@@ -35,15 +35,15 @@ bool TrainedAI::GameEnd(const State &s) {
 void TrainedAI::extract(const State &s, Data *data) {
     GameState *game = &data->newest();
 
-    MCSaveInfo(s, id(), game);
+    MCExtractor::SaveInfo(s, id(), game);
     game->name = name();
 
     if (_recent_states.maxlen() == 1) {
-        MCExtract(s, id(), _respect_fow, &game->s);
+        MCExtractor::Extract(s, id(), _respect_fow, &game->s);
         // std::cout << "(1) size_s = " << game->s.size() << std::endl << std::flush;
     } else {
         std::vector<float> &state = _recent_states.GetRoom();
-        MCExtract(s, id(), _respect_fow, &state);
+        MCExtractor::Extract(s, id(), _respect_fow, &state);
 
         const size_t maxlen = _recent_states.maxlen();
         game->s.resize(maxlen * state.size());
@@ -77,6 +77,18 @@ bool TrainedAI::handle_response(const State &s, const Data &data, RTSMCAction *a
     switch(gs.action_type) {
         case ACTION_GLOBAL:
             // action
+            //
+            {
+              string comment = "V: " + std::to_string(gs.V) + ", Prob: ";
+              for (int i = 0; i < (int) gs.pi.size(); ++i) {
+                  if (i > 0) comment += ", ";
+                  comment += std::to_string(gs.pi[i]);
+              }
+              a->AddComment(comment);
+
+              // Also save prev seen.
+              a->AddComment("PrevSeenCount: " + std::to_string(env.GetPrevSeenCount(id())));
+            }
             a->SetState9(gs.a);
             break;
 

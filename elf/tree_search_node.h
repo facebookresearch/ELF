@@ -78,7 +78,7 @@ public:
 
     enum VisitType { NODE_NOT_VISITED = 0, NODE_JUST_VISITED, NODE_ALREADY_VISITED };
 
-    NodeT() : visited_(false), count_(0) { }
+    NodeT(Node *parent) : parent_(parent), visited_(false), count_(0) { }
     NodeT(const Node&) = delete;
     Node &operator=(const Node&) = delete;
 
@@ -99,8 +99,11 @@ public:
         // Then we need to allocate sa_val_
         for (const pair<A, float> & action_pair : resp.pi) {
             auto res = sa_.insert(make_pair(action_pair.first, EdgeInfo(action_pair.second)));
-            res.first->second.next = alloc.Alloc();
+            res.first->second.next = alloc.Alloc(this);
             init(res.first->second);
+            // Compute v here.
+            // Node *child = alloc[res.first->second.next];
+            // child->V_ = V_ + log(action_pair.second + 1e-6);
         }
 
         // value
@@ -140,8 +143,12 @@ public:
 
         for (const auto & p : sa_) {
             if (p.second.n > 0) {
-                ss << indent_str << "[" << p.first << "] " << p.second.info() << endl;
-                ss << alloc[p.second.next]->_info(indent + 2, alloc);
+                const Node *n = alloc[p.second.next];
+                if (n->visited_) {
+                    ss << indent_str << "[" << p.first << "] " << p.second.info();
+                    ss << ", V: " << n->V_ << endl;
+                    ss << n->_info(indent + 2, alloc);
+                }
             }
         }
         return ss.str();
@@ -153,12 +160,13 @@ public:
 
 private:
     // For state.
+    Node *parent_;
     mutex lock_node_;
     atomic_bool visited_;
     unordered_map<A, EdgeInfo> sa_;
 
     atomic<int> count_;
-    float V_;
+    float V_ = 0.0;
 };
 
 template <typename S, typename A>
@@ -199,9 +207,9 @@ public:
     const Node *root() const { return (*this)[root_id_]; }
 
     // Low level functions.
-    NodeId Alloc() {
+    NodeId Alloc(Node *parent = nullptr) {
         lock_guard<mutex> lock(alloc_mutex_);
-        allocated_[allocated_node_count_].reset(new Node());
+        allocated_[allocated_node_count_].reset(new Node(parent));
         return allocated_node_count_ ++;
     }
 

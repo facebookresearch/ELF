@@ -31,7 +31,7 @@ public:
     // Return false if this procedure fails.
     virtual bool Act(const S &, A *, const std::atomic_bool *) { return true; }
 
-    virtual bool GameEnd(const S &) { return true; }
+    virtual bool GameEnd() { return true; }
 
     virtual ~AI_T() { }
 
@@ -71,19 +71,16 @@ public:
         return true;
     }
 
-    const Data& data() const { 
+    const Data& data() const {
         assert(_ai_comm);
-        return _ai_comm->info().data; 
+        return _ai_comm->info().data;
     }
     const AIComm *ai_comm() const { return _ai_comm; }
     AIComm *ai_comm() { return _ai_comm; }
 
     // Get called when we start a new game.
-    bool GameEnd(const S &s) override {
+    bool GameEnd() override {
         if (_ai_comm == nullptr) return false;
-
-        // Send final message.
-        Act(s, nullptr, nullptr);
 
         // Restart _ai_comm.
         _ai_comm->Restart();
@@ -162,9 +159,9 @@ public:
         return true;
     }
 
-    const Data& data() const { 
+    const Data& data() const {
         assert(_ai_comm);
-        return _ai_comm->info().data; 
+        return _ai_comm->info().data;
     }
     const AIComm *ai_comm() const { return _ai_comm; }
     AIComm *ai_comm() { return _ai_comm; }
