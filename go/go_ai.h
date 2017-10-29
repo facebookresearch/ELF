@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ai.h"
+#include <fstream>
 
 using namespace std;
 
@@ -12,11 +13,18 @@ public:
         actor_name_ = name;
     }
 
-    void get_last_pi(vector<pair<Coord, float>> *output_pi) const {
+    void get_last_pi(vector<pair<Coord, float>> *output_pi, ostream *oo = nullptr) const {
+        assert(last_state_ != nullptr);
+
         if (data().size() == 0) {
             cout << "DirectPredictAI: history empty!" << endl;
             throw std::range_error("DirectPredictAI: history empty!");
         }
+
+        if (oo != nullptr) {
+            *oo <<  last_state_->ShowBoard() << endl << endl;
+        }
+
         const vector<float> &pi = data().newest().pi;
 
         output_pi->clear();
@@ -30,17 +38,31 @@ public:
         std::sort(output_pi->begin(), output_pi->end(), [](const data_type &d1, const data_type &d2) {
             return d1.second > d2.second;
         });
-        // Then we only pick the first 5.
+        // Then we only pick the first 5 (check invalid move first).
         vector<data_type> tmp;
-        for (int i = 0; i < 5; ++i) {
+        int i = 0;
+        while (tmp.size() < 5) {
             const data_type& v = output_pi->at(i);
-            // cout << "Predict [" << i << "][" << coord2str(v.first) << "][" << v.first << "] " << v.second << endl;
-            tmp.push_back(v);
+            // Check whether this move is right.
+            bool valid = last_state_->CheckMove(v.first);
+            if (valid) {
+                tmp.push_back(v);
+            }
+
+            if (oo != nullptr) {
+                *oo << "Predict [" << i << "][" << coord2str(v.first) << "][" << coord2str2(v.first) << "][" << v.first << "] " << v.second;
+                if (valid) *oo << " added" << endl;
+                else *oo << " invalid" << endl;
+            }
+            i ++;
         }
         *output_pi = tmp;
     }
 
-    float get_last_value() const { return data().newest().V; }
+    float get_last_value() const {
+        assert(last_state_ != nullptr);
+        return data().newest().V;
+    }
 
 protected:
     std::string actor_name_;

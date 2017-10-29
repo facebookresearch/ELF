@@ -60,17 +60,18 @@ void GoGame::Init(AIComm *ai_comm) {
     if (_options.verbose) std::cout << "[" << _game_idx << "] Done with initialization" << std::endl;
 }
 
-void GoGame::Act(const std::atomic_bool& done) {
+void GoGame::Act(const elf::Signal &signal) {
     // Randomly pick one loader
     Coord c;
     if (_options.online) {
-        while (! done) {
-            _human_player->Act(_state, &c, &done);
+        // At least you need to run Act once.
+        do {
+            _human_player->Act(_state, &c, &signal.done());
             if (_state.forward(c)) break;
             // cout << "Invalid move: x = " << X(c) << " y = " << Y(c) << " move: " << coord2str(c) << " please try again" << endl;
-        }
+        } while(! signal.PrepareStop());
 
-        _ai->Act(_state, &c, &done);
+        _ai->Act(_state, &c, &signal.done());
         if (! _state.forward(c)) {
             cout << "No valid move, restarting the game" << endl;
             _state.Reset();
@@ -79,6 +80,6 @@ void GoGame::Act(const std::atomic_bool& done) {
         // Replays hold a state by itself.
         _curr_loader_idx = _rng() % _loaders.size();
         auto *loader = _loaders[_curr_loader_idx].get();
-        loader->Act(&c, &done);
+        loader->Act(&c, &signal.done());
     }
 }

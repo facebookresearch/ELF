@@ -25,12 +25,13 @@ class GoState {
 public:
     GoState() : _bf(_board) { Reset(); }
     bool forward(const Coord &c);
+    bool CheckMove(const Coord &c) const;
 
     void Reset();
     void ApplyHandicap(int handi);
 
     GoState(const GoState &s) : _bf(_board) {
-        CopyBoard(&_board, &s._board); 
+        CopyBoard(&_board, &s._board);
     }
 
     static HandicapTable &handi_table() { return _handi_table; }
@@ -43,9 +44,9 @@ public:
     Coord LastMove2() const { return _board._last_move2; }
     Stone NextPlayer() const { return _board._next_player; }
 
-    vector<Coord> last_opponent_moves() const { 
+    vector<Coord> last_opponent_moves() const {
         Coord m = LastMove2();
-        if (m != M_PASS) return vector<Coord>{ LastMove2() }; 
+        if (m != M_PASS) return vector<Coord>{ LastMove2() };
         else return vector<Coord>();
     }
 

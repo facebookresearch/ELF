@@ -28,6 +28,7 @@
 #include "ai_comm.h"
 #include "stats.h"
 #include "member_check.h"
+#include "signal.h"
 
 struct GroupStat {
     int gid;
@@ -315,7 +316,7 @@ public:
     using Comm = CommT<Info>;
     using AIComm = AICommT<Comm>;
 
-    using GameStartFunc = std::function<void (int game_idx, const ContextOptions &context_options, const Options& options, const std::atomic_bool &done, Comm *comm)>;
+    using GameStartFunc = std::function<void (int game_idx, const ContextOptions &context_options, const Options& options, const elf::Signal &signal, Comm *comm)>;
 
 private:
     Comm _comm;
@@ -324,6 +325,7 @@ private:
 
     ctpl::thread_pool _pool;
     Notif _done;
+    std::atomic_bool _prepare_stop;
     bool _game_started = false;
 
 public:
@@ -344,8 +346,8 @@ public:
         // Now we start all jobs.
         for (int i = 0; i < _pool.size(); ++i) {
             _pool.push([i, this, &game_start_func](int){
-                const std::atomic_bool &done = _done.flag();
-                game_start_func(i, _context_options, _options, done, &_comm);
+                elf::Signal signal(_done.flag(), _prepare_stop);
+                game_start_func(i, _context_options, _options, signal, &_comm);
                 // std::cout << "G[" << i << "] is ending" << std::endl;
                 _done.notify();
             });
@@ -388,6 +390,8 @@ public:
                 Steps(Wait(wait_usec));
             }
         });
+
+        _prepare_stop = true;
 
         // First set all batchsize to be 1.
         std::cout << "Prepare to stop ..." << std::endl;

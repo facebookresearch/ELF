@@ -29,12 +29,7 @@ inline string coord2str(Coord c) {
     int y = Y(c);
     //if (y >= 8) y ++;
 
-    string s;
-    s.resize(3);
-    s[0] = 'a' + x;
-    s[1] = 'a' + y;
-    s[2] = 0;
-    return s;
+    return std::string{ static_cast<char>('a' + x), static_cast<char>('a' + y) };
 }
 
 inline string coord2str2(Coord c) {
@@ -42,10 +37,7 @@ inline string coord2str2(Coord c) {
     if (x >= 8) x ++;
     int y = Y(c);
 
-    string s;
-    s.resize(2);
-    s[0] = 'A' + x;
-    s[1] = 0;
+    string s { static_cast<char>('A' + x) };
     return s + std::to_string(y + 1);
 }
 

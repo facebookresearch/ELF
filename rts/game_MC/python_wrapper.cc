@@ -42,9 +42,9 @@ public:
 
     void Start() {
         _context->Start(
-            [this](int game_idx, const ContextOptions &context_options, const PythonOptions &options, const std::atomic_bool &done, Comm *comm) {
+            [this](int game_idx, const ContextOptions &context_options, const PythonOptions &options, const elf::Signal &signal, Comm *comm) {
                     auto params = this->GetParams();
-                    this->_wrapper.thread_main(game_idx, context_options, options, done, &params, comm);
+                    this->_wrapper.thread_main(game_idx, context_options, options, signal, &params, comm);
             });
     }
 

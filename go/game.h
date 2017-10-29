@@ -43,14 +43,13 @@ public:
 
     void Init(AIComm *ai_comm);
 
-    void MainLoop(const std::atomic_bool& done) {
+    void MainLoop(const elf::Signal& signal) {
         // Main loop of the game.
-        while (true) {
-            Act(done);
-            if (done.load()) break;
+        while (! signal.IsDone()) {
+            Act(signal);
         }
     }
 
-    void Act(const std::atomic_bool& done);
+    void Act(const elf::Signal &signal);
     string ShowBoard() const { return _state.ShowBoard(); }
 };

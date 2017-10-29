@@ -15,9 +15,11 @@ public:
         ai_->SetActorName("actor");
     }
 
+    void set_ostream(ostream *oo) { oo_ = oo; }
+
     NodeResponse &evaluate(const GoState &s) {
         ai_->Act(s, nullptr, nullptr);
-        ai_->get_last_pi(&resp_.pi);
+        ai_->get_last_pi(&resp_.pi, oo_);
         resp_.value = ai_->get_last_value();
         return resp_;
     }
@@ -35,6 +37,7 @@ public:
 protected:
     NodeResponse resp_;
     unique_ptr<DirectPredictAI> ai_;
+    ostream *oo_ = nullptr;
 };
 
 using MCTSGoAI = elf::MCTSAIWithCommT<MCTSActor, AIComm>;

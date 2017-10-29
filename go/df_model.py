@@ -22,6 +22,8 @@ class Model_Policy(Model):
         self.convs_bn = []
         last_planes = self.num_planes
 
+        print("Model dim = %d" % self.dim)
+
         for i in range(10):
             conv = nn.Conv2d(last_planes, self.dim, 3, padding=1)
             conv_bn = nn.BatchNorm2d(self.dim) if not getattr(args, "no_bn", False) else lambda x: x

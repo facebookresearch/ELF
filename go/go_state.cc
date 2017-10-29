@@ -69,6 +69,11 @@ bool GoState::forward(const Coord &c) {
     return true;
 }
 
+bool GoState::CheckMove(const Coord &c) const {
+    GroupId4 ids;
+    return TryPlay2(&_board, c, &ids);
+}
+
 void GoState::ApplyHandicap(int handi) {
     _handi_table.Apply(handi, &_board);
 }

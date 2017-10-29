@@ -74,6 +74,8 @@ public:
             return false;
         }
 
+        _set_ostream(actor);
+
 #define PRINT_MAIN(args) if (output_ != nullptr) { *output_ << "[run=" << run_id << "] " << args << endl << flush; }
 
 #define PRINT_TS(args) if (output_ != nullptr) { *output_ << "[run=" << run_id << "][iter=" << iter << "/" << info.num_rollout << "]" << args << endl << flush; }
@@ -155,6 +157,15 @@ private:
         (void)actor;
         // return sigmoid((node->value() - options_.baseline) / options_.baseline_sigma);
         return node->value();
+    }
+
+    MEMBER_FUNC_CHECK(set_ostream)
+    template <typename Actor, typename std::enable_if<has_func_set_ostream<Actor>::value>::type *U = nullptr>
+    void _set_ostream(Actor &actor) {
+        actor.set_ostream(output_.get());
+    }
+    template <typename Actor, typename std::enable_if<! has_func_set_ostream<Actor>::value>::type *U = nullptr>
+    void _set_ostream(Actor &) {
     }
 
     template <typename Actor>

@@ -63,7 +63,7 @@ void register_common_func(py::module &m) {
   int AddCollectors(int batchsize, int exclusive_id, int timeout_usec, const GroupStat &gstat) { \
     return context->comm().AddCollectors(batchsize, exclusive_id, timeout_usec, gstat); \
   } \
-  string GetCollectorInfos() const { \
+  std::string GetCollectorInfos() const { \
     return context->comm().GetCollectorInfos(); \
   } \
   int size() const { return context->size(); } \
