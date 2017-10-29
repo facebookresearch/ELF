@@ -11,18 +11,15 @@ from torch.autograd import Variable
 import math
 
 from ..args_provider import ArgsProvider
+
+from .utils import add_err
 from .policy_gradient import PolicyGradient
 from .discounted_reward import DiscountedReward
 from .value_matcher import ValueMatcher
-from .utils import add_err
 
 # Actor critic model.
-class ActorCritic:
-    ''' An actor critic model '''
+class RNNActorCritic:
     def __init__(self):
-        ''' Initialization of `PolicyGradient`, `DiscountedReward` and `ValueMatcher`.
-        Initialize the arguments needed (num_games, batchsize, value_node) and in child_providers.
-        '''
         self.pg = PolicyGradient()
         self.discounted_reward = DiscountedReward()
         self.value_matcher = ValueMatcher()
@@ -35,43 +32,49 @@ class ActorCritic:
             child_providers = [ self.pg.args, self.discounted_reward.args, self.value_matcher.args ],
         )
 
-    def update(self, mi, batch, stats):
-        ''' Actor critic model update.
-        Feed stats for later summarization.
-
-        Args:
-            mi(`ModelInterface`): mode interface used
-            batch(dict): batch of data. Keys in a batch:
-                ``s``: state,
-                ``r``: immediate reward,
-                ``terminal``: if game is terminated
-            stats(`Stats`): Feed stats for later summarization.
-        '''
+    def update(self, mi, batch, hiddens, stats):
+        ''' Actor critic model '''
         m = mi["model"]
         args = self.args
         value_node = self.args.value_node
 
-        T = batch["s"].size(0)
+        T = batch["a"].size(0)
 
-        state_curr = m(batch.hist(T - 1))
-        self.discounted_reward.setR(state_curr[value_node].squeeze().data, stats)
+        h = Variable(hiddens)
+        hs = [ ]
+        ss = [ ]
+
+        # Forward to compute LSTM.
+        for t in range(0, T - 1):
+            if t > 0:
+                term = Variable(1.0 - batch["terminal"][t].float()).view(-1, 1)
+                h.register_hook(lambda grad: grad.mul(term))
+
+            state_curr = m(batch.hist(t), h)
+            h = m.transition(state_curr["h"], batch["a"][t])
+            hs.append(h)
+            ss.append(state_curr)
+
+        R = ss[-1][value_node].squeeze().data
+        self.discounted_reward.setR(R, stats)
 
         err = None
 
+        # Backward to compute gradient descent.
         for t in range(T - 2, -1, -1):
-            bht = batch.hist(t)
-            state_curr = m.forward(bht)
+            state_curr = ss[t]
 
             # go through the sample and get the rewards.
+            bht = batch.hist(t)
             V = state_curr[value_node].squeeze()
 
             R = self.discounted_reward.feed(
                 dict(r=batch["r"][t], terminal=batch["terminal"][t]),
-                stats=stats)
+                stats)
 
-            policy_err = self.pg.feed(R-V.data, state_curr, bht, stats, old_pi_s=bht)
-            err = add_err(err, policy_err)
-            err = add_err(err, self.value_matcher.feed({ value_node: V, "target" : R}, stats))
+            err = add_err(err, self.pg.feed(R - V.data, state_curr, bht, stats, old_pi_s=bht))
+            err = add_err(err, self.value_matcher.feed({ value_node : V, "target" : R }, stats))
 
-        stats["cost"].feed(err.data[0] / (T - 1))
+        stats["cost"].feed(err.data[0] / (T-1))
         err.backward()
+

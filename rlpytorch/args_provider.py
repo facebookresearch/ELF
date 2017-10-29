@@ -204,6 +204,7 @@ class ArgsProvider:
 
         ArgsProvider._ApplyOverrides(global_overrides, args)
 
+        print("PID: " + str(os.getpid()))
         args.print_info()
         recursive_map(args_providers, lambda provider : provider._set(args))
         return args

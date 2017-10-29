@@ -55,7 +55,10 @@ class Model(nn.Module):
         Returns:
             Variable for x
         '''
-        return Variable(x, volatile=self.volatile)
+        if not isinstance(x, Variable):
+            return Variable(x, volatile=self.volatile)
+        else:
+            return x
 
     def before_update(self):
         ''' Customized operations for each model before update. To be extended. '''
