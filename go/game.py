@@ -69,13 +69,19 @@ class Loader:
                 reply=dict(T=1, keys=set(["pi", "a"])),
                 name="human_actor",
             )
-
-        if args.mode == "online" or args.mode == "selfplay":
             # Used for MCTS/Direct play.
             desc["actor"] = dict(
                 batchsize=args.batchsize,
                 input=dict(T=1, keys=set(["s"])),
-                reply=dict(T=1, keys=set(["pi", "a"])),
+                reply=dict(T=1, keys=set(["pi", "V", "a"])),
+                name="actor",
+            )
+        elif args.mode == "selfplay":
+            # Used for MCTS/Direct play.
+            desc["actor"] = dict(
+                batchsize=args.batchsize,
+                input=dict(T=1, keys=set(["s"])),
+                reply=dict(T=1, keys=set(["pi", "V"])),
                 name="actor",
                 timeout_usec = 100,
             )

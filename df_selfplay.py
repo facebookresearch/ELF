@@ -16,7 +16,7 @@ if __name__ == '__main__':
     mi["model"].eval()
     mi["actor"].eval()
 
-    evaluator.setup(sampler=env["sampler"], mi=mi)
+    evaluator.setup(mi=mi)
 
     def actor(batch):
         reply = evaluator.actor(batch)

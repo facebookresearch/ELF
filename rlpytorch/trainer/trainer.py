@@ -74,7 +74,10 @@ class Evaluator:
         state_curr = m.forward(batch.hist(0))
         m.set_volatile(False)
 
-        reply_msg = self.sampler.sample(state_curr)
+        if self.sampler is not None:
+            reply_msg = self.sampler.sample(state_curr)
+        else:
+            reply_msg = dict(pi=state_curr["pi"].data)
 
         if self.stats is not None:
             self.stats.feed_batch(batch)
