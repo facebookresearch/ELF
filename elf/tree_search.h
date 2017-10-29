@@ -54,7 +54,9 @@ public:
     TSOneThreadT(int thread_id, const TSOptions& options)
       : thread_id_(thread_id), options_(options), rng_(thread_id) {
         if (options_.verbose) {
-            output_.reset(new ofstream("tree_search_" + std::to_string(thread_id) + ".txt"));
+            string log_file = "tree_search_" + std::to_string(thread_id) + ".txt";
+            // cout << "Logging " << log_file << endl;
+            output_.reset(new ofstream(log_file));
         }
     }
 

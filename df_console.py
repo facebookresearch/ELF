@@ -195,11 +195,10 @@ class DFConsole:
 
         evaluator.setup(sampler=env["sampler"], mi=mi)
 
-        if args.online:
-            GC.reg_callback("actor", actor)
-            GC.reg_callback("human_actor", human_actor)
-        else:
-            GC.reg_callback("train", train)
+        GC.reg_callback_if_exists("actor", actor)
+        GC.reg_callback_if_exists("human_actor", human_actor)
+        GC.reg_callback_if_exists("train", train)
+
         GC.Start()
 
         evaluator.episode_start(0)

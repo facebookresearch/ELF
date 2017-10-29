@@ -24,10 +24,12 @@ struct GameOptions {
     // When sending current situations, randomly select one to break any correlations.
     int num_games_per_thread = 300;
 
-    // If true, then it will open the game in online mode.
-    // In this mode, the thread will not output the next k moves (since every game is new).
-    // Instead, it will get the action from the neural network to proceed.
-    bool online = false;
+    // mode == "online": it will open the game in online mode.
+    //    In this mode, the thread will not output the next k moves (since every game is new).
+    //    Instead, it will get the action from the neural network to proceed.
+    // mode == "offline": offline training
+    // mode == "selfplay": self play.
+    std::string mode;
 
     // Use mcts engine.
     bool use_mcts = false;
@@ -52,7 +54,7 @@ struct GameOptions {
     std::string list_filename;
     bool verbose = false;
 
-    REGISTER_PYBIND_FIELDS(seed, online, data_aug, start_ratio_pre_moves, ratio_pre_moves, move_cutoff, num_planes, num_future_actions, list_filename, verbose, num_games_per_thread, use_mcts);
+    REGISTER_PYBIND_FIELDS(seed, mode, data_aug, start_ratio_pre_moves, ratio_pre_moves, move_cutoff, num_planes, num_future_actions, list_filename, verbose, num_games_per_thread, use_mcts);
 };
 
 struct GameState {

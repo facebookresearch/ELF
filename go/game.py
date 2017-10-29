@@ -30,7 +30,7 @@ class Loader:
                 ("start_ratio_pre_moves", dict(type=float, default=0.5, help="how many moves to perform in each thread, before we use the first sgf file to train the model")),
                 ("num_games_per_thread", dict(type=int, default=5, help="number of concurrent games per threads, used to increase diversity of games")),
                 ("move_cutoff", dict(type=int, default=-1, help="Cutoff ply in replay")),
-                ("online", dict(action="store_true", help="Set game to online mode")),
+                ("mode", "online"),
                 ("use_mcts", dict(action="store_true")),
                 ("gpu", dict(type=int, default=None))
             ],
@@ -47,7 +47,7 @@ class Loader:
         opt = go.GameOptions()
         opt.seed = 0
         opt.list_filename = args.list_file
-        opt.online = args.online
+        opt.mode = args.mode
         opt.use_mcts = args.use_mcts
         opt.verbose = args.verbose
         opt.data_aug = args.data_aug
@@ -62,7 +62,7 @@ class Loader:
         print("Num Actions: ", params["num_action"])
 
         desc = {}
-        if args.online:
+        if args.mode == "online":
             desc["human_actor"] = dict(
                 batchsize=args.batchsize,
                 input=dict(T=1, keys=set(["s"])),
@@ -70,14 +70,15 @@ class Loader:
                 name="human_actor",
             )
 
+        if args.mode == "online" or args.mode == "selfplay":
             # Used for MCTS/Direct play.
             desc["actor"] = dict(
                 batchsize=args.batchsize,
                 input=dict(T=1, keys=set(["s"])),
                 reply=dict(T=1, keys=set(["pi", "a"])),
                 name="actor",
+                timeout_usec = 100,
             )
-
         else:
             desc["train"] = dict(
                 batchsize=args.batchsize,

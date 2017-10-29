@@ -4,9 +4,9 @@ from multiple_prediction import MultiplePrediction
 import torch
 import torch.nn as nn
 
-class Model_Policy(Model):
+class Model_PolicyValue(Model):
     def __init__(self, args):
-        super(Model_Policy, self).__init__(args)
+        super(Model_PolicyValue, self).__init__(args)
 
         params = args.params
 
@@ -31,10 +31,11 @@ class Model_Policy(Model):
             self.convs_bn.append(conv_bn)
             last_planes = self.dim
 
-        self.final_conv = nn.Conv2d(self.dim, self.num_future_actions, 3, padding=1)
+        self.final_conv = nn.Conv2d(self.dim, 1, 3, padding=1)
 
         # Softmax as the final layer
         self.softmax = nn.Softmax()
+        self.value = nn.Linear(self.board_size ** 2, 1)
         self.relu = nn.LeakyReLU(0.1) if not getattr(args, "no_leaky_relu", False) else nn.ReLU()
 
     def get_define_args():
@@ -52,13 +53,14 @@ class Model_Policy(Model):
             s = conv_bn(self.relu(conv(s)))
 
         output = self.final_conv(s)
-        pis = []
         d = self.board_size * self.board_size
-        for i in range(self.num_future_actions):
-            pis.append(self.softmax(output[:,i].contiguous().view(-1, d)))
-        return dict(pis=pis, pi=pis[0])
+        h = output.view(-1, d)
+
+        pi = self.softmax(h)
+        V = self.value(h)
+        return dict(pi=pi, V=V)
 
 # Format: key, [model, method]
 Models = {
-    "df_policy" : [Model_Policy, MultiplePrediction]
+    "df" : [Model_PolicyValue, MultiplePrediction]
 }

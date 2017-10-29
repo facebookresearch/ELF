@@ -286,6 +286,13 @@ class GCWrapper:
     def reg_has_callback(self, key):
         return key in self.name2idx
 
+    def reg_callback_if_exists(self, key, cb):
+        if self.reg_has_callback(key):
+            self.reg_callback(key, cb)
+            return True
+        else:
+            return False
+
     def reg_callback(self, key, cb):
         '''Set callback function for key
 

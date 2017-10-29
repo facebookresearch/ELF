@@ -40,7 +40,7 @@ public:
             *a = res.best_a;
 
             clock.Record("MCTS");
-            cout << "MCTSAI Result: " << res.info() << " Action:" << res.best_a << endl;
+            cout << "[" << this->id() << "] MCTSAI Result: " << res.info() << " Action:" << res.best_a << endl;
             cout << clock.Summary() << endl;
         } else {
             auto res = ts_->Run(s);
