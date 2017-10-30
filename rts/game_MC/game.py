@@ -24,7 +24,7 @@ class Loader(CommonLoader):
             ("use_unit_action", dict(action="store_true")),
             ("disable_time_decay", dict(action="store_true")),
             ("use_prev_units", dict(action="store_true")),
-            ("attach_complete_information", dict(action="store_true")),
+            ("attach_complete_info", dict(action="store_true")),
             ("feature_type", "ORIGINAL")
         ]
 
