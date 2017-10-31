@@ -35,6 +35,8 @@ struct ContextOptions {
     // Whether we wait for each group or we wait jointly.
     bool wait_per_group = false;
 
+    int num_collectors = 1;
+
     mcts::TSOptions mcts_options;
 
     ContextOptions() {}
@@ -42,6 +44,7 @@ struct ContextOptions {
     void print() const {
       std::cout << "#Game: " << num_games << std::endl;
       std::cout << "#Max_thread: " << max_num_threads << std::endl;
+      std::cout << "#Collectors: " << num_collectors << std::endl;
       std::cout << "T: " << T << std::endl;
       if (verbose_comm) std::cout << "Comm Verbose On" << std::endl;
       if (verbose_collector) std::cout << "Comm Collector On" << std::endl;
@@ -49,7 +52,7 @@ struct ContextOptions {
       std::cout << mcts_options.info() << std::endl;
     }
 
-    REGISTER_PYBIND_FIELDS(num_games, max_num_threads, T, verbose_comm, verbose_collector, wait_per_group, mcts_options);
+    REGISTER_PYBIND_FIELDS(num_games, max_num_threads, T, verbose_comm, verbose_collector, wait_per_group, mcts_options, num_collectors);
 };
 
 inline constexpr int get_query_id(int game_id, int thread_id) {

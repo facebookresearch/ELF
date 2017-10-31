@@ -21,11 +21,11 @@ class ContextArgs:
                 ("T", 6),
                 ("eval", dict(action="store_true")),
                 ("wait_per_group", dict(action="store_true")),
+                ("num_collectors", 0),
                 ("verbose_comm", dict(action="store_true")),
                 ("verbose_collector", dict(action="store_true")),
-                ("mcts_threads", 64),
-                ("mcts_rollout_per_thread", 50),
-
+                ("mcts_threads", 0),
+                ("mcts_rollout_per_thread", 1),
                 ("mcts_verbose", dict(action="store_true")),
                 ("mcts_save_tree_filename", ""),
                 ("mcts_verbose_time", dict(action="store_true")),
@@ -58,6 +58,7 @@ class ContextArgs:
         co.verbose_collector = args.verbose_collector
 
         co.max_num_threads = args.mcts_threads
+        co.num_collectors = args.num_collectors
 
         mcts = co.mcts_options
 

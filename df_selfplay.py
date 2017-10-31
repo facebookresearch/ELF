@@ -27,7 +27,7 @@ if __name__ == '__main__':
         total_sel_batchsize += batch.batchsize
         total_batchsize += batch.max_batchsize
 
-        if total_batchsize >= 5000:
+        if total_sel_batchsize >= 5000:
             print("Batch usage: %d/%d (%.2f%%)" %
                   (total_sel_batchsize, total_batchsize, 100.0 * total_sel_batchsize / total_batchsize))
             total_sel_batchsize = 0

@@ -237,7 +237,11 @@ class GCWrapper:
         total_batchsize = 0
         for key, v in descriptions.items():
             total_batchsize += v["batchsize"]
-        num_recv_thread = math.floor(num_games / total_batchsize)
+  
+        if co.num_collectors > 0:
+            num_recv_thread = co.num_collectors
+        else:   
+            num_recv_thread = math.floor(num_games / total_batchsize)
         num_recv_thread = max(num_recv_thread, 1)
         print("#recv_thread = %d" % num_recv_thread)
 
