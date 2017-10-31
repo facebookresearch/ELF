@@ -13,7 +13,7 @@ from datetime import datetime
 import sys
 import os
 
-from rlpytorch import load_env, Evaluator, ModelInterface, ArgsProvider, EvalIters
+from rlpytorch import load_env, Evaluator, ArgsProvider, EvalIters
 
 if __name__ == '__main__':
     evaluator = Evaluator(stats=False)
@@ -23,9 +23,7 @@ if __name__ == '__main__':
     GC = env["game"].initialize()
 
     model = env["model_loaders"][0].load_model(GC.params)
-    mi = ModelInterface()
-    mi.add_model("model", model, optim_params={ "lr" : 0.001})
-    mi.add_model("actor", model, copy=True, cuda=True, gpu_id=args.gpu)
+    env["mi"].add_model("actor", model, cuda=True, gpu_id=args.gpu)
 
     def actor(batch):
         reply = evaluator.actor(batch)
@@ -40,7 +38,7 @@ if __name__ == '__main__':
         eval_iters.stats.feed_batch(batch)
         return reply
 
-    evaluator.setup(sampler=env["sampler"], mi=mi)
+    evaluator.setup(sampler=env["sampler"], mi=env["mi"])
 
     GC.reg_callback("actor", actor)
     GC.Start()

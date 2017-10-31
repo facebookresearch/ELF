@@ -11,6 +11,7 @@
 
 #include "comm_template.h"
 #include "hist.h"
+#include "tree_search_options.h"
 #include <pybind11/pybind11.h>
 
 namespace py = pybind11;
@@ -25,13 +26,19 @@ void register_common_func(py::module &m) {
     .def(py::init<>())
     .def("print", &ContextOptions::print);
 
+  PYCLASS_WITH_FIELDS(m, mcts::TSOptions)
+    .def(py::init<>());
+
   PYCLASS_WITH_FIELDS(m, EntryInfo)
     .def(py::init<>());
 
   PYCLASS_WITH_FIELDS(m, GroupStat)
-    .def(py::init<>());
+    .def(py::init<>())
+    .def("info", &GroupStat::info);
 
-  PYCLASS_WITH_FIELDS(m, Infos);
+  PYCLASS_WITH_FIELDS(m, Infos)
+    .def(py::init<>())
+    .def("batchsize", &Infos::batchsize);
 
   using HistState = HistT<State>;
   PYCLASS_WITH_FIELDS(m, HistState)
@@ -55,8 +62,11 @@ void register_common_func(py::module &m) {
   std::string Version() const { return context->Version(); } \
   void PrintSummary() const { context->PrintSummary(); } \
   GroupStat CreateGroupStat() const { return GroupStat(); } \
-  int AddCollectors(int batchsize, int exclusive_id, const GroupStat &gstat) { \
-    return context->comm().AddCollectors(batchsize, exclusive_id, gstat); \
+  int AddCollectors(int batchsize, int exclusive_id, int timeout_usec, const GroupStat &gstat) { \
+    return context->comm().AddCollectors(batchsize, exclusive_id, timeout_usec, gstat); \
+  } \
+  std::string GetCollectorInfos() const { \
+    return context->comm().GetCollectorInfos(); \
   } \
   int size() const { return context->size(); } \
   EntryInfo GetTensorSpec(int gid, const std::string &key, int T) { \
@@ -83,4 +93,6 @@ void register_common_func(py::module &m) {
     .def("__len__", &GameContext::size) \
     .def("AddTensor", &GameContext::AddTensor) \
     .def("GetTensorSpec", &GameContext::GetTensorSpec, py::return_value_policy::copy) \
+    .def("GetCollectorInfos", &GameContext::GetCollectorInfos) \
+
 

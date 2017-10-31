@@ -84,15 +84,12 @@ struct PythonOptions {
 
     bool shuffle_player;
 
-    int mcts_threads;
-    int mcts_rollout_per_thread;
     int game_name;
     // [TODO] put handicap to TD.
     int handicap_level;
 
     PythonOptions()
-      : simulation_type(ST_NORMAL), map_size_x(20), map_size_y(20), max_unit_cmd(10), max_tick(30000), seed(0), shuffle_player(false), mcts_threads(1), mcts_rollout_per_thread(1),
-        game_name(0), handicap_level(0) {
+      : simulation_type(ST_NORMAL), map_size_x(20), map_size_y(20), max_unit_cmd(10), max_tick(30000), seed(0), shuffle_player(false), game_name(0), handicap_level(0) {
     }
 
     void AddAIOptions(const AIOptions &ai) {
@@ -112,11 +109,10 @@ struct PythonOptions {
         for (const AIOptions& ai_option : ai_options) {
             std::cout << ai_option.info() << std::endl;
         }
-        std::cout << "MCTS #threads: " << mcts_threads << " #rollout/thread: " << mcts_rollout_per_thread << std::endl;
         std::cout << "Output_prompt_filename: \"" << output_filename << "\"" << std::endl;
         std::cout << "Cmd_dumper_prefix: \"" << cmd_dumper_prefix << "\"" << std::endl;
         std::cout << "Save_replay_prefix: \"" << save_replay_prefix << "\"" << std::endl;
     }
 
-    REGISTER_PYBIND_FIELDS(simulation_type, map_size_x, map_size_y, max_unit_cmd, output_filename, cmd_dumper_prefix, map_filename, save_replay_prefix, max_tick, seed, mcts_threads, mcts_rollout_per_thread, game_name, handicap_level, shuffle_player);
+    REGISTER_PYBIND_FIELDS(simulation_type, map_size_x, map_size_y, max_unit_cmd, output_filename, cmd_dumper_prefix, map_filename, save_replay_prefix, max_tick, seed, game_name, handicap_level, shuffle_player);
 };

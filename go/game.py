@@ -30,7 +30,8 @@ class Loader:
                 ("start_ratio_pre_moves", dict(type=float, default=0.5, help="how many moves to perform in each thread, before we use the first sgf file to train the model")),
                 ("num_games_per_thread", dict(type=int, default=5, help="number of concurrent games per threads, used to increase diversity of games")),
                 ("move_cutoff", dict(type=int, default=-1, help="Cutoff ply in replay")),
-                ("online", dict(action="store_true", help="Set game to online mode")),
+                ("mode", "online"),
+                ("use_mcts", dict(action="store_true")),
                 ("gpu", dict(type=int, default=None))
             ],
             more_args = ["batchsize", "T"],
@@ -41,11 +42,13 @@ class Loader:
         args = self.args
         co = go.ContextOptions()
         self.context_args.initialize(co)
+        co.print()
 
         opt = go.GameOptions()
         opt.seed = 0
         opt.list_filename = args.list_file
-        opt.online = args.online
+        opt.mode = args.mode
+        opt.use_mcts = args.use_mcts
         opt.verbose = args.verbose
         opt.data_aug = args.data_aug
         opt.ratio_pre_moves = args.ratio_pre_moves
@@ -59,11 +62,28 @@ class Loader:
         print("Num Actions: ", params["num_action"])
 
         desc = {}
-        if args.online:
+        if args.mode == "online":
+            desc["human_actor"] = dict(
+                batchsize=args.batchsize,
+                input=dict(T=1, keys=set(["s"])),
+                reply=dict(T=1, keys=set(["pi", "a"])),
+                name="human_actor",
+            )
+            # Used for MCTS/Direct play.
             desc["actor"] = dict(
                 batchsize=args.batchsize,
-                input=dict(T=args.T, keys=set(["s"])),
-                reply=dict(T=args.T, keys=set(["V", "a"]))
+                input=dict(T=1, keys=set(["s"])),
+                reply=dict(T=1, keys=set(["pi", "V", "a"])),
+                name="actor",
+            )
+        elif args.mode == "selfplay":
+            # Used for MCTS/Direct play.
+            desc["actor"] = dict(
+                batchsize=args.batchsize,
+                input=dict(T=1, keys=set(["s"])),
+                reply=dict(T=1, keys=set(["pi", "V"])),
+                name="actor",
+                timeout_usec = 10,
             )
         else:
             desc["train"] = dict(

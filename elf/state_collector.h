@@ -35,6 +35,7 @@ struct InfosT {
 
     InfosT(int gid, const std::vector<Data *> &s) : gid(gid), s(s) { }
     InfosT() : gid(-1) { }
+    int batchsize() const { return (int)s.size(); }
 
     REGISTER_PYBIND_FIELDS(gid, s);
 };
@@ -171,12 +172,15 @@ private:
     SyncSignal *_signal;
 
     bool _verbose;
+    int _timeout_usec;
 
     // Statistics
     int _num_enqueue;
 
     // Wakeup signal.
     Semaphore<int> _wakeup;
+
+    static constexpr int kTimeOutuSecNoBatch = 0;
 
     void send_batch() {
         _wakeup.reset();
@@ -190,8 +194,8 @@ private:
     }
 
 public:
-    CollectorGroupT(int gid, const std::vector<Key> &keys, int batchsize, SyncSignal *signal, bool verbose)
-        : _gid(gid), _batchsize(batchsize), _batch_collector(keys), _signal(signal), _verbose(verbose) {
+    CollectorGroupT(int gid, const std::vector<Key> &keys, int batchsize, SyncSignal *signal, bool verbose, int timeout_usec)
+        : _gid(gid), _batchsize(batchsize), _batch_collector(keys), _signal(signal), _verbose(verbose), _timeout_usec(timeout_usec) {
     }
 
     EntryInfo GetEntry(const std::string &key, int hist_len, EntryFunc entry_func) const {
@@ -216,13 +220,19 @@ public:
 
     int gid() const { return _gid; }
 
+    std::string info() const {
+        std::stringstream ss;
+        ss << "Collector[" << _gid << "] Batchsize: " << _batchsize;
+        return ss.str();
+    }
+
     void SetBatchSize(int batchsize) {
-        // std::cout << "Before send batchsize " << batchsize << std::endl;
+        // std::cout << "[" << _gid << "] Before send batchsize " << batchsize << std::endl;
         _batchsize_q.enqueue(batchsize);
         int dummy;
-        // std::cout << "After send batchsize " << batchsize << " Waiting for reply" << std::endl;
+        // std::cout << "[" << _gid << "] After send batchsize " << batchsize << " Waiting for reply" << std::endl;
         _batchsize_back.wait(&dummy);
-        // std::cout << "Reply got. batchsize " << batchsize << std::endl;
+        // std::cout << "[" << _gid << "] Reply got. batchsize " << batchsize << std::endl;
     }
 
     // Game side.
@@ -250,7 +260,7 @@ public:
                 _batchsize_back.notify(0);
                 // std::cout << "CollectorGroup: After notification. batchsize = " << _batchsize << std::endl;
             }
-            _batch = _batch_collector.waitBatch(_batchsize);
+            _batch = _batch_collector.waitBatch(_batchsize, _timeout_usec, kTimeOutuSecNoBatch);
             _batch_data.clear();
             for (In *b : _batch) {
                 _batch_data.push_back(&b->data);
@@ -258,6 +268,7 @@ public:
 
             // Time to leave the loop.
             if (_batch.size() == 1 && _batch[0] == nullptr) break;
+            if (_batch.empty()) continue;
 
             V_PRINT(_verbose, "CollectorGroup: [" << _gid << "] Compute input. batchsize = " << _batch.size());
 

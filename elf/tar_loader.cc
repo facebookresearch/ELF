@@ -1,6 +1,10 @@
 #include "tar_loader.h"
 #include <memory.h>
 
+namespace elf {
+
+namespace tar {
+
 bool file_is_tar(const std::string& filename) {
   return filename.substr(filename.find_last_of(".") + 1) == "tar";
 }
@@ -33,3 +37,7 @@ std::string TarLoader::Load(const std::string &filename) {
 TarLoader::~TarLoader() {
     mtar_close(&tar);
 }
+
+}  // namespace tar
+
+}  // namespace elf

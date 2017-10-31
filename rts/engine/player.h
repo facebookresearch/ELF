@@ -20,12 +20,25 @@ class Unit;
 struct Fog {
     // Fog level: 0 no fog, 100 completely invisible.
     int _fog = 100;
-    void Reset() {  _fog = 100; }
-    void SetClear() { _fog = 0; }
+    vector<Unit> _prev_seen_units;
+
+    void MakeInvisible() {  _fog = 100; }
+    void SetClear() { _fog = 0; _prev_seen_units.clear(); }
     bool CanSeeTerrain() const { return _fog < 50; }
     bool CanSeeUnit() const { return _fog < 30; }
 
-    SERIALIZER(Fog, _fog);
+    void SaveUnit(const Unit &u) {
+        _prev_seen_units.push_back(u);
+    }
+
+    void ResetFog() {
+        _fog = 100;
+        _prev_seen_units.clear(); 
+    }
+
+    const vector<Unit> &seen_units() const { return _prev_seen_units; }
+
+    SERIALIZER(Fog, _fog, _prev_seen_units);
 };
 
 // PlayerPrivilege, Normal player only see within the Fog of War.
@@ -38,6 +51,7 @@ private:
 
     // Player information.
     PlayerId _player_id;
+    std::string _name;
 
     // Type of players, different player could have different privileges.
     PlayerPrivilege _privilege;
@@ -89,6 +103,8 @@ private:
         }
     };
 
+    Loc _filter_with_fow(const Unit& u) const;
+
     bool line_passable(UnitId id, const PointF &curr, const PointF &target) const;
     float get_line_dist(const Loc &p1, const Loc &p2) const;
 
@@ -101,14 +117,15 @@ private:
 public:
     Player() : _map(nullptr), _player_id(INVALID), _privilege(PV_NORMAL), _resource(0) {
     }
-    Player(const RTSMap& m, int player_id)
-        : _map(&m), _player_id(player_id), _privilege(PV_NORMAL), _resource(0) {
+    Player(const RTSMap& m, const std::string &name, int player_id)
+        : _map(&m), _player_id(player_id), _name(name), _privilege(PV_NORMAL), _resource(0) {
         _fogs.assign(_map->GetPlaneSize(), Fog());
     }
 
     const RTSMap& GetMap() const { return *_map; }
     const RTSMap *ResetMap(const RTSMap *new_map) { auto tmp = _map; _map = new_map; return tmp; }
     PlayerId GetId() const { return _player_id; }
+    const std::string &GetName() const { return _name; }
     int GetResource() const { return _resource; }
 
     string Draw() const;
@@ -137,9 +154,16 @@ public:
         return make_string("p", _player_id, _resource);
     }
 
-    void ClearCache() { _heuristics.clear(); _cache.clear(); _resource = 0; }
+    void ClearCache() { 
+        _heuristics.clear(); 
+        _cache.clear(); 
+        _resource = 0; 
+        for (auto &fog : _fogs) {
+            fog.ResetFog();
+        }
+    }
 
-    bool CanSeeTerrain(Loc loc) const { return _fogs[loc].CanSeeTerrain(); }
+    const Fog &GetFog(Loc loc) const { return _fogs[loc]; }
 
     string PrintInfo() const;
 
@@ -149,7 +173,7 @@ public:
     static PlayerId ExtractPlayerId(UnitId id) { return (id >> 24); }
     static UnitId CombinePlayerId(UnitId raw_id, PlayerId player_id) { return (raw_id & 0xffffff) | (player_id << 24); }
 
-    SERIALIZER(Player, _player_id, _privilege, _resource, _fogs, _heuristics, _cache);
+    SERIALIZER(Player, _player_id, _name, _privilege, _resource, _fogs, _heuristics, _cache);
     HASH(Player, _player_id, _privilege, _resource);
 };
 

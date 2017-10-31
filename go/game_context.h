@@ -16,6 +16,7 @@
 #include "game.h"
 #include "../elf/pybind_interface.h"
 #include "../elf/tar_loader.h"
+#include "offpolicy_loader.h"
 #include "board_feature.h"
 
 class GameContext {
@@ -24,30 +25,30 @@ class GameContext {
 
   private:
     std::unique_ptr<GC> _context;
-    std::vector<GoGame> _games;
+    std::vector<std::unique_ptr<GoGame>> _games;
     const int _num_action = BOARD_DIM * BOARD_DIM;
 
   public:
     GameContext(const ContextOptions& context_options, const GameOptions& options) {
       _context.reset(new GC{context_options, options});
       for (int i = 0; i < context_options.num_games; ++i) {
-          _games.emplace_back(i, options);
+          _games.emplace_back(new GoGame(i, context_options, options));
       }
       if (! options.list_filename.empty()) OfflineLoader::InitSharedBuffer(options.list_filename);
     }
 
     void Start() {
         auto f = [this](int game_idx, const ContextOptions &context_options, const GameOptions&,
-                const std::atomic_bool& done, GC::Comm* comm) {
+                const elf::Signal& signal, GC::Comm* comm) {
             GC::AIComm ai_comm(game_idx, comm);
             auto &state = ai_comm.info().data;
             state.InitHist(context_options.T);
             for (auto &s : state.v()) {
                 s.Init(game_idx, _num_action);
             }
-            auto& game = _games[game_idx];
-            game.Init(&ai_comm);
-            game.MainLoop(done);
+            auto* game = _games[game_idx].get();
+            game->Init(&ai_comm);
+            game->MainLoop(signal);
         };
         _context->Start(f);
     }
@@ -75,6 +76,7 @@ class GameContext {
         else if (key == "move_idx") return EntryInfo(key, type_name);
         else if (key == "winner") return EntryInfo(key, type_name);
         else if (key == "a" || key == "V") return EntryInfo(key, type_name);
+        else if (key == "pi") return EntryInfo(key, type_name, { BOARD_DIM * BOARD_DIM });
         else if (key == "aug_code" || key == "move_idx" || key == "game_record_idx") return EntryInfo(key, type_name);
 
         return EntryInfo();
@@ -86,9 +88,10 @@ class GameContext {
 
     std::string ShowBoard(int game_idx) const {
         if (_check_game_idx(game_idx)) return "Invalid game_idx [" + std::to_string(game_idx) + "]";
-        return _games[game_idx].ShowBoard();
+        return _games[game_idx]->ShowBoard();
     }
 
+    /*
     void ApplyHandicap(int game_idx, int handicap) {
         if (_check_game_idx(game_idx)) return;
         return _games[game_idx].ApplyHandicap(handicap);
@@ -98,6 +101,7 @@ class GameContext {
         if (_check_game_idx(game_idx)) return;
         _games[game_idx].UndoMove();
     }
+    */
 
     CONTEXT_CALLS(GC, _context);
 

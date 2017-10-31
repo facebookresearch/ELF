@@ -14,23 +14,24 @@
 //
 CmdInput move_event(const Unit &u, char /*hotkey*/, const PointF& p, const UnitId &target_id, const GameEnv&) {
     // Don't need to check hotkey since there is only one type of action.
-    // cout << "In move command [" << hotkey << "] @" << p << " target: " << target_id << endl;
-    if (target_id == INVALID && ! p.IsInvalid())
-        return CmdInput(CmdInput::CI_MOVE, u.GetId(), p, target_id); 
+    if (target_id == INVALID && ! p.IsInvalid()) {
+        // cout << "In move command [" << hotkey << "] @" << p << " target: " << target_id << endl;
+        return CmdInput(CmdInput::CI_MOVE, u.GetId(), p, target_id);
+    }
     else return CmdInput();
 }
 
 CmdInput attack_event(const Unit &u, char /*hotkey*/, const PointF& p, const UnitId &target_id, const GameEnv&) {
     // Don't need to check hotkey since there is only one type of action.
     // cout << "In attack command [" << hotkey << "] @" << p << " target: " << target_id << endl;
-    return CmdInput(CmdInput::CI_ATTACK, u.GetId(), p, target_id); 
+    return CmdInput(CmdInput::CI_ATTACK, u.GetId(), p, target_id);
 }
 
 CmdInput gather_event(const Unit &u, char /*hotkey*/, const PointF& p, const UnitId &target_id, const GameEnv& env) {
     // Don't need to check hotkey since there is only one type of action.
     // cout << "In gather command [" << hotkey << "] @" << p << " target: " << target_id << endl;
     UnitId base = env.FindClosestBase(u.GetPlayerId());
-    return CmdInput(CmdInput::CI_GATHER, u.GetId(), p, target_id, base); 
+    return CmdInput(CmdInput::CI_GATHER, u.GetId(), p, target_id, base);
 }
 
 CmdInput build_event(const Unit &u, char hotkey, const PointF& p, const UnitId& /*target_id*/, const GameEnv&) {
@@ -69,7 +70,7 @@ CmdInput build_event(const Unit &u, char hotkey, const PointF& p, const UnitId& 
             return CmdInput();
     }
 
-    return CmdInput(CmdInput::CI_BUILD, u.GetId(), build_p, INVALID, INVALID, build_type); 
+    return CmdInput(CmdInput::CI_BUILD, u.GetId(), build_p, INVALID, INVALID, build_type);
 }
 
 void RawToCmd::add_hotkey(const string& s, EventResp f) {
@@ -85,7 +86,7 @@ void RawToCmd::setup_hotkeys() {
     add_hotkey("cbsmr", build_event);
 }
 
-RawMsgStatus RawToCmd::Process(const GameEnv &env, const string&s, CmdReceiver *receiver) {
+RawMsgStatus RawToCmd::Process(Tick tick, const GameEnv &env, const string&s, vector<CmdBPtr> *cmds, vector<UICmd> *ui_cmds) {
     // Raw command:
     //   t 'L' i j: left click at (i, j)
     //   t 'R' i j: right clock at (i, j)
@@ -97,6 +98,8 @@ RawMsgStatus RawToCmd::Process(const GameEnv &env, const string&s, CmdReceiver *
     //   t lowercase : keyboard click.
     // t is tick.
     if (s.empty()) return PROCESSED;
+    assert(cmds != nullptr);
+    assert(ui_cmds != nullptr);
 
     Tick t;
     char c;
@@ -106,11 +109,13 @@ RawMsgStatus RawToCmd::Process(const GameEnv &env, const string&s, CmdReceiver *
 
     cout << "Cmd: " << s << endl;
 
-    Tick tick = receiver->GetTick();
     const RTSMap& m = env.GetMap();
 
     istringstream ii(s);
-    ii >> t >> c;
+    string cc;
+    ii >> t >> cc;
+    if (cc.size() != 1) return PROCESSED;
+    c = cc[0];
     switch(c) {
         case 'L':
         case 'R':
@@ -130,21 +135,23 @@ RawMsgStatus RawToCmd::Process(const GameEnv &env, const string&s, CmdReceiver *
             selected = m.GetUnitIdInRegion(p, p2);
             break;
         case 'F':
-            receiver->SendCmd(UICmd::GetUIFaster());
+            ui_cmds->push_back(UICmd::GetUIFaster());
             return PROCESSED;
         case 'W':
-            receiver->SendCmd(UICmd::GetUISlower());
+            ui_cmds->push_back(UICmd::GetUISlower());
             return PROCESSED;
         case 'C':
-            receiver->SendCmd(UICmd::GetUICyclePlayer());
+            ui_cmds->push_back(UICmd::GetUICyclePlayer());
             return PROCESSED;
         case 'S':
             ii >> percent;
             // cout << "Get slider bar notification " << percent << endl;
-            receiver->SendCmd(UICmd::GetUISlideBar(percent));
+            ui_cmds->push_back(UICmd::GetUISlideBar(percent));
             return PROCESSED;
         case 'P':
-            receiver->SendCmd(UICmd::GetToggleGamePause());
+            ui_cmds->push_back(UICmd::GetToggleGamePause());
+            return PROCESSED;
+        default:
             return PROCESSED;
     }
 
@@ -164,6 +171,7 @@ RawMsgStatus RawToCmd::Process(const GameEnv &env, const string&s, CmdReceiver *
         if (it_key != _hotkey_maps.end()) {
             EventResp f = it_key->second;
             for (auto it = _sel_unit_ids.begin(); it != _sel_unit_ids.end(); ++it) {
+                // cout << "Deal with unit" << *it << endl << flush;
                 if (Player::ExtractPlayerId(*it) != _player_id) continue;
 
                 // Only command our unit.
@@ -177,7 +185,7 @@ RawMsgStatus RawToCmd::Process(const GameEnv &env, const string&s, CmdReceiver *
                 if (! cmd.get() || ! env.GetGameDef().unit(u->GetUnitType()).CmdAllowed(cmd->type())) continue;
 
                 // Command successful.
-                receiver->SendCmd(std::move(cmd));
+                cmds->emplace_back(std::move(cmd));
                 cmd_success = true;
             }
         }

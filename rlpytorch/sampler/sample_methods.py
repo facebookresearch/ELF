@@ -70,13 +70,15 @@ def sample_eps_with_check(probs, epsilon, greedy=False):
         num_action = probs.size(1)
         batchsize = probs.size(0)
 
-        rej_p = probs.data.new().resize_(2)
+        probs = probs.data if isinstance(probs, torch.autograd.Variable) else probs
+
+        rej_p = probs.new().resize_(2)
         rej_p[0] = 1 - epsilon
         rej_p[1] = epsilon
-        rej = rej_p.multinomial(batchsize).byte()
+        rej = rej_p.multinomial(batchsize, replacement=True).byte()
 
-        uniform_p = probs.data.new().resize_(num_action).fill_(1.0 / num_action)
-        uniform_sampling = uniform_p.multinomial(batchsize)
+        uniform_p = probs.new().resize_(num_action).fill_(1.0 / num_action)
+        uniform_sampling = uniform_p.multinomial(batchsize, replacement=True)
         actions[rej] = uniform_sampling[rej]
     return actions
 

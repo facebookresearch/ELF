@@ -12,11 +12,7 @@
 #include "elf/comm_template.h"
 #include "elf/hist.h"
 #include "engine/python_common_options.h"
-
-#define ACTION_GLOBAL 0
-#define ACTION_PROB 1
-#define ACTION_REGIONAL 2
-#define ACTION_UNIT_CMD 3 
+#include "engine/cmd_interface.h"
 
 template <typename T>
 void fill_zero(std::vector<T> &v) {
@@ -36,35 +32,30 @@ struct GameState {
     int32_t tick;
     int32_t winner;
 
-    // Used for self-play.
-    std::string player_name;
-
-    // Extra data.
-    int ai_start_tick;
+    std::string name;
 
     // Extracted feature map.
     std::vector<float> s;
 
-    // Resource for each player (one-hot representation). Not used now. 
-    std::vector<float> res;
+    std::vector<float> reduced_s;
+    std::vector<float> reduced_next_s;
 
     float last_r;
 
     // Reply
-    int64_t action_type;
     int32_t rv;
 
+    int32_t action_type;
     int64_t a;
     float V;
     std::vector<float> pi;
 
-    // 
-    std::vector<int64_t> unit_loc, target_loc;
-    std::vector<int64_t> build_type, cmd_type;
+    std::vector<int64_t> uloc, tloc;
+    std::vector<int64_t> bt, ct;
 
     // Also we need to save distributions.
-    std::vector<float> unit_loc_prob, target_loc_prob;
-    std::vector<float> build_type_prob, cmd_type_prob;
+    std::vector<float> uloc_prob, tloc_prob;
+    std::vector<float> bt_prob, ct_prob;
 
     int n_max_cmd;
     int n_action;
@@ -84,41 +75,43 @@ struct GameState {
         return *this;
     }
 
-    void Restart() { }
+    void Restart() {
+    }
 
-    void Init(int iid, int num_action, int num_max_cmd, int mapx, int mapy, int num_cmd_type, int num_units) {
+    void Init(int iid, int num_action, int num_max_cmd, int mapx, int mapy, int num_ct, int num_units, int reduced_size) {
         id = iid;
         pi.resize(num_action, 0.0);
         n_action = num_action;
 
         n_max_cmd = num_max_cmd;
-        unit_loc.resize(num_max_cmd, 0);
-        target_loc.resize(num_max_cmd, 0);
-        build_type.resize(num_max_cmd, 0);
-        cmd_type.resize(num_max_cmd, 0);
+        uloc.resize(num_max_cmd, 0);
+        tloc.resize(num_max_cmd, 0);
+        bt.resize(num_max_cmd, 0);
+        ct.resize(num_max_cmd, 0);
 
-        unit_loc_prob.resize(num_max_cmd * mapx * mapy, 0.0);
-        target_loc_prob.resize(num_max_cmd * mapx * mapy, 0.0);
-        build_type_prob.resize(num_max_cmd * num_units, 0.0);
-        cmd_type_prob.resize(num_max_cmd * num_cmd_type, 0.0);
+        uloc_prob.resize(num_max_cmd * mapx * mapy, 0.0);
+        tloc_prob.resize(num_max_cmd * mapx * mapy, 0.0);
+        bt_prob.resize(num_max_cmd * num_units, 0.0);
+        ct_prob.resize(num_max_cmd * num_ct, 0.0);
+        reduced_s.resize(reduced_size, 0.0);
+        reduced_next_s.resize(reduced_size, 0.0);
     }
 
     void Clear() {
         a = 0;
         V = 0.0;
         std::fill(pi.begin(), pi.end(), 0.0);
-        action_type = ACTION_GLOBAL;
         unit_cmds.clear();
 
-        fill_zero(unit_loc);
-        fill_zero(target_loc);
-        fill_zero(build_type);
-        fill_zero(cmd_type);
+        fill_zero(uloc);
+        fill_zero(tloc);
+        fill_zero(bt);
+        fill_zero(ct);
 
-        fill_zero(unit_loc_prob);
-        fill_zero(target_loc_prob);
-        fill_zero(build_type_prob);
-        fill_zero(cmd_type_prob);
+        fill_zero(uloc_prob);
+        fill_zero(tloc_prob);
+        fill_zero(bt_prob);
+        fill_zero(ct_prob);
 
         /*
         // TODO Specify action map dimensions in Init.
@@ -132,16 +125,16 @@ struct GameState {
         */
     }
 
-    bool AddUnitCmd(float unit_loc_x, float unit_loc_y, float target_loc_x, float target_loc_y, int cmd_type, int build_tp) {
+    bool AddUnitCmd(float uloc_x, float uloc_y, float tloc_x, float tloc_y, int ct, int build_tp) {
         if ((int)unit_cmds.size() < n_max_cmd) {
-            unit_cmds.emplace_back(unit_loc_x, unit_loc_y, target_loc_x, target_loc_y, cmd_type, build_tp);
+            unit_cmds.emplace_back(uloc_x, uloc_y, tloc_x, tloc_y, ct, build_tp);
             return true;
         } else return false;
     }
 
     // These fields are used to exchange with Python side using tensor interface.
-    DECLARE_FIELD(GameState, id, a, V, pi, action_type, last_r, s, res, rv, terminal, seq, game_counter, last_terminal, unit_loc, target_loc, build_type, cmd_type, unit_loc_prob, target_loc_prob, build_type_prob, cmd_type_prob);
-    REGISTER_PYBIND_FIELDS(id); 
+    DECLARE_FIELD(GameState, id, a, V, pi, last_r, s, rv, terminal, seq, game_counter, last_terminal, uloc, tloc, bt, ct, uloc_prob, tloc_prob, bt_prob, ct_prob, reduced_s, reduced_next_s);
+    REGISTER_PYBIND_FIELDS(id);
 };
 
 using Context = ContextT<PythonOptions, HistT<GameState>>;

@@ -35,6 +35,7 @@ class Evaluator:
         self.args = ArgsProvider(
             call_from = self,
             define_args = [
+                ("keys_in_reply", "")
             ],
             more_args = ["num_games", "batchsize", "num_minibatch"],
             on_get_args = self._on_get_args,
@@ -44,6 +45,7 @@ class Evaluator:
     def _on_get_args(self, _):
         if self.stats is not None and not self.stats.is_valid():
             self.stats = None
+        self.keys_in_reply = set(self.args.keys_in_reply.split(","))
 
     def episode_start(self, i):
         ''' Called before each episode. Reset ``actor_count`` to 0.
@@ -72,12 +74,19 @@ class Evaluator:
         state_curr = m.forward(batch.hist(0))
         m.set_volatile(False)
 
-        reply_msg = self.sampler.sample(state_curr)
+        if self.sampler is not None:
+            reply_msg = self.sampler.sample(state_curr)
+        else:
+            reply_msg = dict(pi=state_curr["pi"].data)
 
         if self.stats is not None:
             self.stats.feed_batch(batch)
 
-        reply_msg["rv"] = self.mi["actor"].step
+        if "rv" in self.keys_in_reply:
+            reply_msg["rv"] = self.mi["actor"].step
+
+        if "V" in self.keys_in_reply:
+            reply_msg["V"] = state_curr["V"].data
 
         self.actor_count += 1
         return reply_msg

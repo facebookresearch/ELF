@@ -91,6 +91,8 @@ void Preload::collect_stats(const GameEnv &env, int player_id, const CmdReceiver
 }
 
 void Preload::GatherInfo(const GameEnv& env, int player_id, const CmdReceiver &receiver) {
+    // cout << "GatherInfo(): player_id: " << player_id << endl;
+    assert(player_id >= 0 && player_id < env.GetNumOfPlayers());
     collect_stats(env, player_id, receiver);
     const Player& player = env.GetPlayer(_player_id);
     _resource = player.GetResource();
@@ -148,6 +150,7 @@ const Unit *Preload::EnemyAtBase() {
     return _enemy_at_base;
 }
 
+/////////////////////// RuleActor /////////////////////
 bool RuleActor::store_cmd(const Unit *u, CmdBPtr&& cmd, AssignedCmds *m) const {
     if (cmd.get() == nullptr) return false;
     // Check if the same cmd has been issued (in particular ATTACK, since ATTACK has cooldown).

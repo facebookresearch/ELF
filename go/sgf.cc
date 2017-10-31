@@ -28,7 +28,7 @@ bool Sgf::load_game(const string& filename, const string& game_string) {
         // cout << PrintHeader();
         // cout << PrintMainVariation();
 
-        SgfIterator iter = begin();
+        auto iter = begin();
         if (iter.done()) return false;
 
         // Compute the length of the move.
@@ -48,7 +48,7 @@ bool Sgf::load_game(const string& filename, const string& game_string) {
     return false;
 }
 
-bool Sgf::Load(const string& filename, TarLoader& tar_loader) {
+bool Sgf::Load(const string& filename, elf::tar::TarLoader& tar_loader) {
   return load_game(filename, tar_loader.Load(filename));
 }
 
@@ -233,7 +233,7 @@ string Sgf::PrintHeader() const {
 
 string Sgf::PrintMainVariation() {
     stringstream ss;
-    SgfIterator iter = begin();
+    auto iter = begin();
     while (! iter.done()) {
         auto curr = iter.GetCurrMove();
         ss << "[" << iter.GetCurrIdx() << "]: " << STR_STONE(curr.player) << " " << coord2str(curr.move);

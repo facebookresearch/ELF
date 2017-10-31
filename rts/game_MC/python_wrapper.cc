@@ -17,34 +17,34 @@
 #include "engine/wrapper_template.h"
 #include "wrapper_callback.h"
 #include "ai.h"
+#include "state_feature.h"
 
 class GameContext {
 public:
     using GC = Context;
-    using Wrapper = WrapperT<WrapperCallbacks, GC::Comm, PythonOptions>;
+    using Wrapper = WrapperT<WrapperCallbacks, GC::Comm, PythonOptions, AI>;
 
 private:
     std::unique_ptr<GC> _context;
     Wrapper _wrapper;
     int _num_frames_in_state;
-    int _num_planes;
 
 public:
     GameContext(const ContextOptions& context_options, const PythonOptions& options) {
-      GameDef::GlobalInit();
-      _context.reset(new GC{context_options, options});
+        GameDef::GlobalInit();
+        _context.reset(new GC{context_options, options});
 
-      _num_frames_in_state = 1;
-      for (const AIOptions& opt : options.ai_options) {
-          _num_frames_in_state = max(_num_frames_in_state, opt.num_frames_in_state);
-      }
-      _num_planes = (GameDef::GetNumUnitType() + 7) * _num_frames_in_state;
+        _num_frames_in_state = 1;
+        for (const AIOptions& opt : options.ai_options) {
+            _num_frames_in_state = max(_num_frames_in_state, opt.num_frames_in_state);
+        }
     }
 
     void Start() {
         _context->Start(
-            [&](int game_idx, const ContextOptions &context_options, const PythonOptions &options, const std::atomic_bool &done, Comm *comm) {
-                    _wrapper.thread_main(game_idx, context_options, options, done, comm);
+            [this](int game_idx, const ContextOptions &context_options, const PythonOptions &options, const elf::Signal &signal, Comm *comm) {
+                    auto params = this->GetParams();
+                    this->_wrapper.thread_main(game_idx, context_options, options, signal, &params, comm);
             });
     }
 
@@ -52,12 +52,14 @@ public:
         return std::map<std::string, int>{
             { "num_action", GameDef::GetNumAction() },
             { "num_unit_type", GameDef::GetNumUnitType() },
-            { "num_planes", _num_planes },
+            { "num_planes_per_time_stamp", MCExtractor::Size() },
+            { "num_planes", MCExtractor::Size() * _num_frames_in_state },
             { "resource_dim", 2 * NUM_RES_SLOT },
             { "max_unit_cmd", _context->options().max_unit_cmd },
             { "map_x", _context->options().map_size_x },
             { "map_y", _context->options().map_size_y },
-            { "num_cmd_type", CmdInput::CI_NUM_CMDS }
+            { "num_cmd_type", CmdInput::CI_NUM_CMDS },
+            { "reduced_dim", MCExtractor::Size() * 5 * 5 }
         };
     }
 
@@ -71,12 +73,12 @@ public:
         const int mapx = _context->options().map_size_x;
         const int mapy = _context->options().map_size_y;
         const int max_unit_cmd = _context->options().max_unit_cmd;
+        const int reduced_size = MCExtractor::Size() * 5 * 5;
 
-        if (key == "s") return EntryInfo(key, type_name, { _num_planes,  _context->options().map_size_y, _context->options().map_size_x});
+        if (key == "s") return EntryInfo(key, type_name, { (int)MCExtractor::Size() * _num_frames_in_state,  _context->options().map_size_y, _context->options().map_size_x});
         else if (key == "last_r" || key == "terminal" || key == "last_terminal" || key == "id" || key == "seq" || key == "game_counter" || key == "player_id") return EntryInfo(key, type_name);
         else if (key == "pi") return EntryInfo(key, type_name, {GameDef::GetNumAction()});
-        else if (key == "a" || key == "rv" || key == "V") return EntryInfo(key, type_name);
-        else if (key == "res") return EntryInfo(key, type_name, {2, NUM_RES_SLOT});
+        else if (key == "a" || key == "rv" || key == "V" || key == "action_type") return EntryInfo(key, type_name);
         else if (key == "uloc") return EntryInfo(key, type_name, { max_unit_cmd });
         else if (key == "tloc") return EntryInfo(key, type_name, { max_unit_cmd });
         else if (key == "bt") return EntryInfo(key, type_name, { max_unit_cmd });
@@ -85,8 +87,20 @@ public:
         else if (key == "tloc_prob") return EntryInfo(key, type_name, { max_unit_cmd, mapx * mapy });
         else if (key == "bt_prob") return EntryInfo(key, type_name, { max_unit_cmd, GameDef::GetNumUnitType() });
         else if (key == "ct_prob") return EntryInfo(key, type_name, { max_unit_cmd, CmdInput::CI_NUM_CMDS });
+        else if (key == "reduced_s") return EntryInfo(key, type_name, { reduced_size });
+        else if (key == "reduced_next_s") return EntryInfo(key, type_name, { reduced_size });
 
         return EntryInfo();
+    }
+
+    void ApplyExtractorParams(const MCExtractorOptions &opt) {
+        std::cout << opt.info() << std::endl;
+        MCExtractor::Init(opt);
+    }
+
+    void ApplyExtractorUsage(const MCExtractorUsageOptions &opt) {
+        std::cout << opt.info() << std::endl;
+        MCExtractor::InitUsage(opt);
     }
 
     void Stop() {
@@ -102,7 +116,9 @@ public:
 PYBIND11_MODULE(minirts, m) {
   register_common_func<GameContext>(m);
   CONTEXT_REGISTER(GameContext)
-    .def("GetParams", &GameContext::GetParams);
+    .def("GetParams", &GameContext::GetParams)
+    .def("ApplyExtractorParams", &GameContext::ApplyExtractorParams)
+    .def("ApplyExtractorUsage", &GameContext::ApplyExtractorUsage);
 
   // Also register other objects.
   PYCLASS_WITH_FIELDS(m, AIOptions)
@@ -115,4 +131,11 @@ PYBIND11_MODULE(minirts, m) {
     .def(py::init<>())
     .def("Print", &PythonOptions::Print)
     .def("AddAIOptions", &PythonOptions::AddAIOptions);
+
+  PYCLASS_WITH_FIELDS(m, MCExtractorOptions)
+    .def(py::init<>());
+
+  PYCLASS_WITH_FIELDS(m, MCExtractorUsageOptions)
+    .def(py::init<>())
+    .def("Set", &MCExtractorUsageOptions::Set);
 }

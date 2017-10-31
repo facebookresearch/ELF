@@ -51,44 +51,6 @@ private:
     bool _terminated;
 
 public:
-    class UnitIterator {
-        private:
-            Units::const_iterator _it;
-            const GameEnv *_env;
-            PlayerId _player_id;
-            bool _output_building;
-            bool _output_moving;
-
-            void next() {
-                while (_it != _env->_units.end()) {
-                    const Unit &u = *_it->second;
-                    if (_player_id == INVALID || _env->_players[_player_id].FilterWithFOW(u)) {
-                        bool is_building = _env->_gamedef.IsUnitTypeBuilding(u.GetUnitType());
-                        if ((is_building && _output_building) || (! is_building && _output_moving)) break;
-                    }
-                    ++ _it;
-                }
-            }
-
-        public:
-            UnitIterator(const GameEnv *env, PlayerId player_id, bool output_building, bool output_moving)
-                : _env(env), _player_id(player_id), _output_building(output_building), _output_moving(output_moving) {
-                _it = _env->_units.begin();
-                next();
-            }
-            UnitIterator &operator ++() {
-                ++ _it;
-                next();
-                return *this;
-            }
-
-            const Unit &operator *() {
-                return *_it->second;
-            }
-
-            bool end() const { return _it == _env->_units.end(); }
-    };
-
     GameEnv();
 
     void Visualize() const;
@@ -100,7 +62,7 @@ public:
     void Reset();
 
     // Add and remove players.
-    void AddPlayer(PlayerPrivilege pv);
+    void AddPlayer(const std::string &name, PlayerPrivilege pv);
     void RemovePlayer();
 
     int GetNumOfPlayers() const { return _players.size(); }
@@ -163,8 +125,14 @@ public:
     bool FindClosestPlaceWithDistance(const PointF &p, int l1_radius,
             const vector<const Unit *>& units, PointF *res_p) const;
 
-    const Player &GetPlayer(PlayerId player_id) const { return _players[player_id]; }
-    Player &GetPlayer(PlayerId player_id) { return _players[player_id]; }
+    const Player &GetPlayer(PlayerId player_id) const {
+      assert(player_id >= 0 && player_id < (int)_players.size());
+      return _players[player_id];
+    }
+    Player &GetPlayer(PlayerId player_id) {
+      assert(player_id >= 0 && player_id < (int)_players.size());
+      return _players[player_id];
+    }
 
     // Add and remove units.
     bool AddUnit(Tick tick, UnitType type, const PointF &p, PlayerId player_id);
@@ -185,9 +153,8 @@ public:
     void Forward(CmdReceiver *receiver);
     void ComputeFOW();
 
-    UnitIterator GetUnitIterator(PlayerId player_id) const { return UnitIterator(this, player_id, true, true); }
-    UnitIterator GetUnitBuildingIterator(PlayerId player_id) const { return UnitIterator(this, player_id, true, false); }
-    UnitIterator GetUnitMovingIterator(PlayerId player_id) const { return UnitIterator(this, player_id, false, true); }
+    // Some debug code.
+    int GetPrevSeenCount(PlayerId) const;
 
     // Fill in metadata to a save_class
     template <typename save_class, typename T>
@@ -199,39 +166,7 @@ public:
 
     // Fill in data to a save_class
     template <typename save_class, typename T>
-    void FillIn(PlayerId player_id, const CmdReceiver& receiver, T *game) const {
-        bool is_spectator = (player_id == INVALID);
-        if (is_spectator) {
-            // Show all the maps.
-            save_class::Save(*_map, game);
-            for (size_t i = 0; i < _players.size(); ++i) {
-                save_class::SaveStats(_players[i], game);
-            }
-        } else {
-            // Show only visible maps
-            // cout << "Save maps and stats" << endl << flush;
-            save_class::SavePlayerMap(_players[player_id], game);
-            save_class::SaveStats(_players[player_id], game);
-        }
-
-        // cout << "Save units" << endl << flush;
-        auto iterator = GetUnitBuildingIterator(player_id);
-        while (! iterator.end()) {
-            save_class::Save(*iterator, receiver, game);
-            ++ iterator;
-        }
-
-        iterator = GetUnitMovingIterator(player_id);
-        while (! iterator.end()) {
-            save_class::Save(*iterator, receiver, game);
-            ++ iterator;
-        }
-
-        // cout << "Save bullet" << endl << flush;
-        for (const auto& bullet : _bullets) {
-            save_class::Save(bullet, game);
-        }
-    }
+    void FillIn(PlayerId player_id, const CmdReceiver& receiver, T *game) const;
 
     void SaveSnapshot(serializer::saver &saver) const;
     void LoadSnapshot(serializer::loader &loader);
@@ -246,5 +181,114 @@ public:
     static const Unit *PickFirstIdle(const vector<const Unit *> units, const CmdReceiver &receiver);
     static const Unit *PickFirst(const vector<const Unit *> units, const CmdReceiver &receiver, CmdType t) ;
 };
+
+class UnitIterator;
+
+class GameEnvAspect {
+public:
+    GameEnvAspect(const GameEnv &env, PlayerId player_id)
+        : _env(env), _player_id(player_id) {
+    }
+
+    bool FilterWithFOW(const Unit &u) const {
+        return _player_id == INVALID || _env.GetPlayer(_player_id).FilterWithFOW(u);
+    }
+    // [TODO] This violates the behavior of Aspect. Will need to change. 
+    const Units &GetAllUnits() const { return _env.GetUnits(); }
+    const Player &GetPlayer() const { return _env.GetPlayer(_player_id); }
+    const GameDef &GetGameDef() const { return _env.GetGameDef(); }
+
+private:
+    const GameEnv &_env;
+    PlayerId _player_id;
+};
+
+class UnitIterator {
+public:
+    enum Type { ALL = 0, BUILDING, MOVING }; 
+
+    UnitIterator(const GameEnvAspect &aspect, Type type)
+        : _aspect(aspect), _type(type) {
+            _it = _aspect.GetAllUnits().begin();
+            next();
+        }
+    UnitIterator(const UnitIterator &i) 
+        : _aspect(i._aspect), _type(i._type), _it(i._it) {
+    }
+
+    UnitIterator &operator ++() {
+        ++ _it;
+        next();
+        return *this;
+    }
+
+    const Unit &operator *() {
+        return *_it->second;
+    }
+
+    bool end() const { return _it == _aspect.GetAllUnits().end(); }
+
+private:
+    const GameEnvAspect &_aspect;
+    Type _type;
+    Units::const_iterator _it;
+
+    void next() {
+        while (_it != _aspect.GetAllUnits().end()) {
+            const Unit &u = *_it->second;
+            if (_aspect.FilterWithFOW(u)) {
+                if (_type == ALL) break;
+
+                bool is_building = _aspect.GetGameDef().IsUnitTypeBuilding(u.GetUnitType());
+                if ((is_building && _type == BUILDING) || (! is_building && _type == MOVING)) break;
+            }
+            ++ _it;
+        }
+    }
+};
+
+// Fill in data to a save_class
+template <typename save_class, typename T>
+void GameEnv::FillIn(PlayerId player_id, const CmdReceiver& receiver, T *game) const {
+    bool is_spectator = (player_id == INVALID);
+
+    save_class::SetPlayerId(player_id, game);
+    save_class::SetSpectator(is_spectator, game);
+
+    if (is_spectator) {
+        // Show all the maps.
+        save_class::Save(*_map, game);
+        for (size_t i = 0; i < _players.size(); ++i) {
+            save_class::SaveStats(_players[i], game);
+        }
+    } else {
+        // Show only visible maps
+        // cout << "Save maps and stats" << endl << flush;
+        save_class::SavePlayerMap(_players[player_id], game);
+        save_class::SaveStats(_players[player_id], game);
+    }
+
+    // cout << "Save units" << endl << flush;
+    GameEnvAspect aspect(*this, player_id);
+
+    // Building iterator.
+    UnitIterator iterator_build(aspect, UnitIterator::BUILDING);
+    while (! iterator_build.end()) {
+        save_class::Save(*iterator_build, &receiver, game);
+        ++ iterator_build;
+    }
+
+    // Moving iterator.
+    UnitIterator iterator_move(aspect, UnitIterator::MOVING);
+    while (! iterator_move.end()) {
+        save_class::Save(*iterator_move, &receiver, game);
+        ++ iterator_move;
+    }
+
+    // cout << "Save bullet" << endl << flush;
+    for (const auto& bullet : _bullets) {
+        save_class::Save(bullet, game);
+    }
+}
 
 #endif

@@ -27,21 +27,32 @@
 #include "state_collector.h"
 #include "ai_comm.h"
 #include "stats.h"
+#include "member_check.h"
+#include "signal.h"
 
 struct GroupStat {
     int gid;
     int hist_len;
-    std::string player_name;
+    std::string name;
 
     GroupStat() : gid(-1), hist_len(1) { }
     std::string info() const {
-        return "[gid=" + std::to_string(gid) + "][T=" + std::to_string(hist_len) + "][player_name=" + player_name + "]";
+        return "[gid=" + std::to_string(gid) + "][T=" + std::to_string(hist_len) + "][name=\"" + name + "\"]";
     }
 
     // Note that gid will be set by C++ side.
-    REGISTER_PYBIND_FIELDS(hist_len, player_name);
+    REGISTER_PYBIND_FIELDS(hist_len, name);
 };
 
+#define ADD_COND_CHECK(field_name) \
+    MEMBER_CHECK(field_name);\
+    template <typename S_ = typename T::State, typename std::enable_if<has_##field_name<S_>::value>::type *U = nullptr> \
+    bool check_##field_name(const GroupStat &gstat, const S_ &record) {\
+        if (! gstat.field_name.empty() && gstat.field_name != record.field_name) return false;\
+        return true;\
+    }\
+    template <typename S_ = typename T::State, typename std::enable_if<! has_##field_name<S_>::value>::type *U = nullptr>\
+    bool check_##field_name(const GroupStat &, const S_ &) { return true; }
 
 template <typename T>
 struct CondPerGroupT {
@@ -53,13 +64,16 @@ struct CondPerGroupT {
 
     CondPerGroupT() : last_used_seq(0), last_seq(0), game_counter(0), freq_send(0) { }
 
+    ADD_COND_CHECK(name)
+
     bool Check(const GroupStat &gstat, const T &info) {
         // Check whether this record is even relevant.
         // If we have specified player id and the player id from the info is irrelevant
         // from what is specified, then we skip.
         const auto &record = info.data.newest();
-        if (! gstat.player_name.empty() && gstat.player_name != record.player_name) return false;
-        // std::cout << "Check " << gstat.info() << " record.player_name = " << record.player_name << std::endl;
+        if (! check_name(gstat, record)) return false;
+
+        // std::cout << "Check " << gstat.info() << " record.name = " << record.name << std::endl;
 
         // Update game counter.
         int new_game_counter = record.game_counter;
@@ -154,8 +168,9 @@ public:
         init_stats();
     }
 
-    int AddCollectors(int batchsize, int exclusive_id, const GroupStat &gstat) {
-        _groups.emplace_back(new CollectorGroup(_groups.size(), _keys, batchsize, _signal.get(), _context_options.verbose_collector));
+    int AddCollectors(int batchsize, int exclusive_id, int timeout_usec, const GroupStat &gstat) {
+        _groups.emplace_back(new CollectorGroup(_groups.size(), _keys, batchsize, _signal.get(),
+                    _context_options.verbose_collector, timeout_usec));
         int gid = _groups.size() - 1;
 
         if ((int)_exclusive_groups.size() <= exclusive_id) {
@@ -164,6 +179,18 @@ public:
         _exclusive_groups[exclusive_id].push_back(gstat);
         _exclusive_groups[exclusive_id].back().gid = gid;
         return gid;
+    }
+
+    std::string GetCollectorInfos() const {
+        std::stringstream ss;
+        for (size_t i = 0; i < _exclusive_groups.size(); ++i) {
+            ss << "Group " << i << ": " << std::endl;
+            for (size_t idx = 0; idx < _exclusive_groups[i].size(); ++idx) {
+                const GroupStat &gstat = _exclusive_groups[i][idx];
+                ss << "  " << _groups[gstat.gid]->info() << " Info: " << gstat.info() << std::endl;
+            }
+        }
+        return ss.str();
     }
 
     CollectorGroup &GetCollectorGroup(int gid) { return *_groups[gid]; }
@@ -203,7 +230,7 @@ public:
             const GroupStat &gstat = _exclusive_groups[i][idx];
 
             if (stats.conds[i].Check(gstat, info)) {
-                V_PRINT(_verbose, "[k=" << key << "] Pass test for group " << gstat.gid << " hist_len = " << gstat.hist_len);
+                V_PRINT(_verbose, "[k=" << key << "] Pass test for group " << gstat.gid << " name = " << gstat.name << " hist_len = " << gstat.hist_len);
                 stats.conds[i].freq_send ++;
 
                 _groups[gstat.gid]->SendData(key, &info);
@@ -217,6 +244,7 @@ public:
 
             // Wait until all collectors have done their jobs.
             stats.counter->wait(selected_groups.size());
+            stats.counter->reset();
 
             V_PRINT(_verbose, "[k=" << key << "] All " << selected_groups.size() << " has done their jobs, Wait until the game is released");
 
@@ -272,13 +300,6 @@ public:
     }
 };
 
-template <typename Key, typename Value>
-const Value &get_value(const std::map<Key, Value>& dict, const Key &key, const Value &default_val) {
-  auto it = dict.find(key);
-  if (it == dict.end()) return default_val;
-  else return it->second;
-}
-
 // The game context, which could include multiple games.
 template <typename _Options, typename _Data>
 class ContextT {
@@ -295,7 +316,7 @@ public:
     using Comm = CommT<Info>;
     using AIComm = AICommT<Comm>;
 
-    using GameStartFunc = std::function<void (int game_idx, const ContextOptions &context_options, const Options& options, const std::atomic_bool &done, Comm *comm)>;
+    using GameStartFunc = std::function<void (int game_idx, const ContextOptions &context_options, const Options& options, const elf::Signal &signal, Comm *comm)>;
 
 private:
     Comm _comm;
@@ -304,6 +325,7 @@ private:
 
     ctpl::thread_pool _pool;
     Notif _done;
+    std::atomic_bool _prepare_stop;
     bool _game_started = false;
 
 public:
@@ -324,8 +346,8 @@ public:
         // Now we start all jobs.
         for (int i = 0; i < _pool.size(); ++i) {
             _pool.push([i, this, &game_start_func](int){
-                const std::atomic_bool &done = _done.flag();
-                game_start_func(i, _context_options, _options, done, &_comm);
+                elf::Signal signal(_done.flag(), _prepare_stop);
+                game_start_func(i, _context_options, _options, signal, &_comm);
                 // std::cout << "G[" << i << "] is ending" << std::endl;
                 _done.notify();
             });
@@ -369,7 +391,10 @@ public:
             }
         });
 
+        _prepare_stop = true;
+
         // First set all batchsize to be 1.
+        std::cout << "Prepare to stop ..." << std::endl;
         _comm.PrepareStop();
 
         // Then stop all game threads.
@@ -382,6 +407,7 @@ public:
         std::cout << "Stop all collectors ..." << std::endl;
         _comm.Stop();
 
+        std::cout << "Stop tmp pool..." << std::endl;
         tmp_thread_done = true;
         tmp_pool.stop();
         _game_started = false;

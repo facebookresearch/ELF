@@ -4,6 +4,10 @@
 #include <vector>
 #include "microtar.h"
 
+namespace elf {
+
+namespace tar {
+
 extern bool file_is_tar(const std::string& filename);
 
 class TarLoader {
@@ -15,3 +19,7 @@ public:
   std::string Load(const std::string &filename);
   ~TarLoader();
 };
+
+}  // namespace tar
+
+}  // namespace elf

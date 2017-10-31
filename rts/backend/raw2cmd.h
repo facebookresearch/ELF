@@ -9,12 +9,13 @@
 
 #pragma once
 #include "engine/cmd_interface.h"
+
 class CmdReceiver;
 
-// RawMsgStatus. 
+// RawMsgStatus.
 custom_enum(RawMsgStatus, PROCESSED = 0, EXCEED_TICK, FAILED);
 
-typedef function<CmdInput (const Unit&, char hotkey, const PointF& p, const UnitId &target_id, const GameEnv &)> EventResp; 
+typedef function<CmdInput (const Unit&, char hotkey, const PointF& p, const UnitId &target_id, const GameEnv &)> EventResp;
 
 class RawToCmd {
 private:
@@ -38,13 +39,17 @@ private:
     void add_hotkey(const string &keys, EventResp func);
     void setup_hotkeys();
 
-    static bool is_mouse_motion(char c) { return c == 'L' || c == 'R' || c == 'B'; } 
+    static bool is_mouse_motion(char c) { return c == 'L' || c == 'R' || c == 'B'; }
 
 public:
     RawToCmd(PlayerId player_id = INVALID) : _player_id(player_id), _last_key('~') { setup_hotkeys(); }
-    RawMsgStatus Process(const GameEnv &env, const string&s, CmdReceiver *receiver);
+    RawMsgStatus Process(Tick tick, const GameEnv &env, const string&s, vector<CmdBPtr> *cmds, vector<UICmd> *ui_cmds);
 
-    void SetId(PlayerId id) { _player_id = id; clear_state();  }
+    void SetId(PlayerId id) {
+        _player_id = id;
+        clear_state();
+    }
+    PlayerId GetPlayerId() const { return _player_id; }
 
     bool IsUnitSelected() const { return ! _sel_unit_ids.empty(); }
     bool IsSingleUnitSelected() const { return _sel_unit_ids.size() == 1; }
@@ -52,7 +57,7 @@ public:
     void ClearUnitSelection() { _sel_unit_ids.clear(); }
     const set<UnitId> &GetAllSelectedUnits() const { return _sel_unit_ids; }
 
-    void NotifyDeleted(const UnitId& id) { 
+    void NotifyDeleted(const UnitId& id) {
         auto it = _sel_unit_ids.find(id);
         if (it != _sel_unit_ids.end()) {
             _sel_unit_ids.erase(it);

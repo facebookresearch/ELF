@@ -11,6 +11,7 @@ import torch.optim
 import torch.nn as nn
 from torch.autograd import Variable
 from collections import deque
+from .args_provider import ArgsProvider
 
 # All model must provide .outputs and .preprocess
 # E.g., .outputs = { "Q" : self.final_linear_layer }
@@ -26,6 +27,15 @@ class ModelInterface:
         self.models = { }
         self.old_models = deque()
         self.optimizers = { }
+
+        self.args = ArgsProvider(
+            call_from = self,
+            define_args = [
+                ("opt_method", "adam"),
+                ("lr", 1e-3),
+                ("adam_eps", 1e-3),
+            ],
+        )
 
     def clone(self, gpu=None):
         ''' Clone the state for the model interface, including ``models`` and ``optimizers``
@@ -65,7 +75,7 @@ class ModelInterface:
         return mi
 
 
-    def add_model(self, key, model, copy=False, cuda=False, gpu_id=None, optim_params={}):
+    def add_model(self, key, model, copy=False, cuda=False, gpu_id=None, opt=False, params={}):
         '''Add a model to `ModelInterface`.
 
         Args:
@@ -74,7 +84,8 @@ class ModelInterface:
             copy(bool): indicate if the model needs to be deep copied.
             cuda(bool): indicate if model needs to be converted to cuda.
             gpu_id(int): gpu index.
-            optim_params(dict): an dict of parameters for optimizers.
+            opt(bool): Whether you want your model to be optimized (weights to be updated).
+            params(dict): an dict of parameters for optimizers.
 
         Returns:
             ``False`` if key is already in ``self.models``, ``True`` if model is successfully added.
@@ -89,17 +100,27 @@ class ModelInterface:
             else:
                 self.models[key].cuda()
 
+        def set_default(params, k, arg_k=None):
+            if arg_k is None: arg_k = k
+            params[k] = params.get(k, getattr(self.args, arg_k))
+
         curr_model = self.models[key]
-        if len(optim_params) > 0:
-            # TODO: put betas, eps into optim_params?
-            self.optimizers[key] = \
-                    torch.optim.Adam(curr_model.parameters(), lr = optim_params["lr"], betas = (0.9, 0.999), eps=1e-3)
+        if opt or len(params) > 0:
+            set_default(params, "lr")
+            set_default(params, "opt_method")
+            set_default(params, "adam_eps")
+
+            if params["opt_method"] == "adam":
+                self.optimizers[key] = \
+                        torch.optim.Adam(curr_model.parameters(), lr = params["lr"], betas = (0.9, 0.999), eps=params["adam_eps"])
+            else:
+                raise ValueError("Optimization method %s is not supported! " % params["opt_method"])
 
         return True
 
     def update_model(self, key, model, save_old_model=False):
         ''' Update an old model. Does not deep copy it.
-        
+
         Args:
             key(str): the key in ``models`` to be updated
             model(`Model`): updated model

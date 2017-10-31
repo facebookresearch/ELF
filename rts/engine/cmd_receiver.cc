@@ -8,6 +8,7 @@
 */
 
 #include "cmd.h"
+#include "cmd_receiver.h"
 #include "game_env.h"
 #include <initializer_list>
 
@@ -79,45 +80,10 @@ bool CmdReceiver::SendCmdWithTick(CmdBPtr &&cmd, Tick tick) {
     return true;
 }
 
-bool CmdReceiver::SendCmd(UICmd &&cmd) {
-    _ui_cmd_queue.push(cmd);
-    return true;
-}
-
 const CmdDurative *CmdReceiver::GetUnitDurativeCmd(UnitId id) const {
     auto it = _unit_durative_cmd.find(id);
     if (it == _unit_durative_cmd.end()) return nullptr;
     else return it->second;
-}
-
-bool CmdReceiver::LoadReplay(const string& replay_filename) {
-    // Load the replay_file (which is a action sequence)
-    // Each action looks like the following:
-    //    Tick, CmdType, UnitId, UnitType, Loc
-    //
-    if (replay_filename.empty()) return false;
-
-    _loaded_replay.clear();
-    _tick = 0;
-    _next_replay_idx = 0;
-
-    // cout << "Loading replay = " << replay_filename << endl;
-
-    serializer::loader loader(false);
-    if (! loader.read_from_file(replay_filename)) {
-        return false;
-    }
-
-    _loaded_replay.clear();
-    loader >> _loaded_replay;
-    // cout << "Loaded replay, size = " << _loaded_replay.size() << endl;
-
-    _cmd_history.clear();
-    _durative_cmd_queue = p_queue<CmdDPtr>();
-    _immediate_cmd_queue = p_queue<CmdIPtr>();
-
-    SendCurrentReplay();
-    return true;
 }
 
 bool CmdReceiver::SaveReplay(const string& replay_filename) const {
@@ -192,27 +158,6 @@ void CmdReceiver::ExecuteImmediateCmds(GameEnv *env, bool force_verbose) {
     SetSaveToHistory(true);
 }
 
-void CmdReceiver::ExecuteUICmds(function<void (const UICmd&)> default_f) {
-    // cout << "Starting ExecuteUICmds" << endl;
-    while (! _ui_cmd_queue.empty()) {
-        const UICmd &cmd = _ui_cmd_queue.front();
-        default_f(cmd);
-        _ui_cmd_queue.pop();
-    }
-    // cout << "Ending ExecuteUICmds" << endl;
-}
-
-void CmdReceiver::SendCurrentReplay() {
-    while (_next_replay_idx <  _loaded_replay.size()) {
-        const auto& cmd = _loaded_replay[_next_replay_idx];
-        if (cmd->tick() > _tick) break;
-        // cout << "Send Current Replay: " << cmd->PrintInfo() << endl;
-        SendCmd(cmd->clone());
-        _next_replay_idx ++;
-    }
-    // cout << "Replay sent, #record = " << _next_replay_idx << endl;
-}
-
 vector<CmdDurative*> CmdReceiver::GetHistoryAtCurrentTick() const {
     vector<CmdDurative*> res;
     for (int i = _cmd_history.size() - 1; i >= 0; i--) {
@@ -233,15 +178,6 @@ void CmdReceiver::SaveCmdReceiver(serializer::saver &saver) const {
     saver << _tick << _immediate_cmd_queue << _durative_cmd_queue << _verbose_player_id << _verbose_choice;
 }
 
-void CmdReceiver::AlignReplayIdx() {
-    // Adjust the _next_replay_idx pointer.
-    _next_replay_idx = 0;
-    while (_next_replay_idx < _loaded_replay.size()) {
-        if (_loaded_replay[_next_replay_idx]->tick() >= _tick) break;
-        _next_replay_idx ++;
-    }
-}
-
 void CmdReceiver::LoadCmdReceiver(serializer::loader &loader) {
     loader >> _tick >> _immediate_cmd_queue >> _durative_cmd_queue >> _verbose_player_id >> _verbose_choice;
 
@@ -256,8 +192,6 @@ void CmdReceiver::LoadCmdReceiver(serializer::loader &loader) {
         const CmdDPtr &curr = c[i];
         if (! curr->IsDone()) _unit_durative_cmd.insert(make_pair(curr->id(), curr.get()));
     }
-
-    AlignReplayIdx();
 }
 
 void CmdReceiver::SetCmdDumper(const string& cmd_dumper_filename) {

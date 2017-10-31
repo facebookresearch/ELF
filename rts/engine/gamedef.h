@@ -105,6 +105,10 @@ public:
     bool CheckAddUnit(RTSMap* _map, UnitType type, const PointF& p) const;
 
     const UnitTemplate &unit(UnitType t) const {
+        if (t < 0 || t >= (int)_units.size()) {
+            cout << "UnitType " << t << " is not found!" << endl;
+            throw std::range_error("Unit type is not found!");
+        }
         return _units[t];
     }
 
@@ -116,8 +120,5 @@ public:
 
     // Get implementation for different befaviors on dead units.
     void CmdOnDeadUnitImpl(GameEnv* env, CmdReceiver* receiver, UnitId _id, UnitId _target) const;
-
-    //bool ActByStateFunc(RuleActor rule_actor, const GameEnv& env, const vector<int>& state, string *s, AssignedCmds *cmds) const;
-
 };
 #endif
