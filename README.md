@@ -21,6 +21,42 @@ ELF has the following characteristics:
 
 * *Flexible*: Pairing between environments and actors is very flexible, e.g., one environment with one agent (e.g., Vanilla A3C), one environment with multiple agents (e.g., Self-play/MCTS), or multiple environment with one actor (e.g., BatchA3C, GA3C). Also, any game built on top of the RTS engine offers full access to its internal representation and dynamics. Besides efficient simulators, we also provide a lightweight yet powerful Reinforcement Learning framework. This framework can host most existing RL algorithms. In this open source release, we have provided state-of-the-art actor-critic algorithms, written in [PyTorch](https://github.com/pytorch/pytorch).
 
+Install scripts
+================
+```
+# Download miniconda and install. 
+wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O $HOME/miniconda.sh
+/bin/bash $HOME/miniconda.sh -b
+$HOME/miniconda3/bin/conda update -y --all python=3
+
+# Add the following to ~/.bash_profile (if you haven't already) and source it:
+export PATH=$HOME/miniconda3/bin:$PATH
+
+# Create a new conda environment and install the necessary packages:
+conda create -n elf python=3
+source activate elf
+# If you use cuda 8.0, try conda install pytorch cuda80 -c soumith
+conda install pytorch -c soumith 
+
+pip install --upgrade pip
+pip install msgpack_numpy
+conda install tqdm
+conda install libgcc
+
+# Install cmake >= 3.8 and gcc >= 4.9
+# This is platform-dependent.
+
+# Clone and build the repository:
+cd ~
+git clone https://github.com/facebookresearch/ELF
+cd ELF/rts/
+mkdir build && cd build
+cmake .. -DPYTHON_EXECUTABLE=~$HOME/miniconda3/bin/python
+make
+
+# Train the model
+sh ./train_minirts.sh --gpu 0
+```
 Supported Environments   
 ========================
 Any game with C/C++ interface can be plugged into this framework by writing a simple wrapper. Currently we have the following environment:
