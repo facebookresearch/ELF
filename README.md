@@ -245,7 +245,7 @@ sh ./selfplay_minirts.sh [your pre-trained model]
 Visualization  
 ==============
 
-To visualize a trained bot, you can specify `--save_replay_prefix [replay_file_prefix]` whn running `eval.py` to save (lots of) replays. Note that the same flag can also be applied to training/selfplay. 
+To visualize a trained bot, you can specify `--save_replay_prefix [replay_file_prefix]` when running `eval.py` to save (lots of) replays. Note that the same flag can also be applied to training/selfplay. 
 
 All replay files contain action sequences, are in `.rep` and should reproduce the exact same game when loaded. To load the replay in the command line, using the following:
 ```bash
