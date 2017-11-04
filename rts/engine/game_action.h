@@ -12,16 +12,18 @@
 class RTSAction {
 public:
     void Init(PlayerId id, const string &name) {
-        _player_id = id; 
+        _player_id = id;
         _name = name;
         _cmds.clear();
-        _ui_cmds.clear();
     }
 
     map<UnitId, CmdBPtr> &cmds() { return _cmds; }
-    vector<UICmd> &ui_cmds() { return _ui_cmds; }
 
-    virtual bool Send(const GameEnv &env, CmdReceiver &receiver) { 
+    void AddComment(const std::string &comment) {
+        if (! comment.empty()) _comments.push_back(comment);
+    }
+
+    virtual bool Send(const GameEnv &env, CmdReceiver &receiver) {
         // Finally send these commands.
         for (auto it = _cmds.begin(); it != _cmds.end(); ++it) {
             const Unit *u = env.GetUnit(it->first);
@@ -37,22 +39,20 @@ public:
             receiver.SendCmd(std::move(it->second));
         }
 
-        // Send UI cmds.
-        for (auto &ui_cmd : _ui_cmds) {
-            receiver.SendCmd(std::move(ui_cmd));
+        string prompt = "[" + std::to_string(_player_id) + ":" + _name + "] ";
+        for (const auto &c : _comments) {
+            receiver.SendCmd(CmdBPtr(new CmdComment(INVALID, prompt + c)));
         }
 
-        auto cmt = "[" + std::to_string(_player_id) + ":" + _name + "] " + _state_string;
-        receiver.SendCmd(CmdBPtr(new CmdComment(INVALID, cmt)));
+        // UI Cmds are handled separately (In RTSStateExtends::Forward).
         return true;
     }
 
 protected:
-    PlayerId _player_id;
-    std::string _name;
-    std::string _state_string;
+    PlayerId _player_id = -1;
+    string _name;
+    vector<string> _comments;
 
     map<UnitId, CmdBPtr> _cmds;
-    vector<UICmd> _ui_cmds;
 };
 

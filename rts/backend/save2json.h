@@ -27,11 +27,14 @@ public:
   static void SetWinner(PlayerId id, json *game);
   static void SetTermination(bool t, json *game);
   static void SetGameCounter(int game_counter, json *game);
+  static void SetPlayerId(PlayerId id, json *game);
+  static void SetSpectator(bool is_spectator, json *game);
+
   static void Save(const RTSMap& m, json *game);
   static void SaveStats(const Player& player, json *game);
   static void SavePlayerMap(const Player& player, json *game);
   // static void Save(const AI &bot, json *game);
-  static void Save(const Unit& unit, const CmdReceiver &receiver, json *game);
+  static void Save(const Unit& unit, const CmdReceiver *receiver, json *game);
   static void Save(const Bullet& bullet, json *game);
   static void SaveCmd(const CmdReceiver &receiver, PlayerId player_id, json *game);
 };

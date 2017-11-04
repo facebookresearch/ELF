@@ -38,7 +38,7 @@ int main() {
 
   int batchsize = 16;
   GroupStat stat;
-  GC.AddCollectors(batchsize, 1, stat);
+  GC.AddCollectors(batchsize, 1, 0, stat);
 
   cout << "Start timing ..." << endl;
   int N = 30000;

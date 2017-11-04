@@ -69,7 +69,8 @@ class ActorCritic:
                 dict(r=batch["r"][t], terminal=batch["terminal"][t]),
                 stats=stats)
 
-            err = add_err(err, self.pg.feed(R-V.data, state_curr, bht, stats, old_pi_s=bht))
+            policy_err = self.pg.feed(R-V.data, state_curr, bht, stats, old_pi_s=bht)
+            err = add_err(err, policy_err)
             err = add_err(err, self.value_matcher.feed({ value_node: V, "target" : R}, stats))
 
         stats["cost"].feed(err.data[0] / (T - 1))

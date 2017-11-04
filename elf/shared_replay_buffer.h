@@ -2,6 +2,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <cassert>
 
 template <typename Key, typename Record>
 class SharedReplayBuffer {
@@ -35,6 +36,7 @@ private:
     GenFunc _gen;
 
     typename BufferType::const_iterator add_record_no_lock(const Key &key) {
+        assert(_gen != nullptr);
         return _buffer.emplace(make_pair(key, _gen(key))).first;
     }
 };

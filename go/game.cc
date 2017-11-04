@@ -10,12 +10,14 @@
 #include "game.h"
 #include "go_game_specific.h"
 #include "offpolicy_loader.h"
-#include "online_player.h"
+#include "go_ai.h"
+#include "mcts.h"
 
 #include <fstream>
 
 ////////////////// GoGame /////////////////////
-GoGame::GoGame(int game_idx, const GameOptions& options) : _options(options), _curr_loader_idx(0) {
+GoGame::GoGame(int game_idx, const ContextOptions &context_options, const GameOptions& options)
+  : _options(options), _context_options(context_options), _curr_loader_idx(0) {
     _game_idx = game_idx;
     if (options.seed == 0) {
         auto now = chrono::system_clock::now();
@@ -32,21 +34,58 @@ GoGame::GoGame(int game_idx, const GameOptions& options) : _options(options), _c
 
 void GoGame::Init(AIComm *ai_comm) {
     assert(ai_comm);
-    if (_options.online) {
-        _loaders.emplace_back(new OnlinePlayer(ai_comm));
+    if (_options.mode == "online" || _options.mode == "selfplay") {
+        if (_options.use_mcts) {
+            auto *ai = new MCTSGoAI(ai_comm, _context_options.mcts_options);
+            _ai.reset(ai);
+        } else {
+            auto *ai = new DirectPredictAI();
+            ai->InitAIComm(ai_comm);
+            ai->SetActorName("actor");
+            _ai.reset(ai);
+        }
     } else {
         // Open many offline instances.
         for (int i = 0; i < _options.num_games_per_thread; ++i) {
-            _loaders.emplace_back(new OfflineLoader(_options, _seed + _game_idx * i * 997 + i * 13773 + 7, ai_comm));
+            auto *loader = new OfflineLoader(_options, _seed + _game_idx * i * 997 + i * 13773 + 7);
+            loader->InitAIComm(ai_comm);
+            _loaders.emplace_back(loader);
         }
     }
+
+    if (_options.mode == "online") {
+        HumanPlayer *player = new HumanPlayer;
+        player->InitAIComm(ai_comm);
+        player->SetActorName("human_actor");
+        _human_player.reset(player);
+    }
+
     if (_options.verbose) std::cout << "[" << _game_idx << "] Done with initialization" << std::endl;
 }
 
-void GoGame::Act(const std::atomic_bool& done) {
-  // Randomly pick one loader
-  _curr_loader_idx = _rng() % _loaders.size();
-  Loader *loader = _loaders[_curr_loader_idx].get();
+void GoGame::Act(const elf::Signal &signal) {
+    // Randomly pick one loader
+    Coord c;
+    if (_ai != nullptr) {
+        // For human player, at least you need to run Act once.
+        if (_human_player != nullptr) {
+            do {
+                _human_player->Act(_state, &c, &signal.done());
+                if (_state.forward(c)) break;
+                // cout << "Invalid move: x = " << X(c) << " y = " << Y(c) << " move: " << coord2str(c) << " please try again" << endl;
+            } while(! signal.PrepareStop());
+        }
 
-  loader->Act(done);
+        _ai->Act(_state, &c, &signal.done());
+        if (! _state.forward(c)) {
+            cout << _state.ShowBoard() << endl;
+            cout << "No valid move [" << c << "][" << coord2str(c) << "][" << coord2str2(c) << "], restarting the game" << endl;
+            _state.Reset();
+        }
+    } else {
+        // Replays hold a state by itself.
+        _curr_loader_idx = _rng() % _loaders.size();
+        auto *loader = _loaders[_curr_loader_idx].get();
+        loader->Act(&c, &signal.done());
+    }
 }

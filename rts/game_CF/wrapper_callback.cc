@@ -34,7 +34,7 @@ void WrapperCallbacks::OnGameOptions(RTSGameOptions *rts_options) {
     rts_options->handicap_level = _options.handicap_level;
 }
 
-void WrapperCallbacks::OnGameInit(RTSGame *game) {
+void WrapperCallbacks::OnGameInit(RTSGame *game, const std::map<std::string, int> *more_params) {
     // std::cout << "Initialize opponent" << std::endl;
     std::vector<AI *> ais;
     for (const AIOptions &ai_opt : _options.ai_options) {

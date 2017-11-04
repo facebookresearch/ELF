@@ -15,8 +15,10 @@
 #include "engine/game.h"
 #include "engine/cmd_util.h"
 #include "engine/ai.h"
+#include "engine/replay_loader.h"
 #include "elf/game_base.h"
 #include "ai.h"
+#include "../game_MC/mcts.h"
 #include "comm_ai.h"
 
 #include <iostream>
@@ -33,35 +35,45 @@
 #include <thread>
 
 using Parser = CmdLineUtils::CmdLineParser;
-using RTSGame = elf::GameBaseT<RTSStateExtend, AI>;
+using RTSGame = elf::GameBaseT<RTSStateExtend, AI, Replayer>;
 
 bool add_players(const string &args, int frame_skip, RTSGame *game) {
-    vector<AI*> bots;
     //bool mcts = false;
     for (const auto& player : split(args, ',')) {
         cout << "Dealing with player = " << player << endl;
         if (player.find("tcp") == 0) {
             vector<string> params = split(player, '=');
-            int tick_start = (params.size() == 1 ? 0 : std::stoi(params[1]));
-            bots.push_back(new TCPAI("tcpai", tick_start, 8000));
-        }
-        /*else if (player.find("mcts") == 0) {
+            // int tick_start = (params.size() == 1 ? 0 : std::stoi(params[1]));
+            game->AddBot(new TCPAI("tcpai", 8000), 1);
+            game->GetState().AppendPlayer("tcpai");
+        } else if (player.find("mcts") == 0) {
             vector<string> params = split(player, '=');
-            int mcts_thread = std::stoi(params[1]);
-            int mcts_rollout_per_thread = std::stoi(params[2]);
+
+            mcts::TSOptions opt;
+            opt.num_threads = std::stoi(params[1]);
+            opt.num_rollout_per_thread = std::stoi(params[2]);
+
+            /*
             vector<string> prerun_cmds;
             if (params.size() >= 4) {
                 prerun_cmds = split(params[3], '-');
             }
-            bots.push_back(new MCTSAI(INVALID, frame_skip, nullptr, mcts_thread, mcts_rollout_per_thread, false, &prerun_cmds));
-            mcts = true;
-        }*/
-        else if (player.find("spectator") == 0) {
+            */
+            game->AddBot(new MCTSRTSAI(opt), frame_skip);
+            game->GetState().AppendPlayer("mcts_ai");
+            // mcts = true;
+        } else if (player.find("replayer") == 0) {
             vector<string> params = split(player, '=');
-            int tick_start = (params.size() == 1 ? 0 : std::stoi(params[1]));
-            game->AddSpectator(new TCPAI("spectator", tick_start, 8000));
+            string replay_name = params[1];
+            game->AddSpectator(new Replayer(replay_name));
+        } else if (player.find("spectator") == 0) {
+            vector<string> params = split(player, '=');
+            int tick_start = (params.size() >= 2 ? 0 : std::stoi(params[1]));
+            string replay_name = (params.size() >= 3 ? params[2] : "");
+            game->AddSpectator(new TCPSpectator(replay_name, tick_start, 8000));
+        } else if (player == "dummy") {
+            game->GetState().AppendPlayer("dummy");
         }
-        else if (player == "dummy") bots.push_back(new AI("dummy", frame_skip));
         /*
         else if (player == "flag_simple") {
             //if (mcts) bots[0]->SetFactory([&](int r) -> AI* { return new FlagSimpleAI(INVALID, r, nullptr, nullptr);});
@@ -70,17 +82,15 @@ bool add_players(const string &args, int frame_skip, RTSGame *game) {
         //else if (player == "td_simple") bots.push_back(new TDSimpleAI(INVALID, frame_skip, nullptr));
         //else if (player == "td_built_in") bots.push_back(new TDBuiltInAI(INVALID, frame_skip, nullptr));
         else {
-            AI *ai = AIFactory<AI>::CreateAI(player, std::to_string(frame_skip));
+            AI *ai = AIFactory<AI>::CreateAI(player, "");
             if (ai != nullptr) {
-                bots.push_back(ai);
+                game->AddBot(ai, frame_skip);
+                game->GetState().AppendPlayer(player);
             } else {
                 cout << "Unknown player! " << player << endl;
                 return false;
             }
         }
-    }
-    for (auto bot : bots) {
-        game->AddBot(bot);
     }
     cout << "Done with adding players" << endl << flush;
     return true;
@@ -94,11 +104,14 @@ RTSGameOptions GetOptions(const Parser &parser) {
     options.main_loop_quota = vis_after >= 0 ? 20 : 0;
 
     string replays = parser.GetItem<string>("load_replay", "");
+    // [TODO]: Fix the bug here.
+    /*
     if (replays != "") {
         for (const auto &replay : split(replays, ',')) {
             options.load_replay_filenames.push_back(replay);
         }
     }
+    */
 
     options.save_replay_prefix = parser.GetItem<string>("save_replay", "replay");
     options.snapshot_load_prefix = parser.GetItem<string>("load_snapshot_prefix", "");
@@ -151,7 +164,7 @@ RTSGameOptions ai_vs_ai2(const Parser &parser, string *players) {
 
     return options;
 }
-/*
+
 RTSGameOptions ai_vs_mcts(const Parser &parser, string *players) {
     RTSGameOptions options = GetOptions(parser);
     int mcts_threads = parser.GetItem<int>("mcts_threads");
@@ -167,7 +180,7 @@ RTSGameOptions ai_vs_mcts(const Parser &parser, string *players) {
 
     return options;
 }
-*/
+
 RTSGameOptions flag_ai_vs_ai(const Parser &parser, string *players) {
     RTSGameOptions options = GetOptions(parser);
     *players = "flag_simple,flag_simple,dummy";
@@ -201,16 +214,14 @@ RTSGameOptions td_simple(const Parser &parser, string *players) {
 
 RTSGameOptions replay_cmd(const Parser &parser, string *players) {
     RTSGameOptions options = GetOptions(parser);
-    *players = "dummy,dummy";
+    *players = "dummy,dummy,replayer=" + parser.GetItem<string>("load_replay");
     options.main_loop_quota = 0;
-    options.bypass_bot_actions = true;
     return options;
 }
 
 RTSGameOptions replay(const Parser &parser, string *players) {
     RTSGameOptions options = GetOptions(parser);
-    *players = "dummy,dummy,spectator=0";
-    options.bypass_bot_actions = true;
+    *players = "dummy,dummy,spectator=" + std::to_string(parser.GetItem<int>("vis_after")) + "=" + parser.GetItem<string>("load_replay");
     return options;
 }
 /*
@@ -244,7 +255,9 @@ void replay_mcts(const Parser &parser) {
     cout << "Loading game " << endl;
     RTSGame game(options);
     game.AddBot(new MCTSAI(INVALID, frame_skip, nullptr, mcts_threads, mcts_rollout_per_thread, mcts_verbose, &prerun_cmds));
+    game.GetState().AppendPlayer("MCTSAI");
     game.AddBot(new SimpleAI(INVALID, frame_skip, nullptr, nullptr));
+    game.GetState().AppendPlayer("SimpleAI");
 
     cout << "Starting main loop " << endl;
     PlayerId winner = game.MainLoop();
@@ -287,7 +300,10 @@ void replay_rollout(const Parser &parser) {
     cout << "Loading game " << endl;
     RTSGame game(options);
     game.AddBot(new MCTS_ROLLOUT_AI(0, frame_skip, nullptr, selected_moves));
+    game.GetState().AppendPlayer("MCTS_ROLLOUT_AI");
+
     game.AddBot(new SimpleAI(1, frame_skip, nullptr, nullptr));
+    game.GetState().AppendPlayer("SimpleAI");
 
     cout << "Starting main loop " << endl;
     PlayerId winner = game.MainLoop();
@@ -299,7 +315,7 @@ void test() {
     RTSMap m;
     vector<Player> players;
     for (int i = 0; i < 2; ++i) {
-        players.emplace_back(m, i);
+        players.emplace_back(m, std::to_string(i), i);
     }
 
     serializer::saver saver(false);
@@ -323,7 +339,7 @@ int main(int argc, char *argv[]) {
     const map<string, function<RTSGameOptions (const Parser &, string *)> > func_mapping = {
         { "selfplay", ai_vs_ai },
         { "selfplay2", ai_vs_ai2 },
-        //{ "mcts", ai_vs_mcts },
+        { "mcts", ai_vs_mcts },
 
         { "replay", replay },
         { "replay_cmd", replay_cmd },
@@ -341,7 +357,7 @@ int main(int argc, char *argv[]) {
     };
 
     GameDef::GlobalInit();
-    
+
     CmdLineUtils::CmdLineParser parser("playstyle --save_replay --load_replay --vis_after[-1] --save_snapshot_prefix --load_snapshot_prefix --seed[0] \
 --load_snapshot_length --max_tick[30000] --binary_io[1] --games[16] --frame_skip[1] --tick_prompt_n_step[2000] --cmd_verbose[0] --peek_ticks --cmd_dumper_prefix \
 --output_file[cout] --mcts_threads[16] --mcts_rollout_per_thread[100] --threads[64] --load_binary_string --mcts_verbose --mcts_prerun_cmds --handicap_level[0]");
@@ -399,12 +415,14 @@ int main(int argc, char *argv[]) {
                 else options.seed = seed0 + i * 241;
 
                 RTSStateExtend state(options);
-                RTSGame game(state);
+                RTSGame game(&state);
                 //game.AddBot(new SimpleAI(INVALID, frame_skip, nullptr));
                 //
                 //game.AddBot(new SimpleAI(INVALID, frame_skip, nullptr));
-                game.AddBot(AIFactory<AI>::CreateAI("simple", std::to_string(frame_skip)));
-                game.AddBot(AIFactory<AI>::CreateAI("simple", std::to_string(frame_skip)));
+                game.AddBot(AIFactory<AI>::CreateAI("simple", ""), frame_skip);
+                game.AddBot(AIFactory<AI>::CreateAI("simple", ""), frame_skip);
+                state.AppendPlayer("simple1");
+                state.AppendPlayer("simple2");
 
                 state.SetGlobalStats(&gstats);
                 bool infinite = (games == 0);
@@ -419,22 +437,22 @@ int main(int argc, char *argv[]) {
         std::cout << gstats.PrintInfo() << std::endl;
     } else {
         RTSStateExtend state(options);
-        RTSGame game(state);
+        RTSGame game(&state);
         cout << "Players: " << players << endl;
         add_players(players, frame_skip, &game);
         cout << "Finish adding players" << endl;
 
         chrono::duration<double> duration = chrono::system_clock::now() - time_start;
         cout << "Total time spent = " << duration.count() << "s" << endl;
-        if (options.load_replay_filenames.empty()) {
-             game.MainLoop();
-        } else {
+        game.MainLoop();
+        /*
             // Load replay etc.
             for (size_t i = 0; i < options.load_replay_filenames.size(); ++i) {
                 game.MainLoop();
                 game.Reset();
             }
         }
+        */
     }
 
     return 0;

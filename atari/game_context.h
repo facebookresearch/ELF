@@ -8,7 +8,6 @@
 */
 
 //File: game_context.h
-//Author: Yuxin Wu <ppwwyyxxc@gmail.com>
 
 #pragma once
 #include <pybind11/pybind11.h>
@@ -51,7 +50,7 @@ class GameContext {
 
     void Start() {
         auto f = [this](int game_idx, const ContextOptions &context_options, const GameOptions&,
-                const std::atomic_bool& done, GC::Comm* comm) {
+                const elf::Signal& signal, GC::Comm* comm) {
             GC::AIComm ai_comm(game_idx, comm);
             auto &state = ai_comm.info().data;
             state.InitHist(context_options.T);
@@ -60,7 +59,7 @@ class GameContext {
             }
             auto& game = games[game_idx];
             game.initialize_comm(game_idx, &ai_comm);
-            game.MainLoop(done);
+            game.MainLoop(&signal.done());
         };
         _context->Start(f);
     }

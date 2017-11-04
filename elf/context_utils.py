@@ -21,8 +21,20 @@ class ContextArgs:
                 ("T", 6),
                 ("eval", dict(action="store_true")),
                 ("wait_per_group", dict(action="store_true")),
+                ("num_collectors", 0),
                 ("verbose_comm", dict(action="store_true")),
-                ("verbose_collector", dict(action="store_true"))
+                ("verbose_collector", dict(action="store_true")),
+                ("mcts_threads", 0),
+                ("mcts_rollout_per_thread", 1),
+                ("mcts_verbose", dict(action="store_true")),
+                ("mcts_save_tree_filename", ""),
+                ("mcts_verbose_time", dict(action="store_true")),
+
+                ("mcts_use_prior", dict(action="store_true")),
+                ("mcts_baseline",  3.0),
+                ("mcts_baseline_sigma", 0.3),
+                ("mcts_pseudo_games", 0),
+                ("mcts_pick_method", "most_visited"),
             ],
             on_get_args = self._on_get_args
         )
@@ -44,4 +56,21 @@ class ContextArgs:
         co.wait_per_group = args.wait_per_group
         co.verbose_comm = args.verbose_comm
         co.verbose_collector = args.verbose_collector
+
+        co.max_num_threads = args.mcts_threads
+        co.num_collectors = args.num_collectors
+
+        mcts = co.mcts_options
+
+        mcts.num_threads = args.mcts_threads
+        mcts.num_rollout_per_thread = args.mcts_rollout_per_thread
+        mcts.verbose = args.mcts_verbose
+        mcts.verbose_time = args.mcts_verbose_time
+        mcts.save_tree_filename = args.mcts_save_tree_filename
+        mcts.use_prior = args.mcts_use_prior
+        mcts.baseline = args.mcts_baseline
+        mcts.baseline_sigma = args.mcts_baseline_sigma
+        mcts.pseudo_games = args.mcts_pseudo_games
+        mcts.pick_method = args.mcts_pick_method
+
 

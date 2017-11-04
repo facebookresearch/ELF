@@ -12,7 +12,7 @@ class MiniRTSNet(Model):
         self.output1d = output1d
 
     def _init(self, args):
-        self.m = args.params["num_unit_type"] + 7
+        self.m = args.params.get("num_planes_per_time_stamp", 13)
         self.input_channel = args.params.get("num_planes", self.m)
         self.mapx = args.params.get("map_x", 20)
         self.mapy = args.params.get("map_y", 20)
@@ -55,7 +55,7 @@ class MiniRTSNet(Model):
             ("arch", "ccpccp;-,64,64,64,-")
         ]
 
-    def forward(self, input, res):
+    def forward(self, input):
         # BN and LeakyReLU are from Wendy's code.
         x = input.view(input.size(0), self.input_channel, self.mapy, self.mapx)
 

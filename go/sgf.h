@@ -29,12 +29,7 @@ inline string coord2str(Coord c) {
     int y = Y(c);
     //if (y >= 8) y ++;
 
-    string s;
-    s.resize(3);
-    s[0] = 'a' + x;
-    s[1] = 'a' + y;
-    s[2] = 0;
-    return s;
+    return std::string{ static_cast<char>('a' + x), static_cast<char>('a' + y) };
 }
 
 inline string coord2str2(Coord c) {
@@ -42,10 +37,7 @@ inline string coord2str2(Coord c) {
     if (x >= 8) x ++;
     int y = Y(c);
 
-    string s;
-    s.resize(2);
-    s[0] = 'A' + x;
-    s[1] = 0;
+    string s { static_cast<char>('A' + x) };
     return s + std::to_string(y + 1);
 }
 
@@ -116,10 +108,10 @@ private:
     bool load_game(const string& filename, const string& game);
 
 public:
-    class SgfIterator {
+    class iterator {
       public:
-          SgfIterator() : _curr(nullptr), _sgf(nullptr), _move_idx(-1) { }
-          SgfIterator(const Sgf &sgf) : _curr(sgf._root.get()), _sgf(&sgf), _move_idx(0) { }
+          iterator() : _curr(nullptr), _sgf(nullptr), _move_idx(-1) { }
+          iterator(const Sgf &sgf) : _curr(sgf._root.get()), _sgf(&sgf), _move_idx(0) { }
 
           SgfMove GetCurrMove() const {
               if (done()) return SgfMove();
@@ -132,7 +124,7 @@ public:
 
           bool done() const { return _curr == nullptr; }
 
-          SgfIterator &operator ++() {
+          iterator &operator ++() {
             if (! done()) {
               _curr = _curr->sibling.get();
               _move_idx ++;
@@ -150,7 +142,7 @@ public:
           const Sgf &GetSgf() const { return *_sgf; }
 
           vector<SgfMove> GetForwardMoves(int k) const {
-              SgfIterator iter = *this;
+              auto iter = *this;
               vector<SgfMove> res;
               for (int i = 0; i < k; ++i) {
                   res.push_back(iter.GetCurrMove());
@@ -168,9 +160,9 @@ public:
 
     Sgf() : _num_moves(0) { }
     bool Load(const string& filename);
-    bool Load(const string& gamename, TarLoader& tar_loader);
+    bool Load(const string& gamename, elf::tar::TarLoader& tar_loader);
 
-    SgfIterator begin() const { return SgfIterator(*this); }
+    iterator begin() const { return iterator(*this); }
 
     Stone GetWinner() const { return _header.winner; }
     int GetHandicapStones() const { return _header.handi; }

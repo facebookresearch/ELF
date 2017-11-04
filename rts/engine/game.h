@@ -33,6 +33,20 @@ public:
     void PreAct() override;
     void IncTick() override;
 
+    bool forward(RTSAction &a) {
+        return RTSState::forward(a);
+    }
+
+    bool forward(ReplayLoader::Action &actions) override {
+        if (! RTSState::forward(actions)) return false;
+
+        // Then we also need to send UI commands, if there is any.
+        for (const auto &cmd : actions.ui_cmds) {
+            dispatch_cmds(cmd);
+        }
+        return true;
+    }
+
     elf::GameResult PostAct() override;
 
 private:

@@ -15,31 +15,33 @@
 #include <chrono>
 #include <algorithm>
 
+using namespace std;
+
 template<typename AI>
 class AIFactory {
 public:
-    using RegFunc = std::function<AI *(const std::string &spec)>;
+    using RegFunc = function<AI *(const string &spec)>;
 
     // Factory method given specification.
-    static AI *CreateAI(const std::string &name, const std::string& spec) {
-        std::lock_guard<std::mutex> lock(_mutex);
+    static AI *CreateAI(const string &name, const string& spec) {
+        lock_guard<mutex> lock(_mutex);
         auto it = _factories.find(name);
         if (it == _factories.end()) return nullptr;
         return it->second(spec);
     }
-    static void RegisterAI(const std::string &name, RegFunc reg_func) {
-        std::lock_guard<std::mutex> lock(_mutex);
-        _factories.insert(std::make_pair(name, reg_func));
+    static void RegisterAI(const string &name, RegFunc reg_func) {
+        lock_guard<mutex> lock(_mutex);
+        _factories.insert(make_pair(name, reg_func));
     }
 private:
-    static std::map<std::string, RegFunc> _factories;
-    static std::mutex _mutex;
+    static map<string, RegFunc> _factories;
+    static mutex _mutex;
 };
 
 template<typename AI>
-std::map<std::string, std::function<AI *(const std::string &spec)>> AIFactory<AI>::_factories;
+map<string, function<AI *(const string &spec)>> AIFactory<AI>::_factories;
 
 template<typename AI>
-std::mutex AIFactory<AI>::_mutex;
+mutex AIFactory<AI>::_mutex;
 
 

@@ -64,6 +64,7 @@ class Args:
     def __contains__(self, key):
         return hasattr(self, key)
 
+
 class ArgsProvider:
     def __init__(self, define_args=[], more_args=[], on_get_args=None, call_from=None, child_providers=[], child_transforms=None):
         '''Define arguments to be loaded from the command line. Example usage
@@ -152,6 +153,7 @@ class ArgsProvider:
         if self._on_get_args is not None:
             self._on_get_args(args)
 
+    @staticmethod
     def _GetProvider(x):
         if isinstance(x, ArgsProvider):
             return x
@@ -160,6 +162,7 @@ class ArgsProvider:
         else:
             raise ValueError("ArgsProvider not found! " + str(x))
 
+    @staticmethod
     def _SendArgsToParser(parser, all_args):
         for group_name, define_args in all_args:
             group = parser.add_argument_group(group_name)
@@ -170,17 +173,20 @@ class ArgsProvider:
                     # If there is issues with argument name. just plot a warning.
                     print("Warning: argument %s/%s cannot be added. Skipped." % (group_name, key))
 
+    @staticmethod
     def _ApplyDefaults(global_defaults, args_list):
         for _, define_args in args_list:
             for k, v in define_args:
                 if k in global_defaults:
                     v["default"] = global_defaults[k]
 
+    @staticmethod
     def _ApplyOverrides(global_overrides, args):
         for k, v in global_overrides.items():
             if k in args:
                 args[k] = v
 
+    @staticmethod
     def Load(parser, args_providers, cmd_line=sys.argv[1:], global_defaults=dict(), global_overrides=dict()):
         '''Load args from ``cmd_line``
 
@@ -204,6 +210,7 @@ class ArgsProvider:
 
         ArgsProvider._ApplyOverrides(global_overrides, args)
 
+        print("PID: " + str(os.getpid()))
         args.print_info()
         recursive_map(args_providers, lambda provider : provider._set(args))
         return args

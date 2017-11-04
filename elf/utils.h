@@ -2,6 +2,7 @@
 
 #include <mutex>
 #include <string>
+#include <vector>
 #include <unordered_map>
 #include <utility>
 #include <map>
@@ -12,23 +13,54 @@ namespace elf_utils {
 
 using namespace std;
 
-template <typename K, typename V>
-const V &map_get(const unordered_map<K, V> &m, const K& k, const V &def) {
+inline string print_bool(bool b) { return b ? "True" : "False"; }
+
+inline string trim(string& str) {
+    str.erase(0, str.find_first_not_of(' '));       //prefixing spaces
+    str.erase(str.find_last_not_of(' ')+1);         //surfixing spaces
+    return str;
+}
+
+inline vector<string> split(const string &s, char delim) {
+    stringstream ss(s);
+    string item;
+    vector<string> elems;
+    while (getline(ss, item, delim)) {
+        elems.push_back(move(item));
+    }
+    return elems;
+}
+
+template <typename Map>
+const typename Map::mapped_type &map_get(const Map &m, const typename Map::key_type& k, const typename Map::mapped_type &def) {
     auto it = m.find(k);
     if (it == m.end()) return def;
     else return it->second;
 }
 
-template <typename K, typename V>
-V map_get(const unordered_map<K, V> &m, const K& k, V def) {
+template <typename Map>
+const typename Map::mapped_type &map_inc(Map &m, const typename Map::key_type& k, const typename Map::mapped_type &default_value) {
+    auto it = m.find(k);
+    if (it == m.end()) {
+      auto res = m.insert(make_pair(k, default_value));
+      return res.first->second;
+    } else {
+      it->second ++;
+      return it->second;
+    }
+}
+
+/*
+template <typename Map>
+typename Map::mapped_type map_get(const Map &m, const typename Map::key_type& k, typename Map::mapped_type def) {
     auto it = m.find(k);
     if (it == m.end()) return def;
     else return it->second;
 }
+*/
 
-
-template <typename K, typename V>
-pair<typename unordered_map<K, V>::const_iterator, bool> map_get(const unordered_map<K, V> &m, const K& k) {
+template <typename Map>
+pair<typename Map::const_iterator, bool> map_get(const Map &m, const typename Map::key_type& k) {
     auto it = m.find(k);
     if (it == m.end()) {
         return make_pair(m.end(), false);
@@ -37,30 +69,14 @@ pair<typename unordered_map<K, V>::const_iterator, bool> map_get(const unordered
     }
 }
 
-template <typename K, typename V>
-pair<typename unordered_map<K, V>::iterator, bool> map_get(unordered_map<K, V> &m, const K& k) {
+template <typename Map>
+pair<typename Map::iterator, bool> map_get(Map &m, const typename Map::key_type& k) {
     auto it = m.find(k);
     if (it == m.end()) {
         return make_pair(m.end(), false);
     } else {
         return make_pair(it, true);
     }
-}
-
-template <typename K, typename V>
-pair<typename unordered_map<K, V>::iterator, bool> sync_add_entry(unordered_map<K, V> &m, mutex &mut, const K& k, function <V ()> gen) { 
-    auto res = map_get(m, k);
-    if (res.second) return res;
-
-    // Otherwise allocate
-    lock_guard<mutex> lock(mut);
-
-    // We need to do that again to enforce that one node does not get allocated twice. 
-    res = map_get(m, k);
-    if (res.second) return res;
-
-    // Save it back. This visit doesn't count.
-    return m.insert(make_pair(k, gen()));
 }
 
 class MyClock {

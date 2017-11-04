@@ -28,10 +28,17 @@ class Batch:
         'char': 'byte'
     }
 
-    def __init__(self, **kwargs):
+    def __init__(self, _batchsize=None, **kwargs):
         ''' Initialize `Batch` class. Pass in a dict and wrap it into ``self.batch``'''
-        self.batch = kwargs
+        if isinstance(_batchsize, int):
+            self.batch = { k : v[:, :_batchsize] for k, v in kwargs.items() }
+        else:
+            self.batch = kwargs
 
+    def first_k(self, batchsize):
+        return Batch(_batchsize=batchsize, **self.batch)
+
+    @staticmethod
     def _request(GC, group_id, key, T):
         info = GC.GetTensorSpec(group_id, key, T)
         # print("Key = \"%s\"" % str(key))
@@ -43,6 +50,7 @@ class Batch:
                 raise ValueError("key[%s] or last_key[%s] is not specified!" % (key, last_key))
         return info
 
+    @staticmethod
     def _alloc(info, use_gpu=True, use_numpy=True):
         if not use_numpy:
             v = Batch.torch_types[info.type](*info.sz)
@@ -59,6 +67,7 @@ class Batch:
 
         return v, info
 
+    @staticmethod
     def load(GC, input_reply, desc, group_id, use_gpu=True, use_numpy=False):
         '''load Batch from the specifications
 
@@ -105,6 +114,14 @@ class Batch:
             else:
                 raise KeyError("Batch(): specified key: %s or %s not found!" % (key, key_with_last))
 
+    def add(self, key, value):
+        '''
+        Add key=value in Batch. This is used when you want to send additional state to the
+        learning algorithm, e.g., hidden state collected from the previous iterations.
+        '''
+        self.batch[key] = value
+        return self
+
     def __contains__(self, key):
         return key in self.batch or "last_" + key in self.batch
 
@@ -113,18 +130,22 @@ class Batch:
         for _, v in self.batch.items():
             v[:] = 0
 
-    def copy_from(self, src):
+    def copy_from(self, src, batch_key=""):
         ''' copy all keys and values from another dict or `Batch` object
 
         Args:
             src(dict or `Batch`): batch data to be copied
         '''
         this_src = src if isinstance(src, dict) else src.batch
+        key_assigned = { k : False for k in self.batch.keys() }
 
         for k, v in this_src.items():
             # Copy it down to cpu.
             if k in self.batch:
                 bk = self.batch[k]
+                key_assigned[k] = True
+                if v is None:
+                    continue
                 if isinstance(v, list) and bk.numel() == len(v):
                     bk = bk.view(-1)
                     for i, vv in enumerate(v):
@@ -133,6 +154,14 @@ class Batch:
                     bk.fill_(v)
                 else:
                     bk[:] = v
+
+            else:
+                raise ValueError("Batch[%s]: \"%s\" in reply is missing in batch specification" % (batch_key, k))
+
+        # Check whether there is any key missing.
+        for k, assigned in key_assigned.items():
+            if not assigned:
+                raise ValueError("Batch[%s].copy_from: Reply[%s] is not assigned" % (batch_key, k))
 
     def cpu2gpu(self, gpu=0):
         ''' call ``cuda()`` on all batch data
@@ -208,7 +237,11 @@ class GCWrapper:
         total_batchsize = 0
         for key, v in descriptions.items():
             total_batchsize += v["batchsize"]
-        num_recv_thread = math.floor(num_games / total_batchsize)
+
+        if co.num_collectors > 0:
+            num_recv_thread = co.num_collectors
+        else:
+            num_recv_thread = math.floor(num_games / total_batchsize)
         num_recv_thread = max(num_recv_thread, 1)
         print("#recv_thread = %d" % num_recv_thread)
 
@@ -230,19 +263,20 @@ class GCWrapper:
             gstat = GC.CreateGroupStat()
             gstat.hist_len = T
 
-            # If we specifiy filters, we need to put the info into gstat.
-            filters = v.get("filters", {})
-            gstat.player_name = filters.get("player_name", "")
-
-            print("Deal with connector. key = %s, hist_len = %d, player_name = %s" % (key, gstat.hist_len, gstat.player_name))
+            gstat.name = v.get("name", "")
+            timeout_usec = v.get("timeout_usec", 0)
 
             gpu2gid.append(list())
             for i in range(num_recv_thread):
-                group_id = GC.AddCollectors(batchsize, len(gpu2gid) - 1, gstat)
+                group_id = GC.AddCollectors(batchsize, len(gpu2gid) - 1, timeout_usec, gstat)
 
-                inputs.append(Batch.load(GC, "input", input, group_id, use_gpu=use_gpu, use_numpy=use_numpy))
+                input_batch = Batch.load(GC, "input", input, group_id, use_gpu=use_gpu, use_numpy=use_numpy)
+                input_batch.batchsize = batchsize
+                inputs.append(input_batch)
                 if reply is not None:
-                    replies.append(Batch.load(GC, "reply", reply, group_id, use_gpu=use_gpu, use_numpy=use_numpy))
+                    reply_batch = Batch.load(GC, "reply", reply, group_id, use_gpu=use_gpu, use_numpy=use_numpy)
+                    reply_batch.batchsize= batchsize
+                    replies.append(reply_batch)
                 else:
                     replies.append(None)
 
@@ -250,6 +284,8 @@ class GCWrapper:
                 name2idx[key].append(group_id)
                 gpu2gid[-1].append(group_id)
                 gid2gpu[group_id] = len(gpu2gid) - 1
+
+        print(GC.GetCollectorInfos())
 
         # Zero out all replies.
         for reply in replies:
@@ -264,6 +300,16 @@ class GCWrapper:
         self.gid2gpu = gid2gpu
         self.gpu2gid = gpu2gid
 
+    def reg_has_callback(self, key):
+        return key in self.name2idx
+
+    def reg_callback_if_exists(self, key, cb):
+        if self.reg_has_callback(key):
+            self.reg_callback(key, cb)
+            return True
+        else:
+            return False
+
     def reg_callback(self, key, cb):
         '''Set callback function for key
 
@@ -274,15 +320,26 @@ class GCWrapper:
               The callback function has the signature ``cb(input_batch, input_batch_gpu, reply_batch)``.
         '''
         if key not in self.name2idx:
-            return False
+            raise ValueError("Callback[%s] is not in the specification" % key)
+        if cb is None:
+            print("Warning: Callback[%s] is registered to None" % key)
+
         for gid in self.name2idx[key]:
             self._cb[gid] = cb
         return True
 
     def _call(self, infos):
-        sel = self.inputs[infos.gid]
+        if infos.gid not in self._cb:
+            raise ValueError("info.gid[%d] is not in callback functions" % infos.gid)
+
+        if self._cb[infos.gid] is None:
+            return;
+
+        batchsize = len(infos.s)
+
+        sel = self.inputs[infos.gid].first_k(batchsize)
         if self.inputs_gpu is not None:
-            sel_gpu = self.inputs_gpu[self.gid2gpu[infos.gid]]
+            sel_gpu = self.inputs_gpu[self.gid2gpu[infos.gid]].first_k(batchsize)
             sel.transfer_cpu2gpu(sel_gpu)
             picked = sel_gpu
         else:
@@ -291,20 +348,28 @@ class GCWrapper:
         # Save the infos structure, if people want to have access to state
         # directly, they can use infos.s[i], which is a state pointer.
         picked.infos = infos
+        picked.batchsize = batchsize
+        picked.max_batchsize = self.inputs[infos.gid].batchsize
 
         # Get the reply array
         if len(self.replies) > infos.gid and self.replies[infos.gid] is not None:
-            sel_reply = self.replies[infos.gid]
+            sel_reply = self.replies[infos.gid].first_k(batchsize)
         else:
             sel_reply = None
 
-        # Call
-        if infos.gid in self._cb:
-            reply = self._cb[infos.gid](picked)
-            # If reply is meaningful, send them back.
-            if isinstance(reply, dict) and sel_reply is not None:
-                # Current we only support reply to the most recent history.
-                sel_reply.copy_from(reply)
+        reply = self._cb[infos.gid](picked)
+        # If reply is meaningful, send them back.
+        if isinstance(reply, dict) and sel_reply is not None:
+            # Current we only support reply to the most recent history.
+            batch_key = "%s-%d" % (self.idx2name[infos.gid], infos.gid)
+            sel_reply.copy_from(reply, batch_key=batch_key)
+
+    def _check_callbacks(self):
+        # Check whether all callbacks are assigned properly.
+        for key, gids in self.name2idx.items():
+            for gid in gids:
+                if gid not in self._cb:
+                    raise ValueError("GCWrapper.Start(): No callback function for key = %s and gid = %d" % (key, gid))
 
     def Run(self):
         '''Wait group of an arbitrary collector key. Samples in a returned batch are always from the same group, but the group key of the batch may be arbitrary.'''
@@ -318,6 +383,7 @@ class GCWrapper:
 
     def Start(self):
         '''Start all game environments'''
+        self._check_callbacks()
         self.GC.Start()
 
     def Stop(self):
@@ -335,4 +401,3 @@ class GCWrapper:
     def PrintSummary(self):
         '''Print summary'''
         self.GC.PrintSummary()
-

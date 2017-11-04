@@ -32,17 +32,13 @@ struct GameState {
     int32_t tick;
     int32_t winner;
 
-    // Used for self-play.
-    std::string player_name;
-
-    // Extra data.
-    int ai_start_tick;
+    std::string name;
 
     // Extracted feature map.
     std::vector<float> s;
 
-    // Resource for each player (one-hot representation). Not used now.
-    std::vector<float> res;
+    std::vector<float> reduced_s;
+    std::vector<float> reduced_next_s;
 
     float last_r;
 
@@ -54,7 +50,6 @@ struct GameState {
     float V;
     std::vector<float> pi;
 
-    //
     std::vector<int64_t> uloc, tloc;
     std::vector<int64_t> bt, ct;
 
@@ -83,7 +78,7 @@ struct GameState {
     void Restart() {
     }
 
-    void Init(int iid, int num_action, int num_max_cmd, int mapx, int mapy, int num_ct, int num_units) {
+    void Init(int iid, int num_action, int num_max_cmd, int mapx, int mapy, int num_ct, int num_units, int reduced_size) {
         id = iid;
         pi.resize(num_action, 0.0);
         n_action = num_action;
@@ -98,6 +93,8 @@ struct GameState {
         tloc_prob.resize(num_max_cmd * mapx * mapy, 0.0);
         bt_prob.resize(num_max_cmd * num_units, 0.0);
         ct_prob.resize(num_max_cmd * num_ct, 0.0);
+        reduced_s.resize(reduced_size, 0.0);
+        reduced_next_s.resize(reduced_size, 0.0);
     }
 
     void Clear() {
@@ -136,7 +133,7 @@ struct GameState {
     }
 
     // These fields are used to exchange with Python side using tensor interface.
-    DECLARE_FIELD(GameState, id, a, V, pi, last_r, s, res, rv, terminal, seq, game_counter, last_terminal, uloc, tloc, bt, ct, uloc_prob, tloc_prob, bt_prob, ct_prob);
+    DECLARE_FIELD(GameState, id, a, V, pi, last_r, s, rv, terminal, seq, game_counter, last_terminal, uloc, tloc, bt, ct, uloc_prob, tloc_prob, bt_prob, ct_prob, reduced_s, reduced_next_s);
     REGISTER_PYBIND_FIELDS(id);
 };
 

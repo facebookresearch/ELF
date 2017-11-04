@@ -8,7 +8,6 @@
 */
 
 //File: python_wrapper.cc
-//Author: Yuxin Wu <ppwwyyxxc@gmail.com>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl_bind.h>
@@ -25,9 +24,9 @@ PYBIND11_MODULE(go_game, m) {
 
   CONTEXT_REGISTER(GameContext)
       .def("GetParams", &GameContext::GetParams)
-      .def("ShowBoard", &GameContext::ShowBoard)
-      .def("ApplyHandicap", &GameContext::ApplyHandicap)
-      .def("UndoMove", &GameContext::UndoMove);
+      .def("ShowBoard", &GameContext::ShowBoard);
+      //.def("ApplyHandicap", &GameContext::ApplyHandicap)
+      //.def("UndoMove", &GameContext::UndoMove);
 
   // Also register other objects.
   PYCLASS_WITH_FIELDS(m, GameOptions)

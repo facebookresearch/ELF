@@ -92,10 +92,10 @@ public:
         int size = v.size();
         if (! s.is_binary()) s.get() << " ";
         s << size;
-        if (! s.is_binary()) s.get() << " ";
+        if (! s.is_binary()) s.get() << "\n";
         for (unsigned int i = 0; i < v.size(); ++i) {
             s << p[i];
-            if (! s.is_binary()) s.get() << " ";
+            if (! s.is_binary()) s.get() << "\n";
         }
         return s;
     }
@@ -126,10 +126,10 @@ public:
         int size = v.size();
         if (! s.is_binary()) s.get() << " ";
         s << size;
-        if (! s.is_binary()) s.get() << " ";
+        if (! s.is_binary()) s.get() << "\n";
         for (int i = 0; i < size; ++i) {
             s << v[i];
-            if (! s.is_binary()) s.get() << " ";
+            if (! s.is_binary()) s.get() << "\n";
         }
         return s;
     }
@@ -139,10 +139,10 @@ public:
         int size = m.size();
         if (! s.is_binary()) s.get() << " ";
         s << size;
-        if (! s.is_binary()) s.get() << " ";
+        if (! s.is_binary()) s.get() << "\n";
         for (const auto& item : m) {
             s << item;
-            if (! s.is_binary()) s.get() << " ";
+            if (! s.is_binary()) s.get() << "\n";
         }
         return s;
     }
@@ -152,10 +152,10 @@ public:
         int size = m.size();
         if (! s.is_binary()) s.get() << " ";
         s << size;
-        if (! s.is_binary()) s.get() << " ";
+        if (! s.is_binary()) s.get() << "\n";
         for (const auto& item : m) {
             s << item;
-            if (! s.is_binary()) s.get() << " ";
+            if (! s.is_binary()) s.get() << "\n";
         }
         return s;
     }
@@ -241,6 +241,7 @@ public:
 
     template <typename T>
     friend loader &operator>>(loader &l, p_queue<T>& v) {
+        v = p_queue<T>();
         int s;
         l >> s;
         for (int i = 0; i < s; ++i) {
@@ -308,6 +309,8 @@ public:
 
     template <typename Key, typename T>
     friend loader &operator>>(loader &l, std::unordered_map<Key, T>& m) {
+        // Warning. The order of traversal in unordered_map is not determined. 
+        // So you might see different serialization for the same unordered map. 
         int s;
         l >> s;
         m.clear();
@@ -398,7 +401,7 @@ namespace std
 #define SERIALIZER(TypeName, ...) \
     serializer::saver &Save(serializer::saver &oo) const { \
         serializer::Save(oo, __VA_ARGS__); \
-        if (! oo.is_binary()) oo.get() << "\n"; \
+        if (! oo.is_binary()) oo.get() << " "; \
         return oo; \
     } \
     serializer::loader &Load(serializer::loader &ii) { \
@@ -435,7 +438,7 @@ class no_such_obj_exception {
     virtual std::string _signature() const { return #BaseTypeName; } \
     virtual serializer::saver &Save(serializer::saver &oo) const { \
         serializer::Save(oo, __VA_ARGS__); \
-        if (! oo.is_binary()) oo.get() << "\n"; \
+        if (! oo.is_binary()) oo.get() << " "; \
         return oo; \
     } \
     virtual serializer::loader &Load(serializer::loader &ii) { \
@@ -447,7 +450,7 @@ class no_such_obj_exception {
     serializer::saver &Save(serializer::saver &oo) const override { \
         BaseTypeName::Save(oo); \
         serializer::Save(oo, __VA_ARGS__); \
-        if (! oo.is_binary()) oo.get() << "\n"; \
+        if (! oo.is_binary()) oo.get() << " "; \
         return oo; \
     } \
     serializer::loader &Load(serializer::loader &ii) override { \

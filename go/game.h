@@ -13,9 +13,10 @@
 #include "elf/comm_template.h"
 #include "elf/ai_comm.h"
 
+#include "ai.h"
 #include "go_game_specific.h"
 #include "go_state.h"
-#include "go_loader.h"
+#include "offpolicy_loader.h"
 #include <random>
 #include <map>
 
@@ -25,26 +26,30 @@ private:
     int _game_idx = -1;
     uint64_t _seed = 0;
     GameOptions _options;
+    ContextOptions _context_options;
 
-    std::vector<std::unique_ptr<Loader>> _loaders;
+    std::vector<std::unique_ptr<OfflineLoader>> _loaders;
     int _curr_loader_idx;
     std::mt19937 _rng;
 
+    std::unique_ptr<AI> _ai;
+    std::unique_ptr<AI> _human_player;
+
+    // Only used when we want to run online
+    GoState _state;
+
 public:
-    GoGame(int game_idx, const GameOptions& options);
+    GoGame(int game_idx, const ContextOptions &context_options, const GameOptions& options);
 
     void Init(AIComm *ai_comm);
 
-    void MainLoop(const std::atomic_bool& done) {
+    void MainLoop(const elf::Signal& signal) {
         // Main loop of the game.
-        while (true) {
-            Act(done);
-            if (done.load()) break;
+        while (! signal.IsDone()) {
+            Act(signal);
         }
     }
 
-    void Act(const std::atomic_bool& done);
-    string ShowBoard() const { return _loaders[_curr_loader_idx]->state().ShowBoard(); }
-    void UndoMove() {_loaders[_curr_loader_idx]->UndoMove();}
-    void ApplyHandicap(int handicap) {_loaders[_curr_loader_idx]->ApplyHandicap(handicap);}
+    void Act(const elf::Signal &signal);
+    string ShowBoard() const { return _state.ShowBoard(); }
 };

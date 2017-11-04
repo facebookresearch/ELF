@@ -23,42 +23,95 @@ namespace mcts {
 
 using namespace std;
 
-template <typename A>
+template<typename A>
+struct NodeResponseT {
+    vector<pair<A, float>> pi;
+    float value;
+};
+
+template <typename S, typename A>
 class NodeAllocT;
 
-// Tree node.
-template <typename A>
-class NodeT {
+template <typename S>
+class NodeBaseT {
 public:
-    NodeT() : visited_(false), count_(0) { }
-    NodeT(const NodeT<A>&) = delete;
-    NodeT<A> &operator=(const NodeT<A>&) = delete;
+    enum StateType { NODE_NULL = 0, NODE_INVALID, NODE_SET };
+
+    NodeBaseT() : s_state_(NODE_NULL) { }
+
+    const S *s_ptr() const { return s_.get(); }
+    bool SetStateIfNull(function<S *()> func) {
+      if (func == nullptr) return false;
+      // The node is invalid.
+      int curr_state = s_state_.load();
+      if (curr_state == NODE_INVALID) return false;
+      if (curr_state == NODE_SET) return true;
+
+      lock_guard<mutex> lock(lock_state_);
+
+      curr_state = s_state_.load();
+      if (curr_state == NODE_INVALID) return false;
+      if (curr_state == NODE_SET) return true;
+
+      s_.reset(func());
+      if (s_ == nullptr) {
+        s_state_ = NODE_INVALID;
+        return false;
+      } else {
+        s_state_ = NODE_SET;
+        return true;
+      }
+    }
+
+protected:
+    mutex lock_state_;
+    unique_ptr<S> s_;
+    atomic<int> s_state_;
+};
+
+// Tree node.
+template <typename S, typename A>
+class NodeT : public NodeBaseT<S> {
+public:
+    using Node = NodeT<S, A>;
+    using NodeAlloc = NodeAllocT<S, A>;
+
+    enum VisitType { NODE_NOT_VISITED = 0, NODE_JUST_VISITED, NODE_ALREADY_VISITED };
+
+    NodeT(Node *parent) : parent_(parent), visited_(false), count_(0) { }
+    NodeT(const Node&) = delete;
+    Node &operator=(const Node&) = delete;
 
     const unordered_map<A, EdgeInfo> &sa() const { return sa_; }
     int count() const { return count_; }
+    float value() const { return V_; }
 
-    bool visited() const { return visited_; }
+    template <typename ExpandFunc, typename InitFunc>
+    VisitType ExpandIfNecessary(ExpandFunc func, InitFunc init, NodeAlloc &alloc) {
+        if (visited_) return NODE_ALREADY_VISITED;
 
-    bool Expand(const vector<pair<A, float>> &pi, float V, NodeAllocT<A> &alloc) {
-        if (visited_) return true;
-
-        // Otherwise visit.  
+        // Otherwise visit.
         lock_guard<mutex> lock(lock_node_);
-        if (visited_) return true;
-        
+        if (visited_) return NODE_ALREADY_VISITED;
+
+        auto resp = func(this);
+
         // Then we need to allocate sa_val_
-        for (const pair<A, float> & action_pair : pi) {
-            EdgeInfo edge(action_pair.second);
-            edge.next = alloc.Alloc();
-            sa_.insert(make_pair(action_pair.first, std::move(edge)));
+        for (const pair<A, float> & action_pair : resp.pi) {
+            auto res = sa_.insert(make_pair(action_pair.first, EdgeInfo(action_pair.second)));
+            res.first->second.next = alloc.Alloc(this);
+            init(res.first->second);
+            // Compute v here.
+            // Node *child = alloc[res.first->second.next];
+            // child->V_ = V_ + log(action_pair.second + 1e-6);
         }
 
         // value
-        V_ = V;
+        V_ = resp.value;
 
-        // Once sa_ is allocated, its structure won't change. 
+        // Once sa_ is allocated, its structure won't change.
         visited_ = true;
-        return true;
+        return NODE_JUST_VISITED;
     }
 
     bool AccumulateStats(const A &a, float reward) {
@@ -66,11 +119,12 @@ public:
         // Not found, skip
         if (! res.second) return false;
 
-        // Inc #visited 
+        // Inc #visited
         count_ ++;
 
         EdgeInfo &info = res.first->second;
         // Async modification (we probably need to add a locker in the future, or not for speed).
+        lock_guard<mutex> lock(lock_node_);
         info.acc_reward += reward;
         info.n ++;
         return true;
@@ -81,31 +135,55 @@ public:
         if (! res.second) return NodeIdInvalid;
         return res.first->second.next;
     }
-    
+
+    string _info(int indent, const NodeAlloc &alloc) const {
+        std::stringstream ss;
+        std::string indent_str;
+        for (int i = 0; i < indent; ++i) indent_str += ' ';
+
+        for (const auto & p : sa_) {
+            if (p.second.n > 0) {
+                const Node *n = alloc[p.second.next];
+                if (n->visited_) {
+                    ss << indent_str << "[" << p.first << "] " << p.second.info();
+                    ss << ", V: " << n->V_ << endl;
+                    ss << n->_info(indent + 2, alloc);
+                }
+            }
+        }
+        return ss.str();
+    }
+
+    string info(const NodeAlloc &alloc) const {
+        return _info(0, alloc);
+    }
+
 private:
-    // For state. 
+    // For state.
+    Node *parent_;
     mutex lock_node_;
     atomic_bool visited_;
     unordered_map<A, EdgeInfo> sa_;
 
-    int count_;
-    float V_;
+    atomic<int> count_;
+    float V_ = 0.0;
 };
 
-template <typename A>
+template <typename S, typename A>
 class NodeAllocT {
 public:
-    using Node = NodeT<A>;
+    using Node = NodeT<S, A>;
+    using NodeAlloc = NodeAllocT<S, A>;
 
-    NodeAllocT() : allocated_node_count_(0) { 
-        root_id_ = Alloc(); 
-    }
+    NodeAllocT() { Clear(); }
 
-    NodeAllocT(const NodeAllocT<A>&) = delete;
-    NodeAllocT<A> &operator=(const NodeAllocT<A>&) = delete;
+    NodeAllocT(const NodeAlloc&) = delete;
+    NodeAlloc &operator=(const NodeAlloc&) = delete;
 
     void Clear() {
         allocated_.clear();
+        allocated_node_count_ = 0;
+        root_id_ = Alloc();
     }
 
     void TreeAdvance(const A& a) {
@@ -126,11 +204,12 @@ public:
     }
 
     Node *root() { return (*this)[root_id_]; }
+    const Node *root() const { return (*this)[root_id_]; }
 
-    // Low level functions. 
-    NodeId Alloc() {
+    // Low level functions.
+    NodeId Alloc(Node *parent = nullptr) {
         lock_guard<mutex> lock(alloc_mutex_);
-        allocated_[allocated_node_count_].reset(new Node());
+        allocated_[allocated_node_count_].reset(new Node(parent));
         return allocated_node_count_ ++;
     }
 
@@ -146,13 +225,14 @@ public:
         Free(id);
     }
 
-    const Node *operator[](NodeId i) const { 
+    Node *operator[](NodeId i) {
         lock_guard<mutex> lock(alloc_mutex_);
         auto it = allocated_.find(i);
         if (it == allocated_.end()) return nullptr;
         else return it->second.get();
     }
-    Node *operator[](NodeId i) { 
+
+    const Node *operator[](NodeId i) const {
         lock_guard<mutex> lock(alloc_mutex_);
         auto it = allocated_.find(i);
         if (it == allocated_.end()) return nullptr;
@@ -160,10 +240,10 @@ public:
     }
 
 private:
-    // TODO: We might just allocate one chunk at a time. 
+    // TODO: We might just allocate one chunk at a time.
     unordered_map<NodeId, unique_ptr<Node>> allocated_;
     NodeId allocated_node_count_;
-    mutex alloc_mutex_;
+    mutable mutex alloc_mutex_;
     NodeId root_id_;
 };
 

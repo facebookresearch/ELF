@@ -247,8 +247,10 @@ var onUnit = function(u, isSelected) {
 
     var hp_ratio = u.hp / u.max_hp;
     var state_str;
-    if (u.cmd.cmd[0] != 'I') {
-        state_str = u.cmd.cmd[0] + u.cmd.state;
+    if ("cmd" in u) {
+        if (u.cmd.cmd[0] != 'I') {
+            state_str = u.cmd.cmd[0] + u.cmd.state;
+        }
     }
     var x1 = xy[0] - unit_size / 2;
     var y1 = xy[1] - 27;
@@ -282,6 +284,21 @@ var onPlayerStats = function(player) {
 	ctx.font = "15px Arial";
 	ctx.fillText(label, x1, y1);
     ctx.closePath();
+}
+
+// Draw units that have been seen.
+var onPlayerSeenUnits = function(m) {
+    if ("units" in m) {
+        var oldAlpha = ctx.globalAlpha;
+        ctx.globalAlpha = 0.3;
+
+        for (var i in m.units) {
+            onUnit(m.units[i], false);
+        }
+        // console.log(m.units.length)
+
+        ctx.globalAlpha = oldAlpha;
+    }
 }
 
 var draw_state = function(u) {
@@ -441,9 +458,13 @@ var render = function (game) {
 	ctx.fillStyle = "Black";
 	ctx.font = "15px Arial";
     var label = "Tick: " + tick;
-	ctx.fillText(label ,left_frame_width + 10, 20);
+	ctx.fillText(label, left_frame_width + 10, 20);
     ctx.closePath();
     onMap(game.rts_map);
+    if (! game.spectator) {
+       onPlayerSeenUnits(game.rts_map);
+    }
+
     var all_units = {};
     var selected = {};
     for (var i in game.players) {
@@ -452,14 +473,13 @@ var render = function (game) {
     for (var i in game.units) {
         var unit = game.units[i];
         all_units[unit.id] = unit;
-        var isSelected = false;
-        if (game.bots[0]) {
-            var s_units = game.bots[0].selected_units;
-            var isSelected = (s_units && s_units.indexOf(unit.id) >= 0);
-            if (isSelected) {
-                selected[unit.id] = unit;
-            }
+
+        var s_units = game.selected_units;
+        var isSelected = (s_units && s_units.indexOf(unit.id) >= 0);
+        if (isSelected) {
+            selected[unit.id] = unit;
         }
+
         onUnit(unit, isSelected);
     }
     if (dragging && x_down && y_down) {
@@ -487,10 +507,13 @@ var render = function (game) {
     	ctx.fillText(label ,left_frame_width + 50, 200);
     }
     var label = "Current FPS is " + Math.floor(50 * Math.pow(1.3, speed));
-    ctx.fillText(label ,left_frame_width + 50, 570);
-    if (game.progress_percent) range1.value = game.progress_percent;
+    ctx.fillText(label, left_frame_width + 50, 570);
+    if (game.replay_length) {
+        range1.value = 100 * game.tick / game.replay_length;
+    }
+
     var label = "Current progress_percent is " + range1.value;
-    ctx.fillText(label ,left_frame_width + 50, 670);
+    ctx.fillText(label, left_frame_width + 50, 670);
     ctx.closePath();
 };
 

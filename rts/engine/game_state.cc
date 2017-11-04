@@ -5,17 +5,15 @@ using namespace std::chrono;
 
 RTSState::RTSState() {
     _env.InitGameDef();
-    // TODO Need to add players accordingly. 
+    // TODO Need to add players accordingly.
     _env.ClearAllPlayers();
 }
 
-void RTSState::OnAddPlayer(int player_id) {
-    (void)player_id;
-    _env.AddPlayer(PV_KNOW_ALL);
+void RTSState::AppendPlayer(const string &name) {
+    _env.AddPlayer(name, PV_KNOW_ALL);
 }
 
-void RTSState::OnRemovePlayer(int player_id) {
-    (void)player_id;
+void RTSState::RemoveLastPlayer() {
     _env.RemovePlayer();
 }
 
@@ -39,27 +37,9 @@ bool RTSState::Prepare(const RTSGameOptions &options, ostream *output) {
        }
        */
 
-    // Load the replay (if there is any)
-    const string& load_replay_filename =
-        game_counter < options.load_replay_filenames.size() ? options.load_replay_filenames[game_counter] : string();
-
     // Load the replay.
     bool situation_loaded = false;
-    if (! load_replay_filename.empty()) {
-        if (output) *output << "Load from replay, name = " << load_replay_filename << endl << flush;
-        if (_cmd_receiver.LoadReplay(load_replay_filename)) {
-            situation_loaded = true;
-        } else {
-            if (output) *output << "Failed to open " << load_replay_filename << endl << flush;
-            return false;
-        }
-    }
-    if (! situation_loaded && ! options.state_string.empty()) {
-        if (output) *output << "Load from state string, size = " << options.state_string.size() << endl << flush;
-        Load(options.state_string);
-        if (output) *output << "Finish load from state string" << endl << flush;
-        situation_loaded = true;
-    }
+    // [TODO]: Get snapshot working in the new framework.
     if (! situation_loaded && ! options.snapshot_load.empty()) {
         if (output) *output << "Loading snapshot = " << options.snapshot_load << endl << flush;
         LoadSnapshot(options.snapshot_load, options.save_with_binary_format);
@@ -101,6 +81,7 @@ bool RTSState::Prepare(const RTSGameOptions &options, ostream *output) {
 }
 
 // 0.0 - 1.0
+/*
 int RTSState::MoveToTick(const std::vector<Tick> &snapshots, float percent) const {
     // Move to a specific tick.
     int num_replay_entry = _cmd_receiver.GetLoadedReplaySize();
@@ -119,6 +100,7 @@ int RTSState::MoveToTick(const std::vector<Tick> &snapshots, float percent) cons
     // Load the snapshot.
     return *it;
 }
+*/
 
 bool RTSState::Reset() {
    _cmd_receiver.ResetTick();
@@ -127,8 +109,15 @@ bool RTSState::Reset() {
    return true;
 }
 
-void RTSState::Forward(RTSAction &action) {
-    action.Send(_env, _cmd_receiver);
+bool RTSState::forward(RTSAction &action) {
+    return action.Send(_env, _cmd_receiver);
+}
+
+bool RTSState::forward(ReplayLoader::Action &actions) {
+    if (actions.restart) _cmd_receiver.ClearCmd();
+    if (! actions.new_state.empty()) Load(actions.new_state);
+    for (auto &&cmd : actions.cmds) _cmd_receiver.SendCmd(std::move(cmd));
+    return true;
 }
 
 elf::GameResult RTSState::PostAct() {
@@ -136,14 +125,21 @@ elf::GameResult RTSState::PostAct() {
     // if (_tick_prompt) *_output_stream << "Start executing cmds... " << endl << flush;
     _cmd_receiver.ExecuteDurativeCmds(_env, _verbose);
     _cmd_receiver.ExecuteImmediateCmds(&_env, _verbose);
-    _cmd_receiver.ExecuteUICmds(_ui_cb);
     // cout << "Compute Fow" << endl;
     _env.ComputeFOW();
+    
+    /*
+    if (GetTick() % 50 == 0) {
+        cout << "[" << GetTick() << "] Player 0: prev seen count: " << endl;
+        _env.GetPrevSeenCount(0);
+        cout << "[" << GetTick() << "] Player 1: prev seen count: " << endl;
+        _env.GetPrevSeenCount(1);
+    }
+    */
 
-    // Check winner. 
+    // Check winner.
     PlayerId winner_id = _env.GetGameDef().CheckWinner(_env, _cmd_receiver.GetTick() >= _max_tick);
     _env.SetWinnerId(winner_id);
-
 
     Tick t = _cmd_receiver.GetTick();
     bool run_normal = _cmd_receiver.GetGameStats().CheckGameSmooth(t);
@@ -151,16 +147,30 @@ elf::GameResult RTSState::PostAct() {
     // Check winning condition
     if (winner_id != INVALID || t >= _max_tick || ! run_normal) {
         _env.SetTermination();
-        _cmd_receiver.GetGameStats().SetWinner(winner_id);
-        return run_normal ? elf::GAME_END : elf::GAME_ERROR; 
-    } 
-    
+        return run_normal ? elf::GAME_END : elf::GAME_ERROR;
+    }
+
     return elf::GAME_NORMAL;
 }
 
 void RTSState::Finalize() {
     // cout << "[" << prefix << "] About to save to rep" << endl;
+    // TODO: Move this to RTSStateExtend.
+    std::string cmt = "[" + std::to_string(GetTick()) + "] ";
+    PlayerId winner_id = _env.GetWinnerId();
+
+    std::string player_name = (winner_id == INVALID ? "failed" : _env.GetPlayer(winner_id).GetName());
+    _cmd_receiver.GetGameStats().SetWinner(player_name, winner_id);
+
     if (! _save_replay_prefix.empty()) {
+        if (winner_id == INVALID) {
+            cmt += "Game Terminated";
+        } else {
+            cmt += player_name + ":" + std::to_string(winner_id) + " won";
+        }
+        _cmd_receiver.SendCmd(CmdBPtr(new CmdComment(INVALID, cmt)));
+        _cmd_receiver.ExecuteImmediateCmds(&_env, _verbose);
+
         const int game_counter = _env.GetGameCounter();
         std::string prefix = _save_replay_prefix + std::to_string(game_counter);
         _cmd_receiver.SaveReplay(prefix + ".rep");

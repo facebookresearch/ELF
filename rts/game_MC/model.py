@@ -11,6 +11,8 @@ from copy import deepcopy
 from collections import Counter
 
 from rlpytorch import Model, ActorCritic
+from actor_critic_changed import ActorCriticChanged
+from forward_predict import ForwardPredict
 from trunk import MiniRTSNet
 
 class Model_ActorCritic(Model):
@@ -53,15 +55,15 @@ class Model_ActorCritic(Model):
             xreduced[:, self.num_unit:] /= 20 * 20
             output = self._var(xreduced)
         else:
-            s, res = x["s"], x["res"]
-            output = self.net(self._var(x["s"]), self._var(x["res"]))
+            output = self.net(self._var(x["s"]))
 
         return self.decision(output)
 
     def decision(self, h):
+        h = self._var(h)
         policy = self.softmax(self.linear_policy(h))
         value = self.linear_value(h)
-        return dict(h=h, V=value, pi=policy)
+        return dict(h=h, V=value, pi=policy, action_type=0)
 
     def decision_fix_weight(self, h):
         # Copy linear policy and linear value
@@ -76,6 +78,7 @@ class Model_ActorCritic(Model):
 
     def transition(self, h, a):
         ''' A transition model that could predict the future given the current state and its action '''
+        h = self._var(h)
         na = self.params["num_action"]
         a_onehot = h.data.clone().resize_(a.size(0), na).zero_()
         a_onehot.scatter_(1, a.view(-1, 1), 1)
@@ -96,4 +99,6 @@ class Model_ActorCritic(Model):
 # if method is None, fall back to default mapping from key to method
 Models = {
     "actor_critic": [Model_ActorCritic, ActorCritic],
+    "actor_critic_changed": [Model_ActorCritic, ActorCriticChanged],
+    "forward_predict": [Model_ActorCritic, ForwardPredict]
 }

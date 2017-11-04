@@ -10,17 +10,10 @@ struct RTSGameOptions {
     // A map file that specifies the map, the terrain
     string map_filename;
 
-    // A replay file to load. It will contains the locations of bases and units, etc.
-    // And action sequence.
-    vector<string> load_replay_filenames;
-
     string save_replay_prefix;
     string snapshot_prefix;
     string snapshot_load;
     string snapshot_load_prefix;
-
-    // State string to load from
-    string state_string;
 
     // Snapshots to load from.
     vector<Tick> snapshots;
@@ -31,9 +24,6 @@ struct RTSGameOptions {
 
     // CmdDumperPrefix
     string cmd_dumper_prefix;
-
-    // By-pass bot actions. Only use cmd stored by replay.
-    bool bypass_bot_actions = false;
 
     // Ticks to be peeked. We only use this when bypass_bot_actions = true.
     set<Tick> peek_ticks;
@@ -69,8 +59,6 @@ struct RTSGameOptions {
         std::stringstream ss;
 
         ss << "Map_filename: " << map_filename << endl;
-        ss << "Load replay filenames: " << endl;
-        for (const auto &f : load_replay_filenames) ss << "  \"" << f << "\"" << endl;
         ss << "Save replay prefix: \"" << save_replay_prefix << "\"" << endl;
         ss << "Snapshot prefix: \"" << snapshot_prefix << "\"" << endl;
         ss << "Snapshot load: \"" << snapshot_load << "\"" << endl;
@@ -78,10 +66,8 @@ struct RTSGameOptions {
         ss << "Snapshots[" << snapshots.size() << "]: ";
         for (const Tick &t : snapshots) ss << t << ", ";
         ss << endl;
-        ss << "State string: #size = " << state_string.size() << endl;
         ss << "Seed: " << seed << endl;
         ss << "Cmd Dumper prefix: \"" << cmd_dumper_prefix << "\"" << endl;
-        ss << "Bypass bot actions: " << (bypass_bot_actions ? "True" : "False") << endl;
         ss << "Pick ticks[" << peek_ticks.size() << "]: ";
         for (const Tick &t : peek_ticks) ss << t << ", ";
         ss << endl;

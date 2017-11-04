@@ -7,32 +7,35 @@
 * of patent rights can be found in the PATENTS file in the same directory.
 */
 
-#include <unordered_map>
-
+#include <type_traits>
 #include "tree_search_base.h"
 
 namespace mcts {
 
 using namespace std;
 
-// Algorithms. 
-template <typename A>
-pair<A, float> UCT(const unordered_map<A, EdgeInfo>& vals, float count, bool use_prob = true) {
+// Algorithms.
+template <typename Map>
+pair<typename Map::key_type, float> UCT(const Map& vals, float count, bool use_prior = true, ostream *oo = nullptr) {
     // Simple PUCT algorithm.
-    A best_a;
-    float max_score = -1.0;
-    const float c_puct = 5.0;
-    float sqrt_count = sqrt(count);
+    using A = typename Map::key_type;
+    static_assert(is_same<typename Map::mapped_type, EdgeInfo>::value, "key type must be EdgeInfo");
 
-    for (const pair<A, EdgeInfo> & action_pair : vals) {
+    A best_a = A();
+    float max_score = std::numeric_limits<float>::lowest();
+    const float c_puct = 0.5;
+    const float sqrt_count1 = sqrt(count + 1);
+
+    if (oo) *oo << "UCT prior = " << (use_prior ? "True" : "False") << endl;
+
+    for (const auto& action_pair : vals) {
         const A& a = action_pair.first;
         const EdgeInfo &info = action_pair.second;
 
-        float prior = use_prob ? info.prior : 1.0;
+        float score = (info.acc_reward + 0.5) / (info.n + 1);
+        if (use_prior) score += c_puct * info.prior / (1 + info.n) * sqrt_count1;
 
-        float Q = (info.acc_reward + 0.5) / (info.n + 1);
-        float p = prior / (1 + info.n) * sqrt_count;
-        float score = Q + c_puct * p;
+        if (oo) *oo << "UCT [a=" << a << "] prior: " << info.prior << " score: " <<  score << endl;
 
         if (score > max_score) {
             max_score = score;
@@ -42,20 +45,57 @@ pair<A, float> UCT(const unordered_map<A, EdgeInfo>& vals, float count, bool use
     return make_pair(best_a, max_score);
 };
 
-template <typename A>
-pair<A, float> MostVisited(const unordered_map<A, EdgeInfo>& vals) {
-    A best_a;
-    float max_score = -1.0;
+template <typename Map>
+MCTSResultT<typename Map::key_type> MostVisited(const Map& vals) {
+    using A = typename Map::key_type;
+    using MCTSResult = MCTSResultT<A>;
+    static_assert(is_same<typename Map::mapped_type, EdgeInfo>::value, "key type must be EdgeInfo");
+
+    MCTSResult res;
     for (const pair<A, EdgeInfo> & action_pair : vals) {
-        const A& a = action_pair.first;
         const EdgeInfo &info = action_pair.second;
 
-        if (info.n > max_score) {
-            max_score = info.n;
-            best_a = a;
-        }
+        res.feed(info.n, action_pair);
     }
-    return make_pair(best_a, max_score);
+    return res;
+};
+
+template <typename Map>
+MCTSResultT<typename Map::key_type> StrongestPrior(const Map& vals) {
+    using A = typename Map::key_type;
+    using MCTSResult = MCTSResultT<A>;
+    static_assert(is_same<typename Map::mapped_type, EdgeInfo>::value, "key type must be EdgeInfo");
+
+    MCTSResult res;
+    for (const pair<A, EdgeInfo> & action_pair : vals) {
+        const EdgeInfo &info = action_pair.second;
+
+        res.feed(info.prior, action_pair);
+    }
+    return res;
+};
+
+template <typename Map>
+MCTSResultT<typename Map::key_type> UniformRandom(const Map& vals) {
+    using A = typename Map::key_type;
+    using MCTSResult = MCTSResultT<A>;
+    static_assert(is_same<typename Map::mapped_type, EdgeInfo>::value, "key type must be EdgeInfo");
+
+    static std::mt19937 rng(time(NULL));
+    static std::mutex mu;
+
+    MCTSResult res;
+
+    int idx = 0;
+    {
+        lock_guard<mutex> lock(mu);
+        idx = rng() % vals.size();
+    }
+    auto it = vals.begin();
+    while (--idx >= 0) ++ it;
+
+    res.feed(it->second.n, *it);
+    return res;
 };
 
 } // namespace mcts

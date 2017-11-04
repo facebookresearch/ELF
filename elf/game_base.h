@@ -2,6 +2,7 @@
 #include <vector>
 #include <atomic>
 #include <memory>
+#include <typeinfo>
 
 namespace elf {
 
@@ -9,89 +10,113 @@ using namespace std;
 
 enum GameResult { GAME_NORMAL = 0, GAME_END = 1, GAME_ERROR = 2 };
 
+using Tick = int;
+
 struct GameBaseOptions {
 };
 
 // Any games played by multiple AIs.
-template <typename S, typename _AI>
+template <typename S, typename _AI, typename _Spectator = _AI>
 class GameBaseT {
 public:
-    using GameBase = GameBaseT<S, _AI>;
+    using GameBase = GameBaseT<S, _AI, _Spectator>;
     using AI = _AI;
+    using Spectator = _Spectator;
+
+    struct Bot {
+        unique_ptr<AI> ai;
+        Tick frame_skip = 1;
+
+        Bot(AI *ai, Tick fs)
+            : ai(ai), frame_skip(fs) {
+        }
+    };
 
     /*
     GameBaseT(const GameBaseOptions &options) : _options(options) {
     }
     */
-    GameBaseT(S &s) : _state(s) { }
+    GameBaseT(S *s = nullptr) : _state(s) { }
 
-    void AddBot(AI *bot) {
+    void AddBot(AI *bot, Tick frame_skip) {
         if (bot == nullptr) {
             std::cout << "Bot at " << _bots.size() << " cannot be nullptr" << std::endl;
             return;
         }
         bot->SetId(_bots.size());
-        bot->SetState(_state);
-        _bots.emplace_back(bot);
-        _state.OnAddPlayer(_bots.size() - 1);
+        _bots.emplace_back(bot, frame_skip);
     }
 
     void RemoveBot() {
-        _state.OnRemovePlayer(_bots.size() - 1);
         _bots.pop_back();
     }
 
-    void AddSpectator(AI *spectator) {
+    void AddSpectator(Spectator *spectator) {
         if (_spectator.get() == nullptr) {
-            spectator->SetId(-1);
-            spectator->SetState(_state);
             _spectator.reset(spectator);
         }
     }
 
-    const S& GetState() const { return _state; }
+    const S& GetState() const { return *_state; }
+    S &GetState() { return *_state; }
+    void SetState(S *s) { _state = s; }
+
+    GameResult Step(const std::atomic_bool *done = nullptr) {
+        _state->PreAct();
+        _act(true, done);
+        GameResult res = _state->PostAct();
+        _state->IncTick();
+
+        return res;
+    }
 
     void MainLoop(const std::atomic_bool *done = nullptr) {
-        _state.Init();
+        _state->Init();
         while (true) {
-            _state.PreAct();
-            auto t = _state.GetTick();
-            for (const auto &bot : _bots) {
-                typename AI::Action actions;
-                bot->Act(t, &actions, done);
-                _state.Forward(actions);
-            }
-            if (_spectator != nullptr) {
-                typename AI::Action actions;
-                _spectator->Act(t, &actions, done);
-            }
-
-            GameResult res = _state.PostAct();
-            if (res != GAME_NORMAL) break;
+            if (Step(done) != GAME_NORMAL) break;
             if (done != nullptr && done->load()) break;
-
-            _state.IncTick();
         }
         // Send message to AIs.
-        auto t = _state.GetTick();
-        for (const auto &bot : _bots) {
-            bot->GameEnd(t);
-        }
-        if (_spectator != nullptr) _spectator->GameEnd(t);
-
-        _state.Finalize();
+        _act(false, done);
+        _game_end();
+        _state->Finalize();
     }
 
     void Reset() {
-        _state.Reset();
+        _state->Reset();
     }
 
 private:
-    S &_state;
-    std::vector<unique_ptr<AI>> _bots;
-    unique_ptr<AI> _spectator;
+    S *_state;
+    std::vector<Bot> _bots;
+    unique_ptr<Spectator> _spectator;
 
     GameBaseOptions _options;
+
+    void _act(bool check_frameskip, const std::atomic_bool *done) {
+        auto t = _state->GetTick();
+        for (const Bot &bot : _bots) {
+            if (! check_frameskip || t % bot.frame_skip == 0) {
+                typename AI::Action actions;
+                bot.ai->Act(*_state, &actions, done);
+                _state->forward(actions);
+            }
+        }
+        if (_spectator != nullptr) {
+            typename Spectator::Action actions;
+            _spectator->Act(*_state, &actions, done);
+            _state->forward(actions);
+        }
+    }
+
+    void _game_end() {
+        for (const Bot &bot : _bots) {
+            bot.ai->GameEnd();
+        }
+        if (_spectator != nullptr) {
+            _spectator->GameEnd();
+        }
+    }
 };
 
 }  // namespace elf
