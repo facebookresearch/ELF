@@ -23,7 +23,7 @@ if __name__ == '__main__':
     GC = env["game"].initialize()
 
     model = env["model_loaders"][0].load_model(GC.params)
-    env["mi"].add_model("actor", model, cuda=True, gpu_id=args.gpu)
+    env["mi"].add_model("actor", model, cuda=not args.gpu is None, gpu_id=args.gpu)
 
     def actor(batch):
         reply = evaluator.actor(batch)
