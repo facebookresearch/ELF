@@ -1,4 +1,4 @@
-#pragma oncef
+#pragma once
 #include "ai.h"
 
 // Lua AI, rule-based AI for Mini-RTS
