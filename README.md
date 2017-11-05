@@ -23,7 +23,7 @@ ELF has the following characteristics:
 
 Tutorials  
 =============
-See [here](https://yuandong-tian.com/elf-tutorial/tutorial.html).
+See [here](http://yuandong-tian.com/elf-tutorial/tutorial.html).
 
 Install scripts
 ================
