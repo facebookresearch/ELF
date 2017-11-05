@@ -41,6 +41,11 @@ struct Unit {
     }
 };
 
+struct LuaUnit {
+    const void *unit;
+    LuaUnit(const Unit *u = nullptr) : unit(u) { }
+};
+
 struct LuaEnv {
 public:
     LuaEnv() {
@@ -48,12 +53,12 @@ public:
         _units.insert(make_pair(1, Unit(200, 4, 2)));
         _units.insert(make_pair(2, Unit(800, 12, 2)));
     }
-    const Unit &GetUnit(int id) const {
+    LuaUnit GetUnit(int id) const {
         auto it = _units.find(id);
         if (it != _units.end()) {
-            return it->second;
+            return LuaUnit(&it->second);
         } else {
-            return _empty_unit;
+            return LuaUnit();
         }
     } 
 private:
@@ -67,7 +72,7 @@ int main() {
 
     state["global_float"] = []() { return 1.2; };
 
-    state["Unit"].SetClass<Unit, int, int, int>("info", &Unit::info);
+    state["Unit"].SetClass<LuaUnit>();
     state["env"].SetObj(env, "unit", &LuaEnv::GetUnit);
 
     state["PointF"].SetClass<PointF>("info", &PointF::info);
