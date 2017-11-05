@@ -146,7 +146,7 @@ class CollectorWithCCQueue {
     return std::make_pair(_data[k]->val, true);
 #else
     int k;
-    if (Q.wait_dequeue_timed(k, timeout_sec))
+    if (Q.wait_dequeue_timed(k, timeout_usec))
       return std::make_pair(_data[k]->val, true);
     else
       return std::make_pair(nullptr, false);

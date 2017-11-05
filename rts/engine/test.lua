@@ -33,7 +33,7 @@ function cmd_gather()
         if gather_cd_expire() then
             harvest_resource()
         end
-    elseif gather_state = 2 then
+    elseif gather_state == 2 then
         if move_towards_base() < 1 then
             change_resource()
         end
