@@ -74,6 +74,9 @@ void GoGame::Act(const std::atomic_bool& done) {
         if (! _state.forward(c)) {
             cout << "No valid move, restarting the game" << endl;
             _state.Reset();
+            _moves.clear();
+        } else {
+          _moves.push_back(c);
         }
     } else {
         // Replays hold a state by itself.

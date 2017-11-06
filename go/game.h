@@ -38,6 +38,8 @@ private:
     // Only used when we want to run online
     GoState _state;
 
+    std::vector<Coord> _moves;
+
 public:
     GoGame(int game_idx, const ContextOptions &context_options, const GameOptions& options);
 
