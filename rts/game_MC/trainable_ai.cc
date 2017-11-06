@@ -104,6 +104,7 @@ bool TrainedAI::handle_response(const State &s, const Data &data, RTSMCAction *a
                 std::for_each(unit_cmds.begin(), unit_cmds.end(), [&](CmdInput &ci) { ci.ApplyEnv(env); });
                 a->SetUnitCmds(unit_cmds);
             }
+            break;
 
             /*
         case ACTION_REGIONAL:
