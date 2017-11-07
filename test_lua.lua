@@ -1,5 +1,7 @@
-u = env.units(0)
-print(u.info())
+print(env.unit(0):info())
+print(env.unit(1):info())
+print(env.unit(2):info())
+print(env.unit(3):info())
 
 bar = Bar.new(5, 2)
 -- bar now refers to a new instance of Bar with its member x set to 5

@@ -7,16 +7,15 @@
 * of patent rights can be found in the PATENTS file in the same directory.
 */
 
-#ifndef _GAME_DEV_H_
-#define _GAME_DEV_H_
+#pragma once
 
 #include "cmd_receiver.h"
+#include "lua_env.h"
 #include "unit.h"
 #include "bullet.h"
 #include "map.h"
 #include "player.h"
 #include <random>
-
 
 class GameEnv {
 private:
@@ -51,22 +50,10 @@ private:
     // This happens if the time tick exceeds max_tick, or there is anything wrong.
     bool _terminated;
 
-    bool _use_sel = true;
+    unique_ptr<LuaEnv> _lua_env;
 
 public:
     GameEnv();
-
-    sel::State &GetSelState() const {
-        return _sel_state;
-    }
-
-    bool GetUseSel() const {
-        return _use_sel;
-    }
-
-    void SetUseSel(bool use_sel) {
-        _use_sel = use_sel;
-    }
 
     void Visualize() const;
 
@@ -305,5 +292,3 @@ void GameEnv::FillIn(PlayerId player_id, const CmdReceiver& receiver, T *game) c
         save_class::Save(bullet, game);
     }
 }
-
-#endif

@@ -3,6 +3,37 @@
 
 -- Attribute that are not specified but defined in C struct 
 -- will use its default value defined in C, or remain undefined.
+--
+g_cmd_init_states = {
+    ["gather"] = { 
+        gather_state = 0
+    },
+    ["build"] = {
+        build_state = 0
+    }
+}
+--
+g_cmds = { }
+function g_init_cmd_start(cmd_id, name)
+    init_state = g_cmd_init_states[name]
+    cmd = { _func = g_funcs[name] }
+    if init_state ~= nil then
+        table.insert(cmd, table.clone(init_state))
+    end
+    g_cmds[cmd_id] = cmd
+end
+
+function g_init_cmd(cmd_id, k, v)
+    g_cmds[cmd_id][k] = v
+end
+
+function g_cmd_run(cmd_id, env)
+    cmd = g_cmds[cmd_id]
+    if cmd == nil then 
+        return false
+    end
+    cmd._func(env, cmd)
+end
 
 unit_init_attributes = {
     ["BASE"] = { 
@@ -26,74 +57,83 @@ unit_init_attributes = {
     }   
 }
 
-
-function cmd_attack(env, cmd)
+g_funcs = { }
+function g_funcs.attack(env, cmd)
      -- c_print("In attack!")
-     if cmd.target:isdead() or not cmd.target:can_be_seen() then
+     local target = env:unit(cmd.target)
+     local u = env:self()
+
+     if target:isdead() or not u:can_see(target) then
          -- c_print("Task finished!")
-         return cmd.COMPLETE
+         return global.COMPLETE
      end
-     local att_r = cmd.unit.att_r
-     if cmd.unit:cd_expired("attack") and cmd.unit:in_attack_range(cmd.target) then
+     local att_r = u:att_r()
+     if u:cd_expired(global.CD_ATTACK) and env:dist_sqr(target:p()) then
          -- c_print("Attacking .. ")
          -- Then we need to attack.
          if att_r <= 1.0 then
-             cmd:send_cmd("MeleeAttack", cmd.target, cmd.unit.att)
+             env:send_cmd_melee_attack(cmd.target, u:att())
          else
-             cmd:send_cmd("EmitBullet", cmd.target, cmd.unit.att, 2)
+             env:send_cmd_emit_bullet(cmd.target, u:att())
          end
      else
          -- c_print("Moving towards target .. ")
-         cmd:move_towards(cmd.target)
+         env:move_towards(cmd.target)
     end
 end
 
-function cmd_gather(env, cmd)
-    local resource = env:get_resource()
-    local base = env:get_base()
-    if resource == nil or base == nil then
-        return cmd.COMPLETE
+function g_funcs.gather(env, cmd)
+    local resource = env:unit(cmd.resource)
+    local base = env:find_closest_base()
+    local u = env:self()
+
+    if resource:isdead() or base:isdead() then
+        return global.COMPLETE
     end
     if cmd.gather_state == 0 then
-        if cmd:move_towards(resource) < 1 then
-            cmd:start_cd("gather")
+        if env:move_towards(resource) < 1 then
+            env:start_cd(global.CD_GATHER)
             cmd.gather_state = 1
         end
     elseif cmd.gather_state == 1 then
-        if cmd.unit:cd_expired("gather") then
-            cmd:send_cmd("HarvestResource", cmd.resource(), 5) 
+        if u:cd_expired(global.CD_GATHER) then
+            env:send_cmd_harvest_resource(cmd.resource, 5) 
             cmd.gather_state = 2 
         end
     elseif cmd.gather_state == 2 then
-        if cmd:move_towards(base) < 1 then
-            cmd:send_cmd("ChangeResource", cmd.unit:player_id(), 5) 
+        if env:move_towards(base) < 1 then
+            env:send_cmd_change_resource(5)
             cmd.gather_state = 0
         end
     end
 end
 
-function cmd_build(env, cmd)
+local kBuildDistSqr = 1 
+
+function g_funcs.build(env, cmd)
     local cost = env:unit_cost(cmd.build_type)
+    local u = env:self()
+
     if cmd.build_state == 0 then
-        if env:dist_sqr(cmd.unit.p, build_p) < kBuildDistStr then
-            cmd:send_cmd("ChangeResource", cmd.unit:player_id(), -cost) 
-            cmd:start_cd("build")
+        if env:dist_sqr(cmd.build_p) < kBuildDistSqr then
+            env:send_cmd_change_resource(u:player_id(), -cost) 
+            env:start_cd(global.CD_BUILD)
             cmd.build_state = kBuilding
         else
             if cmd.p:isvalid() then
                 local nearby_p = env:get_nearby_location(cmd.p)
-                cmd:move_towards_location(nearby_p)
+                env:move_towards_location(nearby_p)
             end
         end
     elseif cmd.build_state == kBuilding then
-        if cmd.unit:cd_expired("build") then
+        if u:cd_expired(global.CD_BUILD) then
             local build_p = cmd.p
             if not build_p:isvalid() then
-                build_p = env:get_nearby_location(cmd.unit.p) 
+                build_p = env:get_nearby_location(u:p()) 
             end
             if build_p:isvalid() then
-                cmd:send_cmd("Create", cmd.build_type, build_p, cmd.unit:player_id(), cost) 
-                return cmd.COMPLETE
+                env:send_cmd_create(cmd.build_type, build_p, u:player_id(), cost) 
+                return global.COMPLETE
             end
         end
     end

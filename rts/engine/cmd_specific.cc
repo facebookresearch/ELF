@@ -15,6 +15,7 @@
 #include "cmd.h"
 #include "cmd.gen.h"
 #include "cmd_specific.gen.h"
+#include "aux_func.h"
 
 static const int kMoveToRes = 0;
 static const int kGathering = 1;
@@ -202,29 +203,6 @@ bool CmdGather::run(const GameEnv &env, CmdReceiver *receiver) {
         }
     }
     return true;
-}
-
-// ------ Build
-// Move to nearby location at cmd.p and build at cmd.p
-// For fixed building, we just set cmd.p as its current location.
-static bool find_nearby_empty_place(const RTSMap &m, const PointF &curr, PointF *p_nearby) {
-    PointF nn;
-    nn = curr.Left(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-    nn = curr.Right(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-    nn = curr.Up(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-    nn = curr.Down(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-
-    nn = curr.LT(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-    nn = curr.LB(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-    nn = curr.RT(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-    nn = curr.RB(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-
-    nn = curr.LL(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-    nn = curr.RR(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-    nn = curr.TT(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-    nn = curr.BB(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-
-    return false;
 }
 
 bool CmdBuild::run(const GameEnv &env, CmdReceiver *receiver) {

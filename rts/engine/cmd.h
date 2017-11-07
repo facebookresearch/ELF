@@ -7,8 +7,7 @@
 * of patent rights can be found in the PATENTS file in the same directory.
 */
 
-#ifndef _CMD_H_
-#define _CMD_H_
+#pragma once
 
 #include "common.h"
 #include <sstream>
@@ -66,10 +65,15 @@ public:
 
     Tick tick() const { return _tick; }
     Tick start_tick() const { return _start_tick; }
+    
     void set_tick_and_start_tick(Tick t) { _tick = _start_tick = t; }
     UnitId id() const { return _id; }
+    int cmd_id() const { return _cmd_id; }
+
     void set_id(UnitId id) { _id = id; }
     void set_cmd_id(int i) { _cmd_id = i; }
+
+    bool just_started() const { return _tick == _start_tick; }
 
     virtual std::unique_ptr<CmdBase> clone() const { return std::unique_ptr<CmdBase>(new CmdBase(*this)); }
     virtual CmdType type() const { return CMD_BASE; }
@@ -193,12 +197,6 @@ public:
     }
 };
 
-class Unit;
-float micro_move(Tick tick, const Unit& u, const GameEnv &env, const PointF& target, CmdReceiver *receiver);
-
-constexpr float kDistEps = 1e-3;
-
 #include "common.h"
 #include "gamedef.h"
 
-#endif

@@ -34,16 +34,26 @@ struct Unit {
     int def;
     Unit(int hp, int att, int def) : hp(hp), att(att), def(def) { }
     Unit() : hp(0), att(0), def(0) { }
-    string info() const {
-        stringstream ss;
-        ss << "hp: " << hp << ", att: " << att << ", def: " << def;
-        return ss.str();
-    }
 };
 
+// Lua Wrapper for Unit.
 struct LuaUnit {
-    const void *unit;
+    const Unit *unit;
     LuaUnit(const Unit *u = nullptr) : unit(u) { }
+
+    bool isdead() const { return unit == nullptr; }
+    int hp() const { return unit->hp; }
+    int att() const { return unit->att; }
+    int def() const { return unit->def; }
+    string info() const { 
+        stringstream ss;
+        if (isdead()) {
+            ss << "Unit is dead";
+        } else {
+            ss << "hp: " << hp() << ", att: " << att() << ", def: " << def();
+        }
+        return ss.str();
+    }
 };
 
 struct LuaEnv {
@@ -53,7 +63,7 @@ public:
         _units.insert(make_pair(1, Unit(200, 4, 2)));
         _units.insert(make_pair(2, Unit(800, 12, 2)));
     }
-    LuaUnit GetUnit(int id) const {
+    LuaUnit GetUnit(int id) {
         auto it = _units.find(id);
         if (it != _units.end()) {
             return LuaUnit(&it->second);
@@ -63,7 +73,6 @@ public:
     } 
 private:
     map<int, Unit> _units;
-    Unit _empty_unit;
 };
 
 int main() {
@@ -72,7 +81,12 @@ int main() {
 
     state["global_float"] = []() { return 1.2; };
 
-    state["Unit"].SetClass<LuaUnit>();
+    state["Unit"].SetClass<LuaUnit>(
+            "hp", &LuaUnit::hp, 
+            "att", &LuaUnit::att,
+            "def", &LuaUnit::def,
+            "info", &LuaUnit::info
+    );
     state["env"].SetObj(env, "unit", &LuaEnv::GetUnit);
 
     state["PointF"].SetClass<PointF>("info", &PointF::info);

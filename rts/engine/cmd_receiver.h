@@ -7,8 +7,7 @@
 * of patent rights can be found in the PATENTS file in the same directory.
 */
 
-#ifndef _CMD_RECEIVER_H_
-#define _CMD_RECEIVER_H_
+#pragma once
 
 #include "cmd.h"
 #include "ui_cmd.h"
@@ -17,7 +16,7 @@
 #include "pq_extend.h"
 #include <map>
 #include <functional>
-// #include "Selene.h"
+#include "lua_env.h"
 
 // receive command and record them in the history.
 class CmdReceiver;
@@ -45,6 +44,8 @@ private:
     int _cmd_next_id;
 
     GameStats _stats;
+
+    unique_ptr<LuaEnv> _lua_env; 
 
     p_queue<CmdIPtr> _immediate_cmd_queue;
     p_queue<CmdDPtr> _durative_cmd_queue;
@@ -89,10 +90,13 @@ public:
     CmdReceiver()
         : _tick(0), _cmd_next_id(0), _cmd_dumper(nullptr), _save_to_history(true),
           _verbose_player_id(INVALID), _verbose_choice(CR_NO_VERBOSE), _path_planning_verbose(false), _use_cmd_comment(false)  {
+         _lua_env.reset(new LuaEnv(this));
     }
 
     const GameStats &GetGameStats() const { return _stats; }
     GameStats &GetGameStats() { return _stats; }
+
+    EnvLua &GetLuaEnv() { return *_lua_env; }
 
     Tick GetTick() const { return _tick; }
     Tick GetNextTick() const { return _tick + 1; }
@@ -152,5 +156,3 @@ public:
 
     ~CmdReceiver() { }
 };
-
-#endif

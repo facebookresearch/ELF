@@ -11,8 +11,7 @@
 #include "cmd.h"
 
 GameEnv::GameEnv() {
-    if (_use_sel) {
-    }
+    _lua_env.reset(new LuaEnv(*this));
 
     // Load the map.
     _map = unique_ptr<RTSMap>(new RTSMap());
