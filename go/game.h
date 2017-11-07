@@ -39,6 +39,7 @@ private:
     GoState _state;
 
     std::vector<Coord> _moves;
+    std::unique_ptr<elf::TarWriter> _tar_writer;
 
 public:
     GoGame(int game_idx, const ContextOptions &context_options, const GameOptions& options);
