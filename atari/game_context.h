@@ -60,7 +60,7 @@ class GameContext {
             }
             auto& game = games[game_idx];
             game.initialize_comm(game_idx, &ai_comm);
-            game.MainLoop(&signal.done());
+            game.MainLoop(signal.done());
         };
         _context->Start(f);
     }
