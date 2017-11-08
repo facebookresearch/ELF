@@ -38,7 +38,7 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
         if (IsIdle(*_receiver, *base)) {
             if (_preload.BuildIfAffordable(WORKER)) {
                 *state_string = "Build worker..Success";
-                store_cmd(base, _B(WORKER), assigned_cmds);
+                store_cmd(base, _B_CURR_LOC(WORKER), assigned_cmds);
             }
         }
     }
@@ -77,7 +77,7 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
             const Unit *u = GameEnv::PickFirstIdle(my_troops[BARRACKS], *_receiver);
             if (u != nullptr) {
                 *state_string = "Build Melee Troop..Success";
-                store_cmd(u, _B(MELEE_ATTACKER), assigned_cmds);
+                store_cmd(u, _B_CURR_LOC(MELEE_ATTACKER), assigned_cmds);
                 _preload.Build(MELEE_ATTACKER);
             }
         }
@@ -89,7 +89,7 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
             const Unit *u = GameEnv::PickFirstIdle(my_troops[BARRACKS], *_receiver);
             if (u != nullptr) {
                 *state_string = "Build Range Troop..Success";
-                store_cmd(u, _B(RANGE_ATTACKER), assigned_cmds);
+                store_cmd(u, _B_CURR_LOC(RANGE_ATTACKER), assigned_cmds);
                 _preload.Build(RANGE_ATTACKER);
             }
         }

@@ -37,7 +37,8 @@ LuaEnv::LuaEnv() : s_{true} {
         "unit_cost", &LuaEnv::UnitCost);
 
     s_["PointF"].SetClass<PointF>(
-        "isvalid", &PointF::IsValid);
+        "isvalid", &PointF::IsValid, 
+        "info", &PointF::info);
 
     s_["global"]["CMD_COMPLETE"] = static_cast<int>(LUA_CMD_COMPLETE);
     s_["global"]["CMD_FAILED"] = static_cast<int>(LUA_CMD_FAILED);
@@ -110,3 +111,18 @@ LuaUnit LuaEnv::GetUnit(UnitId id) const {
     );
 } 
 
+void reg_engine_cmd_lua() {
+    CmdTypeLookup::RegCmdType(CMD_DURATIVE_LUA, "CMD_DURATIVE_LUA");
+    
+    using CmdLuaAttack = CmdDurativeLuaT<UnitId>;
+    SERIALIZER_ANCHOR_FUNC(CmdBase, CmdLuaAttack);
+    // SERIALIZER_ANCHOR_FUNC(CmdDurative, CmdLuaAttack);
+
+    using CmdLuaGather = CmdDurativeLuaT<UnitId, UnitId>;
+    SERIALIZER_ANCHOR_FUNC(CmdBase, CmdLuaGather);
+    // SERIALIZER_ANCHOR_FUNC(CmdDurative, CmdLuaGather);
+    //
+    using CmdLuaBuild = CmdDurativeLuaT<int, PointF>;
+    SERIALIZER_ANCHOR_FUNC(CmdBase, CmdLuaBuild);
+    // SERIALIZER_ANCHOR_FUNC(CmdDurative, CmdLuaBuild);
+}

@@ -231,7 +231,7 @@ bool RuleActor::act_per_unit(const GameEnv &env, const Unit *u, const int *state
     if (ut == BASE && state[STATE_BUILD_WORKER] && idle) {
         if (_preload.BuildIfAffordable(WORKER)) {
             *state_string = "Build worker..Success";
-            store_cmd(u, _B(WORKER), assigned_cmds);
+            store_cmd(u, _B_CURR_LOC(WORKER), assigned_cmds);
         }
     }
 
@@ -258,7 +258,7 @@ bool RuleActor::act_per_unit(const GameEnv &env, const Unit *u, const int *state
         if (state[STATE_BUILD_MELEE_TROOP] && ! region_hist->has_built_melee) {
             if (_preload.BuildIfAffordable(MELEE_ATTACKER)) {
                 *state_string = "Build Melee Troop..Success";
-                store_cmd(u, _B(MELEE_ATTACKER), assigned_cmds);
+                store_cmd(u, _B_CURR_LOC(MELEE_ATTACKER), assigned_cmds);
                 region_hist->has_built_melee = true;
             }
         }
@@ -266,7 +266,7 @@ bool RuleActor::act_per_unit(const GameEnv &env, const Unit *u, const int *state
         if (state[STATE_BUILD_RANGE_TROOP] && ! region_hist->has_built_range) {
             if (_preload.BuildIfAffordable(RANGE_ATTACKER)) {
                 *state_string = "Build Range Troop..Success";
-                store_cmd(u, _B(RANGE_ATTACKER), assigned_cmds);
+                store_cmd(u, _B_CURR_LOC(RANGE_ATTACKER), assigned_cmds);
                 region_hist->has_built_range = true;
             }
         }

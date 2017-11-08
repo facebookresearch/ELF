@@ -119,6 +119,20 @@ private:
 
     sel::State s_;
 
+    void _register_obj(int cmd_id, const std::string &k, const int &v) {
+        s_["g_cmds"][cmd_id][k] = v;
+    }
+
+    void _register_obj(int cmd_id, const std::string &k, const double &v) {
+        s_["g_cmds"][cmd_id][k] = v;
+    }
+
+    void _register_obj(int cmd_id, const std::string &k, const PointF &v) {
+        s_["g_cmds"][cmd_id][k].SetObj(v, 
+            "isvalid", &PointF::IsValid, 
+            "info", &PointF::info);
+    }
+
     template <typename... Ts>
     void _init_cmd(const CmdDurativeLuaT<Ts...> &cmd) {
         s_["g_init_cmd_start"](cmd.cmd_id(), cmd.name());
@@ -127,7 +141,7 @@ private:
 
     template <std::size_t I, typename... Ts>
     typename std::enable_if<I < sizeof... (Ts), void>::type  _init_cmd_impl(const CmdDurativeLuaT<Ts...> &cmd) {
-        s_["g_init_cmd"](cmd.cmd_id(), cmd.key(I), std::get<I>(cmd.data()));
+        _register_obj(cmd.cmd_id(), cmd.key(I), std::get<I>(cmd.data()));
         _init_cmd_impl<I + 1, Ts...>(cmd);
     }
 
@@ -145,6 +159,8 @@ public:
 
     explicit CmdDurativeLuaT(const std::string& name, const std::vector<std::string> &keys, const Ts & ...args) 
         : _name(name), _keys(keys), _data(args...) {
+    }
+    explicit CmdDurativeLuaT() : _name("undefined") { 
     }
     explicit CmdDurativeLuaT(const CmdDurativeLua &c) 
         : CmdDurative(c), _name(c._name), _keys(c._keys), _data(c._data) {
@@ -177,6 +193,7 @@ public:
     const std::string &name() const { return _name; }
     const std::string &key(std::size_t i) const { return _keys[i]; }
     const std::tuple<Ts...> &data() const { return _data; }
+    std::tuple<Ts...> &data() { return _data; }
     
     SERIALIZER_DERIVED(CmdDurativeLua, CmdBase, _name, _keys, _data);
     SERIALIZER_ANCHOR(CmdDurativeLua);
@@ -189,6 +206,4 @@ protected:
 
 };
 
-template <typename... Ts>
-SERIALIZER_ANCHOR_INIT(CmdDurativeLuaT<Ts...>);
-
+void reg_engine_cmd_lua();

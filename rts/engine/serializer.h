@@ -21,6 +21,7 @@
 #include <utility>
 #include <unordered_map>
 #include <memory>
+#include <typeinfo>
 #include "pq_extend.h"
 
 namespace serializer {
@@ -469,7 +470,7 @@ class no_such_obj_exception {
 };
 
 #define SERIALIZER_BASE(BaseTypeName, ...) \
-    virtual std::string _signature() const { return #BaseTypeName; } \
+    virtual std::string _signature() const { return typeid(BaseTypeName).name(); } \
     virtual serializer::saver &Save(serializer::saver &oo) const { \
         serializer::Save(oo, __VA_ARGS__); \
         if (! oo.is_binary()) oo.get() << " "; \
@@ -480,7 +481,7 @@ class no_such_obj_exception {
     } \
 
 #define SERIALIZER_DERIVED(TypeName, BaseTypeName, ...) \
-    std::string _signature() const override { return #TypeName; } \
+    std::string _signature() const override { return typeid(TypeName).name(); } \
     serializer::saver &Save(serializer::saver &oo) const override { \
         BaseTypeName::Save(oo); \
         serializer::Save(oo, __VA_ARGS__); \
@@ -493,7 +494,7 @@ class no_such_obj_exception {
     } \
 
 #define SERIALIZER_DERIVED0(TypeName, BaseTypeName) \
-    std::string _signature() const override { return #TypeName; } \
+    std::string _signature() const override { return typeid(TypeName).name(); } \
 
 #define SERIALIZER_ANCHOR(AnchorTypeName) \
     static std::map<std::string, std::function<AnchorTypeName *()> > _name2obj; \
@@ -522,9 +523,9 @@ class no_such_obj_exception {
         return *p1 < *p2; \
     } \
 
-#define S_ITEM(TypeName) { #TypeName, []() { return new TypeName(); } }
+#define S_ITEM(TypeName) { typeid(TypeName).name(), []() { return new TypeName(); } }
 #define SERIALIZER_ANCHOR_INIT(AnchorTypeName, ...) std::map<std::string, std::function<AnchorTypeName *()> > AnchorTypeName::_name2obj = { S_ITEM(AnchorTypeName), __VA_ARGS__ }
 
-#define SERIALIZER_ANCHOR_FUNC(AnchorTypeName, TypeName) AnchorTypeName::_name2obj[#TypeName] = []() { return new TypeName(); }
+#define SERIALIZER_ANCHOR_FUNC(AnchorTypeName, TypeName) AnchorTypeName::_name2obj[typeid(TypeName).name()] = []() { return new TypeName(); }
 
 #endif

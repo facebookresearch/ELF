@@ -180,6 +180,10 @@ struct PointF {
         return dx * dx + dy * dy;
     }
 
+    string info() const { 
+        return std::to_string(x) + ", " + std::to_string(y);
+    }
+
     SERIALIZER(PointF, x, y);
     HASH(PointF, x, y);
 };

@@ -39,6 +39,7 @@ void GameDef::GlobalInit() {
     reg_engine();
     reg_engine_specific();
     reg_minirts_specific();
+    reg_engine_cmd_lua();
 
     // InitAI.
     AIFactory<AI>::RegisterAI("simple", [](const std::string &spec) {
