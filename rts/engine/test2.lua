@@ -27,7 +27,7 @@ function g_init_cmd(cmd_id, k, v)
     g_cmds[cmd_id][k] = v
 end
 
-function g_cmd_run(cmd_id, env)
+function g_run_cmd(cmd_id, env)
     cmd = g_cmds[cmd_id]
     if cmd == nil then 
         return false
@@ -59,7 +59,7 @@ unit_init_attributes = {
 
 g_funcs = { }
 function g_funcs.attack(env, cmd)
-     -- c_print("In attack!")
+     print("In attack!")
      local target = env:unit(cmd.target)
      local u = env:self()
 

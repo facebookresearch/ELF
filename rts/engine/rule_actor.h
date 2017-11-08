@@ -14,6 +14,7 @@
 #include "cmd_specific.gen.h"
 #include "cmd_interface.h"
 #include "game_env.h"
+#include "lua_env.h"
 #include <sstream>
 #include <algorithm>
 
@@ -26,8 +27,9 @@ custom_enum(FlagState, FLAGSTATE_START = 0, FLAGSTATE_GET_FLAG, FLAGSTATE_ATTACK
     NUM_FLAGSTATE);
 
 // Some easy macros
-#define _A(...) CmdBPtr(new CmdAttack(INVALID, __VA_ARGS__))
 #define _M(...) CmdBPtr(new CmdMove(INVALID, __VA_ARGS__))
+// #define _A(target) CmdBPtr(new CmdAttack(INVALID, target))
+#define _A(target) CmdBPtr(new CmdDurativeLuaT<UnitId>("attack", std::vector<std::string>{ "target" }, target))
 #define _G(...) CmdBPtr(new CmdGather(INVALID, __VA_ARGS__))
 #define _B(...) CmdBPtr(new CmdBuild(INVALID, __VA_ARGS__))
 

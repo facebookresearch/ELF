@@ -33,6 +33,14 @@ LuaEnv::LuaEnv() {
         "send_cmd_change_resource", &LuaEnv::ChangeResource, 
         "send_cmd_create", &LuaEnv::SendCmdCreate,
         "unit_cost", &LuaEnv::UnitCost);
+
+    s_["global"]["CMD_COMPLETE"] = static_cast<int>(LUA_CMD_COMPLETE);
+    s_["global"]["CMD_FAILED"] = static_cast<int>(LUA_CMD_FAILED);
+    s_["global"]["CD_ATTACK"] = static_cast<int>(CD_ATTACK);
+    s_["global"]["CD_MOVE"] = static_cast<int>(CD_MOVE);
+    s_["global"]["CD_BUILD"] = static_cast<int>(CD_BUILD);
+    s_["global"]["CD_GATHER"] = static_cast<int>(CD_GATHER);
+
     s_.Load("test2.lua");
 }
 

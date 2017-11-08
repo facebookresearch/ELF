@@ -110,6 +110,24 @@ public:
         return s;
     }
 
+    template <std::size_t I, typename... Ts>
+    typename std::enable_if<I < sizeof...(Ts), void>::type _save_tuple(const std::tuple<Ts...>& v) {
+        *this << std::get<I>(v);
+        if (! this->is_binary()) this->get() << " ";
+        this->_save_tuple<I + 1, Ts...>(v);
+    }
+
+    template <std::size_t I, typename... Ts>
+    typename std::enable_if<I == sizeof...(Ts), void>::type _save_tuple(const std::tuple<Ts...>&) {
+    }
+
+    template <typename... Ts>
+    friend saver &operator<<(saver &s, const std::tuple<Ts...>& v) {
+        if (! s.is_binary()) s.get() << " ";
+        s._save_tuple<0, Ts...>(v);
+        return s;
+    }
+
     friend saver &operator<<(saver &s, const std::string& v) {
         if (s.is_binary()) {
             int size = v.size();
@@ -249,6 +267,22 @@ public:
             l >> tmp;
             v.push(std::move(tmp));
         }
+        return l;
+    }
+
+    template <std::size_t I, typename... Ts>
+    typename std::enable_if<I < sizeof...(Ts), void>::type _load_tuple(std::tuple<Ts...>& v) {
+        *this >> std::get<I>(v);
+        this->_load_tuple<I + 1, Ts...>(v);
+    }
+
+    template <std::size_t I, typename... Ts>
+    typename std::enable_if<I == sizeof...(Ts), void>::type _load_tuple(std::tuple<Ts...>&) {
+    }
+
+    template <typename... Ts>
+    friend loader &operator>>(loader &l, std::tuple<Ts...>& v) {
+        l._load_tuple<0, Ts...>(v);
         return l;
     }
 

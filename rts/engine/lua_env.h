@@ -65,6 +65,8 @@ class CmdDurativeLuaT;
 class CmdReceiver;
 class GameEnv;
 
+enum CmdReturnLua { LUA_CMD_NORMAL = 0, LUA_CMD_FAILED = 1, LUA_CMD_COMPLETE = 2 };
+
 // LuaWrapper of the environment.
 class LuaEnv {
 public:
@@ -77,14 +79,15 @@ public:
     }
 
     template <typename... Ts>
-    void Run(const CmdDurativeLuaT<Ts...> &cmd) { 
+    CmdReturnLua Run(const CmdDurativeLuaT<Ts...> &cmd) { 
         if (cmd.just_started()) {
             // Initialize its LUA component.
             _init_cmd(cmd);
         }
         cmd_ = &cmd;
         unit_ = GetUnit(cmd_->id());
-        s_["g_run_cmd"](cmd.cmd_id(), *this);
+        return static_cast<CmdReturnLua>(s_["g_run_cmd"](cmd.cmd_id(), *this));
+
     } 
 
     void CDStart(int cd_type);
@@ -121,13 +124,13 @@ private:
     }
 
     template <std::size_t I, typename... Ts>
-    std::enable_if<I < sizeof... (Ts), void>  _init_cmd_impl(const CmdDurativeLuaT<Ts...> &cmd) {
+    typename std::enable_if<I < sizeof... (Ts), void>::type  _init_cmd_impl(const CmdDurativeLuaT<Ts...> &cmd) {
         s_["g_init_cmd"](cmd.cmd_id(), cmd.key(I), std::get<I>(cmd.data()));
         _init_cmd_impl<I + 1, Ts...>(cmd);
     }
 
     template <std::size_t I, typename... Ts>
-    std::enable_if<I == sizeof... (Ts), void>  _init_cmd_impl(const CmdDurativeLuaT<Ts...> &) {
+    typename std::enable_if<I == sizeof... (Ts), void>::type  _init_cmd_impl(const CmdDurativeLuaT<Ts...> &) {
     }
 };
 
@@ -138,15 +141,30 @@ class CmdDurativeLuaT : public CmdDurative {
 public:
     using CmdDurativeLua = CmdDurativeLuaT<Ts...>;
 
-    explicit CmdDurativeLuaT(const std::string& name, const std::vector<std::string> &keys, Ts && ...args) 
+    explicit CmdDurativeLuaT(const std::string& name, const std::vector<std::string> &keys, const Ts & ...args) 
         : _name(name), _keys(keys), _data(args...) {
     }
+
+    string PrintInfo() const override {
+        std::stringstream ss;
+        ss << this->CmdDurative::PrintInfo() << "[lua] ";
+        for (const auto &k : _keys) {
+            ss << k << " ";
+        }
+        return ss.str();
+    }
+
+    CmdType type() const override { return CMD_DURATIVE_LUA; }
 
     bool run(const GameEnv& env, CmdReceiver *receiver) override {
         LuaEnv &lua_env = _get_lua_env(env, receiver);
 
         // Run lua script.
-        return lua_env.Run(*this);
+        CmdReturnLua ret = lua_env.Run(*this);
+        if (ret == LUA_CMD_COMPLETE) {
+            SetDone();
+            return true;
+        } else return ret == LUA_CMD_NORMAL;
     }
     const std::string &name() const { return _name; }
     const std::string &key(std::size_t i) const { return _keys[i]; }

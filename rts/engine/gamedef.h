@@ -70,6 +70,7 @@ struct UnitTemplate {
 
     int GetUnitCost() const { return _build_cost; }
     bool CmdAllowed(CmdType cmd) const {
+        if (cmd == CMD_DURATIVE_LUA) return true;
         return _allowed_cmds.find(cmd) != _allowed_cmds.end();
     }
 };

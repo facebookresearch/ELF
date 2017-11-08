@@ -40,6 +40,9 @@ typedef int CmdType;
 
 #define INVALID_CMD -1
 #define CMD_BASE 0
+#define CMD_DURATIVE 1
+#define CMD_IMMEDIATE 2
+#define CMD_DURATIVE_LUA 3
 
 class CmdReceiver;
 class GameEnv;
@@ -120,6 +123,8 @@ public:
     explicit CmdDurative(UnitId id = INVALID) : CmdBase(id), _done(false) { }
     explicit CmdDurative(Tick t, UnitId id) : CmdBase(t, id), _done(false) { }
 
+    CmdType type() const override { return CMD_DURATIVE; }
+
     // Check whether this command is done. If so, it will be removed from the current queue.
     bool IsDone() const { return _done; }
 
@@ -149,6 +154,8 @@ public:
     explicit CmdImmediate(UnitId id = INVALID) : CmdBase(id) { }
     explicit CmdImmediate(Tick t, UnitId id) : CmdBase(t, id) { }
     bool Run(GameEnv* env, CmdReceiver *receiver){ return run(env, receiver); }
+
+    CmdType type() const override { return CMD_IMMEDIATE; }
 
     virtual ~CmdImmediate() { }
 
