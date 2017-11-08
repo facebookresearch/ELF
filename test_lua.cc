@@ -98,6 +98,7 @@ int main() {
     );
 
 	state.Load("test_lua.lua");
+    state["test"]();
 
     return 0;
 }

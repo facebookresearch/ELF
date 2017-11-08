@@ -25,3 +25,7 @@ print(loc:info())
 bar = nil
 --[[ the bar object will be destroyed the next time a garbage
      collection is run ]]--
+
+function test()
+    print("Hello world!")
+end

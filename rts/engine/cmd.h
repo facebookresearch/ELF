@@ -122,6 +122,7 @@ protected:
 public:
     explicit CmdDurative(UnitId id = INVALID) : CmdBase(id), _done(false) { }
     explicit CmdDurative(Tick t, UnitId id) : CmdBase(t, id), _done(false) { }
+    explicit CmdDurative(const CmdDurative &c) : CmdBase(c), _done(c._done) { }
 
     CmdType type() const override { return CMD_DURATIVE; }
 

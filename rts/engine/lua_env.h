@@ -7,8 +7,8 @@
 // Lua Wrapper for Unit.
 class LuaUnit {
 public:
-    explicit LuaUnit(UnitId id, const Player& player, const Unit *u = nullptr) 
-        : id_(id), player_(&player), unit_(u) { 
+    explicit LuaUnit(Tick tick, UnitId id, const Player& player, const Unit *u = nullptr) 
+        : tick_(tick), id_(id), player_(&player), unit_(u) { 
     }
     explicit LuaUnit() : id_(INVALID), player_(nullptr), unit_(nullptr) {
     }
@@ -35,8 +35,8 @@ public:
 
     PlayerId player_id() const { return unit_->GetPlayerId(); }
 
-    bool CDExpired(Tick tick, int cd_type) {
-        return unit_->GetProperty().CD((CDType)cd_type).Passed(tick); 
+    bool CDExpired(int cd_type) {
+        return unit_->GetProperty().CD((CDType)cd_type).Passed(tick_); 
     }
 
     bool CanSee(const LuaUnit &u) const { 
@@ -54,6 +54,7 @@ public:
     }
 
 private:
+    Tick tick_;
     UnitId id_;
     const Player *player_;
     const Unit *unit_;
@@ -86,8 +87,9 @@ public:
         }
         cmd_ = &cmd;
         unit_ = GetUnit(cmd_->id());
-        return static_cast<CmdReturnLua>(s_["g_run_cmd"](cmd.cmd_id(), *this));
-
+        int ret = s_["g_run_cmd"](cmd.cmd_id(), *this);
+        // std::cout << "Return from LUA (in LuaEnv) ret = " << ret << std::endl;
+        return static_cast<CmdReturnLua>(ret);
     } 
 
     void CDStart(int cd_type);
@@ -144,6 +146,9 @@ public:
     explicit CmdDurativeLuaT(const std::string& name, const std::vector<std::string> &keys, const Ts & ...args) 
         : _name(name), _keys(keys), _data(args...) {
     }
+    explicit CmdDurativeLuaT(const CmdDurativeLua &c) 
+        : CmdDurative(c), _name(c._name), _keys(c._keys), _data(c._data) {
+    }
 
     string PrintInfo() const override {
         std::stringstream ss;
@@ -154,6 +159,9 @@ public:
         return ss.str();
     }
 
+    std::unique_ptr<CmdBase> clone() const override { 
+        return std::unique_ptr<CmdDurativeLua>(new CmdDurativeLua(*this)); 
+    }
     CmdType type() const override { return CMD_DURATIVE_LUA; }
 
     bool run(const GameEnv& env, CmdReceiver *receiver) override {

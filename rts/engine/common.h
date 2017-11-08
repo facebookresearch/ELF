@@ -103,6 +103,7 @@ struct PointF {
     PointF BB() const { PointF c(*this); c.y += 2.0; return c; }
 
     bool IsInvalid() const { return x < -1e17 || y < -1e17; }
+    bool IsValid() const { return ! IsInvalid(); }
     void SetInvalid() { x = -1e18; y = -1e18; }
 
     PointF CCW90() const {

@@ -8,13 +8,15 @@
 
 #include "aux_func.h"
 
-LuaEnv::LuaEnv() {
+LuaEnv::LuaEnv() : s_{true} {
     s_["Unit"].SetClass<LuaUnit>(
         "isdead", &LuaUnit::isdead,
         "p", &LuaUnit::p,
         "hp", &LuaUnit::hp, 
         "att", &LuaUnit::att,
         "def", &LuaUnit::def,
+        "att_r", &LuaUnit::att_r,
+        "player_id", &LuaUnit::player_id,
         "cd_expired", &LuaUnit::CDExpired,
         "can_see", &LuaUnit::CanSee,
         "info", &LuaUnit::info
@@ -34,8 +36,12 @@ LuaEnv::LuaEnv() {
         "send_cmd_create", &LuaEnv::SendCmdCreate,
         "unit_cost", &LuaEnv::UnitCost);
 
+    s_["PointF"].SetClass<PointF>(
+        "isvalid", &PointF::IsValid);
+
     s_["global"]["CMD_COMPLETE"] = static_cast<int>(LUA_CMD_COMPLETE);
     s_["global"]["CMD_FAILED"] = static_cast<int>(LUA_CMD_FAILED);
+    s_["global"]["CMD_NORMAL"] = static_cast<int>(LUA_CMD_NORMAL);
     s_["global"]["CD_ATTACK"] = static_cast<int>(CD_ATTACK);
     s_["global"]["CD_MOVE"] = static_cast<int>(CD_MOVE);
     s_["global"]["CD_BUILD"] = static_cast<int>(CD_BUILD);
@@ -97,6 +103,7 @@ int LuaEnv::UnitCost(int unit_type) {
 
 LuaUnit LuaEnv::GetUnit(UnitId id) const {
     return LuaUnit(
+        receiver_->GetTick(),
         id, 
         env_->GetPlayer(Player::ExtractPlayerId(id)),
         env_->GetUnit(id)

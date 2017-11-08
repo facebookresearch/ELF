@@ -107,7 +107,7 @@ void CmdReceiver::ExecuteDurativeCmds(const GameEnv &env, bool force_verbose) {
     // Execute durative cmds.
     while (! _durative_cmd_queue.empty()) {
         const CmdDPtr& cmd_ref = _durative_cmd_queue.top();
-        cout << "Top: " << cmd_ref->PrintInfo() << endl;
+        // cout << "Top: " << cmd_ref->PrintInfo() << endl;
         if (cmd_ref->tick() > _tick) break;
 
         show_prompt_cond("ExecuteDurativeCmds", cmd_ref, force_verbose);
