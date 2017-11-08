@@ -1,8 +1,14 @@
 #include "lua_env.h"
+#include "cmd_receiver.h"
 #include "game_env.h"
 
-LuaEnv::LuaEnv(CmdReceiver *receiver) 
-    : cmd_receiver_(receiver) {
+#include "cmd.h"
+#include "cmd.gen.h"
+#include "cmd_specific.gen.h"
+
+#include "aux_func.h"
+
+LuaEnv::LuaEnv() {
     s_["Unit"].SetClass<LuaUnit>(
         "isdead", &LuaUnit::isdead,
         "p", &LuaUnit::p,
@@ -25,13 +31,17 @@ LuaEnv::LuaEnv(CmdReceiver *receiver)
         "send_cmd_emit_bullet", &LuaEnv::SendCmdEmitBullet, 
         "send_cmd_harvest_resource", &LuaEnv::HarvestResource, 
         "send_cmd_change_resource", &LuaEnv::ChangeResource, 
-        "send_cmd_create", &LuaEnv::SendCmdCreate,, 
+        "send_cmd_create", &LuaEnv::SendCmdCreate,
         "unit_cost", &LuaEnv::UnitCost);
     s_.Load("test2.lua");
 }
 
+LuaEnv &_get_lua_env(const GameEnv &env, CmdReceiver *receiver) {
+    return receiver->GetLuaEnv().Set(env, receiver);
+}
+
 void LuaEnv::CDStart(int cd_type) {
-    cmd_receiver_->SendCmd(CmdIPtr(new CmdCDStart(cmd_->id(), cmd_type))); 
+    receiver_->SendCmd(CmdIPtr(new CmdCDStart(cmd_->id(), (CDType)cd_type))); 
 }
 
 double LuaEnv::DistSqr(const PointF &target_p) {
@@ -44,37 +54,37 @@ PointF LuaEnv::FindNearbyEmptyPlace(const PointF &p) {
     return nearby_p;
 }
 
-void LuaEnv::MoveTowardsTarget(const PointF &target_p) {
-    micro_move(cmd_receiver_->GetTick(), unit_.get(), env, target_p, cmd_receiver_);
+double LuaEnv::MoveTowardsTarget(const PointF &target_p) {
+    return micro_move(receiver_->GetTick(), unit_.get(), *env_, target_p, receiver_);
 }
 
-void LuaEnv::MoveTowards(const LuaUnit &u) {
-    micro_move(cmd_receiver_->GetTick(), unit_.get(), env, u.p_ref(), cmd_receiver_);
+double LuaEnv::MoveTowards(const LuaUnit &u) {
+    return micro_move(receiver_->GetTick(), unit_.get(), *env_, u.p_ref(), receiver_);
 }
 
 void LuaEnv::SendCmdMeleeAttack(UnitId target, int att) {
-    cmd_receiver_->SendCmd(CmdIPtr(new CmdMeleeAttack(cmd_->id(), target, -att)));
+    receiver_->SendCmd(CmdIPtr(new CmdMeleeAttack(cmd_->id(), target, -att)));
 }
 
 void LuaEnv::SendCmdEmitBullet(UnitId target, int att) {
-    cmd_receiver_->SendCmd(CmdIPtr(new CmdEmitBullet(cmd_->id(), target, unit_.p_ref(), -att, 0.2)));
+    receiver_->SendCmd(CmdIPtr(new CmdEmitBullet(cmd_->id(), target, unit_.p_ref(), -att, 0.2)));
 }
 
 void LuaEnv::SendCmdCreate(int build_type, const PointF &build_p) {
     int cost = UnitCost(build_type);
-    cmd_receiver_->SendCmd(CmdIPtr(new CmdCreate(cmd_->id(), build_type, build_p, unit_.player_id(), cost)));
+    receiver_->SendCmd(CmdIPtr(new CmdCreate(cmd_->id(), (UnitType)build_type, build_p, unit_.player_id(), cost)));
 }
 
 void LuaEnv::HarvestResource(UnitId res, int delta) {
-    cmd_receiver_->SendCmd(CmdIPtr(new CmdHarvest(cmd_->id(), res, -delta)));
+    receiver_->SendCmd(CmdIPtr(new CmdHarvest(cmd_->id(), res, -delta)));
 } 
 
 void LuaEnv::ChangeResource(int delta) {
-    cmd_receiver_->SendCmd(CmdIPtr(new CmdChangePlayerResource(cmd_->id(), unit_.player_id(), delta)));
+    receiver_->SendCmd(CmdIPtr(new CmdChangePlayerResource(cmd_->id(), unit_.player_id(), delta)));
 }
 
 int LuaEnv::UnitCost(int unit_type) {
-    return env_.GetGameDef().unit(unit_type).GetUnitCost();
+    return env_->GetGameDef().unit((UnitType)unit_type).GetUnitCost();
 }
 
 LuaUnit LuaEnv::GetUnit(UnitId id) const {

@@ -90,13 +90,13 @@ public:
     CmdReceiver()
         : _tick(0), _cmd_next_id(0), _cmd_dumper(nullptr), _save_to_history(true),
           _verbose_player_id(INVALID), _verbose_choice(CR_NO_VERBOSE), _path_planning_verbose(false), _use_cmd_comment(false)  {
-         _lua_env.reset(new LuaEnv(this));
+         _lua_env.reset(new LuaEnv);
     }
 
     const GameStats &GetGameStats() const { return _stats; }
     GameStats &GetGameStats() { return _stats; }
 
-    EnvLua &GetLuaEnv() { return *_lua_env; }
+    LuaEnv &GetLuaEnv() { return *_lua_env; }
 
     Tick GetTick() const { return _tick; }
     Tick GetNextTick() const { return _tick + 1; }

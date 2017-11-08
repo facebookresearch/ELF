@@ -15,12 +15,12 @@
 #include "cmd.h"
 #include "cmd.gen.h"
 #include "cmd_specific.gen.h"
+
 #include "aux_func.h"
 
 static const int kMoveToRes = 0;
 static const int kGathering = 1;
 static const int kMoveToBase = 2;
-static const int kNumGatherState = 3;
 
 static const int kMoveToDest = 0;
 static const int kBuilding = 1;
@@ -62,25 +62,14 @@ bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
     const Unit *target = env.GetUnit(_target);
     const Player &player = env.GetPlayer(u->GetPlayerId());
 
-    auto target_dead = [&]() -> bool { return target == nullptr; };
-    auto see_target = [&]() -> bool { return player.GetPrivilege() != PV_NORMAL || player.FilterWithFOW(*target); };
-    auto done = [&]() { _done = true; };
-
-    sel::State &sel_state = env.GetSelState();
-    if (env.GetUseSel()) {
-        sel_state["target_dead"] = target_dead;
-        sel_state["see_target"] = see_target;
-        sel_state["done"] = done;
-    } else {
-        if (target_dead() || see_target())  {
-            // The goal is destroyed or is out of FOW, back to idle.
-            // FilterWithFOW is checked if the agent is not a KNOW_ALL agent.
-            // For example, for AI, they could cheat and attack wherever they want.
-            // For normal player you cannot attack a Unit outside the FOW.
-            //
-            done();
-            return true;
-        }
+    if (target == nullptr || (player.GetPrivilege() == PV_NORMAL && ! player.FilterWithFOW(*target)))  {
+        // The goal is destroyed or is out of FOW, back to idle.
+        // FilterWithFOW is checked if the agent is not a KNOW_ALL agent.
+        // For example, for AI, they could cheat and attack wherever they want.
+        // For normal player you cannot attack a Unit outside the FOW.
+        //
+        _done = true;
+        return true;
     }
 
     //const RTSMap &m = env.GetMap();
@@ -88,39 +77,21 @@ bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
     const PointF &curr = u->GetPointF();
     const PointF &target_p = target->GetPointF();
 
-    auto in_attack_range = [&]() -> bool {
-        int dist_sqr_to_enemy = PointF::L2Sqr(curr, target_p);
-        return dist_sqr_to_enemy <= (property._att_r * property._att_r);
-    };
-    auto unit_attack_range = [&]() -> double { return property._att_r; };
-    auto attack_cd_expire = [&]() -> bool { return property.CD(CD_ATTACK).Passed(_tick); };
-    auto send_melee_attack = [&]() { receiver->SendCmd(CmdIPtr(new CmdMeleeAttack(_id, _target, -property._att))); };
-    auto send_range_attack = [&]() { receiver->SendCmd(CmdIPtr(new CmdEmitBullet(_id, _target, curr, -property._att, 0.2))); };
-    auto start_attack_cd = [&]() { receiver->SendCmd(CmdIPtr(new CmdCDStart(_id, CD_ATTACK))); };
-    auto move_towards_target = [&]() { micro_move(_tick, *u, env, target_p, receiver); };
+    int dist_sqr_to_enemy = PointF::L2Sqr(curr, target_p);
+    bool in_attack_range = (dist_sqr_to_enemy <= property._att_r * property._att_r);
+    // cout << "[" << _id << "] dist_sqr_to_enemy[" << _last_cmd.target_id << "] = " << dist_sqr_to_enemy << endl;
 
-    if (env.GetUseSel()) {
-        sel_state["unit_attack_range"] = unit_attack_range;
-        sel_state["attack_cd_expire"] = attack_cd_expire;
-        sel_state["send_melee_attack"] = send_melee_attack;
-        sel_state["send_range_attack"] = send_range_attack;
-        sel_state["start_attack_cd"] = start_attack_cd;
-        sel_state["move_towards_target"] = move_towards_target;
-        sel_state["cmd_attack"]();
-    } else {
-
-        // Otherwise attack.
-        if (attack_cd_expire() && in_attack_range()) {
-            // Melee delivers attack immediately, long-range will deliver attack via bullet.
-            if (unit_attack_range() <= 1.0) {
-                send_melee_attack();
-            } else {
-                send_range_attack();
-            }
-            start_attack_cd();
-        } else if (! in_attack_range()) {
-            move_towards_target();
+    // Otherwise attack.
+    if (property.CD(CD_ATTACK).Passed(_tick) && in_attack_range) {
+        // Melee delivers attack immediately, long-range will deliver attack via bullet.
+        if (property._att_r <= 1.0) {
+            receiver->SendCmd(CmdIPtr(new CmdMeleeAttack(_id, _target, -property._att)));
+        } else {
+            receiver->SendCmd(CmdIPtr(new CmdEmitBullet(_id, _target, curr, -property._att, 0.2)));
         }
+        receiver->SendCmd(CmdIPtr(new CmdCDStart(_id, CD_ATTACK)));
+    } else if (! in_attack_range) {
+        micro_move(_tick, *u, env, target_p, receiver);
     }
 
     // In both case, continue this action.
@@ -135,20 +106,10 @@ bool CmdGather::run(const GameEnv &env, CmdReceiver *receiver) {
     // Gather resources back and forth.
     const Unit *resource = env.GetUnit(_resource);
     const Unit *base = env.GetUnit(_base);
-
-    auto resource_base_gone = [&]() -> bool { return resource == nullptr || base == nullptr; };
-    auto done = [&]() { _done = true; };
-
-    sel::State &sel_state = env.GetSelState();
-    if (env.GetUseSel()) {
-        sel_state["resource_base_gone"] = resource_base_gone;
-        sel_state["done"] = done;
-    } else {
-        if (resource_base_gone()) {
-            // Either resource or base is gone. so we stop.
-            done();
-            return false;
-        }
+    if (resource == nullptr || base == nullptr) {
+        // Either resource or base is gone. so we stop.
+        _done = true;
+        return false;
     }
     //const RTSMap &m = env.GetMap();
     //const PointF &curr = u->GetPointF();
@@ -159,48 +120,30 @@ bool CmdGather::run(const GameEnv &env, CmdReceiver *receiver) {
     //  cout << "[" << tick << "] [" << cmd_state.state << "]" << " CD_MOVE: "
     //       << property.CD(CD_MOVE).PrintInfo(tick) << "  CD_GATHER: "
     //       << property.CD(CD_GATHER).PrintInfo(tick) << endl;
-
-    auto move_towards_resource = [&]() -> double {return micro_move(_tick, *u, env, res_p, receiver); };
-    auto move_towards_base = [&]() -> double {return micro_move(_tick, *u, env, base_p, receiver); };
-    auto start_gather_cd = [&]() { receiver->SendCmd(CmdIPtr(new CmdCDStart(_id, CD_GATHER))); };
-    auto gather_cd_expire = [&]() -> bool { return property.CD(CD_GATHER).Passed(_tick); };
-    auto harvest_resource = [&](int delta) {receiver->SendCmd(CmdIPtr(new CmdHarvest(_id, _resource, -delta)));};
-    auto change_resource = [&](int delta) {receiver->SendCmd(CmdIPtr(new CmdChangePlayerResource(_id, u->GetPlayerId(), delta)));};
-
-    if (env.GetUseSel()) {
-        sel_state["gather_state"] = _state;
-        sel_state["update_gather_state"] = [&]() { _state = (_state + 1) % kNumGatherState;};
-        sel_state["move_towards_resource"] = move_towards_resource;
-        sel_state["move_towards_base"] = move_towards_base;
-        sel_state["start_gather_cd"] = start_gather_cd;
-        sel_state["gather_cd_expire"] = gather_cd_expire;
-        sel_state["harvest_resource"] = harvest_resource;
-        sel_state["change_resource"] = change_resource;
-        sel_state["cmd_gather"]();
-    } else {
-        switch(_state) {
-            case kMoveToRes:
-                if (move_towards_resource() < kGatherDistSqr) {
-                    start_gather_cd();
-                    _state = kGathering;
-                }
-                break;
-            case kGathering:
-                // Stay for gathering.
-                if (property.CD(CD_GATHER).Passed(_tick)) {
-                    harvest_resource(5);
-                    _state = kMoveToBase;
-                }
-                break;
-            case kMoveToBase:
-                // Get the location of closest base.
-                // base_p = m.FindClosestBase(curr, Player::GetPlayerId(u.GetId()));
-                if (move_towards_base() < kGatherDistSqr) {
-                    change_resource(5);
-                    _state = kMoveToRes;
-                }
-                break;
-        }
+    switch(_state) {
+        case kMoveToRes:
+            if (micro_move(_tick, *u, env, res_p, receiver) < kGatherDistSqr) {
+                // Switch
+                receiver->SendCmd(CmdIPtr(new CmdCDStart(_id, CD_GATHER)));
+                _state = kGathering;
+            }
+            break;
+        case kGathering:
+            // Stay for gathering.
+            if (property.CD(CD_GATHER).Passed(_tick)) {
+                receiver->SendCmd(CmdIPtr(new CmdHarvest(_id, _resource, -5)));
+                _state = kMoveToBase;
+            }
+            break;
+        case kMoveToBase:
+            // Get the location of closest base.
+            // base_p = m.FindClosestBase(curr, Player::GetPlayerId(u.GetId()));
+            if (micro_move(_tick, *u, env, base_p, receiver) < kGatherDistSqr) {
+                // Switch
+                receiver->SendCmd(CmdIPtr(new CmdChangePlayerResource(_id, u->GetPlayerId(), 5)));
+                _state = kMoveToRes;
+            }
+            break;
     }
     return true;
 }
@@ -218,67 +161,39 @@ bool CmdBuild::run(const GameEnv &env, CmdReceiver *receiver) {
     // When cmd.p = INVALID, build nearby.
     // Otherwise move to nearby location of cmd.p and build at cmd.p
     // cout << "Build cd: " << property.CD(CD_BUILD).PrintInfo(tick) << endl;
-    auto done = [&]() { _done = true; };
-    auto check_close = [&]() -> bool {return _p.IsInvalid() || PointF::L2Sqr(curr, _p) < kBuildDistSqr;};
-    auto change_resource = [&]() {receiver->SendCmd(CmdIPtr(new CmdChangePlayerResource(_id, u->GetPlayerId(), -cost)));};
-    auto start_build_cd = [&]() { receiver->SendCmd(CmdIPtr(new CmdCDStart(_id, CD_BUILD))); };
-    auto build_cd_expire = [&]() -> bool { return p.CD(CD_BUILD).Passed(_tick); };
-    auto move_towards_build_p = [&]() {
-        // Move to nearby location.
-        PointF nearby_p;
-        if (find_nearby_empty_place(m, _p, &nearby_p)) {
-            micro_move(_tick, *u, env, _p, receiver);
-        }
-    };
-    PointF build_p;
-    auto check_build_p = [&]() -> bool {
-        if (_p.IsInvalid()) {
-            build_p.SetInvalid();
-            find_nearby_empty_place(m, curr, &build_p);
-        } else {
-            build_p = _p;
-        }
-        return ! build_p.IsInvalid();
-    };
-    auto actual_build = [&]() {receiver->SendCmd(CmdIPtr(new CmdCreate(_id, _build_type, build_p, u->GetPlayerId(), cost)));};
-
-    sel::State &sel_state = env.GetSelState();
-    if (env.GetUseSel()) {
-        sel_state["build_state"] = _state;
-        sel_state["update_build_state"] = [&]() {_state = kBuilding;};
-        sel_state["done"] = done;
-        sel_state["check_close"] = check_close;
-        sel_state["change_resource"] = change_resource;
-        sel_state["start_build_cd"] = start_build_cd;
-        sel_state["build_cd_expire"] = build_cd_expire;
-        sel_state["move_towards_build_p"] = move_towards_build_p;
-        sel_state["check_build_p"] = check_build_p;
-        sel_state["actual_build"] = actual_build;
-        sel_state["cmd_build"]();
-    } else {
-        switch(_state) {
-            case kMoveToDest:
-                // cout << "build_act stage 0 cmd = " << PrintInfo() << endl;
-                if (check_close()) {
-                    // Note that when we are out of money, the command CmdChangePlayerResource will terminate this command.
-                    // cout << "Build cost = " << cost << endl;
-                    change_resource();
-                    start_build_cd();
-                    _state = kBuilding;
+    switch(_state) {
+        case kMoveToDest:
+            // cout << "build_act stage 0 cmd = " << PrintInfo() << endl;
+            if (_p.IsInvalid() || PointF::L2Sqr(curr, _p) < kBuildDistSqr) {
+                // Note that when we are out of money, the command CmdChangePlayerResource will terminate this command.
+                // cout << "Build cost = " << cost << endl;
+                receiver->SendCmd(CmdIPtr(new CmdChangePlayerResource(_id, u->GetPlayerId(), -cost)));
+                receiver->SendCmd(CmdIPtr(new CmdCDStart(_id, CD_BUILD)));
+                _state = kBuilding;
+            } else {
+                // Move to nearby location.
+                PointF nearby_p;
+                if (find_nearby_empty_place(m, _p, &nearby_p)) {
+                    micro_move(_tick, *u, env, _p, receiver);
+                }
+            }
+            break;
+        case kBuilding:
+            // Stay for building.
+            if (p.CD(CD_BUILD).Passed(_tick)) {
+                PointF build_p;
+                if (_p.IsInvalid()) {
+                    build_p.SetInvalid();
+                    find_nearby_empty_place(m, curr, &build_p);
                 } else {
-                    move_towards_build_p();
+                    build_p = _p;
                 }
-                break;
-            case kBuilding:
-                // Stay for building.
-                if (build_cd_expire()) {
-                    if (check_build_p()) {
-                        actual_build();
-                        done();
-                    }
+                if (! build_p.IsInvalid()) {
+                    receiver->SendCmd(CmdIPtr(new CmdCreate(_id, _build_type, build_p, u->GetPlayerId(), cost)));
+                    _done = true;
                 }
-                break;
-        }
+            }
+            break;
     }
     return true;
 }

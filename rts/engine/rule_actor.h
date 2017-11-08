@@ -178,41 +178,6 @@ public:
         return true;
     }
 
-
-    bool ActByLua(const GameEnv &env, string * /*state_string*/, AssignedCmds *assigned_cmds) {
-        sel::State &sel_state = env.GetSelState();
-        vector<UnitId> unit_ids;
-        const Units& units = env.GetUnits();
-        int i = 0;
-        for (auto it = units.begin(); it != units.end(); ++it) {
-            Unit *u = it->second.get();
-            // Let lua deal with properties
-            std::ostringstream oss;
-            oss << "unit" << i;
-            sel_state["unit"/*oss.str().c_str()*/].SetObj<Unit>(*u);
-            i++;
-        }
-        std::vector<CmdInput> unit_cmds;
-        int n_max_cmd = sel_state["n_max_cmd"];
-        for (int i = 0; i < n_max_cmd; ++i) {
-            sel_state["issue_cmd"]();
-            //unit_cmds.emplace_back(_XY(uloc[i], m), _XY(tloc[i], m), ct[i], bt[i]);
-        }
-        std::for_each(unit_cmds.begin(), unit_cmds.end(), [&](CmdInput &ci) { ci.ApplyEnv(env); });
-        for (const CmdInput &cmd : unit_cmds) {
-            // std::cout << cmd.info() << std::endl;
-            CmdBPtr c = cmd.GetCmd();
-            if (c.get() != nullptr) {
-                const Unit *u = env.GetUnit(cmd.id);
-                if (u != nullptr) {
-                    store_cmd(u, std::move(c), assigned_cmds);
-                }
-            }
-        }
-
-        return true;
-    }
-
     static const Unit *closest_dist(const vector<const Unit *>& units, const PointF &p, float *closest) {
         float closest_dist = *closest;
         const Unit *closest_unit = nullptr;

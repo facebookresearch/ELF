@@ -1,10 +1,8 @@
 #pragma once
 #include "selene.h"
-#include "cmd_receiver.h"
 #include "unit.h"
 #include "player.h"
 #include "lua.hpp"
-#include "game_env.h"
 
 // Lua Wrapper for Unit.
 class LuaUnit {
@@ -64,13 +62,17 @@ private:
 template <typename... Ts>
 class CmdDurativeLuaT;
 
+class CmdReceiver;
+class GameEnv;
+
 // LuaWrapper of the environment.
 class LuaEnv {
 public:
-    LuaEnv(CmdReceiver *receiver);
+    LuaEnv();
 
-    LuaEnv &SetGameEnv(const GameEnv &env) {
+    LuaEnv &Set(const GameEnv &env, CmdReceiver *receiver) {
         env_ = &env;
+        receiver_ = receiver;
         return *this;
     }
 
@@ -90,8 +92,8 @@ public:
     LuaUnit GetSelf() const { return unit_; }
 
     PointF FindNearbyEmptyPlace(const PointF &p);
-    void MoveTowardsTarget(const PointF &target_p);
-    void MoveTowards(const LuaUnit &u);
+    double MoveTowardsTarget(const PointF &target_p);
+    double MoveTowards(const LuaUnit &u);
 
     void SendCmdMeleeAttack(UnitId target, int att);
     void SendCmdEmitBullet(UnitId target, int att);
@@ -105,7 +107,7 @@ public:
 
 private:
     const GameEnv *env_ = nullptr;
-    CmdReceiver *cmd_receiver_ = nullptr;
+    CmdReceiver *receiver_ = nullptr;
     const CmdDurative *cmd_ = nullptr;
 
     LuaUnit unit_;
@@ -129,7 +131,7 @@ private:
     }
 };
 
-#include "cmd_receiver.h"
+LuaEnv &_get_lua_env(const GameEnv&, CmdReceiver *);
 
 template <typename... Ts>
 class CmdDurativeLuaT : public CmdDurative {
@@ -141,7 +143,7 @@ public:
     }
 
     bool run(const GameEnv& env, CmdReceiver *receiver) override {
-        LuaEnv &lua_env = receiver->GetLuaEnv().SetGameEnv(env);
+        LuaEnv &lua_env = _get_lua_env(env, receiver);
 
         // Run lua script.
         return lua_env.Run(*this);
@@ -150,7 +152,7 @@ public:
     const std::string &key(std::size_t i) const { return _keys[i]; }
     const std::tuple<Ts...> &data() const { return _data; }
     
-    SERIALIZER_DERIVED(CmdDurativeLua, CmdBase);
+    SERIALIZER_DERIVED(CmdDurativeLua, CmdBase, _name, _keys, _data);
     SERIALIZER_ANCHOR(CmdDurativeLua);
     UNIQUE_PTR_COMPARE(CmdDurativeLua);
 
@@ -158,6 +160,7 @@ protected:
     std::string _name;
     std::vector<std::string> _keys;
     std::tuple<Ts...> _data;
+
 };
 
 template <typename... Ts>

@@ -11,8 +11,6 @@
 #include "cmd.h"
 
 GameEnv::GameEnv() {
-    _lua_env.reset(new LuaEnv(*this));
-
     // Load the map.
     _map = unique_ptr<RTSMap>(new RTSMap());
     _game_counter = -1;

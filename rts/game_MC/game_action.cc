@@ -12,8 +12,6 @@ bool RTSMCAction::Send(const GameEnv &env, CmdReceiver &receiver) {
 
     if (_type == CMD_INPUT) {
         rule_actor.ActByCmd(env, _unit_cmds, &comment, &_cmds);
-    } else if (_type == LUA) {
-        rule_actor.ActByLua(env, &comment, &_cmds);
     } else {
         bool gather_ok = rule_actor.GatherInfo(env, &comment, &_cmds);
         if (! gather_ok) {

@@ -1,4 +1,6 @@
 #include "aux_func.h"
+#include "cmd.h"
+#include "cmd.gen.h"
 
 /*
 static float trunc(float v, float b) {

@@ -9,12 +9,12 @@
 
 #pragma once
 
-#include "cmd_receiver.h"
 #include "lua_env.h"
 #include "unit.h"
 #include "bullet.h"
 #include "map.h"
 #include "player.h"
+#include "cmd_receiver.h"
 #include <random>
 
 class GameEnv {
@@ -49,8 +49,6 @@ private:
     // Whether the game is terminated.
     // This happens if the time tick exceeds max_tick, or there is anything wrong.
     bool _terminated;
-
-    unique_ptr<LuaEnv> _lua_env;
 
 public:
     GameEnv();
