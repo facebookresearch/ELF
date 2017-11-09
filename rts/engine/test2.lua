@@ -67,7 +67,8 @@ function g_funcs.attack(env, cmd)
          return global.CMD_COMPLETE
      end
      local att_r = u:att_r()
-     if u:cd_expired(global.CD_ATTACK) and env:dist_sqr(target:p()) < att_r * att_r then
+     local in_range = env:dist_sqr(target:p()) <= att_r * att_r
+     if u:cd_expired(global.CD_ATTACK) and in_range then
          -- print("Attacking .. ")
          -- Then we need to attack.
          if att_r <= 1.0 then
@@ -75,9 +76,12 @@ function g_funcs.attack(env, cmd)
          else
              env:send_cmd_emit_bullet(cmd.target, u:att())
          end
+         env:cd_start(global.CD_ATTACK)
      else
-         -- print("Moving towards target .. ")
-         env:move_towards(target)
+         if not in_range then
+             -- print("Moving towards target .. ")
+             env:move_towards(target)
+         end
     end
     -- print("Done with Attacking .. ")
 end
@@ -114,19 +118,22 @@ local kBuildDistSqr = 1
 function g_funcs.build(env, cmd)
     local cost = env:unit_cost(cmd.build_type)
     local u = env:self()
+    local p = cmd.p:self()
+
+    -- print("[" .. env:tick() .. "] Cost: " .. cost .. " type: " .. cmd.build_type .. " p: " .. cmd.p:info())
 
     if cmd.build_state == 0 then
-        if not cmd.p:isvalid() or env:dist_sqr(cmd.p) < kBuildDistSqr then
-            env:send_cmd_change_resource(u:player_id(), -cost) 
+        if not p:isvalid() or env:dist_sqr(p) < kBuildDistSqr then
+            env:send_cmd_change_resource(-cost) 
             env:cd_start(global.CD_BUILD)
             cmd.build_state = kBuilding
         else
-            local nearby_p = env:find_nearby_empty_place(cmd.p)
-            env:move_towards_location(nearby_p)
+            local nearby_p = env:find_nearby_empty_place(p)
+            env:move_towards_target(nearby_p)
         end
     elseif cmd.build_state == kBuilding then
         if u:cd_expired(global.CD_BUILD) then
-            local build_p = cmd.p
+            local build_p = p
             if not build_p:isvalid() then
                 build_p = env:find_nearby_empty_place(u:p()) 
             end
