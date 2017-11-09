@@ -23,6 +23,7 @@ LuaEnv::LuaEnv() : s_{true} {
     );
     s_["Env"].SetClass<LuaEnv>(
         "unit", &LuaEnv::GetUnit, 
+        "tick", &LuaEnv::Tick,
         "self", &LuaEnv::GetSelf,
         "cd_start", &LuaEnv::CDStart, 
         "dist_sqr", &LuaEnv::DistSqr, 
@@ -57,6 +58,10 @@ LuaEnv &_get_lua_env(const GameEnv &env, CmdReceiver *receiver) {
 
 void LuaEnv::CDStart(int cd_type) {
     receiver_->SendCmd(CmdIPtr(new CmdCDStart(cmd_->id(), (CDType)cd_type))); 
+}
+
+int LuaEnv::Tick() const {
+    return receiver_->GetTick();
 }
 
 double LuaEnv::DistSqr(const PointF &target_p) {
@@ -103,6 +108,7 @@ int LuaEnv::UnitCost(int unit_type) {
 }
 
 LuaUnit LuaEnv::GetUnit(UnitId id) const {
+    // std::cout << "CurrTick: " << receiver_->GetTick() << std::endl;
     return LuaUnit(
         receiver_->GetTick(),
         id, 

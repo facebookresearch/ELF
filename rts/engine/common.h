@@ -87,6 +87,8 @@ struct PointF {
     PointF(const Coord& c) :  x(c.x), y(c.y) { }
     Coord ToCoord() const { return Coord((int)(x + 0.5), (int)(y + 0.5)); }
 
+    PointF self() const { return *this; }
+
     PointF Left() const { PointF c(*this); c.x -= 1.0; return c; }
     PointF Right() const { PointF c(*this); c.x += 1.0; return c; }
     PointF Up() const { PointF c(*this); c.y -= 1.0; return c; }

@@ -179,6 +179,7 @@ public:
 
     // Some utility function to pick first from units in a group.
     static const Unit *PickFirstIdle(const vector<const Unit *> units, const CmdReceiver &receiver);
+    static const Unit *PickIdleOrGather(const vector<const Unit *> units, const CmdReceiver &receiver);
     static const Unit *PickFirst(const vector<const Unit *> units, const CmdReceiver &receiver, CmdType t) ;
 };
 

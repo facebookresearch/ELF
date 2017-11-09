@@ -58,7 +58,7 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
         *state_string = "Build barracks..NOOP";
         if (_preload.Affordable(BARRACKS)) {
             // cout << "Building barracks!" << endl;
-            const Unit *u = GameEnv::PickFirst(my_troops[WORKER], *_receiver, GATHER);
+            const Unit *u = GameEnv::PickIdleOrGather(my_troops[WORKER], *_receiver);
             if (u != nullptr) {
                 CmdBPtr cmd = _preload.GetBuildBarracksCmd(env);
                 if (cmd != nullptr) {

@@ -10,10 +10,11 @@ public:
     explicit LuaUnit(Tick tick, UnitId id, const Player& player, const Unit *u = nullptr) 
         : tick_(tick), id_(id), player_(&player), unit_(u) { 
     }
-    explicit LuaUnit() : id_(INVALID), player_(nullptr), unit_(nullptr) {
+    explicit LuaUnit() : tick_(0), id_(INVALID), player_(nullptr), unit_(nullptr) {
     }
 
     LuaUnit &operator=(const LuaUnit &u) {
+        tick_ = u.tick_;
         player_ = u.player_;
         unit_ = u.unit_;
         id_ = u.id_;
@@ -36,6 +37,7 @@ public:
     PlayerId player_id() const { return unit_->GetPlayerId(); }
 
     bool CDExpired(int cd_type) {
+        // std::cout << unit_->GetProperty().Draw(tick_) << std::endl;
         return unit_->GetProperty().CD((CDType)cd_type).Passed(tick_); 
     }
 
@@ -95,6 +97,7 @@ public:
     void CDStart(int cd_type);
     double DistSqr(const PointF &target_p);
     LuaUnit GetSelf() const { return unit_; }
+    int Tick() const;
 
     PointF FindNearbyEmptyPlace(const PointF &p);
     double MoveTowardsTarget(const PointF &target_p);
@@ -129,6 +132,7 @@ private:
 
     void _register_obj(int cmd_id, const std::string &k, const PointF &v) {
         s_["g_cmds"][cmd_id][k].SetObj(v, 
+            "self", &PointF::self,
             "isvalid", &PointF::IsValid, 
             "info", &PointF::info);
     }

@@ -9,6 +9,7 @@
 
 #include "game_env.h"
 #include "cmd.h"
+#include "cmd_specific.gen.h"
 
 GameEnv::GameEnv() {
     // Load the map.
@@ -309,6 +310,19 @@ const Unit *GameEnv::PickFirst(const vector<const Unit *> units, const CmdReceiv
     for (const auto *u : units) {
         const CmdDurative *cmd = receiver.GetUnitDurativeCmd(u->GetId());
         if ( (t == INVALID_CMD && cmd == nullptr) || (cmd != nullptr && cmd->type() == t)) return u;
+    }
+    return nullptr;
+}
+
+const Unit *GameEnv::PickIdleOrGather(const vector<const Unit *> units, const CmdReceiver &receiver) {
+    for (const auto *u : units) {
+        const CmdDurative *cmd = receiver.GetUnitDurativeCmd(u->GetId());
+        if (cmd == nullptr) return u;
+        if (cmd->type() == GATHER) return u;
+
+        using CmdGatherLua = CmdDurativeLuaT<UnitId, UnitId>; 
+        const CmdGatherLua *cmd_lua = dynamic_cast<const CmdGatherLua *>(cmd);
+        if (cmd_lua != nullptr && cmd_lua->name() == "gather") return u;
     }
     return nullptr;
 }

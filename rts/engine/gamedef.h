@@ -43,14 +43,16 @@ struct UnitProperty {
     inline UnitId GetLastDamageFrom() const { return _damage_from; }
 
     string Draw(Tick tick) const {
-        string s = make_string(_hp, _max_hp);
+        stringstream ss;
+        ss << "Tick: " << tick << " ";
+        ss << "H: " << _hp << "/" << _max_hp << " ";
         for (int i = 0; i < NUM_COOLDOWN; ++i) {
             CDType t = (CDType)i;
             int cd_val = CD(t)._cd;
             int diff = std::min(tick - CD(t)._last, cd_val);
-            s += make_string(t, diff, cd_val) + " ";
+            ss << t << " [last=" << CD(t)._last << "][diff=" << diff << "][cd=" << cd_val << "]; ";
         }
-        return s;
+        return ss.str();
     }
     inline string PrintInfo() const { return std::to_string(_hp) + "/" + std::to_string(_max_hp); }
 
