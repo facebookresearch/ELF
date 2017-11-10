@@ -10,7 +10,6 @@
 
 using namespace std;
 
-#define BOARD_DIM 19
 class HandicapTable {
 private:
     // handicap table.

@@ -1210,7 +1210,7 @@ void ShowBoard2Buf(const Board *board, ShowChoice choice, char *buf) {
           else strcpy(stone, "O ");
         }
       } else if (s == S_EMPTY) {
-        if (STAR_ON19(i, j))
+        if (STAR(i, j))
           strcpy(stone, "+ ");
         else
           strcpy(stone, ". ");
@@ -1270,7 +1270,7 @@ static int add_one_row(const Board *board, int j, ShowChoice choice, char *buf) 
     Coord c = OFFSETXY(i, j);
     Stone s = board->_infos[c].color;
     if (HAS_STONE(s)) {
-      const char *ss_vis = STAR_ON19(i, j) ? stone_start_vis : stone_vis;
+      const char *ss_vis = STAR(i, j) ? stone_start_vis : stone_vis;
       if (c == board->_last_move && choice >= SHOW_LAST_MOVE) {
         if (s == S_BLACK) sprintf(stone, "%s%s)%s", color_last_black, ss_vis, bg_color_start);
         else sprintf(stone, "%s%s)%s", color_last_white, ss_vis, bg_color_start);
@@ -1279,7 +1279,7 @@ static int add_one_row(const Board *board, int j, ShowChoice choice, char *buf) 
         else sprintf(stone, "%s%s ", fg_white, ss_vis);
       }
     } else if (s == S_EMPTY) {
-      if (STAR_ON19(i, j))
+      if (STAR(i, j))
         sprintf(stone, "%s+ ", fg_black);
       else {
         if (choice == SHOW_ROWS) {
