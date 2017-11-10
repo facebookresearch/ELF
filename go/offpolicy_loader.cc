@@ -68,7 +68,7 @@ bool OfflineLoader::after_reload(const std::string & /*full_name*/, Sgf::iterato
     }
     */
     // If the game record is too short or the boardsize is not what we want, return false.
-    if (sgf.NumMoves() < 10 || sgf.GetBoardSize() != BOARD_DIM) return false;
+    if (sgf.NumMoves() < 10 || sgf.GetBoardSize() != BOARD_SIZE) return false;
     if (need_reload(it)) return false;
 
     // iterator valid, now we change the state accordingly.
@@ -152,7 +152,7 @@ bool OfflineLoader::save_forward_moves(const BoardFeature &bf, vector<int64_t> *
     actions->resize(_options.num_future_actions);
     for (int i = 0; i < _options.num_future_actions; ++i) {
         int action = bf.Coord2Action(future_moves[i].move);
-        if (action < 0 || action >= BOARD_DIM * BOARD_DIM) {
+        if (action < 0 || action >= BOARD_SIZE * BOARD_SIZE) {
             Coord move = future_moves[i].move;
             Stone player = future_moves[i].player;
             // print_context();

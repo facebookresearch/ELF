@@ -6,25 +6,26 @@
 // LICENSE file in the root directory of this source tree. An additional grant
 // of patent rights can be found in the PATENTS file in the same directory.
 //
-
-#ifndef _BOARD_H_
-#define _BOARD_H_
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+//
+#pragma once
 
 #include <stdio.h>
 #include <memory.h>
 #include "common.h"
 
-const int BOARD_SIZE = 19;
-const int BOARD_MARGIN = 1;
-const int BOARD_EXPAND_SIZE = 21;
-const int NUM_INTERSECTION = 361; // (BOARD_SIZE*BOARD_SIZE);
+// This can be changed to 9x9
+constexpr int BOARD_SIZE = 19;
 
-#define MACRO_BOARD_SIZE 19
-#define MACRO_BOARD_EXPAND_SIZE 21
+// 19x19 only
+#define STAR_ON19(i, j) ( ((i) == 3 || (i) == 9 || (i) == 15) && ((j) == 3 || (j) == 9 || (j) == 15) )
+// 9x9 only
+#define STAR_ON9(i, j) ( ( ((i) == 2 || (i) == 6) && ((j) == 2 || (j) == 6) ) || (i == 4 && j == 4) )
+
+#define STAR STAR_ON19
+
+constexpr int BOARD_MARGIN = 1;
+constexpr int BOARD_EXPAND_SIZE = BOARD_SIZE + 2;
+constexpr int NUM_INTERSECTION = BOARD_SIZE*BOARD_SIZE;
 
 typedef unsigned char Status;
 typedef unsigned char ShowChoice;
@@ -72,12 +73,12 @@ Next step
 */
 
 // Maximum possible value of coords.
-#define BOUND_COORD (MACRO_BOARD_EXPAND_SIZE * MACRO_BOARD_EXPAND_SIZE)
+constexpr int BOUND_COORD = BOARD_EXPAND_SIZE * BOARD_EXPAND_SIZE;
 
 // Board
 typedef struct {
   // Board
-  Info _infos[MACRO_BOARD_EXPAND_SIZE * MACRO_BOARD_EXPAND_SIZE];
+  Info _infos[BOARD_EXPAND_SIZE * BOARD_EXPAND_SIZE];
 
   // Group info
   Group _groups[MAX_GROUP];
@@ -127,7 +128,7 @@ typedef struct {
 // Save all candidate moves.
 typedef struct {
   const Board *board;
-  Coord moves[MACRO_BOARD_SIZE*MACRO_BOARD_SIZE];
+  Coord moves[BOARD_SIZE*BOARD_SIZE];
   int num_moves;
 } AllMoves;
 
@@ -141,16 +142,13 @@ typedef struct {
 #define G_ONBOARD(id) ( (id) != MAX_GROUP )
 #define G_HAS_STONE(id) ( (id) > 0 && (id) < MAX_GROUP )
 
-// 19x19 only
-#define STAR_ON19(i, j) ( ((i) == 3 || (i) == 9 || (i) == 15) && ((j) == 3 || (j) == 9 || (j) == 15) )
-
 // Coordinate/Move
 // X first, then y.
-#define X(c) ( (c) % MACRO_BOARD_EXPAND_SIZE - 1 )
-#define Y(c) ( (c) / MACRO_BOARD_EXPAND_SIZE - 1 )
+#define X(c) ( (c) % BOARD_EXPAND_SIZE - 1 )
+#define Y(c) ( (c) / BOARD_EXPAND_SIZE - 1 )
 #define ON_BOARD(x, y) ( (x) >= 0 && (x) < BOARD_SIZE && (y) >= 0 && (y) < BOARD_SIZE )
-#define EXTENDOFFSETXY(x, y)  ( (y) * MACRO_BOARD_EXPAND_SIZE + (x) )
-#define OFFSETXY(x, y)  ( ((y) + BOARD_MARGIN) * MACRO_BOARD_EXPAND_SIZE + (x) + BOARD_MARGIN )
+#define EXTENDOFFSETXY(x, y)  ( (y) * BOARD_EXPAND_SIZE + (x) )
+#define OFFSETXY(x, y)  ( ((y) + BOARD_MARGIN) * BOARD_EXPAND_SIZE + (x) + BOARD_MARGIN )
 
 // Warning, the export offset is different from internal representation
 // Internal representation: y * stride + x
@@ -169,26 +167,26 @@ typedef struct {
 // T/B means y-1/y+1
 #define L(c) ((c) - 1)
 #define R(c) ((c) + 1)
-#define T(c) ((c) - MACRO_BOARD_EXPAND_SIZE)
-#define B(c) ((c) + MACRO_BOARD_EXPAND_SIZE)
-#define LT(c) ((c) - 1 - MACRO_BOARD_EXPAND_SIZE)
-#define LB(c) ((c) - 1 + MACRO_BOARD_EXPAND_SIZE)
-#define RT(c) ((c) + 1 - MACRO_BOARD_EXPAND_SIZE)
-#define RB(c) ((c) + 1 + MACRO_BOARD_EXPAND_SIZE)
+#define T(c) ((c) - BOARD_EXPAND_SIZE)
+#define B(c) ((c) + BOARD_EXPAND_SIZE)
+#define LT(c) ((c) - 1 - BOARD_EXPAND_SIZE)
+#define LB(c) ((c) - 1 + BOARD_EXPAND_SIZE)
+#define RT(c) ((c) + 1 - BOARD_EXPAND_SIZE)
+#define RB(c) ((c) + 1 + BOARD_EXPAND_SIZE)
 #define LL(c) ((c) - 2)
 #define RR(c) ((c) + 2)
-#define TT(c) ((c) - 2*MACRO_BOARD_EXPAND_SIZE)
-#define BB(c) ((c) + 2*MACRO_BOARD_EXPAND_SIZE)
-#define NEIGHBOR4(c1, c2) (abs((c1) - (c2)) == 1 || abs((c1) - (c2)) == MACRO_BOARD_EXPAND_SIZE)
-#define NEIGHBOR8(c1, c2) (abs((c1) - (c2)) == 1 || abs(abs((c1) - (c2)) - MACRO_BOARD_EXPAND_SIZE) < 2)
+#define TT(c) ((c) - 2*BOARD_EXPAND_SIZE)
+#define BB(c) ((c) + 2*BOARD_EXPAND_SIZE)
+#define NEIGHBOR4(c1, c2) (abs((c1) - (c2)) == 1 || abs((c1) - (c2)) == BOARD_EXPAND_SIZE)
+#define NEIGHBOR8(c1, c2) (abs((c1) - (c2)) == 1 || abs(abs((c1) - (c2)) - BOARD_EXPAND_SIZE) < 2)
 
 // Left, top, right, bottom
-static const int delta4[4] = { -1, - MACRO_BOARD_EXPAND_SIZE, +1, MACRO_BOARD_EXPAND_SIZE };
+static const int delta4[4] = { -1, - BOARD_EXPAND_SIZE, +1, BOARD_EXPAND_SIZE };
 
 // LT, LB, RT, RB
-static const int diag_delta4[4] = {  -1 - MACRO_BOARD_EXPAND_SIZE, -1 + MACRO_BOARD_EXPAND_SIZE, 1 - MACRO_BOARD_EXPAND_SIZE, 1 + MACRO_BOARD_EXPAND_SIZE };
+static const int diag_delta4[4] = {  -1 - BOARD_EXPAND_SIZE, -1 + BOARD_EXPAND_SIZE, 1 - BOARD_EXPAND_SIZE, 1 + BOARD_EXPAND_SIZE };
 
-static const int delta8[8] = { -1, - MACRO_BOARD_EXPAND_SIZE, +1, MACRO_BOARD_EXPAND_SIZE, -1 - MACRO_BOARD_EXPAND_SIZE, -1 + MACRO_BOARD_EXPAND_SIZE, 1 - MACRO_BOARD_EXPAND_SIZE, 1 + MACRO_BOARD_EXPAND_SIZE };
+static const int delta8[8] = { -1, - BOARD_EXPAND_SIZE, +1, BOARD_EXPAND_SIZE, -1 - BOARD_EXPAND_SIZE, -1 + BOARD_EXPAND_SIZE, 1 - BOARD_EXPAND_SIZE, 1 + BOARD_EXPAND_SIZE };
 
 // Loop through the group link table
 #define TRAVERSE(b, id, c) \
@@ -372,8 +370,3 @@ bool GetDistanceMap(const Board* board, Stone player, float *data);
 char *get_move_str(Coord m, Stone player, char *buf);
 void util_show_move(Coord m, Stone player, char *buf);
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif

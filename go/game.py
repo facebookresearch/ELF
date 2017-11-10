@@ -114,7 +114,8 @@ if __name__ == '__main__':
 
     import torch
     nbin = 10
-    stats = torch.FloatTensor(nbin, 19, 19)
+    board_size = GC["params"]["board_size"]
+    stats = torch.FloatTensor(nbin, board_size, board_size)
     counts = torch.FloatTensor(10)
 
     game_records_visited = Counter()
