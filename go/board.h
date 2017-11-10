@@ -14,14 +14,14 @@
 #include "common.h"
 
 // This can be changed to 9x9
-constexpr int BOARD_SIZE = 19;
+constexpr int BOARD_SIZE = 9;
 
 // 19x19 only
 #define STAR_ON19(i, j) ( ((i) == 3 || (i) == 9 || (i) == 15) && ((j) == 3 || (j) == 9 || (j) == 15) )
 // 9x9 only
 #define STAR_ON9(i, j) ( ( ((i) == 2 || (i) == 6) && ((j) == 2 || (j) == 6) ) || (i == 4 && j == 4) )
 
-#define STAR STAR_ON19
+#define STAR STAR_ON9
 
 constexpr int BOARD_MARGIN = 1;
 constexpr int BOARD_EXPAND_SIZE = BOARD_SIZE + 2;
