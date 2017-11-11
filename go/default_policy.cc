@@ -337,6 +337,7 @@ DefPolicyMove DefPolicy::Run(function<int ()> rand_func, Board* board, const Reg
             move.type = NORMAL;
             move.gamma = 0;
             if (! TryPlay2(board, move.m, &ids)) {
+                printf("#candidate moves: %d\n", all_moves.num_moves);
                 printf("Move: x = %d, y = %d, str = %s\n", X(move.m), Y(move.m), get_move_str(move.m, board->_next_player, buf));
                 printf("Move (from board) = %s\n", get_move_str(move.m, board->_next_player, buf));
                 ShowBoard(board, SHOW_ALL);
