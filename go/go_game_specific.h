@@ -59,7 +59,7 @@ struct GameOptions {
 
 struct GameState {
     using State = GameState;
-    // Board state 19x19
+    // Board state BOARD_SIZE * BOARD_SIZE 
     std::vector<float> s;
 
     // Next k actions.

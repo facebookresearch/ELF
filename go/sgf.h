@@ -80,7 +80,7 @@ struct SgfHeader {
 
     void Reset() {
         rule = 0;
-        size = 19;
+        size = BOARD_SIZE;
         komi = 7.5;
         handi = 0;
 
