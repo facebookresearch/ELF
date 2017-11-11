@@ -29,6 +29,7 @@ class ContextArgs:
                 ("mcts_verbose", dict(action="store_true")),
                 ("mcts_save_tree_filename", ""),
                 ("mcts_verbose_time", dict(action="store_true")),
+                ("mcts_persistent_tree", dict(action="store_true")),
 
                 ("mcts_use_prior", dict(action="store_true")),
                 ("mcts_baseline",  3.0),
@@ -72,5 +73,6 @@ class ContextArgs:
         mcts.baseline_sigma = args.mcts_baseline_sigma
         mcts.pseudo_games = args.mcts_pseudo_games
         mcts.pick_method = args.mcts_pick_method
+        mcts.persistent_tree = args.mcts_persistent_tree
 
 
