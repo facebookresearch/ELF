@@ -151,7 +151,7 @@ private:
     MEMBER_FUNC_CHECK(reward)
     template <typename Actor, typename std::enable_if<has_func_reward<Actor>::value>::type *U = nullptr>
     float get_reward(const Actor &actor, const Node *node) {
-        return actor.reward(*node->s_ptr());
+        return actor.reward(*node->s_ptr(), node->value());
     }
 
     template <typename Actor, typename std::enable_if<! has_func_reward<Actor>::value>::type *U = nullptr>

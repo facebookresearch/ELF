@@ -11,7 +11,7 @@
 
 #include "board.h"
 #include <vector>
-#include <function>
+#include <functional>
 using namespace std;
 
 enum MoveType { NORMAL = 0, KO_FIGHT, OPPONENT_IN_DANGER, OUR_ATARI, NAKADE, PATTERN, NO_MOVE, NUM_MOVE_TYPE };
@@ -34,7 +34,7 @@ class DefPolicyMoves {
 public:
     int size() const { return moves_.size(); }
 
-    int clear() { moves_.clear(); total_gamma_ = 0; }
+    void clear() { moves_.clear(); total_gamma_ = 0; }
 
     void add(const DefPolicyMove &move) {
         moves_.push_back(move);
@@ -53,9 +53,9 @@ public:
         if (total_gamma_ == 0) return -1;
 
         // Random sample.
-        int stab = rand_func() % total;
+        int stab = rand_func() % total_gamma_;
         // printf("stab = %d/%d\n", stab, total);
-        for (int i = 0; i < moves_.size(); i++) {
+        for (size_t i = 0; i < moves_.size(); i++) {
             int gamma = moves_[i].gamma;
             if (stab < gamma) return i;
             stab -= gamma;
@@ -69,7 +69,7 @@ public:
         ShowBoard(board_, SHOW_LAST_MOVE);
         const auto &m = moves_[i];
         util_show_move(m.m, board_->_next_player, buf);
-        printf("Type = %s, gamma = %d\n", m.type, m.gamma);
+        printf("Type = %u, gamma = %d\n", m.type, m.gamma);
     }
 
     DefPolicyMoves(const Board *board) 
@@ -103,8 +103,6 @@ private:
 
     using CheckFunc = function<void (DefPolicy::*)(DefPolicyMoves *, const Region *)>;
     static const CheckFunc kCheckFuncs[NUM_MOVE_TYPE];  
-
-    vector<CheckFunc> funcs_;
 
     // Check whether there is any ko fight we need to take part in. (Not working now)
     void check_ko_fight(DefPolicyMoves *m, const Region *r);

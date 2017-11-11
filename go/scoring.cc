@@ -11,6 +11,10 @@
 
 #include "ownermap.h"
 
+OwnerMap::OwnerMap() {
+    Clear();
+}
+
 void OwnerMap::Clear() {
 	total_ownermap_count_ = 0;
 	memset(ownermap_, 0, sizeof(ownermap_));
@@ -53,9 +57,9 @@ Stone OwnerMap::JudgeOne(int i, int j, float ratio) {
 
 void OwnerMap::GetDeadStones(const Board *board, float ratio, Stone *livedead, Stone *group_stats) {
 	// Threshold the ownermap and determine.
-	Stone *internal_group_stats = NULL;
+	Stone *internal_group_stats = nullptr;
 
-	if (group_stats == NULL) {
+	if (group_stats == nullptr) {
 		internal_group_stats = (Stone *)malloc(board->_num_groups * sizeof(Stone));
 		group_stats = internal_group_stats;
 	}
@@ -85,7 +89,7 @@ void OwnerMap::GetDeadStones(const Board *board, float ratio, Stone *livedead, S
 		}
 	}
 	// Once we get the group stats, we thus can fill the ownermap.
-	if (livedead != NULL) {
+	if (livedead != nullptr) {
 		// Zero out everything else.
 		memset(livedead, S_EMPTY, BOARD_SIZE * BOARD_SIZE * sizeof(Stone));
 		for (int i = 1; i < board->_num_groups; ++i) {
@@ -95,10 +99,10 @@ void OwnerMap::GetDeadStones(const Board *board, float ratio, Stone *livedead, S
 		}
 	}
 
-	if (internal_group_stats != NULL) free(internal_group_stats);
+	if (internal_group_stats != nullptr) free(internal_group_stats);
 }
 
-void OwnerMap::Get(float ratio, Stone *ownermap) {
+void OwnerMap::get(float ratio, Stone *ownermap) {
 	// Threshold the ownermap and determine.
 	for (int i = 0; i < BOARD_SIZE; ++i) {
 		for (int j = 0; j < BOARD_SIZE; ++j) {
@@ -108,7 +112,7 @@ void OwnerMap::Get(float ratio, Stone *ownermap) {
 	}
 }
 
-void OwnerMap::GetFloat(Stone player, float *ownermap) {
+void OwnerMap::get_float(Stone player, float *ownermap) {
 	for (int i = 0; i < BOARD_SIZE; ++i) {
 		for (int j = 0; j < BOARD_SIZE; ++j) {
 			Coord c = OFFSETXY(i, j);
@@ -128,7 +132,7 @@ void OwnerMap::ShowDeadStones(const Board *board, const Stone *stones) {
 	char buf[2000];
 	int len = 0;
 	len += sprintf(buf + len, "   ");
-    len += sprintf(buf + len, kBoardPrompt);
+    len += sprintf(buf + len, BOARD_PROMPT);
     len += sprintf(buf + len, "\n"); 
 
 	char stone[3];
@@ -158,7 +162,7 @@ void OwnerMap::ShowDeadStones(const Board *board, const Stone *stones) {
 	}
 
 	len += sprintf(buf + len, "   ");
-    len += sprintf(buf + len, kBoardPrompt);
+    len += sprintf(buf + len, BOARD_PROMPT);
 	// Finally print
 	printf(buf);
 }

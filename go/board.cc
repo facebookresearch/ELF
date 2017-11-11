@@ -65,8 +65,8 @@ bool PlaceHandicap(Board *board, int x, int y, Stone player) {
 }
 
 void CopyBoard(Board *dst, const Board* src) {
-  assert(dst, "dst cannot be NULL");
-  assert(src, "src cannot be NULL");
+  assert(dst, "dst cannot be nullptr");
+  assert(src, "src cannot be nullptr");
   memcpy(dst, src, sizeof(Board));
 }
 
@@ -165,11 +165,11 @@ bool IsSelfAtariXY(const Board *board, const GroupId4 *ids, int x, int y, Stone 
   return IsSelfAtari(board, ids, OFFSETXY(x, y), player, num_stones);
 }
 
-// If num_stones is not NULL, return the number of stones for the to-be-formed atari group.
+// If num_stones is not nullptr, return the number of stones for the to-be-formed atari group.
 bool IsSelfAtari(const Board *board, const GroupId4 *ids, Coord c, Stone player, int *num_stones) {
-  if (board == NULL) error("SelfAtari: board cannot be NULL!\n");
+  if (board == nullptr) error("SelfAtari: board cannot be nullptr!\n");
   GroupId4 ids2;
-  if (ids == NULL) {
+  if (ids == nullptr) {
     // Then we should run TryPlay2 by ourself.
     if (! TryPlay(board, X(c), Y(c), player, &ids2)) return false;
     ids = &ids2;
@@ -193,7 +193,7 @@ bool IsSelfAtari(const Board *board, const GroupId4 *ids, Coord c, Stone player,
 
   short id = b2._infos[c].id;
   if (b2._groups[id].liberties == 1) {
-    if (num_stones != NULL) *num_stones = b2._groups[id].stones;
+    if (num_stones != nullptr) *num_stones = b2._groups[id].stones;
     return true;
   } else {
     return false;
@@ -337,7 +337,7 @@ bool IsMoveGivingSimpleKo(const Board *board, const GroupId4 *ids, Stone player)
 
 Coord GetSimpleKoLocation(const Board *board, Stone *player) {
   if (board->_ko_age == 0 && board->_simple_ko != M_PASS) {
-    if (player != NULL) *player = board->_simple_ko_color;
+    if (player != nullptr) *player = board->_simple_ko_color;
     return board->_simple_ko;
   } else {
     return M_PASS;
@@ -723,7 +723,7 @@ void FindAllCandidateMovesInRegion(const Board* board, const Region *r, Stone pl
   int self_atari_count = 0;
 
   int left, top, right, bottom;
-  if (r == NULL) {
+  if (r == nullptr) {
     left = 0;
     top = 0;
     right = BOARD_SIZE;
@@ -781,7 +781,7 @@ void FindAllValidMoves(const Board* board, Stone player, AllMoves *all_moves) {
 
 void FindAllValidMovesInRegion(const Board *board, const Region *r, AllMoves *all_moves) {
   int left, top, right, bottom;
-  if (r == NULL) {
+  if (r == nullptr) {
     left = 0;
     top = 0;
     right = BOARD_SIZE;
@@ -827,7 +827,7 @@ void Expand(Region *r, Coord c) {
 }
 
 void GetBoardBBox(const Board *board, Region *r) {
-  assert(r, "Input region cannot be NULL!");
+  assert(r, "Input region cannot be nullptr!");
   // Get the bounding box that covers the stones.
   r->left = BOARD_SIZE;
   r->top = BOARD_SIZE;
@@ -977,7 +977,7 @@ static bool GivenGroupLives(const Board *board, short group_idx) {
 }
 
 bool GroupInRegion(const Board *board, short group_idx, const Region *r) {
-  if (r == NULL) return true;
+  if (r == nullptr) return true;
   bool is_in = false;
   TRAVERSE(board, group_idx, c) {
     if (IsIn(r, c)) {
@@ -995,7 +995,7 @@ bool OneGroupLives(const Board *board, Stone player, const Region *r) {
     if (board->_groups[i].color != player) continue;
     // Check if this group is in the region. As long as any of its stones is in the region, we should check it.
     bool is_in = false;
-    if (r != NULL) {
+    if (r != nullptr) {
       TRAVERSE(board, i, c) {
         if (IsIn(r, c)) {
           is_in = true;
@@ -1102,7 +1102,7 @@ bool Play(Board *board, const GroupId4 *ids) {
   bool merge_two_groups_called = false;
   for (int i = 0; i < 4; ++i) {
     // printf("Analysis #%d: id = %d, color = %d, liberty = %d\n", i, ids->ids[i], ids->colors[i], ids->group_liberties[i]);
-    // Skip NULL group.
+    // Skip nullptr group.
     if (ids->ids[i] == 0) continue;
     unsigned short id = ids->ids[i];
     Group* g = &board->_groups[id];
@@ -1194,7 +1194,7 @@ void ShowBoard2Buf(const Board *board, ShowChoice choice, char *buf) {
   char buf2[30];
   int len = 0;
   str_concat(buf, &len, "   ");
-  str_concat(buf, &len, kBoardPrompt);
+  str_concat(buf, &len, BOARD_PROMPT);
   str_concat(buf, &len, "\n");
 
   char stone[3];
@@ -1213,7 +1213,7 @@ void ShowBoard2Buf(const Board *board, ShowChoice choice, char *buf) {
           else strcpy(stone, "O ");
         }
       } else if (s == S_EMPTY) {
-        if (STAR(i, j))
+        if (STAR_ON(i, j))
           strcpy(stone, "+ ");
         else
           strcpy(stone, ". ");
@@ -1230,7 +1230,7 @@ void ShowBoard2Buf(const Board *board, ShowChoice choice, char *buf) {
     str_concat(buf, &len, "\n");
   }
   str_concat(buf, &len, "   ");
-  str_concat(buf, &len, kBoardPrompt);
+  str_concat(buf, &len, BOARD_PROMPT);
   if (choice == SHOW_ALL) {
     len += sprintf(buf + len, "\n   #Groups = %d", board->_num_groups - 1);
     len += sprintf(buf + len, "\n   #ply = %d", board->_ply);
@@ -1250,7 +1250,7 @@ void ShowBoard(const Board *board, ShowChoice choice) {
 
 static int add_title(char *buf) {
   int len = sprintf(buf, "   ");
-  len += sprintf(buf, kBoardPrompt);
+  len += sprintf(buf, BOARD_PROMPT);
   len += sprintf(buf, "   ");
   return len;
 }
@@ -1277,7 +1277,7 @@ static int add_one_row(const Board *board, int j, ShowChoice choice, char *buf) 
     Coord c = OFFSETXY(i, j);
     Stone s = board->_infos[c].color;
     if (HAS_STONE(s)) {
-      const char *ss_vis = STAR(i, j) ? stone_start_vis : stone_vis;
+      const char *ss_vis = STAR_ON(i, j) ? stone_start_vis : stone_vis;
       if (c == board->_last_move && choice >= SHOW_LAST_MOVE) {
         if (s == S_BLACK) sprintf(stone, "%s%s)%s", color_last_black, ss_vis, bg_color_start);
         else sprintf(stone, "%s%s)%s", color_last_white, ss_vis, bg_color_start);
@@ -1286,7 +1286,7 @@ static int add_one_row(const Board *board, int j, ShowChoice choice, char *buf) 
         else sprintf(stone, "%s%s ", fg_white, ss_vis);
       }
     } else if (s == S_EMPTY) {
-      if (STAR(i, j))
+      if (STAR_ON(i, j))
         sprintf(stone, "%s+ ", fg_black);
       else {
         if (choice == SHOW_ROWS) {
@@ -1590,8 +1590,8 @@ float GetFastScore(const Board* board, const int rule) {
 }
 
 float GetTrompTaylorScore(const Board *board, const Stone *group_stats, Stone *territory) {
-  Stone * internal_territory = NULL;
-  if (territory == NULL) {
+  Stone * internal_territory = nullptr;
+  if (territory == nullptr) {
     internal_territory = new Stone[BOARD_SIZE * BOARD_SIZE];
     territory = internal_territory;
   }
@@ -1615,7 +1615,7 @@ float GetTrompTaylorScore(const Board *board, const Stone *group_stats, Stone *t
         if (*t == S_EMPTY) {
           // Get the true color of the stone
           unsigned char id = board->_infos[c].id;
-          if (group_stats != NULL && (group_stats[id] & S_DEAD)) s = OPPONENT(s);
+          if (group_stats != nullptr && (group_stats[id] & S_DEAD)) s = OPPONENT(s);
           *t = s;
           territories[s] ++;
         }
@@ -1649,7 +1649,7 @@ float GetTrompTaylorScore(const Board *board, const Stone *group_stats, Stone *t
               if (*t == S_EMPTY) {
                 // Get the true color of the stone
                 unsigned char id = board->_infos[ccc].id;
-                if (group_stats != NULL && (group_stats[id] & S_DEAD)) sss = OPPONENT(sss);
+                if (group_stats != nullptr && (group_stats[id] & S_DEAD)) sss = OPPONENT(sss);
                 *t = sss;
                 territories[sss] ++;
               }

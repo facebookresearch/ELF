@@ -4,6 +4,8 @@
 #include "sgf.h"
 #include "board.h"
 #include "board_feature.h"
+#include "scoring.h"
+#include "default_policy.h"
 #include <sstream>
 #include <map>
 #include <vector>
@@ -36,6 +38,8 @@ public:
     static HandicapTable &handi_table() { return _handi_table; }
 
     Board &board() { return _board; }
+    const Board &board() const { return _board; }
+
     bool JustStarted() const { return _board._ply == 1; }
     int GetPly() const { return _board._ply; }
 
@@ -65,6 +69,21 @@ public:
         char buf[2000];
         ShowBoard2Buf(&_board, SHOW_LAST_MOVE, buf);
         return string(buf);
+    }
+
+    // Use def policy and TT score to get an estimate of the value.
+    float Evaluate(function<int ()> rand_func, int num_trial = 5) const {
+        OwnerMap ownermap;
+        DefPolicy def_policy;
+        const int max_depth = BOARD_SIZE * BOARD_SIZE * 2 - _board._ply;
+        for (int i = 0; i < num_trial; ++i) {
+            Board board2;
+            CopyBoard(&board2, &_board);
+            def_policy.Run(rand_func, &board2, nullptr, max_depth, false);
+            ownermap.Accumulate(&board2);
+        }
+        
+        return ownermap.GetTTScore(&_board, nullptr, nullptr);
     }
 
 protected:

@@ -12,14 +12,13 @@
 
 class OwnerMap {
 public:
+    OwnerMap();
+
 	// Accumulating Ownermap
 	void Clear();
 	void Accumulate(const Board *board);
 
 	void GetDeadStones(const Board *board, float ratio, Stone *livedead, Stone *group_stats) const;
-
-	void Get(float ratio, Stone *ownermap) const;
-	void GetFloat(Stone player, float *ownermap) const;
 
 	// Get Trompy-Taylor score directly.
 	// If livedead != NULL, then livedead is a BOARD_SIZE * BOARD_SIZE array. Otherwise this output is ignored.
@@ -35,5 +34,8 @@ private:
 	int total_ownermap_count_;
 
 	// Histogram. S_EMPTY (S_UNKNOWN), S_BLACK, S_WHITE, S_OFF_BOARD (S_DAME)
-	int ownermap_[MACRO_BOARD_SIZE][MACRO_BOARD_SIZE][4];
+	int ownermap_[BOARD_SIZE][BOARD_SIZE][4];
+
+	void get(float ratio, Stone *ownermap) const;
+	void get_float(Stone player, float *ownermap) const;
 };

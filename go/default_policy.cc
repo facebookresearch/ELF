@@ -16,12 +16,6 @@ DefPolicy::DefPolicy() {
     // Set default parameters.
     for (int i = 0; i < NUM_MOVE_TYPE; ++i) switches_[i] = true;
 
-    for (int i = 0; i < NUM_MOVE_TYPE; ++i) {
-        if (switches_[i]) {
-            funcs_.push_back(kCheckFuncs_[i]);
-        }
-    }
-
     // Allow self-atari moves for groups with <= 3 stones.
     thres_allow_atari_stone_ = 3;
 
@@ -43,9 +37,9 @@ void DefPolicy::compute_policy(DefPolicyMoves *m, const Region *r) {
     // Initialize moves.
     m->clear();
 
-    for (const auto &f : funcs_) {
-        if (f != nullptr) {
-            f(m, r);
+    for (size_t i = 0; i < NUM_MOVE_TYPE; ++i) {
+        if (switches_[i] && kCheckFuncs_[i] != nullptr) {
+            kCheckFuncs_[i](m, r);
         }
     }
 }

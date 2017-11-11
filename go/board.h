@@ -18,14 +18,14 @@ constexpr int BOARD_SIZE = 9;
 
 // 19x19 only
 #define STAR_ON19(i, j) ( ((i) == 3 || (i) == 9 || (i) == 15) && ((j) == 3 || (j) == 9 || (j) == 15) )
-const char *kBoard19Prompt = "A B C D E F G H J K L M N O P Q R S T";
+#define BOARD19_PROMPT "A B C D E F G H J K L M N O P Q R S T"
 
 // 9x9 only
 #define STAR_ON9(i, j) ( ( ((i) == 2 || (i) == 6) && ((j) == 2 || (j) == 6) ) || (i == 4 && j == 4) )
-const char *kBoard9Prompt = "A B C D E F G H J";
+#define BOARD9_PROMPT "A B C D E F G H J"
 
-#define STAR STAR_ON9
-const char *kBoardPrompt = kBoard9Prompt;
+#define STAR_ON STAR_ON9
+#define BOARD_PROMPT BOARD9_PROMPT 
 
 constexpr int BOARD_MARGIN = 1;
 constexpr int BOARD_EXPAND_SIZE = BOARD_SIZE + 2;
