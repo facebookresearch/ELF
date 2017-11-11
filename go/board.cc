@@ -1193,7 +1193,10 @@ void ShowBoard2Buf(const Board *board, ShowChoice choice, char *buf) {
   // Warning [TODO]: possibly buffer overflow.
   char buf2[30];
   int len = 0;
-  str_concat(buf, &len, "   A B C D E F G H J K L M N O P Q R S T\n");
+  str_concat(buf, &len, "   ");
+  str_concat(buf, &len, kBoardPrompt);
+  str_concat(buf, &len, "\n");
+
   char stone[3];
   stone[2] = 0;
   for (int j = BOARD_SIZE - 1; j >= 0; --j) {
@@ -1226,7 +1229,8 @@ void ShowBoard2Buf(const Board *board, ShowChoice choice, char *buf) {
     }
     str_concat(buf, &len, "\n");
   }
-  str_concat(buf, &len, "   A B C D E F G H J K L M N O P Q R S T");
+  str_concat(buf, &len, "   ");
+  str_concat(buf, &len, kBoardPrompt);
   if (choice == SHOW_ALL) {
     len += sprintf(buf + len, "\n   #Groups = %d", board->_num_groups - 1);
     len += sprintf(buf + len, "\n   #ply = %d", board->_ply);
@@ -1245,7 +1249,10 @@ void ShowBoard(const Board *board, ShowChoice choice) {
 }
 
 static int add_title(char *buf) {
-  return sprintf(buf, "   A B C D E F G H J K L M N O P Q R S T   ");
+  int len = sprintf(buf, "   ");
+  len += sprintf(buf, kBoardPrompt);
+  len += sprintf(buf, "   ");
+  return len;
 }
 
 static int add_one_row(const Board *board, int j, ShowChoice choice, char *buf) {
