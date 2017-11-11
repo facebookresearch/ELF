@@ -32,6 +32,7 @@ struct DefPolicyMove {
 // A queue for adding candidate moves.
 class DefPolicyMoves {
 public:
+    const Board *board() const { return board_; }
     int size() const { return moves_.size(); }
 
     void clear() { moves_.clear(); total_gamma_ = 0; }
@@ -88,21 +89,18 @@ private:
 class DefPolicy {
 public:
     DefPolicy();
-	void PrintParams();
-	DefPolicyMove Run(function<int ()>, Board* board, const Region *r, int max_depth, bool verbose);
+    void PrintParams();
+    DefPolicyMove Run(function<int ()>, Board* board, const Region *r, int max_depth, bool verbose);
 
 private:
-	bool switches_[NUM_MOVE_TYPE];
-	// Try to save our group in atari if its size is >= thres_save_atari.
-	int thres_save_atari_;
-	// Allow self-atari move if the group size is smaller than thres_allow_atari_stone (before the new move is put).
-	int thres_allow_atari_stone_;
-	// Reduce opponent liberties if its liberties <= thres_opponent_libs and #stones >= thres_opponent_stones.
-	int thres_opponent_libs_;
-	int thres_opponent_stones_;
-
-    using CheckFunc = function<void (DefPolicy::*)(DefPolicyMoves *, const Region *)>;
-    static const CheckFunc kCheckFuncs[NUM_MOVE_TYPE];  
+    bool switches_[NUM_MOVE_TYPE];
+    // Try to save our group in atari if its size is >= thres_save_atari.
+    int thres_save_atari_;
+    // Allow self-atari move if the group size is smaller than thres_allow_atari_stone (before the new move is put).
+    int thres_allow_atari_stone_;
+    // Reduce opponent liberties if its liberties <= thres_opponent_libs and #stones >= thres_opponent_stones.
+    int thres_opponent_libs_;
+    int thres_opponent_stones_;
 
     // Check whether there is any ko fight we need to take part in. (Not working now)
     void check_ko_fight(DefPolicyMoves *m, const Region *r);
@@ -121,13 +119,13 @@ private:
 
     Coord get_moves_from_group(DefPolicyMoves *m, unsigned char id, MoveType type);
 
-	// Utilities for playing default policy. Referenced from Pachi's code.
-	void compute_policy(DefPolicyMoves *m, const Region *r);
+    // Utilities for playing default policy. Referenced from Pachi's code.
+    void compute_policy(DefPolicyMoves *m, const Region *r);
 
-	// Sample the default policy, if ids != NULL, then only sample valid moves and save the ids information for the next play.
-	bool sample(DefPolicyMoves *ms, function<int ()> rand_func, bool verbose, GroupId4 *ids, DefPolicyMove *m);
+    // Sample the default policy, if ids != NULL, then only sample valid moves and save the ids information for the next play.
+    bool sample(DefPolicyMoves *ms, function<int ()> rand_func, bool verbose, GroupId4 *ids, DefPolicyMove *m);
 
     // Old version of default policy, not used.
-	bool simple_sample(const DefPolicyMoves *ms, function<int ()>, GroupId4 *ids, DefPolicyMove *m);
+    bool simple_sample(const DefPolicyMoves *ms, function<int ()>, GroupId4 *ids, DefPolicyMove *m);
 }; 
 

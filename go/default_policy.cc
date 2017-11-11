@@ -2,16 +2,6 @@
 // #include "pattern.h"
 #include "assert.h"
 
-const CheckFunc DefPolicy::kCheckFuncs_[NUM_MOVE_TYPE] = {
-    nullptr,
-    DefPolicy::check_ko_fight,
-    DefPolicy::check_opponent_in_danger,
-    DefPolicy::check_our_atari,
-    DefPolicy::check_nakade,
-    DefPolicy::check_pattern,
-    nullptr,
-};
-
 DefPolicy::DefPolicy() {
     // Set default parameters.
     for (int i = 0; i < NUM_MOVE_TYPE; ++i) switches_[i] = true;
@@ -33,13 +23,28 @@ void DefPolicy::PrintParams() {
     }
 }
 
+using CheckFunc = function<void (DefPolicyMoves *, const Region *)>;
+
 void DefPolicy::compute_policy(DefPolicyMoves *m, const Region *r) {
     // Initialize moves.
     m->clear();
 
+    using std::placeholders::_1;
+    using std::placeholders::_2;
+
+    static CheckFunc kCheckFuncs[NUM_MOVE_TYPE] = {
+        nullptr,
+        std::bind(&DefPolicy::check_ko_fight, this, _1, _2),
+        std::bind(&DefPolicy::check_opponent_in_danger, this, _1, _2),
+        std::bind(&DefPolicy::check_our_atari, this, _1, _2),
+        std::bind(&DefPolicy::check_nakade, this, _1, _2),
+        std::bind(&DefPolicy::check_pattern, this, _1, _2),
+        nullptr,
+    };
+
     for (size_t i = 0; i < NUM_MOVE_TYPE; ++i) {
-        if (switches_[i] && kCheckFuncs_[i] != nullptr) {
-            kCheckFuncs_[i](m, r);
+        if (switches_[i] && kCheckFuncs[i] != nullptr) {
+            kCheckFuncs[i](m, r);
         }
     }
 }
@@ -60,7 +65,7 @@ bool DefPolicy::sample(DefPolicyMoves *ms, function<int ()> rand_func, bool verb
             ms->PrintInfo(i);
         }
 
-        if (ids == NULL || TryPlay2(ms->board, ms->at(i).m, ids)) {
+        if (ids == NULL || TryPlay2(ms->board(), ms->at(i).m, ids)) {
             *m = ms->at(i);
             return true;
         }
@@ -75,7 +80,7 @@ bool DefPolicy::simple_sample(const DefPolicyMoves *ms, function<int ()> rand_fu
     if (ms->size() == 0) return false;
 
     int i = rand_func() % ms->size();
-    if (ids == NULL || TryPlay2(ms->board, ms->at(i).m, ids)) {
+    if (ids == NULL || TryPlay2(ms->board(), ms->at(i).m, ids)) {
         *m = ms->at(i);
         return true;
     }
@@ -84,7 +89,7 @@ bool DefPolicy::simple_sample(const DefPolicyMoves *ms, function<int ()> rand_fu
 
 
 // Utilities for playing default policy. Referenced from Pachi's code.
-void DefPolicy::check_ko_fight(DefPolicyMoves *m, const Region *r) {
+void DefPolicy::check_ko_fight(DefPolicyMoves *, const Region *) {
     // Need to implement ko age.
     /*
        if (GetSimpleKoLocation(board) != M_PASS) {
@@ -94,7 +99,7 @@ void DefPolicy::check_ko_fight(DefPolicyMoves *m, const Region *r) {
 
 // Get the move with specific structure.
 Coord DefPolicy::get_moves_from_group(DefPolicyMoves *m, unsigned char id, MoveType type) {
-    const Board *board = m->board;
+    const Board *board = m->board();
     // Find the atari point.
     int count = 0;
     int lib_count = board->_groups[id].liberties;
@@ -115,7 +120,7 @@ Coord DefPolicy::get_moves_from_group(DefPolicyMoves *m, unsigned char id, MoveT
 
 // Check any of the opponent group has lib <= lib_thres, if so, make all the capture moves.
 void DefPolicy::check_opponent_in_danger(DefPolicyMoves *m, const Region *r) {
-    const Board *board = m->board;
+    const Board *board = m->board();
     // Loop through all groups and check.
     // Group id starts from 1.
     Stone opponent = OPPONENT(board->_next_player);
@@ -125,7 +130,7 @@ void DefPolicy::check_opponent_in_danger(DefPolicyMoves *m, const Region *r) {
         // If the liberties of opponent group is too many, skip.
         if (g->liberties > thres_opponent_libs_) continue;
         // If #stones of opponent group is too few, skip.
-        if (g->stones < thres_opponent_stones) continue;
+        if (g->stones < thres_opponent_stones_) continue;
         if (!GroupInRegion(board, i, r)) continue;
 
         // Find the intersections that reduces its point and save it to the move queue.
@@ -137,7 +142,7 @@ void DefPolicy::check_opponent_in_danger(DefPolicyMoves *m, const Region *r) {
 
 // Check any of our group has lib = 1, if so, try saving it.
 void DefPolicy::check_our_atari(DefPolicyMoves *m, const Region *r) {
-    const Board *board = m->board;
+    const Board *board = m->board();
 
     for (int i = 1; i < board->_num_groups; ++i) {
         const Group* g = &board->_groups[i];
@@ -189,10 +194,10 @@ static Coord nakade_point(const Board *board, Coord loc) {
             // If that point is surrounding by our stone, return immediately.
             if (board->_infos[c].color == board->_next_player) return M_PASS;
             if (board->_infos[c].color != S_EMPTY) continue;
-            BOOL dup = FALSE;
+            bool dup = false;
             for (int j = 0; j < area_n; j++)
                 if (c == area[j]) {
-                    dup = TRUE;
+                    dup = true;
                     break;
                 }
             if (dup) continue;
@@ -255,7 +260,7 @@ static Coord nakade_point(const Board *board, Coord loc) {
 
 // Check if there is any nakade point, if so, play it to kill the opponent's group.
 void DefPolicy::check_nakade(DefPolicyMoves *m, const Region *r) {
-    const Board *board = m->board;
+    const Board *board = m->board();
     Coord empty = M_PASS;
     if (board->_last_move == M_PASS) return;
     if (r != nullptr && ! IsIn(r, board->_last_move)) return;
@@ -282,7 +287,7 @@ void DefPolicy::check_nakade(DefPolicyMoves *m, const Region *r) {
 }
 
 // Check the 3x3 pattern matcher
-void DefPolicy::check_pattern(void *h, DefPolicyMoves *m, const Region *r) {
+void DefPolicy::check_pattern(DefPolicyMoves *, const Region *) {
 }
 
 // The default policy
@@ -335,7 +340,7 @@ DefPolicyMove DefPolicy::Run(function<int ()> rand_func, Board* board, const Reg
                 printf("Move: x = %d, y = %d, str = %s\n", X(move.m), Y(move.m), get_move_str(move.m, board->_next_player, buf));
                 printf("Move (from board) = %s\n", get_move_str(move.m, board->_next_player, buf));
                 ShowBoard(board, SHOW_ALL);
-                print("[%d/%d]: Move cannot be executed!", k, max_depth);
+                printf("[%d/%d]: Move cannot be executed!", k, max_depth);
                 throw std::range_error("Move cannot be executed!");
             }
         }

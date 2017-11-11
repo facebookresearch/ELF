@@ -38,4 +38,8 @@ private:
 
 	void get(float ratio, Stone *ownermap) const;
 	void get_float(Stone player, float *ownermap) const;
+
+    float float_one(int i, int j, Stone player) const;
+    Stone judge_one(int i, int j, float ratio) const;
 };
+

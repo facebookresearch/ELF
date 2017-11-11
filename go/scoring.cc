@@ -1,5 +1,3 @@
-#pragma once
-
 //
 // Copyright (c) 2016-present, Facebook, Inc.
 // All rights reserved.
@@ -9,7 +7,7 @@
 // of patent rights can be found in the PATENTS file in the same directory.
 // 
 
-#include "ownermap.h"
+#include "scoring.h"
 
 OwnerMap::OwnerMap() {
     Clear();
@@ -37,11 +35,11 @@ void OwnerMap::Accumulate(const Board *board) {
 	total_ownermap_count_ ++;
 }
 
-float OwnerMap::FloatOne(int i, int j, Stone player) {
+float OwnerMap::float_one(int i, int j, Stone player) const {
 	return ((float) ownermap_[i][j][player]) / total_ownermap_count_;
 }
 
-Stone OwnerMap::JudgeOne(int i, int j, float ratio) {
+Stone OwnerMap::judge_one(int i, int j, float ratio) const {
 	int empty = ownermap_[i][j][S_EMPTY];
 	int black = ownermap_[i][j][S_BLACK];
 	int white = ownermap_[i][j][S_WHITE];
@@ -55,7 +53,7 @@ Stone OwnerMap::JudgeOne(int i, int j, float ratio) {
 	return S_UNKNOWN;
 }
 
-void OwnerMap::GetDeadStones(const Board *board, float ratio, Stone *livedead, Stone *group_stats) {
+void OwnerMap::GetDeadStones(const Board *board, float ratio, Stone *livedead, Stone *group_stats) const {
 	// Threshold the ownermap and determine.
 	Stone *internal_group_stats = nullptr;
 
@@ -70,7 +68,7 @@ void OwnerMap::GetDeadStones(const Board *board, float ratio, Stone *livedead, S
 		for (int j = 0; j < BOARD_SIZE; ++j) {
 			Coord c = OFFSETXY(i, j);
 			Stone s = board->_infos[c].color;
-			Stone owner = JudgeOne(i, j, ratio);
+			Stone owner = judge_one(i, j, ratio);
 
 			// printf("owner at (%d, %d) = %d\n", i, j, owner);
 			short id = board->_infos[c].id;
@@ -102,26 +100,26 @@ void OwnerMap::GetDeadStones(const Board *board, float ratio, Stone *livedead, S
 	if (internal_group_stats != nullptr) free(internal_group_stats);
 }
 
-void OwnerMap::get(float ratio, Stone *ownermap) {
+void OwnerMap::get(float ratio, Stone *ownermap) const {
 	// Threshold the ownermap and determine.
 	for (int i = 0; i < BOARD_SIZE; ++i) {
 		for (int j = 0; j < BOARD_SIZE; ++j) {
 			Coord c = OFFSETXY(i, j);
-			ownermap_[EXPORT_OFFSET(c)] = JudgeOne(h, i, j, ratio);
+			ownermap[EXPORT_OFFSET(c)] = judge_one(i, j, ratio);
 		}
 	}
 }
 
-void OwnerMap::get_float(Stone player, float *ownermap) {
+void OwnerMap::get_float(Stone player, float *ownermap) const {
 	for (int i = 0; i < BOARD_SIZE; ++i) {
 		for (int j = 0; j < BOARD_SIZE; ++j) {
 			Coord c = OFFSETXY(i, j);
-			ownermap_[EXPORT_OFFSET(c)] = FloatOne(i, j, player);
+			ownermap[EXPORT_OFFSET(c)] = float_one(i, j, player);
 		}
 	}
 }
 
-float OwnerMap::GetTTScore(const Board *board, Stone *livedead, Stone *territory) {
+float OwnerMap::GetTTScore(const Board *board, Stone *livedead, Stone *territory) const {
 	Stone group_stats[MAX_GROUP];
 	GetDeadStones(board, 0.5, livedead, group_stats);
 	return GetTrompTaylorScore(board, group_stats, territory);
@@ -167,7 +165,7 @@ void OwnerMap::ShowDeadStones(const Board *board, const Stone *stones) {
 	printf(buf);
 }
 
-void OwnerMap::ShowStonesProb(Stone player) {
+void OwnerMap::ShowStonesProb(Stone player) const {
 	// Show the board with ownership
 	char buf[20000];
 	int len = 0;
@@ -177,8 +175,8 @@ void OwnerMap::ShowStonesProb(Stone player) {
 	for (int j = BOARD_SIZE - 1; j >= 0; --j) {
 		len += sprintf(buf + len, "%2d ", j + 1);
 		for (int i = 0; i < BOARD_SIZE; ++i) {
-			Coord c = OFFSETXY(i, j);
-			float val = FloatOne(h, i, j, player);
+			// Coord c = OFFSETXY(i, j);
+			float val = float_one(i, j, player);
 			len += sprintf(buf + len, "%.3f  ", val);
 		}
 		len += sprintf(buf + len, "%d\n", j + 1);
