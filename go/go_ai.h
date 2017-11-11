@@ -42,6 +42,7 @@ public:
         vector<data_type> tmp;
         int i = 0;
         while (tmp.size() < 5) {
+            if (i >= (int)output_pi->size()) break;
             const data_type& v = output_pi->at(i);
             // Check whether this move is right.
             bool valid = last_state_->CheckMove(v.first);

@@ -23,50 +23,47 @@ void DefPolicy::PrintParams() {
     }
 }
 
-void DefPolicy::compute_policy(DefPolicyMoves *m, const Region *r) {
+void DefPolicy::compute_policy() {
     // Initialize moves.
-    m->clear();
+    moves_.clear();
 
-    if (switches_[KO_FIGHT]) check_ko_fight(m, r);
-    if (switches_[OPPONENT_IN_DANGER]) check_opponent_in_danger(m, r);
-    if (switches_[OUR_ATARI]) check_our_atari(m, r);
-    if (switches_[NAKADE]) check_nakade(m, r);
-    if (switches_[PATTERN]) check_pattern(m, r);
+    if (switches_[KO_FIGHT]) check_ko_fight();
+    if (switches_[OPPONENT_IN_DANGER]) check_opponent_in_danger();
+    if (switches_[OUR_ATARI]) check_our_atari();
+    if (switches_[NAKADE]) check_nakade();
+    if (switches_[PATTERN]) check_pattern();
 }
 
-bool DefPolicy::sample(DefPolicyMoves *ms, RandFunc rand_func, bool verbose, GroupId4 *ids, DefPolicyMove *m) {
-    assert(ms);
-
-    if (ms->size() == 0) return false;
+bool DefPolicy::sample(RandFunc rand_func, bool verbose, GroupId4 *ids, DefPolicyMove *m) {
+    if (moves_.size() == 0) return false;
 
     int count = 0;
     while (1) {
         // Sample distribution.
-        int i = ms->sample(rand_func);
+        int i = moves_.sample(rand_func);
         if (i < 0) return false;
 
         if (verbose) {
             printf("Sample step = %d\n", count);
-            ms->PrintInfo(i);
+            moves_.PrintInfo(i);
         }
 
-        if (ids == NULL || TryPlay2(ms->board(), ms->at(i).m, ids)) {
-            *m = ms->at(i);
+        if (ids == NULL || TryPlay2(moves_.board(), moves_[i].m, ids)) {
+            *m = moves_[i];
             return true;
         }
         // Otherwise set gamma to be zero and redo this.
-        ms->remove(i);
+        moves_.remove(i);
         count ++;
     }
 }
 
-bool DefPolicy::simple_sample(const DefPolicyMoves *ms, RandFunc rand_func, GroupId4 *ids, DefPolicyMove *m) {
-    assert(ms);
-    if (ms->size() == 0) return false;
+bool DefPolicy::simple_sample(RandFunc rand_func, GroupId4 *ids, DefPolicyMove *m) {
+    if (moves_.size() == 0) return false;
 
-    int i = rand_func() % ms->size();
-    if (ids == NULL || TryPlay2(ms->board(), ms->at(i).m, ids)) {
-        *m = ms->at(i);
+    int i = rand_func() % moves_.size();
+    if (ids == NULL || TryPlay2(moves_.board(), moves_[i].m, ids)) {
+        *m = moves_[i];
         return true;
     }
     return false;
@@ -74,7 +71,7 @@ bool DefPolicy::simple_sample(const DefPolicyMoves *ms, RandFunc rand_func, Grou
 
 
 // Utilities for playing default policy. Referenced from Pachi's code.
-void DefPolicy::check_ko_fight(DefPolicyMoves *, const Region *) {
+void DefPolicy::check_ko_fight() {
     // Need to implement ko age.
     /*
        if (GetSimpleKoLocation(board) != M_PASS) {
@@ -83,8 +80,8 @@ void DefPolicy::check_ko_fight(DefPolicyMoves *, const Region *) {
 }
 
 // Get the move with specific structure.
-Coord DefPolicy::get_moves_from_group(DefPolicyMoves *m, unsigned char id, MoveType type) {
-    const Board *board = m->board();
+Coord DefPolicy::get_moves_from_group(unsigned char id, MoveType type, bool add_move) {
+    const Board *board = moves_.board();
     // Find the atari point.
     int count = 0;
     int lib_count = board->_groups[id].liberties;
@@ -92,7 +89,7 @@ Coord DefPolicy::get_moves_from_group(DefPolicyMoves *m, unsigned char id, MoveT
     TRAVERSE(board, id, c) {
         FOR4(c, _, cc) {
             if (board->_infos[cc].color == S_EMPTY) {
-                if (m != nullptr) m->add(DefPolicyMove(cc, type));
+                if (add_move) moves_.add(DefPolicyMove(cc, type));
                 last = cc;
                 count ++;
                 if (count == lib_count) break;
@@ -104,8 +101,8 @@ Coord DefPolicy::get_moves_from_group(DefPolicyMoves *m, unsigned char id, MoveT
 }
 
 // Check any of the opponent group has lib <= lib_thres, if so, make all the capture moves.
-void DefPolicy::check_opponent_in_danger(DefPolicyMoves *m, const Region *r) {
-    const Board *board = m->board();
+void DefPolicy::check_opponent_in_danger() {
+    const Board *board = moves_.board();
     // Loop through all groups and check.
     // Group id starts from 1.
     Stone opponent = OPPONENT(board->_next_player);
@@ -116,27 +113,27 @@ void DefPolicy::check_opponent_in_danger(DefPolicyMoves *m, const Region *r) {
         if (g->liberties > thres_opponent_libs_) continue;
         // If #stones of opponent group is too few, skip.
         if (g->stones < thres_opponent_stones_) continue;
-        if (!GroupInRegion(board, i, r)) continue;
+        if (!GroupInRegion(board, i, r_)) continue;
 
         // Find the intersections that reduces its point and save it to the move queue.
-        get_moves_from_group(m, i, OPPONENT_IN_DANGER);
+        get_moves_from_group(i, OPPONENT_IN_DANGER, true);
         // ShowBoard(board, SHOW_LAST_MOVE);
         // util_show_move(m, board->_next_player);
     }
 }
 
 // Check any of our group has lib = 1, if so, try saving it.
-void DefPolicy::check_our_atari(DefPolicyMoves *m, const Region *r) {
-    const Board *board = m->board();
+void DefPolicy::check_our_atari() {
+    const Board *board = moves_.board();
 
     for (int i = 1; i < board->_num_groups; ++i) {
         const Group* g = &board->_groups[i];
         // If the group is not in atari or its #stones are not too many, skip.
         if (g->color != board->_next_player || g->liberties != 1 || g->stones < thres_save_atari_) continue;
-        if (!GroupInRegion(board, i, r)) continue;
+        if (!GroupInRegion(board, i, r_)) continue;
 
         // Find the atari point.
-        Coord c = get_moves_from_group(nullptr, i, NORMAL);
+        Coord c = get_moves_from_group(i, NORMAL, false);
         if (c == M_PASS) {
             char buf[30];
             printf("Cannot get the atari point for group %d start with %s!\n", i, get_move_str(g->start, S_EMPTY, buf));
@@ -156,7 +153,7 @@ void DefPolicy::check_our_atari(DefPolicyMoves *m, const Region *r) {
             }
         } ENDFOR4
         if (liberty > 0 || group_rescue > 0) {
-            m->add(DefPolicyMove(c, OUR_ATARI));
+            moves_.add(DefPolicyMove(c, OUR_ATARI));
         }
     }
 }
@@ -244,11 +241,12 @@ static Coord nakade_point(const Board *board, Coord loc) {
 }
 
 // Check if there is any nakade point, if so, play it to kill the opponent's group.
-void DefPolicy::check_nakade(DefPolicyMoves *m, const Region *r) {
-    const Board *board = m->board();
+void DefPolicy::check_nakade() {
+    const Board *board = moves_.board();
+
     Coord empty = M_PASS;
     if (board->_last_move == M_PASS) return;
-    if (r != nullptr && ! IsIn(r, board->_last_move)) return;
+    if (r_ != nullptr && ! IsIn(r_, board->_last_move)) return;
 
     FOR4(board->_last_move, _, c) {
         if (board->_infos[c].color != S_EMPTY) continue;
@@ -266,13 +264,13 @@ void DefPolicy::check_nakade(DefPolicyMoves *m, const Region *r) {
     if (empty != M_PASS) {
         Coord nakade = nakade_point(board, empty);
         if (nakade != M_PASS) {
-            m->add(DefPolicyMove(nakade, NAKADE));
+            moves_.add(DefPolicyMove(nakade, NAKADE));
         }
     }
 }
 
 // Check the 3x3 pattern matcher
-void DefPolicy::check_pattern(DefPolicyMoves *, const Region *) {
+void DefPolicy::check_pattern() {
 }
 
 // The default policy
@@ -283,7 +281,8 @@ DefPolicyMove DefPolicy::Run(RandFunc rand_func, Board* board, const Region *r, 
     int num_pass = 0;
 
     DefPolicyMove move;
-    DefPolicyMoves m(board);
+    moves_.set_board(board);
+    r_ = r;
 
     if (verbose) {
         printf("Start default policy!\n");
@@ -300,10 +299,10 @@ DefPolicyMove DefPolicy::Run(RandFunc rand_func, Board* board, const Region *r, 
 
         // Utilities for playing default policy. Referenced from Pachi's code.
         // printf("Start computing def policy\n");
-        compute_policy(&m, r);
+        compute_policy();
 
         // printf("Start sampling def policy\n");
-        bool sample_res = sample(&m, rand_func, verbose, &ids, &move);
+        bool sample_res = sample(rand_func, verbose, &ids, &move);
         int idx = -1;
 
         if (! sample_res) {

@@ -3,9 +3,9 @@
 // All rights reserved.
 //
 // This source code is licensed under the BSD-style license found in the
-// LICENSE file in the root directory of this source tree. An additional grant 
+// LICENSE file in the root directory of this source tree. An additional grant
 // of patent rights can be found in the PATENTS file in the same directory.
-// 
+//
 
 #pragma once
 
@@ -34,6 +34,8 @@ using RandFunc = function<unsigned int ()>;
 // A queue for adding candidate moves.
 class DefPolicyMoves {
 public:
+    void set_board(const Board *board) { board_ = board; }
+
     const Board *board() const { return board_; }
     int size() const { return moves_.size(); }
 
@@ -75,16 +77,12 @@ public:
         printf("Type = %u, gamma = %d\n", m.type, m.gamma);
     }
 
-    DefPolicyMoves(const Board *board) 
-        : board_(board) { 
-    }
-
 private:
-    const Board *board_;
+    const Board *board_ = nullptr;
 
     // Move sequence.
     vector<DefPolicyMove> moves_;
-    int total_gamma_;
+    int total_gamma_ = 0;
 };
 
 // The parameters for default policy.
@@ -98,6 +96,9 @@ public:
     // using CheckFunc = function<void (DefPolicy::*)(DefPolicyMoves *, const Region *)>;
 
 private:
+    DefPolicyMoves moves_;
+    const Region *r_ = nullptr;
+
     bool switches_[NUM_MOVE_TYPE];
     // Try to save our group in atari if its size is >= thres_save_atari.
     int thres_save_atari_;
@@ -108,29 +109,29 @@ private:
     int thres_opponent_stones_;
 
     // Check whether there is any ko fight we need to take part in. (Not working now)
-    void check_ko_fight(DefPolicyMoves *m, const Region *r);
+    void check_ko_fight();
 
     // Check any of our group has lib = 1, if so, try saving it by extending.
-    void check_our_atari(DefPolicyMoves *m, const Region *r);
+    void check_our_atari();
 
     // Check if any opponent group is in danger, if so, try killing it.
-    void check_opponent_in_danger(DefPolicyMoves *m, const Region *r);
+    void check_opponent_in_danger();
 
     // Check if there is any nakade point, if so, play it to kill the opponent's group.
-    void check_nakade(DefPolicyMoves *m, const Region *r);
+    void check_nakade();
 
     // Check the 3x3 pattern matcher, currently disabled.
-    void check_pattern(DefPolicyMoves *m, const Region *r);
+    void check_pattern();
 
-    Coord get_moves_from_group(DefPolicyMoves *m, unsigned char id, MoveType type);
+    Coord get_moves_from_group(unsigned char id, MoveType type, bool add_move);
 
     // Utilities for playing default policy. Referenced from Pachi's code.
-    void compute_policy(DefPolicyMoves *m, const Region *r);
+    void compute_policy();
 
     // Sample the default policy, if ids != NULL, then only sample valid moves and save the ids information for the next play.
-    bool sample(DefPolicyMoves *ms, RandFunc rand_func, bool verbose, GroupId4 *ids, DefPolicyMove *m);
+    bool sample(RandFunc rand_func, bool verbose, GroupId4 *ids, DefPolicyMove *m);
 
     // Old version of default policy, not used.
-    bool simple_sample(const DefPolicyMoves *ms, RandFunc rand_func, GroupId4 *ids, DefPolicyMove *m);
-}; 
+    bool simple_sample(RandFunc rand_func, GroupId4 *ids, DefPolicyMove *m);
+};
 

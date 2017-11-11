@@ -92,6 +92,9 @@ public:
             int depth = 0;
 
             while (_visit(actor, node, alloc) == Node::NODE_ALREADY_VISITED) {
+                // If there is no move available, skip.
+                if (node->sa().empty()) break;
+
                 A a = UCT(node->sa(), node->count(), options_.use_prior, output_.get()).first;
                 PRINT_TS("[depth=" << depth << "] Action: " << a);
 

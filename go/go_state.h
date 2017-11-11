@@ -72,7 +72,7 @@ public:
     }
 
     // Use def policy and TT score to get an estimate of the value.
-    float Evaluate(function<int ()> rand_func, int num_trial = 5) const {
+    float Evaluate(function<unsigned int ()> rand_func, int num_trial = 5) const {
         OwnerMap ownermap;
         DefPolicy def_policy;
         const int max_depth = BOARD_SIZE * BOARD_SIZE * 2 - _board._ply;
@@ -82,8 +82,12 @@ public:
             def_policy.Run(rand_func, &board2, nullptr, max_depth, false);
             ownermap.Accumulate(&board2);
         }
-        
-        return ownermap.GetTTScore(&_board, nullptr, nullptr);
+
+        float score = ownermap.GetTTScore(&_board, nullptr, nullptr);
+        // std::cout << ShowBoard() << std::endl;
+        // std::cout << "Done with evaluation. score: " << score << std::endl;
+
+        return score - 7.5 > 0.5 ? 1.0 : -1.0;
     }
 
 protected:
