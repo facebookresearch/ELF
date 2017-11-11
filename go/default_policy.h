@@ -29,6 +29,8 @@ struct DefPolicyMove {
     }
 };
 
+using RandFunc = function<unsigned int ()>;
+
 // A queue for adding candidate moves.
 class DefPolicyMoves {
 public:
@@ -50,7 +52,7 @@ public:
     const DefPolicyMove &operator[](int i) const { return moves_[i]; }
     const DefPolicyMove &at(int i) const { return moves_[i]; }
 
-    int sample(function<int ()> rand_func) const {
+    int sample(RandFunc rand_func) const {
         if (total_gamma_ == 0) return -1;
 
         // Random sample.
@@ -90,7 +92,10 @@ class DefPolicy {
 public:
     DefPolicy();
     void PrintParams();
-    DefPolicyMove Run(function<int ()>, Board* board, const Region *r, int max_depth, bool verbose);
+
+    DefPolicyMove Run(RandFunc, Board* board, const Region *r, int max_depth, bool verbose);
+
+    // using CheckFunc = function<void (DefPolicy::*)(DefPolicyMoves *, const Region *)>;
 
 private:
     bool switches_[NUM_MOVE_TYPE];
@@ -123,9 +128,9 @@ private:
     void compute_policy(DefPolicyMoves *m, const Region *r);
 
     // Sample the default policy, if ids != NULL, then only sample valid moves and save the ids information for the next play.
-    bool sample(DefPolicyMoves *ms, function<int ()> rand_func, bool verbose, GroupId4 *ids, DefPolicyMove *m);
+    bool sample(DefPolicyMoves *ms, RandFunc rand_func, bool verbose, GroupId4 *ids, DefPolicyMove *m);
 
     // Old version of default policy, not used.
-    bool simple_sample(const DefPolicyMoves *ms, function<int ()>, GroupId4 *ids, DefPolicyMove *m);
+    bool simple_sample(const DefPolicyMoves *ms, RandFunc rand_func, GroupId4 *ids, DefPolicyMove *m);
 }; 
 

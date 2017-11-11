@@ -2,6 +2,7 @@
 
 #include "elf/mcts.h"
 #include "go_ai.h"
+#include <iostream>
 
 class MCTSActor {
 public:
@@ -40,7 +41,7 @@ public:
 
         // If the game last too long, then we can formally use the evaluation.
         std::mt19937 rng(time(NULL));
-        auto func = [&]() -> int { return rng(); };
+        auto func = [&]() -> unsigned int { return rng(); };
         return s.Evaluate(func);
     }
 

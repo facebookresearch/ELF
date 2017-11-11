@@ -23,33 +23,18 @@ void DefPolicy::PrintParams() {
     }
 }
 
-using CheckFunc = function<void (DefPolicyMoves *, const Region *)>;
-
 void DefPolicy::compute_policy(DefPolicyMoves *m, const Region *r) {
     // Initialize moves.
     m->clear();
 
-    using std::placeholders::_1;
-    using std::placeholders::_2;
-
-    static CheckFunc kCheckFuncs[NUM_MOVE_TYPE] = {
-        nullptr,
-        std::bind(&DefPolicy::check_ko_fight, this, _1, _2),
-        std::bind(&DefPolicy::check_opponent_in_danger, this, _1, _2),
-        std::bind(&DefPolicy::check_our_atari, this, _1, _2),
-        std::bind(&DefPolicy::check_nakade, this, _1, _2),
-        std::bind(&DefPolicy::check_pattern, this, _1, _2),
-        nullptr,
-    };
-
-    for (size_t i = 0; i < NUM_MOVE_TYPE; ++i) {
-        if (switches_[i] && kCheckFuncs[i] != nullptr) {
-            kCheckFuncs[i](m, r);
-        }
-    }
+    if (switches_[KO_FIGHT]) check_ko_fight(m, r);
+    if (switches_[OPPONENT_IN_DANGER]) check_opponent_in_danger(m, r);
+    if (switches_[OUR_ATARI]) check_our_atari(m, r);
+    if (switches_[NAKADE]) check_nakade(m, r);
+    if (switches_[PATTERN]) check_pattern(m, r);
 }
 
-bool DefPolicy::sample(DefPolicyMoves *ms, function<int ()> rand_func, bool verbose, GroupId4 *ids, DefPolicyMove *m) {
+bool DefPolicy::sample(DefPolicyMoves *ms, RandFunc rand_func, bool verbose, GroupId4 *ids, DefPolicyMove *m) {
     assert(ms);
 
     if (ms->size() == 0) return false;
@@ -75,7 +60,7 @@ bool DefPolicy::sample(DefPolicyMoves *ms, function<int ()> rand_func, bool verb
     }
 }
 
-bool DefPolicy::simple_sample(const DefPolicyMoves *ms, function<int ()> rand_func, GroupId4 *ids, DefPolicyMove *m) {
+bool DefPolicy::simple_sample(const DefPolicyMoves *ms, RandFunc rand_func, GroupId4 *ids, DefPolicyMove *m) {
     assert(ms);
     if (ms->size() == 0) return false;
 
@@ -291,7 +276,7 @@ void DefPolicy::check_pattern(DefPolicyMoves *, const Region *) {
 }
 
 // The default policy
-DefPolicyMove DefPolicy::Run(function<int ()> rand_func, Board* board, const Region *r, int max_depth, bool verbose) {
+DefPolicyMove DefPolicy::Run(RandFunc rand_func, Board* board, const Region *r, int max_depth, bool verbose) {
     AllMoves all_moves;
     GroupId4 ids;
     char buf[30];
@@ -319,6 +304,7 @@ DefPolicyMove DefPolicy::Run(function<int ()> rand_func, Board* board, const Reg
 
         // printf("Start sampling def policy\n");
         bool sample_res = sample(&m, rand_func, verbose, &ids, &move);
+        int idx = -1;
 
         if (! sample_res) {
             // Fall back to the normal mode.
@@ -330,14 +316,18 @@ DefPolicyMove DefPolicy::Run(function<int ()> rand_func, Board* board, const Reg
                 move.m = M_PASS;
             } else {
                 // Sample one move
-                int idx = rand_func() % all_moves.num_moves;
+                idx = rand_func() % all_moves.num_moves;
                 move.m = all_moves.moves[idx];
             }
 
             move.type = NORMAL;
             move.gamma = 0;
             if (! TryPlay2(board, move.m, &ids)) {
-                printf("#candidate moves: %d\n", all_moves.num_moves);
+                printf("\n\n#candidate moves: %d. Current move idx: %d\n", all_moves.num_moves, idx);
+                for (int i = 0; i < all_moves.num_moves; ++i) {
+                    printf("%s ", get_move_str(all_moves.moves[i], board->_next_player, buf));
+                }
+                printf("\n");
                 printf("Move: x = %d, y = %d, str = %s\n", X(move.m), Y(move.m), get_move_str(move.m, board->_next_player, buf));
                 printf("Move (from board) = %s\n", get_move_str(move.m, board->_next_player, buf));
                 ShowBoard(board, SHOW_ALL);
