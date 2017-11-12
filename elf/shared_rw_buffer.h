@@ -4,6 +4,7 @@
 #include <functional>
 #include <chrono>
 #include <random>
+#include <sstream>
 #include "primitive.h"
 
 namespace elf {
@@ -22,32 +23,51 @@ public:
         float reward = 0.0;
         string machine;
         string content;
+
+        string info() const {
+            stringstream ss;
+            ss << "[t=" << timestamp << "][id=" << game_id << "][seq=" << seq << "]";
+            ss << "[pri=" << pri << "][reward=" << reward << "[machine=" << machine << "] len(content)=" << content.size();
+            return ss.str();
+        }
     };
 
     class Sampler {
     public:
         explicit Sampler(SharedRWBuffer *data) : data_(data), rng_(time(NULL)) {
-            data_->rw_lock_.read_shared_lock();
+            lock();
         }
         Sampler(const Sampler &) = delete;
         Sampler(Sampler &&sampler) : data_(sampler.data_), rng_(move(sampler.rng_)) { }
 
         const Record &sample() {
-            const auto *loaded = &data_->get_recent_load();
-            if (loaded->empty()) {
+            const vector<Record> *loaded = &data_->get_recent_load();
+            while (loaded->empty()) {
+                unlock();
                 data_->table_read_recent(1000);
+                lock();
                 loaded = &data_->get_recent_load();
+                if (data_->verbose_) {
+                    std::cout << "#Loaded: " << loaded->size() << std::endl;
+                }
             }
+
             int idx = rng_() % loaded->size();
             return loaded->at(idx);
         }
 
-        ~Sampler() {
-            data_->rw_lock_.read_shared_unlock();
-        }
+        ~Sampler() { unlock(); }
+
     private:
         SharedRWBuffer *data_;
         mt19937 rng_;
+
+        void lock() {
+            data_->rw_lock_.read_shared_lock();
+        }
+        void unlock() {
+            data_->rw_lock_.read_shared_unlock();
+        }
     };
 
     SharedRWBuffer(const string &filename, const string& table_name, bool verbose = false)
@@ -158,7 +178,15 @@ private:
            SharedRWBuffer *h = reinterpret_cast<SharedRWBuffer *>(handle);
            SharedRWBuffer::Record r;
 
-           r.timestamp = stoi(column_texts[0]);
+           if (h->verbose_) {
+               cout << "SharedRWBuffer| In Read callback!" << endl;
+               for (int i = 0; i < num_columns; ++i) {
+                   cout << "SharedRWBuffer|  " << column_names[i] << ": \"" << column_texts[i] << "\"" << endl;
+               }
+           }
+           if (strlen(column_texts[6]) < 50) return 0;
+
+           r.timestamp = stoll(column_texts[0]);
            r.game_id = stoi(column_texts[1]);
            r.machine = column_texts[2];
            r.seq = stoi(column_texts[3]);
@@ -167,6 +195,10 @@ private:
            r.content = column_texts[6];
 
            h->cb_save(r);
+           if (h->verbose_) {
+               cout << "SharedRWBuffer| Entry: " << r.info() << endl;
+               cout << "SharedRWBuffer| Entry saved!" << endl;
+           }
            return 0;
        };
 
@@ -183,6 +215,8 @@ private:
    void cb_save_start() {
        alt_mutex_.lock();
        int alt_idx = (curr_idx_ + 1) % recent_loaded_.size();
+
+       // std::cout << "cb_save_start(): alt_idx: " << alt_idx << std::endl;
        recent_loaded_[alt_idx].clear();
    }
 
@@ -195,6 +229,7 @@ private:
 
    void cb_save_end() {
        int alt_idx = (curr_idx_ + 1) % recent_loaded_.size();
+       // std::cout << "cb_save_end(): alt_idx: " << alt_idx << std::endl;
 
        rw_lock_.write_lock();
        curr_idx_ = alt_idx;

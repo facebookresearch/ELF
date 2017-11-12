@@ -68,6 +68,7 @@ inline std::vector<Coord> sgfstr2coords(const std::string& sgf) {
       if (j == sgf.size()) break;
 
       moves.push_back(str2coord(sgf.substr(i, j - i)));
+      i = j + 1;
   }
 
   return moves;

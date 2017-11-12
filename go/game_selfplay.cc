@@ -77,9 +77,20 @@ void GoGameSelfPlay::Act(const elf::Signal &signal) {
         }
     } else {
         // Train a model directly.
-        auto sampler = _rw_buffer->GetSampler();
-        const elf::SharedRWBuffer::Record &r = sampler.sample();
-        vector<Coord> moves = sgfstr2coords(r.content);
+        vector<Coord> moves;
+        float reward = 0.0;
+        {
+            // std::cout << "Get Sampler" << std::endl;
+            auto sampler = _rw_buffer->GetSampler();
+
+            // std::cout << "sampling" << std::endl;
+            const elf::SharedRWBuffer::Record &r = sampler.sample();
+
+            // std::cout << "Convert to moves: " << r.content << std::endl;
+            moves = sgfstr2coords(r.content);
+            reward = r.reward;
+            // std::cout << "Convert complete, #move = " << moves.size() << std::endl;
+        }
 
         // Random sample one move
         int move_to = _rng() % (moves.size() - _options.num_future_actions + 1);
@@ -88,10 +99,13 @@ void GoGameSelfPlay::Act(const elf::Signal &signal) {
             _state.forward(moves[i]);
         }
 
+        // std::cout << _state.ShowBoard() << std::endl;
+        // std::cout << move_to << "/" << moves.size() << std::endl;
+
         // Then send the data to the server.
         auto &gs = _ai_comm->Prepare();
         gs.move_idx = _state.GetPly();
-        gs.winner = r.reward;
+        gs.winner = reward;
 
         int code = _rng() % 8;
         gs.aug_code = code;
@@ -102,6 +116,8 @@ void GoGameSelfPlay::Act(const elf::Signal &signal) {
         for (int i = 0; i < _options.num_future_actions; ++i) {
             gs.offline_a[i] = bf.Coord2Action(moves[move_to + i]);
         }
+        // std::cout << "Just before sending data ... " << std::endl;
         _ai_comm->SendDataWaitReply();
+        // std::cout << "Just after sending data ... " << std::endl;
     }
 }

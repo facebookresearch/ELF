@@ -25,6 +25,10 @@ class MultiplePrediction:
         total_loss = None
         eps = 1e-6
         targets = batch.hist(0)["offline_a"]
+
+        if "pis" not in state_curr:
+            state_curr["pis"] = [ state_curr["pi"] ]
+
         for i, pred in enumerate(state_curr["pis"]):
             if i == 0:
                 prec1, prec5 = topk_accuracy(pred.data, targets[:, i].contiguous(), topk=(1, 5))

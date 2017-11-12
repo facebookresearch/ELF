@@ -175,7 +175,8 @@ class Trainer:
             # Update actor model
             # print("Update actor model")
             # Save the current model.
-            mi.update_model("actor", mi["model"])
+            if "actor" in mi:
+                mi.update_model("actor", mi["model"])
             self.just_updated = True
 
         self.just_updated = False

@@ -74,6 +74,8 @@ class ModelInterface:
                 '''
         return mi
 
+    def __contains__(self, key):
+        return key in self.models
 
     def add_model(self, key, model, copy=False, cuda=False, gpu_id=None, opt=False, params={}):
         '''Add a model to `ModelInterface`.
