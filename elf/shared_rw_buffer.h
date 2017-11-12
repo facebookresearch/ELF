@@ -25,15 +25,17 @@ public:
         string content;
     };
 
-    SharedRWBuffer(const string &filename, const string& table_name)
-      : table_name_(table_name), rng_(time(NULL)), recent_loaded_(2) {
+    SharedRWBuffer(const string &filename, const string& table_name, bool verbose = false)
+      : table_name_(table_name), rng_(time(NULL)), recent_loaded_(2), verbose_(verbose) {
         int rc = sqlite3_open(filename.c_str(), &db_);
         if (rc) {
             cerr << "Can't open database. Filename: " << filename << ", ErrMsg: " << sqlite3_errmsg(db_) << endl;
             throw std::range_error("Cannot open database");
         }
         // Check whether table exists.
-        exec("SELECT 1 FROM " + table_name_ + " LIMIT 1;");
+        if (! table_exists()) {
+            table_create();
+        }
     }
 
     void Sample(int n, vector<Record> *sample_records) {
@@ -56,6 +58,8 @@ public:
         return table_insert(r);
     }
 
+    const string &LastError() const { return last_err_; }
+
     ~SharedRWBuffer() {
         sqlite3_close(db_);
     }
@@ -64,6 +68,7 @@ public:
 private:
    sqlite3 *db_ = nullptr;
    const string table_name_;
+   string last_err_;
 
    mt19937 rng_;
 
@@ -74,11 +79,21 @@ private:
    mutable mutex alt_mutex_;
    mutable mutex write_mutex_;
 
+   bool verbose_ = false;
+
    friend int read_callback(void *, int, char **, char **);
 
    int exec(const string &sql, SqlCB callback = nullptr) {
        char *zErrMsg;
+       if (verbose_) {
+           cout << "SQL: " << sql << endl;
+       }
        int rc = sqlite3_exec(db_, sql.c_str(), callback, this, &zErrMsg);
+       if (rc != 0) {
+           last_err_ = zErrMsg;
+       } else {
+           last_err_ = "";
+        }
        sqlite3_free(zErrMsg);
        return rc;
    }
@@ -115,13 +130,13 @@ private:
        uint64_t timestamp = chrono::duration_cast<chrono::milliseconds>(now.time_since_epoch()).count();
 
        const string sql = "INSERT INTO " + table_name_ + " VALUES (" \
-          + to_string(r.timestamp == 0 ? timestamp : r.timestamp) + ", " \
+          + "\"" + to_string(r.timestamp == 0 ? timestamp : r.timestamp) + "\", " \
           + to_string(r.game_id) + ", " \
-          + r.machine + ", " \
+          + "\"" + r.machine + "\", " \
           + to_string(r.seq) + ", " \
           + to_string(r.pri) + ", " \
           + to_string(r.reward) + ", " \
-          + r.content + ");";
+          + "\"" + r.content + "\");";
        return exec(sql) == 0;
    }
 

@@ -82,7 +82,8 @@ void GoGame::Act(const elf::Signal &signal) {
         _ai->Act(_state, &c, &signal.done());
         if (! _state.forward(c) || _state.GetPly() > BOARD_SIZE * BOARD_SIZE ) {
             cout << _state.ShowBoard() << endl;
-            cout << "No valid move [" << c << "][" << coord2str(c) << "][" << coord2str2(c) << "], restarting the game" << endl;
+            cout << "No valid move [" << c << "][" << coord2str(c) << "][" << coord2str2(c) << "], ";
+            cout << "or ply: " << _state.GetPly() << " exceeds threads.Restarting the game" << endl;
             _state.Reset();
 
             if (_tar_writer != nullptr) {
@@ -93,7 +94,9 @@ void GoGame::Act(const elf::Signal &signal) {
                 r.game_id = _game_idx;
                 r.reward = _state.Evaluate([&]() -> unsigned int { return _rng(); });
                 r.content = coords2sgfstr(_moves);
-                _rw_buffer->Insert(r);
+                if (! _rw_buffer->Insert(r)) {
+                    cout << "Insert error! Last error: " << _rw_buffer->LastError() << endl;
+                }
             }
             _moves.clear();
             _game_idx++;
