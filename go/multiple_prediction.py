@@ -22,7 +22,7 @@ class MultiplePrediction:
         ''' Update given batch '''
         # Current timestep.
         state_curr = mi["model"](batch.hist(0))
-        total_loss = None
+        total_policy_loss = None
         eps = 1e-6
         targets = batch.hist(0)["offline_a"]
 
@@ -38,7 +38,18 @@ class MultiplePrediction:
             # backward.
             loss = self.policy_loss((pred + eps).log(), Variable(targets[:, i]))
             stats["loss" + str(i)].feed(loss.data[0])
-            total_loss = add_err(total_loss, loss / (i + 1))
+            total_policy_loss = add_err(total_policy_loss, loss / (i + 1))
+
+        total_value_loss = None
+        if "V" in state_curr and "V" in batch:
+            total_value_loss = self.value_loss(state_curr["V"], Variable(batch.hist(0)["V"]))
+
+        stats["total_policy_loss"].feed(total_policy_loss.data[0])
+        if total_value_loss is not None:
+            stats["total_value_loss"].feed(total_value_loss.data[0])
+            total_loss = total_policy_loss + total_value_loss
+        else:
+            total_loss = total_policy_loss
 
         stats["total_loss"].feed(total_loss.data[0])
         if not self.args.multipred_no_backprop:
