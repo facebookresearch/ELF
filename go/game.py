@@ -57,6 +57,7 @@ class Loader:
         opt.num_games_per_thread = args.num_games_per_thread
         GC = go.GameContext(co, opt)
         print("Version: ", GC.Version())
+        print("Mode: ", opt.mode)
 
         params = GC.GetParams()
         print("Num Actions: ", params["num_action"])
@@ -85,12 +86,14 @@ class Loader:
                 name="actor",
                 timeout_usec = 10,
             )
-        else:
+        elif args.mode == "train":
             desc["train"] = dict(
                 batchsize=args.batchsize,
                 input=dict(T=args.T, keys=set(["s", "offline_a"])),
                 reply=None
             )
+        else:
+            raise "No such mode: " + args.mode
 
         self.more_labels.add_labels(desc)
 

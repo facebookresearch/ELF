@@ -42,7 +42,10 @@ void GoGameSelfPlay::Init(AIComm *ai_comm) {
             ai->SetActorName("actor");
             _ai.reset(ai);
         }
-    } else if (_options.mode == "training") {
+    } else if (_options.mode == "train") {
+    } else {
+        std::cout << "Unknown mode! " << _options.mode << std::endl;
+        throw std::range_error("Unknown mode");
     }
 
     if (_options.verbose) std::cout << "[" << _game_idx << "] Done with initialization" << std::endl;

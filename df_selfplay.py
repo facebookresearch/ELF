@@ -1,19 +1,17 @@
 # Console for DarkForest
 import sys
 import os
-from rlpytorch import load_env, Evaluator, ModelInterface, ArgsProvider, EvalIters
+from rlpytorch import load_env, Evaluator, ModelInterface, ArgsProvider
 
 if __name__ == '__main__':
-    evaluator = Evaluator(stats=False)
+    evaluator = Evaluator(stats=None)
     # Set game to online model.
-    env, args = load_env(os.environ, evaluator=evaluator, overrides=dict(mode="selfplay", T=1))
+    env, args = load_env(os.environ, evaluator=evaluator, overrides=dict(T=1))
 
     GC = env["game"].initialize()
     model = env["model_loaders"][0].load_model(GC.params)
     mi = ModelInterface()
-    mi.add_model("model", model)
     mi.add_model("actor", model, copy=True, cuda=args.gpu is not None, gpu_id=args.gpu)
-    mi["model"].eval()
     mi["actor"].eval()
 
     evaluator.setup(mi=mi)

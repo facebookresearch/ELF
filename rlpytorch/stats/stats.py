@@ -166,8 +166,9 @@ class Stats(EvalCount):
         elif stats_name == "winrate":
             self.collector = WinRate()
         else:
-            print("Name " + str(stats_name) + " is not known!")
-            raise ValueError("")
+            self.collector = None
+            print("Stats: Name " + str(stats_name) + " is not known!")
+            # raise ValueError("Name " + str(stats_name) + " is not known!")
 
     def is_valid(self):
         return self.collector is not None

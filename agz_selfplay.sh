@@ -1,0 +1,1 @@
+game=./go/game model=df model_file=./go/df_model2 python3 df_selfplay.py --mode selfplay --batchsize 128 --num_games 32 --mcts_threads 32 --mcts_rollout 50 --use_mcts --mcts_verbose_time --keys_in_reply V --num_block 20 --mcts_persistent_tree --num_collectors 2 "$@"

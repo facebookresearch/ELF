@@ -41,7 +41,6 @@ private:
 
     std::vector<Coord> _moves;
     std::unique_ptr<elf::tar::TarWriter> _tar_writer;
-    std::unique_ptr<elf::SharedRWBuffer> _rw_buffer;
 
 public:
     GoGame(int game_idx, const ContextOptions &context_options, const GameOptions& options);

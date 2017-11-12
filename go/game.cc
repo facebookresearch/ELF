@@ -27,8 +27,6 @@ GoGame::GoGame(int game_idx, const ContextOptions &context_options, const GameOp
         _seed = options.seed;
     }
     _rng.seed(_seed);
-
-    _rw_buffer.reset(new elf::SharedRWBuffer("/home/yuandong/local/replay.db", "REPLAY"));
 }
 
 void GoGame::Init(AIComm *ai_comm) {
@@ -84,15 +82,6 @@ void GoGame::Act(const elf::Signal &signal) {
 
             if (_tar_writer != nullptr) {
               _tar_writer->Write(std::to_string(_game_idx), coords2sgfstr(_moves));
-            }
-            if (_rw_buffer != nullptr) {
-                elf::SharedRWBuffer::Record r;
-                r.game_id = _game_idx;
-                r.reward = _state.Evaluate([&]() -> unsigned int { return _rng(); });
-                r.content = coords2sgfstr(_moves);
-                if (! _rw_buffer->Insert(r)) {
-                    cout << "Insert error! Last error: " << _rw_buffer->LastError() << endl;
-                }
             }
             _moves.clear();
             _game_idx++;
