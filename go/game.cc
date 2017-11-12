@@ -31,6 +31,8 @@ GoGame::GoGame(int game_idx, const ContextOptions &context_options, const GameOp
         _seed = options.seed;
     }
     _rng.seed(_seed);
+
+    _rw_buffer.reset(new SharedRWBuffer("/home/yuandong/local/replay.db", "REPLAY"));
 }
 
 void GoGame::Init(AIComm *ai_comm) {
@@ -78,13 +80,20 @@ void GoGame::Act(const elf::Signal &signal) {
         }
 
         _ai->Act(_state, &c, &signal.done());
-        if (! _state.forward(c)) {
+        if (! _state.forward(c) || _state.GetPly() > BOARD_SIZE * BOARD_SIZE ) {
             cout << _state.ShowBoard() << endl;
             cout << "No valid move [" << c << "][" << coord2str(c) << "][" << coord2str2(c) << "], restarting the game" << endl;
             _state.Reset();
 
             if (_tar_writer != nullptr) {
               _tar_writer->Write(std::to_string(_game_idx), coords2sgfstr(_moves));
+            }
+            if (_rw_buffer != nullptr) {
+                SharedRWBuffer::Record r;
+                r.game_id = _game_idx;
+                r.reward = _state.Evaluate();
+                r.content = coords2sgfstr(_moves);
+                _rw_buffer->Insert(r);
             }
             _moves.clear();
             _game_idx++;

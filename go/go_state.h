@@ -48,8 +48,8 @@ public:
     Stone NextPlayer() const { return _board._next_player; }
 
     vector<Coord> last_opponent_moves() const {
-        Coord m = LastMove2();
-        if (m != M_PASS) return vector<Coord>{ LastMove2() };
+        Coord m = LastMove();
+        if (m != M_PASS) return vector<Coord>{ LastMove() };
         else return vector<Coord>();
     }
 

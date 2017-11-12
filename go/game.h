@@ -12,6 +12,7 @@
 #include "elf/pybind_helper.h"
 #include "elf/comm_template.h"
 #include "elf/ai_comm.h"
+#include "elf/shared_rw_buffer.h"
 
 #include "ai.h"
 #include "go_game_specific.h"
@@ -40,6 +41,7 @@ private:
 
     std::vector<Coord> _moves;
     std::unique_ptr<elf::tar::TarWriter> _tar_writer;
+    std::unique_ptr<elf::SharedRWBuffer> _rw_buffer;
 
 public:
     GoGame(int game_idx, const ContextOptions &context_options, const GameOptions& options);
