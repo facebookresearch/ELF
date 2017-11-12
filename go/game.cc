@@ -32,7 +32,7 @@ GoGame::GoGame(int game_idx, const ContextOptions &context_options, const GameOp
     }
     _rng.seed(_seed);
 
-    _rw_buffer.reset(new SharedRWBuffer("/home/yuandong/local/replay.db", "REPLAY"));
+    _rw_buffer.reset(new elf::SharedRWBuffer("/home/yuandong/local/replay.db", "REPLAY"));
 }
 
 void GoGame::Init(AIComm *ai_comm) {
@@ -89,9 +89,9 @@ void GoGame::Act(const elf::Signal &signal) {
               _tar_writer->Write(std::to_string(_game_idx), coords2sgfstr(_moves));
             }
             if (_rw_buffer != nullptr) {
-                SharedRWBuffer::Record r;
+                elf::SharedRWBuffer::Record r;
                 r.game_id = _game_idx;
-                r.reward = _state.Evaluate();
+                r.reward = _state.Evaluate([&]() -> unsigned int { return _rng(); });
                 r.content = coords2sgfstr(_moves);
                 _rw_buffer->Insert(r);
             }

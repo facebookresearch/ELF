@@ -36,6 +36,7 @@ public:
     string info() const { return string(); }
 
     float reward(const GoState &s, float value) const {
+        (void)value;
         // Compute value of the current situation, if the game._ply has passed a threshold.
         // if (s.GetPly() <= BOARD_SIZE * BOARD_SIZE) return value;
 

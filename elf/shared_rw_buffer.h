@@ -3,12 +3,15 @@
 #include <iostream>
 #include <functional>
 #include <chrono>
+#include <shared_mutex>
+#include <random>
+#include <mutex>
 
 namespace elf {
 
 using namespace std;
 
-using SqlCB = function<int (void*,int,char**,char**)>;
+typedef int SqlCB(void*,int,char**,char**);
 
 class SharedRWBuffer {
 public:
@@ -24,17 +27,20 @@ public:
 
     SharedRWBuffer(const string &filename, const string& table_name)
       : table_name_(table_name), rng_(time(NULL)), recent_loaded_(2) {
-        int rc = sqlite3_open(filename, &db_);
+        int rc = sqlite3_open(filename.c_str(), &db_);
         if (rc) {
             cerr << "Can't open database. Filename: " << filename << ", ErrMsg: " << sqlite3_errmsg(db_) << endl;
             throw std::range_error("Cannot open database");
         }
         // Check whether table exists.
-        exec("SELECT 1 FROM " + table_name + " LIMIT 1;")
+        exec("SELECT 1 FROM " + table_name_ + " LIMIT 1;");
     }
 
-    void Sample(int n, vector<Record> *sample_records) const {
-        shared_lock<shared_mutex> lock(write_mutex_);
+    void Sample(int n, vector<Record> *sample_records) {
+        write_mutex_.lock();
+        readers_ ++;
+        write_mutex_.unlock();
+
         const auto &loaded = recent_loaded_[curr_idx_];
 
         // Sample with replacement.
@@ -42,6 +48,8 @@ public:
             int idx = rng_() % loaded.size();
             sample_records->push_back(loaded[idx]);
         }
+
+        readers_ --;
     }
 
     bool Insert(const Record &r) {
@@ -61,8 +69,10 @@ private:
 
    int curr_idx_ = 0;
    vector<vector<Record>> recent_loaded_;
+
+   atomic<int> readers_;
    mutable mutex alt_mutex_;
-   mutable shared_mutex write_mutex_;
+   mutable mutex write_mutex_;
 
    friend int read_callback(void *, int, char **, char **);
 
@@ -80,7 +90,7 @@ private:
 
    bool table_create() {
        const string sql =
-         "CREATE TABLE " + table_name + " ("  \
+         "CREATE TABLE " + table_name_ + " ("  \
              "TIME           CHAR(20) PRIMARY KEY NOT NULL," \
              "GAME_ID        INT     NOT NULL," \
              "MACHINE        CHAR(80) NOT NULL," \
@@ -115,14 +125,7 @@ private:
        return exec(sql) == 0;
    }
 
-   bool table_read_recent(int max_num_records) {
-       // Read things into a buffer.
-       const string sql = "SELECT * FROM " + table_name_ + " ORDER BY TIME DESC LIMIT " + to_string(max_num_records) + ";";
-       cb_save_start();
-       int ret = exec(sql, read_callback);
-       cb_save_end();
-       return ret == 0;
-   }
+   bool table_read_recent(int max_num_records);
 
    void cb_save_start() {
        alt_mutex_.lock();
@@ -139,9 +142,12 @@ private:
 
    void cb_save_end() {
        int alt_idx = (curr_idx_ + 1) % recent_loaded_.size();
-       unique_lock<shared_mutex> lock(write_mutex_);
+
+       write_mutex_.lock();
+       while(readers_ > 0){};
        curr_idx_ = alt_idx;
-       lock.release();
+       write_mutex_.unlock();
+
        alt_mutex_.unlock();
    }
 };

@@ -20,4 +20,13 @@ int read_callback(void *handle, int num_columns, char **column_texts, char **col
     return 0;
 }
 
+bool SharedRWBuffer::table_read_recent(int max_num_records) {
+    // Read things into a buffer.
+    const string sql = "SELECT * FROM " + table_name_ + " ORDER BY TIME DESC LIMIT " + to_string(max_num_records) + ";";
+    cb_save_start();
+    int ret = exec(sql, read_callback);
+    cb_save_end();
+    return ret == 0;
+}
+
 }  // namespace elf
