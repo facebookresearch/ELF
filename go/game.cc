@@ -21,11 +21,7 @@ GoGame::GoGame(int game_idx, const ContextOptions &context_options, const GameOp
   : _options(options), _context_options(context_options), _curr_loader_idx(0) {
     _game_idx = game_idx;
     if (options.seed == 0) {
-        auto now = chrono::system_clock::now();
-        auto now_ms = chrono::time_point_cast<chrono::milliseconds>(now);
-        auto value = now_ms.time_since_epoch();
-        long duration = value.count();
-        _seed = (time(NULL) * 1000 + duration + _game_idx * 2341479) % 100000000;
+        _seed = elf_utils::get_seed(game_idx);
         if (_options.verbose) std::cout << "[" << _game_idx << "] Seed:" << _seed << std::endl;
     } else {
         _seed = options.seed;

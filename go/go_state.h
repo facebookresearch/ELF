@@ -58,6 +58,13 @@ public:
         return _bf;
     }
 
+    const BoardFeature &extractor(int code) {
+        auto rot = (BoardFeature::Rot)(code % 4);
+        bool flip = (code >> 2) == 1;
+        _bf.SetD4Group(rot, flip);
+        return _bf;
+    }
+
     const BoardFeature &extractor() {
         _bf.SetD4Group(BoardFeature::NONE, false);
         return _bf;

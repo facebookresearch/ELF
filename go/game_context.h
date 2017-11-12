@@ -13,7 +13,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl_bind.h>
 
-#include "game.h"
+#include "game_selfplay.h"
 #include "../elf/pybind_interface.h"
 #include "../elf/tar_loader.h"
 #include "offpolicy_loader.h"
@@ -25,14 +25,14 @@ class GameContext {
 
   private:
     std::unique_ptr<GC> _context;
-    std::vector<std::unique_ptr<GoGame>> _games;
+    std::vector<std::unique_ptr<GoGameSelfPlay>> _games;
     const int _num_action = BOARD_SIZE * BOARD_SIZE;
 
   public:
     GameContext(const ContextOptions& context_options, const GameOptions& options) {
       _context.reset(new GC{context_options, options});
       for (int i = 0; i < context_options.num_games; ++i) {
-          _games.emplace_back(new GoGame(i, context_options, options));
+          _games.emplace_back(new GoGameSelfPlay(i, context_options, options));
       }
       if (! options.list_filename.empty()) OfflineLoader::InitSharedBuffer(options.list_filename);
     }

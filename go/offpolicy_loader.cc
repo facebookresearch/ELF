@@ -106,7 +106,7 @@ std::string OfflineLoader::get_key() {
 }
 
 bool OfflineLoader::need_reload(const Sgf::iterator &it) const {
-   return (it.done() || it.StepLeft() < _options.num_future_actions 
+   return (it.done() || it.StepLeft() < _options.num_future_actions
             || (_options.move_cutoff >= 0 && it.GetCurrIdx() >= _options.move_cutoff));
 }
 
@@ -128,10 +128,7 @@ void OfflineLoader::extract(Data *data) {
     int code = _options.data_aug;
     if (code  == -1 || code >= 8) code = _rng() % 8;
     gs.aug_code = code;
-
-    auto rot = (BoardFeature::Rot)(code % 4);
-    bool flip = (code >> 2) == 1;
-    const BoardFeature &bf = s().extractor(rot, flip);
+    const BoardFeature &bf = s().extractor(code);
 
     bf.Extract(&gs.s);
     save_forward_moves(bf, &gs.offline_a);

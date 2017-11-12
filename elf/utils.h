@@ -8,12 +8,22 @@
 #include <map>
 #include <sstream>
 #include <chrono>
+#include <time.h>
 
 namespace elf_utils {
 
 using namespace std;
 
 inline string print_bool(bool b) { return b ? "True" : "False"; }
+
+inline uint64_t get_seed(int game_idx) {
+    // [TODO] Definitely not the right way, but working.
+    auto now = chrono::system_clock::now();
+    auto now_ms = chrono::time_point_cast<chrono::milliseconds>(now);
+    auto value = now_ms.time_since_epoch();
+    long duration = value.count();
+    return (time(NULL) * 1000 + duration + game_idx * 2341479) % 100000000;
+}
 
 inline string trim(string& str) {
     str.erase(0, str.find_first_not_of(' '));       //prefixing spaces

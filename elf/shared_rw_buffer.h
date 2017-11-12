@@ -3,9 +3,8 @@
 #include <iostream>
 #include <functional>
 #include <chrono>
-#include <shared_mutex>
 #include <random>
-#include <mutex>
+#include "primitive.h"
 
 namespace elf {
 
@@ -25,8 +24,34 @@ public:
         string content;
     };
 
+    class Sampler {
+    public:
+        explicit Sampler(SharedRWBuffer *data) : data_(data), rng_(time(NULL)) {
+            data_->rw_lock_.read_shared_lock();
+        }
+        Sampler(const Sampler &) = delete;
+        Sampler(Sampler &&sampler) : data_(sampler.data_), rng_(move(sampler.rng_)) { }
+
+        const Record &sample() {
+            const auto *loaded = &data_->get_recent_load();
+            if (loaded->empty()) {
+                data_->table_read_recent(1000);
+                loaded = &data_->get_recent_load();
+            }
+            int idx = rng_() % loaded->size();
+            return loaded->at(idx);
+        }
+
+        ~Sampler() {
+            data_->rw_lock_.read_shared_unlock();
+        }
+    private:
+        SharedRWBuffer *data_;
+        mt19937 rng_;
+    };
+
     SharedRWBuffer(const string &filename, const string& table_name, bool verbose = false)
-      : table_name_(table_name), rng_(time(NULL)), recent_loaded_(2), verbose_(verbose) {
+      : table_name_(table_name), recent_loaded_(2), verbose_(verbose) {
         int rc = sqlite3_open(filename.c_str(), &db_);
         if (rc) {
             cerr << "Can't open database. Filename: " << filename << ", ErrMsg: " << sqlite3_errmsg(db_) << endl;
@@ -38,20 +63,8 @@ public:
         }
     }
 
-    void Sample(int n, vector<Record> *sample_records) {
-        write_mutex_.lock();
-        readers_ ++;
-        write_mutex_.unlock();
-
-        const auto &loaded = recent_loaded_[curr_idx_];
-
-        // Sample with replacement.
-        for (int i = 0; i < n; ++i) {
-            int idx = rng_() % loaded.size();
-            sample_records->push_back(loaded[idx]);
-        }
-
-        readers_ --;
+    Sampler GetSampler() {
+        return Sampler(this);
     }
 
     bool Insert(const Record &r) {
@@ -70,14 +83,11 @@ private:
    const string table_name_;
    string last_err_;
 
-   mt19937 rng_;
-
    int curr_idx_ = 0;
    vector<vector<Record>> recent_loaded_;
 
-   atomic<int> readers_;
+   mutable RWLock rw_lock_;
    mutable mutex alt_mutex_;
-   mutable mutex write_mutex_;
 
    bool verbose_ = false;
 
@@ -140,7 +150,35 @@ private:
        return exec(sql) == 0;
    }
 
-   bool table_read_recent(int max_num_records);
+   bool table_read_recent(int max_num_records) {
+       auto read_callback = [](void *handle, int num_columns, char **column_texts, char **column_names) {
+           (void)num_columns;
+           (void)column_names;
+
+           SharedRWBuffer *h = reinterpret_cast<SharedRWBuffer *>(handle);
+           SharedRWBuffer::Record r;
+
+           r.timestamp = stoi(column_texts[0]);
+           r.game_id = stoi(column_texts[1]);
+           r.machine = column_texts[2];
+           r.seq = stoi(column_texts[3]);
+           r.pri = stof(column_texts[4]);
+           r.reward = stof(column_texts[5]);
+           r.content = column_texts[6];
+
+           h->cb_save(r);
+           return 0;
+       };
+
+       // Read things into a buffer.
+       const string sql = "SELECT * FROM " + table_name_ + " ORDER BY TIME DESC LIMIT " + to_string(max_num_records) + ";";
+       cb_save_start();
+       int ret = exec(sql, read_callback);
+       cb_save_end();
+       return ret == 0;
+   }
+
+   const vector<Record> &get_recent_load() const { return recent_loaded_[curr_idx_]; }
 
    void cb_save_start() {
        alt_mutex_.lock();
@@ -158,10 +196,9 @@ private:
    void cb_save_end() {
        int alt_idx = (curr_idx_ + 1) % recent_loaded_.size();
 
-       write_mutex_.lock();
-       while(readers_ > 0){};
+       rw_lock_.write_lock();
        curr_idx_ = alt_idx;
-       write_mutex_.unlock();
+       rw_lock_.write_unlock();
 
        alt_mutex_.unlock();
    }

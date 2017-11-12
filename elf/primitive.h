@@ -165,3 +165,32 @@ public:
         _flag = false;
     }
 };
+
+// [TODO] This should be replaced by shared_mutex in C++17.
+class RWLock {
+public:
+    void read_shared_lock() {
+        write_mutex_.lock();
+        readers_ ++;
+        write_mutex_.unlock();
+    }
+
+    void read_shared_unlock() {
+        readers_ --;
+    }
+
+    void write_lock() {
+       write_mutex_.lock();
+       while(readers_ > 0){};
+    }
+
+    void write_unlock() {
+       write_mutex_.unlock();
+    }
+
+    RWLock() : readers_(0) { }
+
+private:
+    std::atomic<int> readers_;
+    std::mutex write_mutex_;
+};

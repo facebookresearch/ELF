@@ -51,6 +51,27 @@ inline string coords2sgfstr(const vector<Coord>& moves) {
   return sgf;
 }
 
+inline std::vector<Coord> sgfstr2coords(const std::string& sgf) {
+  std::vector<Coord> moves;
+  if (sgf.empty() || sgf[0] != '(') return moves;
+
+  size_t i = 1;
+  while (true) {
+      if (sgf[i] != ';') break;
+      while (i < sgf.size() && sgf[i] != '[') i ++;
+      if (i == sgf.size()) break;
+
+      i ++;
+      size_t j = i;
+
+      while (j < sgf.size() && sgf[j] != ']') j ++;
+      if (j == sgf.size()) break;
+
+      moves.push_back(str2coord(sgf.substr(i, j - i)));
+  }
+
+  return moves;
+}
 
 struct SgfEntry {
     Coord move;
