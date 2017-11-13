@@ -26,13 +26,18 @@ class GameContext {
   private:
     std::unique_ptr<GC> _context;
     std::vector<std::unique_ptr<GoGameSelfPlay>> _games;
+
+    std::unique_ptr<elf::SharedRWBuffer> _rw_buffer;
+
     const int _num_action = BOARD_SIZE * BOARD_SIZE;
 
   public:
     GameContext(const ContextOptions& context_options, const GameOptions& options) {
       _context.reset(new GC{context_options, options});
+      _rw_buffer.reset(new elf::SharedRWBuffer(options.database_filename, "REPLAY"));
+
       for (int i = 0; i < context_options.num_games; ++i) {
-          _games.emplace_back(new GoGameSelfPlay(i, context_options, options));
+          _games.emplace_back(new GoGameSelfPlay(i, _rw_buffer.get(), context_options, options));
       }
       if (! options.list_filename.empty()) OfflineLoader::InitSharedBuffer(options.list_filename);
     }

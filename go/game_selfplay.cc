@@ -15,8 +15,8 @@
 #include <fstream>
 
 ////////////////// GoGame /////////////////////
-GoGameSelfPlay::GoGameSelfPlay(int game_idx, const ContextOptions &context_options, const GameOptions& options)
-  : _options(options), _context_options(context_options) {
+GoGameSelfPlay::GoGameSelfPlay(int game_idx, elf::SharedRWBuffer *rw_buffer, const ContextOptions &context_options, const GameOptions& options)
+  : _options(options), _context_options(context_options), _rw_buffer(rw_buffer) {
     _game_idx = game_idx;
     if (options.seed == 0) {
         _seed = elf_utils::get_seed(game_idx);
@@ -25,8 +25,6 @@ GoGameSelfPlay::GoGameSelfPlay(int game_idx, const ContextOptions &context_optio
         _seed = options.seed;
     }
     _rng.seed(_seed);
-
-    _rw_buffer.reset(new elf::SharedRWBuffer(options.database_filename, "REPLAY"));
 }
 
 void GoGameSelfPlay::Init(AIComm *ai_comm) {

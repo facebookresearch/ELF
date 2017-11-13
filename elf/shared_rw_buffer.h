@@ -30,6 +30,18 @@ public:
             ss << "[pri=" << pri << "][reward=" << reward << "[machine=" << machine << "] len(content)=" << content.size();
             return ss.str();
         }
+
+        string sql() const {
+            stringstream ss;
+            ss << "(" << "\"" << timestamp + "\", ";
+            ss << game_id << ", ";
+            ss << "\"" << machine << "\", ";
+            ss << seq << ", ";
+            ss << pri << ", ";
+            ss << reward << ", ";
+            ss << "\"" << content << "\")";
+            return ss.str();
+        }
     };
 
     class Sampler {
@@ -87,8 +99,17 @@ public:
         return Sampler(this);
     }
 
-    bool Insert(const Record &r) {
-        return table_insert(r);
+    bool Insert(const Record &r, bool send_sql = true) {
+        unique_lock<mutex> lock(insert_mutex_);
+
+        insert_buffer_.push_back(r);
+        if (insert_buffer_.back().timestamp == 0) {
+            auto now = chrono::system_clock::now();
+            insert_buffer_.back().timestamp = chrono::duration_cast<chrono::milliseconds>(now.time_since_epoch()).count();
+        }
+
+        if (send_sql) return table_insert();
+        else return true;
     }
 
     const string &LastError() const { return last_err_; }
@@ -102,6 +123,9 @@ private:
    sqlite3 *db_ = nullptr;
    const string table_name_;
    string last_err_;
+
+   vector<Record> insert_buffer_;
+   mutex insert_mutex_;
 
    int curr_idx_ = 0;
    vector<vector<Record>> recent_loaded_;
@@ -155,19 +179,21 @@ private:
        return true;
    }
 
-   bool table_insert(const Record &r) {
-       auto now = chrono::system_clock::now();
-       uint64_t timestamp = chrono::duration_cast<chrono::milliseconds>(now.time_since_epoch()).count();
+   bool table_insert() {
+       string sql = "INSERT INTO " + table_name_ + " VALUES ";
+       for (size_t i = 0; i < insert_buffer_.size(); ++i) {
+           if (i > 0) sql += ", ";
+           sql += insert_buffer_[i].sql();
+       }
+       sql += ";";
 
-       const string sql = "INSERT INTO " + table_name_ + " VALUES (" \
-          + "\"" + to_string(r.timestamp == 0 ? timestamp : r.timestamp) + "\", " \
-          + to_string(r.game_id) + ", " \
-          + "\"" + r.machine + "\", " \
-          + to_string(r.seq) + ", " \
-          + to_string(r.pri) + ", " \
-          + to_string(r.reward) + ", " \
-          + "\"" + r.content + "\");";
-       return exec(sql) == 0;
+       int ret = exec(sql);
+       if (ret == 0) {
+           insert_buffer_.clear();
+           return true;
+       } else {
+           return false;
+       }
    }
 
    bool table_read_recent(int max_num_records) {

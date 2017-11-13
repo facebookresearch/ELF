@@ -37,12 +37,11 @@ private:
     GoState _state;
 
     std::vector<Coord> _moves;
-    std::unique_ptr<elf::SharedRWBuffer> _rw_buffer;
-
+    elf::SharedRWBuffer *_rw_buffer = nullptr;
     AIComm *_ai_comm = nullptr;
 
 public:
-    GoGameSelfPlay(int game_idx, const ContextOptions &context_options, const GameOptions& options);
+    GoGameSelfPlay(int game_idx, elf::SharedRWBuffer *rw_buffer, const ContextOptions &context_options, const GameOptions& options);
 
     void Init(AIComm *ai_comm);
 
