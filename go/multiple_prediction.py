@@ -41,8 +41,8 @@ class MultiplePrediction:
             total_policy_loss = add_err(total_policy_loss, loss / (i + 1))
 
         total_value_loss = None
-        if "V" in state_curr and "V" in batch:
-            total_value_loss = self.value_loss(state_curr["V"], Variable(batch.hist(0)["V"]))
+        if "V" in state_curr and "winner" in batch:
+            total_value_loss = self.value_loss(state_curr["V"], Variable(batch.hist(0)["winner"]))
 
         stats["total_policy_loss"].feed(total_policy_loss.data[0])
         if total_value_loss is not None:

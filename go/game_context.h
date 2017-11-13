@@ -74,8 +74,7 @@ class GameContext {
         else if (key == "offline_a") return EntryInfo(key, type_name, {_context->options().num_future_actions});
         else if (key == "last_terminal" || key == "id" || key == "seq" || key == "game_counter") return EntryInfo(key, type_name);
         else if (key == "move_idx") return EntryInfo(key, type_name);
-        else if (key == "winner") return EntryInfo(key, type_name);
-        else if (key == "a" || key == "V") return EntryInfo(key, type_name);
+        else if (key == "a" || key == "V" || key == "winner") return EntryInfo(key, type_name);
         else if (key == "pi") return EntryInfo(key, type_name, { BOARD_SIZE * BOARD_SIZE });
         else if (key == "aug_code" || key == "move_idx" || key == "game_record_idx") return EntryInfo(key, type_name);
 

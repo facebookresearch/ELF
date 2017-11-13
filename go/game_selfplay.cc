@@ -71,6 +71,7 @@ void GoGameSelfPlay::Act(const elf::Signal &signal) {
 
             _state.Reset();
             _moves.clear();
+            _ai->GameEnd();
             _game_idx++;
         } else {
           _moves.push_back(c);
@@ -78,7 +79,7 @@ void GoGameSelfPlay::Act(const elf::Signal &signal) {
     } else {
         // Train a model directly.
         vector<Coord> moves;
-        float reward = 0.0;
+        float winner = 0.0;
         {
             // std::cout << "Get Sampler" << std::endl;
             auto sampler = _rw_buffer->GetSampler();
@@ -88,7 +89,7 @@ void GoGameSelfPlay::Act(const elf::Signal &signal) {
 
             // std::cout << "Convert to moves: " << r.content << std::endl;
             moves = sgfstr2coords(r.content);
-            reward = r.reward;
+            winner = r.reward;
             // std::cout << "Convert complete, #move = " << moves.size() << std::endl;
         }
 
@@ -105,7 +106,7 @@ void GoGameSelfPlay::Act(const elf::Signal &signal) {
         // Then send the data to the server.
         auto &gs = _ai_comm->Prepare();
         gs.move_idx = _state.GetPly();
-        gs.winner = reward;
+        gs.winner = winner;
 
         int code = _rng() % 8;
         gs.aug_code = code;

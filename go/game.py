@@ -89,7 +89,7 @@ class Loader:
         elif args.mode == "train":
             desc["train"] = dict(
                 batchsize=args.batchsize,
-                input=dict(T=args.T, keys=set(["s", "offline_a"])),
+                input=dict(T=args.T, keys=set(["s", "offline_a", "winner"])),
                 reply=None
             )
         else:

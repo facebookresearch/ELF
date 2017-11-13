@@ -1,12 +1,13 @@
 # Console for DarkForest
 import sys
 import os
-from rlpytorch import load_env, Evaluator, ModelInterface, ArgsProvider
+from rlpytorch import load_env, Evaluator, ModelInterface, ArgsProvider, SingleProcessRun
 
 if __name__ == '__main__':
     evaluator = Evaluator(stats=None)
+    runner = SingleProcessRun()
     # Set game to online model.
-    env, args = load_env(os.environ, evaluator=evaluator, overrides=dict(T=1))
+    env, args = load_env(os.environ, evaluator=evaluator, runner=runner, overrides=dict(T=1))
 
     GC = env["game"].initialize()
     model = env["model_loaders"][0].load_model(GC.params)
@@ -25,22 +26,32 @@ if __name__ == '__main__':
         total_sel_batchsize += batch.batchsize
         total_batchsize += batch.max_batchsize
 
-        if total_sel_batchsize >= 5000:
+        if total_sel_batchsize >= 500000:
             print("Batch usage: %d/%d (%.2f%%)" %
                   (total_sel_batchsize, total_batchsize, 100.0 * total_sel_batchsize / total_batchsize))
             total_sel_batchsize = 0
             total_batchsize = 0
-        # import pdb
-        # pdb.set_trace()
+
+        # eval_iters.stats.feed_batch(batch)
         return reply
 
     GC.reg_callback_if_exists("actor", actor)
 
+    runner.setup(GC, episode_summary=evaluator.episode_summary,
+                episode_start=evaluator.episode_start)
+
+    runner.run()
+
+    '''
     GC.Start()
 
-    evaluator.episode_start(0)
-
+    i = 0
     while True:
-        GC.Run()
+        evaluator.episode_start(i)
+        for n in eval_iters.iters():
+            GC.Run()
+        evaluator.episode_summary(i)
+        i += 1
 
     GC.Stop()
+    '''

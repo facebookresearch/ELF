@@ -59,7 +59,7 @@ struct GameOptions {
 
 struct GameState {
     using State = GameState;
-    // Board state BOARD_SIZE * BOARD_SIZE 
+    // Board state BOARD_SIZE * BOARD_SIZE
     std::vector<float> s;
 
     // Next k actions.
@@ -74,15 +74,16 @@ struct GameState {
     int32_t game_record_idx = -1;
     int32_t move_idx = -1;
     int32_t aug_code = 0;
-    int32_t winner = 0; // B +1, W -1, U 0
 
     std::string name;
 
     int64_t a;
     std::vector<float> pi;
-    float V;
+    float V; // B +1, W -1, U 0
+    float winner;
+    float last_r;
 
-    void Clear() { game_record_idx = -1; aug_code = 0; winner = 0; move_idx = -1; }
+    void Clear() { game_record_idx = -1; aug_code = 0; last_r = 0.0; winner = 0.0; move_idx = -1; }
 
     void Init(int iid, int num_action) {
         id = iid;
@@ -110,8 +111,8 @@ struct GameState {
         last_terminal = 0;
     }
 
-    DECLARE_FIELD(GameState, id, seq, game_counter, last_terminal, s, offline_a, a, V, pi, move_idx, winner, aug_code, game_record_idx);
-    REGISTER_PYBIND_FIELDS(id, seq, game_counter, last_terminal, s, offline_a, a, V, move_idx, winner, aug_code);
+    DECLARE_FIELD(GameState, id, seq, game_counter, last_terminal, s, offline_a, a, V, pi, move_idx, aug_code, game_record_idx, last_r, winner);
+    REGISTER_PYBIND_FIELDS(id, seq, game_counter, last_terminal, s, offline_a, a, V, move_idx, aug_code, last_r);
 };
 
 using Context = ContextT<GameOptions, HistT<GameState>>;

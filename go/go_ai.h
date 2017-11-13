@@ -73,7 +73,6 @@ protected:
         auto &gs = data->newest();
         gs.name = actor_name_;
         gs.move_idx = state.GetPly();
-        gs.winner = 0;
         const auto &bf = state.last_extractor();
         bf.Extract(&gs.s);
         last_state_ = &state;
@@ -100,7 +99,6 @@ protected:
         auto &gs = data->newest();
         gs.name = actor_name_;
         gs.move_idx = state.GetPly();
-        gs.winner = 0;
         const auto &bf = state.last_extractor();
         bf.Extract(&gs.s);
     }
