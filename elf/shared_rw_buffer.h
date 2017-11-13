@@ -33,7 +33,7 @@ public:
 
         string sql() const {
             stringstream ss;
-            ss << "(" << "\"" << timestamp + "\", ";
+            ss << "(" << "\"" << timestamp << "\", ";
             ss << game_id << ", ";
             ss << "\"" << machine << "\", ";
             ss << seq << ", ";
@@ -102,14 +102,20 @@ public:
     bool Insert(const Record &r, bool send_sql = true) {
         unique_lock<mutex> lock(insert_mutex_);
 
+        // cout << "Before inserting.. " << endl;
         insert_buffer_.push_back(r);
         if (insert_buffer_.back().timestamp == 0) {
             auto now = chrono::system_clock::now();
             insert_buffer_.back().timestamp = chrono::duration_cast<chrono::milliseconds>(now.time_since_epoch()).count();
         }
 
-        if (send_sql) return table_insert();
-        else return true;
+        // cout << "After inserting.. #entry = " << insert_buffer_.size() << " send_sql: " << (send_sql ? "true" : " false") << endl;
+
+        if (send_sql) {
+          return table_insert();
+        } else {
+          return true;
+        }
     }
 
     const string &LastError() const { return last_err_; }

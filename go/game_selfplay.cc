@@ -59,12 +59,14 @@ void GoGameSelfPlay::Act(const elf::Signal &signal) {
             cout << "No valid move [" << c << "][" << coord2str(c) << "][" << coord2str2(c) << "], ";
             cout << "or ply: " << _state.GetPly() << " exceeds threads.Restarting the game" << endl;
 
-            elf::SharedRWBuffer::Record r;
-            r.game_id = _game_idx;
-            r.reward = _state.Evaluate([&]() -> unsigned int { return _rng(); });
-            r.content = coords2sgfstr(_moves);
-            if (! _rw_buffer->Insert(r)) {
-                cout << "Insert error! Last error: " << _rw_buffer->LastError() << endl;
+            if (_rw_buffer != nullptr) {
+                elf::SharedRWBuffer::Record r;
+                r.game_id = _game_idx;
+                r.reward = _state.Evaluate([&]() -> unsigned int { return _rng(); });
+                r.content = coords2sgfstr(_moves);
+                if (! _rw_buffer->Insert(r)) {
+                    cout << "Insert error! Last error: " << _rw_buffer->LastError() << endl;
+                }
             }
 
             _state.Reset();
