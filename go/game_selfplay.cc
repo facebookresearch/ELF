@@ -64,8 +64,11 @@ void GoGameSelfPlay::Act(const elf::Signal &signal) {
                 r.game_id = _game_idx;
                 r.reward = _state.Evaluate([&]() -> unsigned int { return _rng(); });
                 r.content = coords2sgfstr(_moves);
-                if (! _rw_buffer->Insert(r)) {
+                int num_inserted = _rw_buffer->Insert(r);
+                if (num_inserted < 0) {
                     cout << "Insert error! Last error: " << _rw_buffer->LastError() << endl;
+                } else {
+                    cout << "Inserted " << num_inserted << " entries" << endl;
                 }
             }
 

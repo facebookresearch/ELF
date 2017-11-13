@@ -99,7 +99,7 @@ public:
         return Sampler(this);
     }
 
-    bool Insert(const Record &r, bool send_sql = true) {
+    int Insert(const Record &r, bool send_sql = true) {
         unique_lock<mutex> lock(insert_mutex_);
 
         // cout << "Before inserting.. " << endl;
@@ -114,7 +114,7 @@ public:
         if (send_sql) {
           return table_insert();
         } else {
-          return true;
+          return 0;
         }
     }
 
@@ -185,8 +185,8 @@ private:
        return true;
    }
 
-   bool table_insert() {
-       string sql = "INSERT INTO " + table_name_ + " VALUES ";
+   int table_insert() {
+       string sql = "INSERT OR REPLACE INTO " + table_name_ + " VALUES ";
        for (size_t i = 0; i < insert_buffer_.size(); ++i) {
            if (i > 0) sql += ", ";
            sql += insert_buffer_[i].sql();
@@ -195,10 +195,11 @@ private:
 
        int ret = exec(sql);
        if (ret == 0) {
+           int num_inserted = insert_buffer_.size();
            insert_buffer_.clear();
-           return true;
+           return num_inserted;
        } else {
-           return false;
+           return -1;
        }
    }
 
