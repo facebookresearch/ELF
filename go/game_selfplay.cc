@@ -26,7 +26,7 @@ GoGameSelfPlay::GoGameSelfPlay(int game_idx, const ContextOptions &context_optio
     }
     _rng.seed(_seed);
 
-    _rw_buffer.reset(new elf::SharedRWBuffer("/home/yuandong/local/replay.db", "REPLAY"));
+    _rw_buffer.reset(new elf::SharedRWBuffer(options.database_filename, "REPLAY"));
 }
 
 void GoGameSelfPlay::Init(AIComm *ai_comm) {

@@ -24,6 +24,7 @@ class Loader:
             define_args = [
                 ("actor_only", dict(action="store_true")),
                 ("list_file", "./train.lst"),
+                ("db_file", "./replay.db"),
                 ("verbose", dict(action="store_true")),
                 ("data_aug", dict(type=int, default=-1, help="specify data augumentation, 0-7, -1 mean random")),
                 ("ratio_pre_moves", dict(type=float, default=0, help="how many moves to perform in each thread, before we use the data train the model")),
@@ -47,6 +48,7 @@ class Loader:
         opt = go.GameOptions()
         opt.seed = 0
         opt.list_filename = args.list_file
+        opt.database_filename = args.db_file
         opt.mode = args.mode
         opt.use_mcts = args.use_mcts
         opt.verbose = args.verbose
@@ -55,6 +57,10 @@ class Loader:
         opt.start_ratio_pre_moves = args.start_ratio_pre_moves
         opt.move_cutoff = args.move_cutoff
         opt.num_games_per_thread = args.num_games_per_thread
+        print("**** Options ****")
+        print(opt.info())
+        print("*****************")
+
         GC = go.GameContext(co, opt)
         print("Version: ", GC.Version())
         print("Mode: ", opt.mode)

@@ -30,6 +30,6 @@ PYBIND11_MODULE(go_game, m) {
 
   // Also register other objects.
   PYCLASS_WITH_FIELDS(m, GameOptions)
-    .def(py::init<>());
-
+    .def(py::init<>())
+    .def("info", &GameOptions::info);
 }

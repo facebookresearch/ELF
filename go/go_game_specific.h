@@ -52,9 +52,28 @@ struct GameOptions {
 
     // A list file containing the files to load.
     std::string list_filename;
+    std::string database_filename;
     bool verbose = false;
 
-    REGISTER_PYBIND_FIELDS(seed, mode, data_aug, start_ratio_pre_moves, ratio_pre_moves, move_cutoff, num_planes, num_future_actions, list_filename, verbose, num_games_per_thread, use_mcts);
+    std::string info() const {
+        std::stringstream ss;
+        ss << "Seed: " << seed << std::endl;
+        ss << "#Plane: " << num_planes << std::endl;
+        ss << "#FutureActions: " << num_future_actions << std::endl;
+        ss << "#GamePerThread: " << num_games_per_thread << std::endl;
+        ss << "mode: " << mode << std::endl;
+        ss << "UseMCTS: " << elf_utils::print_bool(use_mcts) << std::endl;
+        ss << "Data Aug: " << data_aug << std::endl;
+        ss << "Start_ratio_pre_moves: " << start_ratio_pre_moves << std::endl;
+        ss << "ratio_pre_moves: " << ratio_pre_moves << std::endl;
+        ss << "MoveCutOff: " << move_cutoff << std::endl;
+        ss << "ListFile: " << list_filename << std::endl;
+        ss << "DBFile: " << database_filename << std::endl;
+        ss << "Verbose: " << elf_utils::print_bool(verbose) << std::endl;
+        return ss.str();
+    }
+
+    REGISTER_PYBIND_FIELDS(seed, mode, data_aug, start_ratio_pre_moves, ratio_pre_moves, move_cutoff, num_planes, num_future_actions, list_filename, verbose, num_games_per_thread, use_mcts, database_filename);
 };
 
 struct GameState {
