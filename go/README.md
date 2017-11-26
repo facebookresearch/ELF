@@ -19,7 +19,7 @@ Training with a single GPU. On GoGoD, Top 1 is around 51.2% after 8 days. Test p
 1214:total_loss[5000]: avg: 4.28183, min: 3.55989[1591], max: 5.15988[1187]
 ```
 
-Here is the pretrained [model](http://yuandong-tian.com/df_elf_model.bin), trained on commit 1e8b94ca625533da4d24dc73fe6e5796904cea2c.
+Here is the pretrained [model](http://yuandong-tian.com/df_elf_model-6075000.bin), trained on commit 1e8b94ca625533da4d24dc73fe6e5796904cea2c.
 
 Test  
 =========
@@ -79,4 +79,4 @@ For details of console commands, please check `df_console.py`.
 MCTS & Selfplay
 =============
 
-Yet to come. 
+Already incorporated. 
