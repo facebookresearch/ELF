@@ -18,6 +18,9 @@ Training with a single GPU. On GoGoD, Top 1 is around 51.2% after 8 days. Test p
 1214:top5_acc[5000]: avg: 82.61469, min: 69.53125[4479], max: 92.96875[1461]
 1214:total_loss[5000]: avg: 4.28183, min: 3.55989[1591], max: 5.15988[1187]
 ```
+
+Here is the pretrained [model](http://yuandong-tian.com/df_elf_model.bin), trained on commit 1e8b94ca625533da4d24dc73fe6e5796904cea2c.
+
 Test  
 =========
 Run the same command but without backpropagation.
