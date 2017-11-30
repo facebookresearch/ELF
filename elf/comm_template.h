@@ -215,7 +215,10 @@ public:
     // Agent side.
     bool SendDataWaitReply(const Key& key, In& info) {
         auto it = _map.find(key);
-        if (it == _map.end()) return false;
+        if (it == _map.end()) {
+            V_PRINT(_verbose, "[k=" << key << "] seq = " << info.data.newest().seq << " hist_len = " << info.data.size() << ", key[" << key << "] invalid! ");
+            return false;
+        }
         Stat &stats = it->second;
         stats.freq ++;
 

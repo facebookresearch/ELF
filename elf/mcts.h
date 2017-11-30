@@ -31,7 +31,12 @@ public:
     TreeSearch *GetEngine() { return ts_.get(); }
 
     bool Act(const State &s, Action *a, const std::atomic_bool *) override {
-        pass_opponent_moves(s);
+        if (! options_.persistent_tree) {
+            reset_tree();
+        } else {
+            advance_moves(s);
+        }
+
         if (options_.verbose_time) {
             elf_utils::MyClock clock;
             clock.Restart();
@@ -46,8 +51,11 @@ public:
             auto res = ts_->Run(s);
             *a = res.best_a;
         }
-        // cout << ts_->info() << endl;
-        ts_->TreeAdvance(*a);
+        return true;
+    }
+
+    bool GameEnd() override {
+        reset_tree();
         return true;
     }
 
@@ -72,41 +80,58 @@ protected:
 private:
     mcts::TSOptions options_;
     unique_ptr<TreeSearch> ts_;
+    int move_number_;
 
-    MEMBER_FUNC_CHECK(last_opponent_moves)
-    template <typename S_ = State, typename std::enable_if<has_func_last_opponent_moves<S_>::value>::type *U = nullptr>
-    void pass_opponent_moves(const S_ &s) {
-        if (options_.persistent_tree) {
-            for (const Action &prev_move : s.last_opponent_moves()) {
-                ts_->TreeAdvance(prev_move);
-            }
-        } else {
-            // Clear the tree.
-            ts_->Clear();
-       }
-    }
-    template <typename S_ = State, typename std::enable_if<!has_func_last_opponent_moves<S_>::value>::type *U = nullptr>
-    void pass_opponent_moves(const S_ &) {
+    void reset_tree() {
         ts_->Clear();
+        move_number_ = -1;
+    }
+
+    // Note that moves_since should have the following signature.
+    //   const vector<Action> &moves_since(int *move_number)
+    // It will compare the current move_number to the move number in the state, and return moves since the last move number.
+    // If the input move_number is negative, then it will return all moves since the game started.
+    // Once it is done, the move_number will be advanced to the most recent move number.
+    MEMBER_FUNC_CHECK(moves_since)
+    template <typename S_ = State, typename std::enable_if<has_func_moves_since<S_>::value>::type *U = nullptr>
+    void advance_moves(const S_ &s) {
+        auto recent_moves = s.moves_since(&move_number_);
+        for (const Action &prev_move : recent_moves) {
+            ts_->TreeAdvance(prev_move);
+        }
+    }
+    template <typename S_ = State, typename std::enable_if<!has_func_moves_since<S_>::value>::type *U = nullptr>
+    void advance_moves(const S_ &) {
     }
 };
 
-template <typename Actor, typename AIComm>
+template <typename Actor, typename AIComm, typename ActorParam = void>
 class MCTSAIWithCommT : public AI_T<typename Actor::State, typename Actor::Action> {
 public:
     using MCTSAI = MCTSAI_T<Actor>;
     using State = typename Actor::State;
     using Action = typename Actor::Action;
 
+    template <typename ActorParam_ = ActorParam, typename std::enable_if<std::is_same<ActorParam_, void>::value>::type *U = nullptr>
     MCTSAIWithCommT(AIComm *ai_comm, const mcts::TSOptions &options)
         : ai_comm_(ai_comm) {
         // Construct a few DirectPredictAIs.
-        for (int i = 0; i < options.num_threads; ++i) {
-            ai_comms_.emplace_back(ai_comm_->Spawn(i));
-        }
+        spawn_aicomms(options.num_threads);
 
         // cout << "#ai = " << ai_dup.size() << endl;
         auto actor_gen = [&](int i) { return new Actor(ai_comms_[i].get()); };
+        // cout << "Done with MCTSAI_T::InitAIComm" << endl;
+        mcts_ai_.reset(new MCTSAI(options, actor_gen));
+    }
+
+    template <typename ActorParam_ = ActorParam, typename std::enable_if<! std::is_same<ActorParam_, void>::value>::type *U = nullptr>
+    MCTSAIWithCommT(AIComm *ai_comm, const mcts::TSOptions &options, const ActorParam &params)
+        : ai_comm_(ai_comm) {
+        // Construct a few DirectPredictAIs.
+        spawn_aicomms(options.num_threads);
+
+        // cout << "#ai = " << ai_dup.size() << endl;
+        auto actor_gen = [&](int i) { return new Actor(ai_comms_[i].get(), params); };
         // cout << "Done with MCTSAI_T::InitAIComm" << endl;
         mcts_ai_.reset(new MCTSAI(options, actor_gen));
     }
@@ -135,6 +160,19 @@ private:
     AIComm *ai_comm_;
     vector<unique_ptr<AIComm>> ai_comms_;
     unique_ptr<MCTSAI> mcts_ai_;
+
+    void spawn_aicomms(int num_threads) {
+        // Construct a few DirectPredictAIs.
+        ai_comms_.clear();
+        for (int i = 0; i < num_threads; ++i) {
+            ai_comms_.emplace_back(ai_comm_->Spawn(i));
+        }
+    }
+
+    // cout << "#ai = " << ai_dup.size() << endl;
+    std::function<Actor *(int)> actor_gen() {
+        return [&](int i) { return new Actor(ai_comms_[i].get()); };
+    }
 };
 
 }  // namespace elf
