@@ -26,7 +26,7 @@ class GameContext {
   private:
     std::unique_ptr<GC> _context;
     std::vector<std::unique_ptr<GoGame>> _games;
-    const int _num_action = BOARD_DIM * BOARD_DIM;
+    const int _num_action = BOARD_SIZE * BOARD_SIZE;
 
   public:
     GameContext(const ContextOptions& context_options, const GameOptions& options) {
@@ -70,13 +70,13 @@ class GameContext {
 
         std::string type_name = mm->type();
 
-        if (key == "s") return EntryInfo(key, type_name, {MAX_NUM_FEATURE, BOARD_DIM, BOARD_DIM});
+        if (key == "s") return EntryInfo(key, type_name, {MAX_NUM_FEATURE, BOARD_SIZE, BOARD_SIZE});
         else if (key == "offline_a") return EntryInfo(key, type_name, {_context->options().num_future_actions});
         else if (key == "last_terminal" || key == "id" || key == "seq" || key == "game_counter") return EntryInfo(key, type_name);
         else if (key == "move_idx") return EntryInfo(key, type_name);
         else if (key == "winner") return EntryInfo(key, type_name);
         else if (key == "a" || key == "V") return EntryInfo(key, type_name);
-        else if (key == "pi") return EntryInfo(key, type_name, { BOARD_DIM * BOARD_DIM });
+        else if (key == "pi") return EntryInfo(key, type_name, { BOARD_SIZE * BOARD_SIZE });
         else if (key == "aug_code" || key == "move_idx" || key == "game_record_idx") return EntryInfo(key, type_name);
 
         return EntryInfo();

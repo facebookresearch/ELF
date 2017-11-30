@@ -41,6 +41,17 @@ inline string coord2str2(Coord c) {
     return s + std::to_string(y + 1);
 }
 
+inline string coords2sgfstr(const vector<Coord>& moves) {
+  std::string sgf = "(";
+  for (size_t i = 0; i < moves.size(); i++) {
+    std::string color = i % 2 == 0 ? "B" : "W";
+    sgf += ";" + color + "[" + coord2str(moves[i]) + "]";
+  }
+  sgf += ")";
+  return sgf;
+}
+
+
 struct SgfEntry {
     Coord move;
     Stone player;
