@@ -112,9 +112,9 @@ public:
     using State = typename Actor::State;
     using Action = typename Actor::Action;
 
-    template <typename ActorParam_ = ActorParam, typename std::enable_if<std::is_same<ActorParam_, void>::value>::type *U = nullptr>
     MCTSAIWithCommT(AIComm *ai_comm, const mcts::TSOptions &options)
         : ai_comm_(ai_comm) {
+        static_assert(std::is_same<ActorParam, void>::value, "The constructor requires ActorParam to be void (or omitted)");
         // Construct a few DirectPredictAIs.
         spawn_aicomms(options.num_threads);
 
@@ -124,14 +124,14 @@ public:
         mcts_ai_.reset(new MCTSAI(options, actor_gen));
     }
 
-    template <typename ActorParam_ = ActorParam, typename std::enable_if<! std::is_same<ActorParam_, void>::value>::type *U = nullptr>
-    MCTSAIWithCommT(AIComm *ai_comm, const mcts::TSOptions &options, const ActorParam &params)
+    MCTSAIWithCommT(AIComm *ai_comm, const mcts::TSOptions &options, const ActorParam *params)
         : ai_comm_(ai_comm) {
+        static_assert(! std::is_same<ActorParam, void>::value, "The constructor requires ActorParam to be set (not void)");
         // Construct a few DirectPredictAIs.
         spawn_aicomms(options.num_threads);
 
         // cout << "#ai = " << ai_dup.size() << endl;
-        auto actor_gen = [&](int i) { return new Actor(ai_comms_[i].get(), params); };
+        auto actor_gen = [&](int i) { return new Actor(ai_comms_[i].get(), *params); };
         // cout << "Done with MCTSAI_T::InitAIComm" << endl;
         mcts_ai_.reset(new MCTSAI(options, actor_gen));
     }
