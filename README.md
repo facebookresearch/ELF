@@ -29,8 +29,6 @@ Install scripts
 ================
 You need to have ```cmake``` >= 3.8, ```gcc``` >= 4.9 and ```tbb``` (linux ```libtbb-dev```) in order to install this script successfully.
 
-```yes | ./this_isntall_sciprt.sh```
-
 ```
 # Download miniconda and install. 
 wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O $HOME/miniconda.sh
@@ -67,6 +65,8 @@ make
 cd ../..
 sh ./train_minirts.sh --gpu 0
 ```
+```yes | ./the_above_install_sciprt.sh```
+
 Supported Environments   
 ========================
 Any game with C/C++ interface can be plugged into this framework by writing a simple wrapper. Currently we have the following environment:
@@ -158,7 +158,7 @@ Please check `train.py` and `eval.py` for actual runnable codes.
 
 Dependency    
 ===============
-C++ compiler with C++11 support (e.g., gcc >= 4.9) is required. The following libraries are required `tbb`. CMake is also required.
+C++ compiler with C++11 support (e.g., gcc >= 4.9) is required. The following libraries are required `tbb`. CMake >=3.8 is also required.
 
 Python 3.x is required. In addition, you need to install following package: [PyTorch](http://pytorch.org/) version 0.2.0+, `tqdm`, `zmq`, `msgpack`, `msgpack_numpy`
 
