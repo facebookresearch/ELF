@@ -65,7 +65,6 @@ make
 cd ../..
 sh ./train_minirts.sh --gpu 0
 ```
-```yes | ./the_above_install_sciprt.sh```
 
 Supported Environments   
 ========================
