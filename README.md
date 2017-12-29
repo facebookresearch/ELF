@@ -27,6 +27,10 @@ See [here](http://yuandong-tian.com/elf-tutorial/tutorial.html).
 
 Install scripts
 ================
+You need to have ```cmake``` >= 3.8, ```gcc``` >= 4.9 and ```tbb``` (linux ```libtbb-dev```) in order to install this script successfully.
+
+```yes | ./this_isntall_sciprt.sh```
+
 ```
 # Download miniconda and install. 
 wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O $HOME/miniconda.sh
@@ -39,7 +43,8 @@ export PATH=$HOME/miniconda3/bin:$PATH
 # Create a new conda environment and install the necessary packages:
 conda create -n elf python=3
 source activate elf
-# If you use cuda 8.0, try conda install pytorch cuda80 -c soumith
+# If you use cuda 8.0
+# conda install pytorch cuda80 -c soumith
 conda install pytorch -c soumith 
 
 pip install --upgrade pip
@@ -47,7 +52,7 @@ pip install msgpack_numpy
 conda install tqdm
 conda install libgcc
 
-# Install cmake >= 3.8 and gcc >= 4.9
+# Install cmake >= 3.8, gcc >= 4.9 and libtbb-dev
 # This is platform-dependent.
 
 # Clone and build the repository:
@@ -55,10 +60,11 @@ cd ~
 git clone https://github.com/facebookresearch/ELF
 cd ELF/rts/
 mkdir build && cd build
-cmake .. -DPYTHON_EXECUTABLE=~$HOME/miniconda3/bin/python
+cmake .. -DPYTHON_EXECUTABLE=$HOME/miniconda3/bin/python
 make
 
 # Train the model
+cd ../..
 sh ./train_minirts.sh --gpu 0
 ```
 Supported Environments   
