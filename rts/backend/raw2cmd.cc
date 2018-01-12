@@ -152,7 +152,7 @@ RawMsgStatus RawToCmd::Process(Tick tick, const GameEnv &env, const string&s, ve
             ui_cmds->push_back(UICmd::GetToggleGamePause());
             return PROCESSED;
         default:
-            return PROCESSED;
+            break;
     }
 
     if (! is_mouse_motion(c)) _last_key = c;
