@@ -52,9 +52,9 @@ class ModelSaver:
         print("Save to " + args.save_dir)
         filename = os.path.join(args.save_dir, basename)
         print("Filename = " + filename)
-        model.save(filename)
+        #model.save(filename)
         # Create a symlink
-        self.symlinker.feed(basename)
+        #self.symlinker.feed(basename)
 
 
 class ValueStats:
@@ -139,5 +139,3 @@ class MultiCounter:
         if reset:
             self.counts = Counter()
             self.total_count = 0
-
-

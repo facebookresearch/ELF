@@ -104,7 +104,15 @@ class Model(nn.Module):
                 del data["stats_dict"][k + ".weight"]
                 del data["stats_dict"][k + ".bias"]
 
-            self.load_state_dict(data["stats_dict"])
+            sd = data["stats_dict"]
+            replace_prefix = [("resnet.module", "resnet")]
+            keys = list(sd.keys())
+            for key in keys:
+                for src, dst in replace_prefix:
+                    if key.startswith(src):
+                        sd[dst + key[len(src):]] = sd[key]
+                        del sd[key]
+            self.load_state_dict(sd)
         self.step = data.get("step", 0)
         self.filename = data.get("filename", filename)
 

@@ -26,7 +26,7 @@ if __name__ == '__main__':
     GC.reg_callback("train", trainer.train)
 
     if GC.reg_has_callback("actor"):
-        env["mi"].add_model("actor", model, copy=True, cuda=all_args.gpu is not None, gpu_id=all_args.gpu)
+        env["mi"].add_model("actor", model, copy=False, cuda=all_args.gpu is not None, gpu_id=all_args.gpu)
         GC.reg_callback("actor", trainer.actor)
 
     trainer.setup(sampler=env["sampler"], mi=env["mi"], rl_method=env["method"])
@@ -35,4 +35,3 @@ if __name__ == '__main__':
                 episode_start=trainer.episode_start)
 
     runner.run()
-

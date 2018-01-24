@@ -14,7 +14,7 @@
 #include "common.h"
 
 // This can be changed to 9x9
-constexpr int BOARD_SIZE = 9;
+constexpr int BOARD_SIZE = 19;
 
 // 19x19 only
 #define STAR_ON19(i, j) ( ((i) == 3 || (i) == 9 || (i) == 15) && ((j) == 3 || (j) == 9 || (j) == 15) )
@@ -25,7 +25,7 @@ constexpr int BOARD_SIZE = 9;
 #define BOARD9_PROMPT "A B C D E F G H J"
 
 #define STAR_ON STAR_ON9
-#define BOARD_PROMPT BOARD9_PROMPT 
+#define BOARD_PROMPT BOARD9_PROMPT
 
 constexpr int BOARD_MARGIN = 1;
 constexpr int BOARD_EXPAND_SIZE = BOARD_SIZE + 2;
@@ -373,4 +373,3 @@ bool GetDistanceMap(const Board* board, Stone player, float *data);
 // Some utility functions.
 char *get_move_str(Coord m, Stone player, char *buf);
 void util_show_move(Coord m, Stone player, char *buf);
-

@@ -8,6 +8,8 @@
 */
 
 #include "game_selfplay.h"
+#include "offpolicy_loader.h"
+
 #include "go_game_specific.h"
 #include "go_ai.h"
 #include "mcts.h"
@@ -41,6 +43,12 @@ void GoGameSelfPlay::Init(AIComm *ai_comm) {
             _ai.reset(ai);
         }
     } else if (_options.mode == "train") {
+        // Open many offline instances.
+        for (int i = 0; i < _options.num_games_per_thread; ++i) {
+            auto *loader = new OfflineLoader(_options, _seed + _game_idx * i * 997 + i * 13773 + 7);
+            loader->InitAIComm(ai_comm);
+            _loaders.emplace_back(loader);
+        }
     } else {
         std::cout << "Unknown mode! " << _options.mode << std::endl;
         throw std::range_error("Unknown mode");
@@ -53,6 +61,7 @@ void GoGameSelfPlay::Act(const elf::Signal &signal) {
     // Randomly pick one loader
     Coord c;
     if (_ai != nullptr) {
+
         _ai->Act(_state, &c, &signal.done());
         if (! _state.forward(c) || _state.GetPly() > BOARD_SIZE * BOARD_SIZE ) {
             cout << _state.ShowBoard() << endl;
@@ -80,48 +89,9 @@ void GoGameSelfPlay::Act(const elf::Signal &signal) {
           _moves.push_back(c);
         }
     } else {
-        // Train a model directly.
-        vector<Coord> moves;
-        float winner = 0.0;
-        {
-            // std::cout << "Get Sampler" << std::endl;
-            auto sampler = _rw_buffer->GetSampler();
-
-            // std::cout << "sampling" << std::endl;
-            const elf::SharedRWBuffer::Record &r = sampler.sample();
-
-            // std::cout << "Convert to moves: " << r.content << std::endl;
-            moves = sgfstr2coords(r.content);
-            winner = r.reward;
-            // std::cout << "Convert complete, #move = " << moves.size() << std::endl;
-        }
-
-        // Random sample one move
-        int move_to = _rng() % (moves.size() - _options.num_future_actions + 1);
-        _state.Reset();
-        for (int i = 0; i < move_to; ++i) {
-            _state.forward(moves[i]);
-        }
-
-        // std::cout << _state.ShowBoard() << std::endl;
-        // std::cout << move_to << "/" << moves.size() << std::endl;
-
-        // Then send the data to the server.
-        auto &gs = _ai_comm->Prepare();
-        gs.move_idx = _state.GetPly();
-        gs.winner = winner;
-
-        int code = _rng() % 8;
-        gs.aug_code = code;
-        const BoardFeature &bf = _state.extractor(code);
-        bf.Extract(&gs.s);
-
-        gs.offline_a.resize(_options.num_future_actions);
-        for (int i = 0; i < _options.num_future_actions; ++i) {
-            gs.offline_a[i] = bf.Coord2Action(moves[move_to + i]);
-        }
-        // std::cout << "Just before sending data ... " << std::endl;
-        _ai_comm->SendDataWaitReply();
-        // std::cout << "Just after sending data ... " << std::endl;
+        // Replays hold a state by itself.
+        _curr_loader_idx = _rng() % _loaders.size();
+        auto *loader = _loaders[_curr_loader_idx].get();
+        loader->Act(&c, &signal.done());
     }
 }

@@ -13,6 +13,7 @@
 #include "elf/comm_template.h"
 #include "elf/ai_comm.h"
 #include "elf/shared_rw_buffer.h"
+#include "offpolicy_loader.h"
 
 #include "ai.h"
 #include "go_game_specific.h"
@@ -27,7 +28,8 @@ private:
     uint64_t _seed = 0;
     GameOptions _options;
     ContextOptions _context_options;
-
+    std::vector<std::unique_ptr<OfflineLoader>> _loaders;
+    int _curr_loader_idx;
     std::mt19937 _rng;
 
     std::unique_ptr<AI> _ai;
