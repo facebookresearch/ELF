@@ -138,7 +138,7 @@ class Trainer:
             more_args = ["num_games", "batchsize"],
             child_providers = [ self.evaluator.args, self.saver.args ],
         )
-        self.just_update = False
+        self.just_updated = False
 
     def actor(self, batch):
         ''' Actor.
@@ -176,9 +176,12 @@ class Trainer:
             # print("Update actor model")
             # Save the current model.
             mi.update_model("actor", mi["model"])
+            if hasattr(self.rl_method, 'on_model_update'):
+                self.rl_method.on_model_update()
             self.just_updated = True
 
-        self.just_updated = False
+        else:
+            self.just_updated = False
 
     def episode_start(self, i):
         ''' Called before each episode.

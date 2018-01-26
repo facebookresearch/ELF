@@ -10,7 +10,7 @@ import torch.nn as nn
 from copy import deepcopy
 from collections import Counter
 
-from rlpytorch import Model, ActorCritic
+from rlpytorch import Model, ActorCritic, PPOActorCritic
 from actor_critic_changed import ActorCriticChanged
 from forward_predict import ForwardPredict
 from trunk import MiniRTSNet
@@ -100,5 +100,6 @@ class Model_ActorCritic(Model):
 Models = {
     "actor_critic": [Model_ActorCritic, ActorCritic],
     "actor_critic_changed": [Model_ActorCritic, ActorCriticChanged],
+    "ppo_actor_critic": [Model_ActorCritic, PPOActorCritic],
     "forward_predict": [Model_ActorCritic, ForwardPredict]
 }
