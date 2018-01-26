@@ -32,7 +32,10 @@ public:
             // Cannot give command to other units.
             if (u->GetPlayerId() != _player_id) continue;
             if (! env.GetGameDef().unit(u->GetUnitType()).CmdAllowed(it->second->type())) continue;
-
+            if (env.GetGameDef().IsUnitTypeBuilding(u->GetUnitType()) && receiver.GetUnitDurativeCmd(u->GetId()) != nullptr) {
+                std::cout << u->GetUnitType() << std::endl;
+                continue;
+            }
             it->second->set_id(it->first);
 
             // Note that after this command, it->second is not usable.
@@ -55,4 +58,3 @@ protected:
 
     map<UnitId, CmdBPtr> _cmds;
 };
-

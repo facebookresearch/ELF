@@ -9,6 +9,8 @@ cache:
 
 # C++ project
 language: cpp
+python:
+  - 3.6
 compiler:
   - gcc
   - clang
@@ -22,9 +24,6 @@ addons:
     - clang
     - libpython3-dev
     - libtbb-dev
-before_install:
-    # work around https://github.com/travis-ci/travis-ci/issues/8363
-    - pyenv global system 3.5
 install:
   # create deps dir if not existing
   - DEPS_DIR=${HOME}/deps

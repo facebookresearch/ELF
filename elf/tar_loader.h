@@ -20,6 +20,15 @@ public:
   ~TarLoader();
 };
 
-}  // namespace tar
+class TarWriter {
+private:
+  mtar_t tar;
+public:
+  TarWriter(const std::string &tar_filename);
+  void Write(const std::string &filename, const std::string &contents);
+  ~TarWriter();
+};
 
-}  // namespace elf
+}
+
+}

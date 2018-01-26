@@ -12,6 +12,7 @@
 #include "offpolicy_loader.h"
 #include "go_ai.h"
 #include "mcts.h"
+#include "elf/tar_loader.h"
 
 #include <fstream>
 
@@ -81,6 +82,14 @@ void GoGame::Act(const elf::Signal &signal) {
             cout << _state.ShowBoard() << endl;
             cout << "No valid move [" << c << "][" << coord2str(c) << "][" << coord2str2(c) << "], restarting the game" << endl;
             _state.Reset();
+
+            if (_tar_writer != nullptr) {
+              _tar_writer->Write(std::to_string(_game_idx), coords2sgfstr(_moves));
+            }
+            _moves.clear();
+            _game_idx++;
+        } else {
+          _moves.push_back(c);
         }
     } else {
         // Replays hold a state by itself.
