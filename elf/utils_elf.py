@@ -214,7 +214,7 @@ class Batch:
 
 class GCWrapper:
     def __init__(self, GC, co, descriptions, use_numpy=False, gpu=None, params=dict()):
-        '''Initialize GCWarpper
+        '''Initialize GCWrapper
 
         Parameters:
             GC(C++ class): Game Context

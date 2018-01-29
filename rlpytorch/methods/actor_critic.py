@@ -17,22 +17,33 @@ from .value_matcher import ValueMatcher
 from .utils import add_err
 
 # Actor critic model.
-class ActorCritic:
+class ActorCritic(object):
     ''' An actor critic model '''
     def __init__(self):
         ''' Initialization of `PolicyGradient`, `DiscountedReward` and `ValueMatcher`.
         Initialize the arguments needed (num_games, batchsize, value_node) and in child_providers.
         '''
-        self.pg = PolicyGradient()
+        self.policy_obj = PolicyGradient()
         self.discounted_reward = DiscountedReward()
         self.value_matcher = ValueMatcher()
+        self._init_args()
 
+    def _init_args(self):
         self.args = ArgsProvider(
             call_from = self,
             define_args = [
+                ('value_loss_coeff', {
+                     'type': float,
+                     'help': 'Coefficient of the value loss relative to policy loss',
+                     'default': 1.0,
+                 }),
             ],
             more_args = ["num_games", "batchsize", "value_node"],
-            child_providers = [ self.pg.args, self.discounted_reward.args, self.value_matcher.args ],
+            child_providers = [
+                self.policy_obj.args,
+                self.discounted_reward.args,
+                self.value_matcher.args
+            ],
         )
 
     def update(self, mi, batch, stats):
@@ -69,9 +80,21 @@ class ActorCritic:
                 dict(r=batch["r"][t], terminal=batch["terminal"][t]),
                 stats=stats)
 
-            policy_err = self.pg.feed(R-V.data, state_curr, bht, stats, old_pi_s=bht)
+            adv = R - V.data
+
+            policy_err = self.policy_obj.feed(
+                adv, state_curr, bht, stats, old_pi_s=bht)
             err = add_err(err, policy_err)
-            err = add_err(err, self.value_matcher.feed({ value_node: V, "target" : R}, stats))
+            err = add_err(
+                err,
+                self.value_matcher.feed({ value_node: V, "target" : R}, stats),
+                weight=self.args.value_loss_coeff)
 
         stats["cost"].feed(err.data[0] / (T - 1))
         err.backward()
+
+    def on_model_update(self):
+        if hasattr(self.policy_obj, 'on_model_update'):
+            self.policy_obj.on_model_update()
+        if hasattr(self.value_matcher, 'on_model_update'):
+            self.value_matcher.on_model_update()

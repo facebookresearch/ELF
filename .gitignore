@@ -9,7 +9,10 @@ tags
 *.rep
 *.swp
 *.swo
+*.tmp
+*.tmp.*
 *.DS_Store
+.nfs*
 build
 CMakeFiles
 CMakeCache.txt

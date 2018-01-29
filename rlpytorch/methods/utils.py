@@ -34,13 +34,15 @@ def accumulate(acc, new):
     ret.update({ k : v for k, v in new.items() if not (k in acc) })
     return ret
 
-def add_err(overall_err, new_err):
+def add_err(overall_err, new_err, weight=1.0):
     ''' Add ``new_err`` to ``overall_err``
 
     Args:
         overall_err(float): summed overall error
         new_err(float): new error
     '''
+    if weight != 1.0:
+        new_err = weight * new_err
     if overall_err is None:
         return new_err
     else:

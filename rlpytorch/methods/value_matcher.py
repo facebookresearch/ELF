@@ -25,14 +25,25 @@ class ValueMatcher:
             call_from = self,
             define_args = [
                 ("grad_clip_norm", dict(type=float, help="Gradient norm clipping", default=None)),
-                ("value_node", dict(type=str, help="The name of the value node", default="V"))
+                ("value_node", dict(type=str, help="The name of the value node", default="V")),
+                ("value_loss_type", dict(type=str, help="Loss type [huber, mse]", default="huber")),
             ],
             on_get_args = self._init,
         )
 
     def _init(self, _):
         ''' Initialize value loss to be ``nn.SmoothL1Loss``. '''
-        self.value_loss = nn.SmoothL1Loss().cuda()
+        self._value_loss_scale = 1.0
+
+        if self.args.value_loss_type == 'huber':
+            self.value_loss = nn.SmoothL1Loss().cuda()
+        elif self.args.value_loss_type == 'mse':
+            self.value_loss = nn.MSELoss().cuda()
+            self._value_loss_scale = 0.5
+        else:
+            raise ValueError(
+                '{} is not a supported loss type'.format(self.value_loss_type))
+
         self.value_node = self.args.value_node
 
     def _reg_backward(self, v):
@@ -67,7 +78,8 @@ class ValueMatcher:
             value_err
         '''
         V = batch[self.value_node]
-        value_err = self.value_loss(V, Variable(batch["target"]))
+        value_err = (self.value_loss(V, Variable(batch["target"])) *
+                     self._value_loss_scale)
         self._reg_backward(V)
         stats["predicted_" + self.value_node].feed(V.data[0])
         stats[self.value_node + "_err"].feed(value_err.data[0])
