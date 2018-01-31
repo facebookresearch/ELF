@@ -15,8 +15,11 @@
 #include "engine/cmd.gen.h"
 #include "engine/cmd_specific.gen.h"
 #include "cmd_specific.gen.h"
+#include "engine/lua_context.h"
 
 bool CmdGenerateMap::run(GameEnv *env, CmdReceiver*) {
+    LuaContext::Run("g_generate", env->GetMap(), env->GetNumOfPlayers(), _init_resource);
+    return true;
     return env->GenerateMap(_num_obstacles, _init_resource) ? true : false;
 }
 

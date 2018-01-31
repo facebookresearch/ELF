@@ -14,8 +14,9 @@
 #include <vector>
 #include "common.h"
 #include "locality_search.h"
+#include "lua_context.h"
 
-struct MapSlot {
+struct MapSlot : public LuaInterface<MapSlot> {
   // three layers, terrian, ground and air.
   Terrain type;
   int height;
@@ -27,6 +28,8 @@ struct MapSlot {
   // Default constructor
   MapSlot() : type(NORMAL), height(0) {
   }
+
+  static void ExposeInterfaceImpl(const std::string& type_name, sel::State& state);
 
   SERIALIZER(MapSlot, type, height, _nns);
 };
@@ -42,7 +45,7 @@ struct PlayerMapInfo {
 
 // Map properties.
 // Map location is an integer.
-class RTSMap {
+class RTSMap : public LuaInterface<RTSMap> {
 private:
   vector<MapSlot> _map;
 
@@ -56,7 +59,6 @@ private:
   LocalitySearch<UnitId> _locality;
 
 private:
-  void reset_intermediates();
   void load_default_map();
   void precompute_all_pair_distances();
 
@@ -69,18 +71,34 @@ public:
   bool LoadMap(const std::string &filename);
   bool GenerateImpassable(const std::function<uint16_t(int)>& f, int nImpassable);
 
+  void InitMap(int m, int n, int level);
+
+  static void ExposeInterfaceImpl(const std::string& type_name, sel::State& state);
+
   // TODO: move this to game_TD
   bool GenerateTDMaze(const std::function<uint16_t(int)>& f);
+
+  void ResetIntermediates();
 
 
   const vector<PlayerMapInfo> &GetPlayerMapInfo() const { return _infos; }
   void ClearMap() { _infos.clear(); _locality.Clear();}
 
+  void AddPlayer(int player_id, int base_x, int base_y, int resource_x, int resource_y, int init_resource);
+
   const MapSlot &operator()(const Loc& loc) const { return _map[loc]; }
   MapSlot &operator()(const Loc& loc) { return _map[loc]; }
 
+  void SetSlotType(int terrain_type, int x, int y, int z = 0) {
+      _map[GetLoc(Coord(x, y, z))].type = static_cast<Terrain>(terrain_type);
+  }
+
   int GetXSize() const { return _m; }
   int GetYSize() const { return _n; }
+  void SetXSize(int x) { _m = x; }
+  void SetYSize(int y) { _n = y; }
+
+
   int GetPlaneSize() const { return _m * _n; }
 
   // TODO: move this to game_TD
@@ -141,7 +159,6 @@ public:
   string PrintCoord(Loc loc) const;
   Coord GetCoord(Loc loc) const;
   Loc GetLoc(const Coord& c) const;
-  Loc GetLoc(int x, int y, int z = 0) const;
 
   // Get sight from the current location.
   vector<Loc> GetSight(const Loc& loc, int range) const;
@@ -150,9 +167,6 @@ public:
   bool IsIn(int x, int y) const { return x >= 0 && x < _m && y >= 0 && y < _n; }
   bool IsIn(const Coord &c, int margin = 0) const { return c.x >= margin && c.x < _m - margin && c.y >= margin && c.y < _n - margin && c.z >= 0 && c.z < _level; }
   bool IsIn(const PointF &p, int margin = 0) const { return IsIn(p.ToCoord(), margin); }
-
-  // Get the nearest location.
-  Loc GetLoc(const PointF& p) const { return GetLoc(p.ToCoord()); }
 
   UnitId GetClosestUnitId(const PointF& p, float max_r = 1e38) const;
   set<UnitId> GetUnitIdInRegion(const PointF &left_top, const PointF &right_bottom) const;

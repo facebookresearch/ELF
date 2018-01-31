@@ -10,10 +10,30 @@
 #include "map.h"
 #include "time.h"
 
+void MapSlot::ExposeInterfaceImpl(const std::string& type_name, sel::State& state) {
+  state[type_name.c_str()].SetClass<MapSlot>(
+    "height", &MapSlot::height
+  );
+}
+
 // Constructor
 RTSMap::RTSMap() {
     load_default_map();
-    reset_intermediates();
+}
+
+void RTSMap::ExposeInterfaceImpl(const std::string& type_name, sel::State& state) {
+  state[type_name.c_str()].SetClass<RTSMap>(
+      "m", &RTSMap::_m,
+      "n", &RTSMap::_n,
+      "level", &RTSMap::_level,
+      "get_loc", &RTSMap::GetLoc,
+      "get_coord", &RTSMap::GetCoord,
+      "init_map", &RTSMap::InitMap,
+      "set_slot_type", &RTSMap::SetSlotType,
+      "reset_intermediates", &RTSMap::ResetIntermediates,
+      "clear_map", &RTSMap::ClearMap,
+      "add_player", &RTSMap::AddPlayer
+  );
 }
 
 bool RTSMap::find_two_nearby_empty_slots(const std::function<uint16_t(int)>& f, int *x1, int *y1, int *x2, int *y2, int i) const {
@@ -29,6 +49,13 @@ bool RTSMap::find_two_nearby_empty_slots(const std::function<uint16_t(int)>& f, 
         if (CanPass(Coord(*x2, *y2), INVALID) && ((*x1 != *x2) || (*y1 != *y2))) return true;
     }
     return false;
+}
+
+void RTSMap::InitMap(int m, int n, int level) {
+  _m = m;
+  _n = n;
+  _level = level;
+  _map.assign(m * n * level, MapSlot());
 }
 
 bool RTSMap::GenerateImpassable(const std::function<uint16_t(int)>& f, int nImpassable) {
@@ -136,17 +163,26 @@ bool RTSMap::GenerateMap(const std::function<uint16_t(int)>& f, int nImpassable,
             // cout << "Player " << i << ": BASE: (" << x1 << ", " << y1 << ") RESOURCE: (" << x2 << ", " << y2 << ")" << endl;
         }
     } while(! success);
+    cout << "gen map done" << endl;
 
-    reset_intermediates();
+    ResetIntermediates();
     return true;
 }
 
-void RTSMap::reset_intermediates() {
+void RTSMap::ResetIntermediates() {
     // Locality Search
     _locality = LocalitySearch<UnitId>(PointF(-0.5, -0.5), PointF(_m + 0.5, _n + 0.5));
 
     // Precompute map structure.
     precompute_all_pair_distances();
+}
+
+void RTSMap::AddPlayer(int player_id, int base_x, int base_y,
+    int resource_x, int resource_y, int init_resource) {
+    cout << player_id << endl;
+    cout << base_x << " " << base_y << endl;
+    cout << resource_x << " " << resource_y << endl;
+    _infos.push_back({player_id, {base_x, base_y, 0}, {resource_x, resource_y, 0}, init_resource});
 }
 
 void RTSMap::load_default_map() {
@@ -209,7 +245,7 @@ vector<Loc> RTSMap::GetSight(const Loc& loc, int range) const {
         const int ymin = std::max(0, c.y - yrange);
         const int ymax = std::min(_n - 1, c.y + yrange);
         for (int y = ymin; y <= ymax; ++y) {
-            res.push_back(GetLoc(x, y));
+            res.push_back(GetLoc(Coord(x, y)));
         }
     }
     return res;
@@ -230,12 +266,8 @@ Coord RTSMap::GetCoord(Loc loc) const {
     return Coord(xy % _m,  xy / _m, z);
 }
 
-Loc RTSMap::GetLoc(int x, int y, int z) const {
-    return (z * _n + y) * _m + x;
-}
-
 Loc RTSMap::GetLoc(const Coord &c) const {
-    return GetLoc(c.x, c.y, c.z);
+    return (c.z * _n + c.y) * _m + c.x;
 }
 
 // Draw the map
@@ -245,7 +277,7 @@ string RTSMap::Draw() const {
     for (int j = 0; j < _n; ++j) {
         for (int i = 0; i < _m; ++i) {
             // Draw the map (only level 0)
-            Loc loc = GetLoc(i, j, 0);
+            Loc loc = GetLoc(Coord(i, j, 0));
             ss << _map[loc].type << " ";
         }
         ss << endl;

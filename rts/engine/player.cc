@@ -41,7 +41,7 @@ string Player::Draw() const {
     for (int y = 0; y < _map->GetYSize(); ++y) {
         for (int x = 0; x < _map->GetXSize(); ++x) {
             // Draw the map (only level 0)
-            Loc loc = _map->GetLoc(x, y, 0);
+            Loc loc = _map->GetLoc(Coord(x, y, 0));
             if ( _fogs[loc].CanSeeTerrain() ) {
                 ss << (*_map)(loc).type << " ";
             } else {
@@ -69,7 +69,7 @@ void Player::ComputeFOW(const Units &units) {
         const Unit *u = it->second.get();
         if (ExtractPlayerId(u->GetId()) == _player_id) {
             const int vis_r = u->GetProperty()._vis_r;
-            Loc l = _map->GetLoc(u->GetPointF());
+            Loc l = _map->GetLoc(u->GetPointF().ToCoord());
             for (const Loc &loc : _map->GetSight(l, vis_r)) {
                 clear_regions.insert(loc);
             }
@@ -95,7 +95,7 @@ void Player::ComputeFOW(const Units &units) {
 Loc Player::_filter_with_fow(const Unit& u) const {
     if (! _map->IsIn(u.GetPointF())) return -1;
     // [TODO]: Could we do better?
-    Loc l = _map->GetLoc(u.GetPointF());
+    Loc l = _map->GetLoc(u.GetPointF().ToCoord());
     return (_fogs[l].CanSeeUnit() ? l : -1);
 }
 
@@ -147,8 +147,8 @@ bool Player::line_passable(UnitId id, const PointF &s, const PointF &t) const {
     PointF::Diff(t, s, &v);
     v /= dist;
 
-    Loc ls = m.GetLoc(s);
-    Loc lt = m.GetLoc(t);
+    Loc ls = m.GetLoc(s.ToCoord());
+    Loc lt = m.GetLoc(t.ToCoord());
 
     const float step = dist / n;
 

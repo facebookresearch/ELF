@@ -27,3 +27,6 @@ add_subdirectory(backend)
 set_target_properties(minirts-backend PROPERTIES
 	RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
 )
+
+execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/game_MC/lua/map_generator.lua ${CMAKE_BINARY_DIR}/map_generator.lua)
+execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/engine/test2.lua ${CMAKE_BINARY_DIR}/test2.lua)

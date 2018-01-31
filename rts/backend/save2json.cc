@@ -73,7 +73,7 @@ void save2json::Save(const RTSMap& m, json *game) {
     json slots;
     for (int y = 0; y < m.GetYSize(); y ++) {
         for (int x = 0; x < m.GetXSize(); x ++) {
-           Loc loc = m.GetLoc(x, y, 0);
+           Loc loc = m.GetLoc(Coord(x, y));
            Terrain t = FOG;
            if (m(loc).type == NORMAL) t = NORMAL;
            else if (m(loc).type == IMPASSABLE) t = IMPASSABLE;
@@ -92,7 +92,7 @@ void save2json::SavePlayerMap(const Player& player, json *game) {
     json slots;
     for (int y = 0; y < m.GetYSize(); y ++) {
         for (int x = 0; x < m.GetXSize(); x ++) {
-            Loc loc = m.GetLoc(x, y, 0);
+            Loc loc = m.GetLoc(Coord(x, y, 0));
             const Fog &f = player.GetFog(loc);
 
             Terrain t = FOG;

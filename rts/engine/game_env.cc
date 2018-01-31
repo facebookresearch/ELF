@@ -278,7 +278,7 @@ int GameEnv::GetPrevSeenCount(PlayerId player_id) const {
 
     for (int x = 0; x < _map->GetXSize(); ++x) {
         for (int y = 0; y < _map->GetYSize(); ++y) {
-            Loc loc = _map->GetLoc(x, y);
+            Loc loc = _map->GetLoc(Coord(x, y));
             const Fog &f = player.GetFog(loc);
             if (f.CanSeeTerrain()) continue;
             for (const Unit &u : f.seen_units()) {

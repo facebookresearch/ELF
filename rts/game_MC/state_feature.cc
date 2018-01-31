@@ -123,7 +123,7 @@ void MCExtractor::extract(const RTSState &s, PlayerId player_id, bool respect_fo
     if (ext_ut_prev_seen != nullptr && ext_hist_bin_prev_seen != nullptr && usage_.type >= PREV_SEEN) {
         for (int x = 0; x < m.GetXSize(); ++x) {
             for (int y = 0; y < m.GetYSize(); ++y) {
-                Loc loc = m.GetLoc(x, y);
+                Loc loc = m.GetLoc(Coord(x, y));
                 const Fog &f = player.GetFog(loc);
                 if (usage_.type == ONLY_PREV_SEEN && f.CanSeeTerrain()) continue;
                 for (const auto &u : f.seen_units()) {
