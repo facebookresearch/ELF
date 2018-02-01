@@ -15,12 +15,11 @@
 #include "engine/cmd.gen.h"
 #include "engine/cmd_specific.gen.h"
 #include "cmd_specific.gen.h"
-#include "engine/lua_context.h"
+#include "lua/cpp_interface.h"
 
 bool CmdGenerateMap::run(GameEnv *env, CmdReceiver*) {
-    LuaContext::Run("g_generate", env->GetMap(), env->GetNumOfPlayers(), _init_resource);
+    RTSMapGenerator::Generate(env->GetMap(), env->GetNumOfPlayers(), _init_resource);
     return true;
-    return env->GenerateMap(_num_obstacles, _init_resource) ? true : false;
 }
 
 #define _CREATE(...) receiver->SendCmd(CmdIPtr(new CmdCreate(INVALID, __VA_ARGS__)))

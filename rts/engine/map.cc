@@ -10,30 +10,9 @@
 #include "map.h"
 #include "time.h"
 
-void MapSlot::ExposeInterfaceImpl(const std::string& type_name, sel::State& state) {
-  state[type_name.c_str()].SetClass<MapSlot>(
-    "height", &MapSlot::height
-  );
-}
-
 // Constructor
 RTSMap::RTSMap() {
     load_default_map();
-}
-
-void RTSMap::ExposeInterfaceImpl(const std::string& type_name, sel::State& state) {
-  state[type_name.c_str()].SetClass<RTSMap>(
-      "m", &RTSMap::_m,
-      "n", &RTSMap::_n,
-      "level", &RTSMap::_level,
-      "get_loc", &RTSMap::GetLoc,
-      "get_coord", &RTSMap::GetCoord,
-      "init_map", &RTSMap::InitMap,
-      "set_slot_type", &RTSMap::SetSlotType,
-      "reset_intermediates", &RTSMap::ResetIntermediates,
-      "clear_map", &RTSMap::ClearMap,
-      "add_player", &RTSMap::AddPlayer
-  );
 }
 
 bool RTSMap::find_two_nearby_empty_slots(const std::function<uint16_t(int)>& f, int *x1, int *y1, int *x2, int *y2, int i) const {

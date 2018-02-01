@@ -21,7 +21,6 @@
 
 #include "custom_enum.h"
 #include "serializer.h"
-#include "lua_context.h"
 
 using namespace std;
 
@@ -50,7 +49,7 @@ typedef int UnitId;
 typedef int PlayerId;
 typedef int Tick;
 
-struct Coord : public LuaInterface<Coord> {
+struct Coord {
     int x, y, z;
     Coord(int x, int y, int z = 0) : x(x), y(y), z(z) { }
     Coord() : x(0), y(0), z(0) { }
@@ -59,10 +58,6 @@ struct Coord : public LuaInterface<Coord> {
     Coord Right() const { Coord c(*this); c.x ++; return c; }
     Coord Up() const { Coord c(*this); c.y --; return c; }
     Coord Down() const { Coord c(*this); c.y ++; return c; }
-
-    static void ExposeInterfaceImpl(const std::string& type_name, sel::State& state) {
-          state[type_name.c_str()].SetClass<Coord, int, int, int>();
-    }
 
     friend ostream &operator<<(ostream &oo, const Coord& p) {
         oo << p.x << " " << p.y;

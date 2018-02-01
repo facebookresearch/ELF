@@ -15,7 +15,8 @@
 #include "engine/cmd_specific.gen.h"
 #include "cmd_specific.gen.h"
 #include "engine/ai.h"
-#include "engine/lua_context.h"
+#include "lua/lua_interface.h"
+#include "lua/cpp_interface.h"
 #include "rule_ai.h"
 
 int GameDef::GetNumUnitType() {
@@ -41,7 +42,8 @@ void GameDef::GlobalInit() {
     reg_engine_specific();
     reg_minirts_specific();
     reg_engine_cmd_lua();
-    reg_lua_context();
+    reg_lua_interfaces();
+    reg_cpp_interfaces();
 
     // InitAI.
     AIFactory<AI>::RegisterAI("simple", [](const std::string &spec) {

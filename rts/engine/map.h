@@ -14,9 +14,8 @@
 #include <vector>
 #include "common.h"
 #include "locality_search.h"
-#include "lua_context.h"
 
-struct MapSlot : public LuaInterface<MapSlot> {
+struct MapSlot {
   // three layers, terrian, ground and air.
   Terrain type;
   int height;
@@ -28,8 +27,6 @@ struct MapSlot : public LuaInterface<MapSlot> {
   // Default constructor
   MapSlot() : type(NORMAL), height(0) {
   }
-
-  static void ExposeInterfaceImpl(const std::string& type_name, sel::State& state);
 
   SERIALIZER(MapSlot, type, height, _nns);
 };
@@ -45,7 +42,7 @@ struct PlayerMapInfo {
 
 // Map properties.
 // Map location is an integer.
-class RTSMap : public LuaInterface<RTSMap> {
+class RTSMap {
 private:
   vector<MapSlot> _map;
 
@@ -72,8 +69,6 @@ public:
   bool GenerateImpassable(const std::function<uint16_t(int)>& f, int nImpassable);
 
   void InitMap(int m, int n, int level);
-
-  static void ExposeInterfaceImpl(const std::string& type_name, sel::State& state);
 
   // TODO: move this to game_TD
   bool GenerateTDMaze(const std::function<uint16_t(int)>& f);
