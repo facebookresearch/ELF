@@ -63,7 +63,7 @@ private:
 
 public:
   // Load map from a file.
-  RTSMap();
+  RTSMap() : _m(0), _n(0) {}
   bool GenerateMap(const std::function<uint16_t (int)>& f, int nImpassable, int num_player, int init_resource);
   bool LoadMap(const std::string &filename);
   bool GenerateImpassable(const std::function<uint16_t(int)>& f, int nImpassable);

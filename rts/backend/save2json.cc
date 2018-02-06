@@ -77,6 +77,7 @@ void save2json::Save(const RTSMap& m, json *game) {
            Terrain t = FOG;
            if (m(loc).type == NORMAL) t = NORMAL;
            else if (m(loc).type == IMPASSABLE) t = IMPASSABLE;
+           else if (m(loc).type == WATER) t = WATER;
            slots.push_back(t);
         }
     }
@@ -99,6 +100,7 @@ void save2json::SavePlayerMap(const Player& player, json *game) {
             if (f.CanSeeTerrain()) {
                 if (m(loc).type == NORMAL) t = NORMAL;
                 else if (m(loc).type == IMPASSABLE) t = IMPASSABLE;
+                else if (m(loc).type == WATER) t = WATER;
             } else {
                 // Add prev seen units.
                 for (const auto &u : f.seen_units()) {

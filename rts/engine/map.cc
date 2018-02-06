@@ -10,10 +10,6 @@
 #include "map.h"
 #include "time.h"
 
-// Constructor
-RTSMap::RTSMap() {
-    load_default_map();
-}
 
 bool RTSMap::find_two_nearby_empty_slots(const std::function<uint16_t(int)>& f, int *x1, int *y1, int *x2, int *y2, int i) const {
     const int kDist = 4;

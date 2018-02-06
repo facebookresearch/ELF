@@ -1,21 +1,16 @@
 #pragma once
 
 #include "selene.h"
+#include "common.h"
 
 
-class StateHolder {
+class StateHolder : public detail::NonMovable, detail::NonCopyable {
 public:
     static sel::State& GetState() {
         // This initialization should be thread safe according to the standard.
         static sel::State state{true};
         return state;
     }
-
-    // Disable copy/move semantics
-    StateHolder(const StateHolder&) = delete;
-    StateHolder& operator=(const StateHolder&) = delete;
-    StateHolder(StateHolder&&) = delete;
-    StateHolder&& operator=(StateHolder&&) = delete;
 
 protected:
     StateHolder() = default;

@@ -41,6 +41,11 @@ struct UnitProperty {
     inline Cooldown &CD(CDType t) { return _cds[t]; }
     inline const Cooldown &CD(CDType t) const { return _cds[t]; }
     inline UnitId GetLastDamageFrom() const { return _damage_from; }
+    void SetCooldown(int t, Cooldown cd) { _cds[static_cast<CDType>(t)] = cd; }
+
+    // setters for lua
+    void SetSpeed(double speed) { _speed = static_cast<float>(speed); }
+    void SetAttr(int attr) { _attr = static_cast<UnitAttr>(attr); }
 
     string Draw(Tick tick) const {
         stringstream ss;
@@ -75,6 +80,10 @@ struct UnitTemplate {
         if (cmd == CMD_DURATIVE_LUA) return true;
         return _allowed_cmds.find(cmd) != _allowed_cmds.end();
     }
+    void AddAllowedCmd(int cmd) { _allowed_cmds.insert(static_cast<CmdType>(cmd)); }
+
+    void SetProperty(UnitProperty prop) { _property = prop; }
+
 };
 
 UnitTemplate _C(int cost, int hp, int defense, float speed, int att, int att_r, int vis_r,

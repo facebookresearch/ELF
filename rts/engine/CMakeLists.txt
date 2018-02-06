@@ -32,8 +32,9 @@ add_rts_command_gen(${CMAKE_CURRENT_SOURCE_DIR}/cmd_specific engine_specific)
 # Engine and game depend on each other
 # But we're using INTERFACE target, sources will be built together in the end, so it can work
 file(GLOB RTS_ENGINE_SOURCES *.cc)
+file(GLOB RTS_ENGINE_LUA_SOURCES lua/*.cc)
 add_library(minirts-engine INTERFACE)
-target_sources(minirts-engine INTERFACE ${RTS_ENGINE_SOURCES})
+target_sources(minirts-engine INTERFACE ${RTS_ENGINE_SOURCES} ${RTS_ENGINE_LUA_SOURCES})
 target_include_directories(minirts-engine INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/../)
 target_link_libraries(minirts-engine INTERFACE selene)
 

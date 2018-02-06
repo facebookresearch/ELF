@@ -18,7 +18,12 @@
 #include "lua/cpp_interface.h"
 
 bool CmdGenerateMap::run(GameEnv *env, CmdReceiver*) {
-    RTSMapGenerator::Generate(env->GetMap(), env->GetNumOfPlayers(), _init_resource);
+    RTSMapGenerator::Generate(env->GetMap(), env->GetNumOfPlayers(), _seed);
+    // create fog for each player
+    for (int player_id = 0; player_id < env->GetNumOfPlayers(); ++player_id) {
+        env->GetPlayer(player_id).CreateFog();
+    }
+
     return true;
 }
 
@@ -56,8 +61,8 @@ bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
     bool shuffle_lr = (lr_seed == 0);
     bool shuffle_ud = (ud_seed == 0);
     auto shuffle_loc = [&] (PointF p, bool b1, bool b2) -> PointF {
-        int x = b1 ? 19 - p.x : p.x;
-        int y = b2 ? 19 - p.y : p.y;
+        int x = b1 ? env->GetMap().GetXSize() - 1 - p.x : p.x;
+        int y = b2 ? env->GetMap().GetYSize() - 1 - p.y : p.y;
         return PointF(x, y);
     };
 

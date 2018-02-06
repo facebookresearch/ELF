@@ -53,6 +53,10 @@ string Player::Draw() const {
     return ss.str();
 }
 
+void Player::CreateFog() {
+    _fogs.assign(_map->GetPlaneSize(), Fog());
+}
+
 void Player::ComputeFOW(const Units &units) {
     // Compute the player's fog of war.
     // Two approaches, loop on the map (or in the future, viewport [TODO]),
@@ -62,6 +66,7 @@ void Player::ComputeFOW(const Units &units) {
     for (Fog &f : _fogs) {
         f.MakeInvisible();
     }
+
 
     // First pass, get the fog region.
     set<Loc> clear_regions;

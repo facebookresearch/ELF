@@ -119,7 +119,6 @@ public:
     }
     Player(const RTSMap& m, const std::string &name, int player_id)
         : _map(&m), _player_id(player_id), _name(name), _privilege(PV_NORMAL), _resource(0) {
-        _fogs.assign(_map->GetPlaneSize(), Fog());
     }
 
     const RTSMap& GetMap() const { return *_map; }
@@ -128,6 +127,7 @@ public:
     const std::string &GetName() const { return _name; }
     int GetResource() const { return _resource; }
 
+    void CreateFog();
     string Draw() const;
     void ComputeFOW(const map<UnitId, unique_ptr<Unit> > &units);
     bool FilterWithFOW(const Unit& u) const;
