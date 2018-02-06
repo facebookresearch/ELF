@@ -31,26 +31,8 @@ bool CmdGenerateMap::run(GameEnv *env, CmdReceiver*) {
 #define _CHANGE_RES(...) receiver->SendCmd(CmdIPtr(new CmdChangePlayerResource(INVALID, __VA_ARGS__)))
 
 
-bool CmdGameStartSpecific::run(GameEnv*, CmdReceiver* receiver) {
-    const PlayerId player_id = 0;
-    const PlayerId enemy_id = 1;
-    _CREATE(RESOURCE, PointF(2, 1), player_id);
-    _CREATE(WORKER, PointF(4, 4), player_id);
-    _CREATE(WORKER, PointF(5, 5), player_id);
-    _CREATE(WORKER, PointF(6, 7), player_id);
-    //_CREATE(RANGE_ATTACKER, PointF(15, 18), player_id);
-    _CREATE(BASE, PointF(7, 2), player_id);
-    //_CREATE(BARRACKS, PointF(8, 5), player_id);
-    _CHANGE_RES(player_id, 100);
-
-    _CREATE(BASE, PointF(18, 16), enemy_id);
-    //_CREATE(WORKER, PointF(17, 15), enemy_id);
-    //_CREATE(WORKER, PointF(18, 15), enemy_id);
-    //_CREATE(WORKER, PointF(19, 16), enemy_id);
-    _CREATE(RESOURCE, PointF(14, 18), enemy_id);
-    //_CREATE(RANGE_ATTACKER, PointF(12, 11), enemy_id);
-    _CHANGE_RES(enemy_id, 100);
-
+bool CmdGameStartSpecific::run(GameEnv* env, CmdReceiver* receiver) {
+    RTSUnitGenerator::Generate(env->GetMap(), *receiver, env->GetNumOfPlayers(), 0);
     return true;
 }
 

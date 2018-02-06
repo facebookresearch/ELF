@@ -7,6 +7,7 @@
 #include "engine/gamedef.h"
 #include "engine/unit.h"
 #include "engine/cmd_specific.gen.h"
+#include "engine/cmd_receiver.h"
 
 
 namespace detail {
@@ -61,6 +62,10 @@ struct _LuaUnitTemplate : public LuaClassInterface<UnitTemplate> {
 };
 
 struct _LuaCooldown : public LuaClassInterface<Cooldown> {
+    static void Init();
+};
+
+struct _LuaCmdReceiver : public LuaClassInterface<CmdReceiver> {
     static void Init();
 };
 

@@ -13,8 +13,8 @@ void RTSUnitGenerator::Init() {
     init("unit_generator.lua");
 }
 
-void RTSUnitGenerator::Generate(RTSMap& map, int seed) {
-    Invoke<void>("rts_unit_generator", "generate", map, seed);
+void RTSUnitGenerator::Generate(RTSMap& map, CmdReceiver& cmd_receiver, int num_players, int seed) {
+    Invoke<void>("rts_unit_generator", "generate", map, cmd_receiver, num_players, seed);
 }
 
 

@@ -25,20 +25,16 @@ end
 
 
 function rts_map_generator.generate(map, num_players, seed)
-    math.randomseed(seed)
-    print("generate")
-    print(Terrain.IMPASSABLE)
-    print(Terrain.WATER)
-    map:clear_map()
-    map:init_map(15, 15, 1)
-    rts_map_generator.generate_forest(map, 3)
-    rts_map_generator.generate_water(map, 3)
-    local init_resource = 200
-    for player_id = 0, num_players - 1 do
-      local base_x, base_y = rts_map_generator.generate_base(map)
-      local resource_x, resource_y = rts_map_generator.generate_base(map)
-      map:add_player(player_id, base_x, base_y, resource_x, resource_y, init_resource)
-    end
-    map:reset_intermediates()
-    print("done")
+  math.randomseed(seed)
+  map:clear_map()
+  map:init_map(20, 20, 1)
+  rts_map_generator.generate_forest(map, 3)
+  rts_map_generator.generate_water(map, 3)
+  local init_resource = 200
+  for player_id = 0, num_players - 1 do
+    local base_x, base_y = rts_map_generator.generate_base(map)
+    local resource_x, resource_y = rts_map_generator.generate_base(map)
+    map:add_player(player_id, base_x, base_y, resource_x, resource_y, init_resource)
+  end
+  map:reset_intermediates()
 end

@@ -12,6 +12,9 @@
 #include "game_env.h"
 #include <initializer_list>
 
+#include "cmd.gen.h"
+#include "cmd_specific.gen.h"
+
 bool CmdReceiver::StartDurativeCmd(CmdDurative *cmd) {
     UnitId id = cmd->id();
     if (id == INVALID) return false;
@@ -197,4 +200,13 @@ void CmdReceiver::LoadCmdReceiver(serializer::loader &loader) {
 void CmdReceiver::SetCmdDumper(const string& cmd_dumper_filename) {
     // Set the command dumper if there is any file specified.
     _cmd_dumper.reset(new ofstream(cmd_dumper_filename));
+}
+
+bool CmdReceiver::SendCmdCreate(int build_type, const PointF& p, int player_id, int resource_used) {
+    return SendCmd(CmdIPtr(new CmdCreate(INVALID, static_cast<UnitType>(build_type),
+        p, static_cast<PlayerId>(player_id), resource_used)));
+}
+
+bool CmdReceiver::SendCmdChangePlayerResource(int player_id, int delta) {
+    return SendCmd(CmdIPtr(new CmdChangePlayerResource(INVALID, static_cast<PlayerId>(player_id), delta)));
 }

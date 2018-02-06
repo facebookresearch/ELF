@@ -4,6 +4,7 @@
 
 #include "engine/map.h"
 #include "engine/gamedef.h"
+#include "engine/cmd_receiver.h"
 
 
 struct RTSMapGenerator : public CppClassInterface<RTSMapGenerator> {
@@ -15,7 +16,7 @@ struct RTSMapGenerator : public CppClassInterface<RTSMapGenerator> {
 struct RTSUnitGenerator : public CppClassInterface<RTSUnitGenerator> {
     static void Init();
 
-    static void Generate(RTSMap& map, int seed);
+    static void Generate(RTSMap& map, CmdReceiver& cmd_receiver, int num_players, int seed);
 };
 
 struct RTSUnitFactory : public CppClassInterface<RTSUnitFactory> {

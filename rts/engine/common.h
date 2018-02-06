@@ -186,6 +186,8 @@ struct PointF {
         return std::to_string(x) + ", " + std::to_string(y);
     }
 
+    void SetIntXY(int xx, int yy) { x = xx; y = yy; }
+
     SERIALIZER(PointF, x, y);
     HASH(PointF, x, y);
 };

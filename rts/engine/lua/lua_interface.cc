@@ -57,7 +57,8 @@ void _LuaCmdType::Init() {
 void _LuaPointF::Init() {
     Register("PointF",
         "isvalid", &PointF::IsValid,
-        "info", &PointF::info
+        "info", &PointF::info,
+        "set_int_xy", &PointF::SetIntXY
     );
 }
 
@@ -104,6 +105,13 @@ void _LuaCooldown::Init() {
     );
 }
 
+void _LuaCmdReceiver::Init() {
+    Register("CmdReceiver",
+        "send_cmd_create", &CmdReceiver::SendCmdCreate,
+        "send_cmd_change_player_resource", &CmdReceiver::SendCmdChangePlayerResource
+    );
+}
+
 }
 
 void reg_engine_lua_interfaces() {
@@ -115,6 +123,7 @@ void reg_engine_lua_interfaces() {
     detail::_LuaUnitProperty::Init();
     detail::_LuaUnitTemplate::Init();
     detail::_LuaCooldown::Init();
+    detail::_LuaCmdReceiver::Init();
 
     detail::_LuaTerrain::Init();
     detail::_LuaUnitType::Init();

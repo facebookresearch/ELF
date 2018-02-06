@@ -16,10 +16,10 @@ var left_frame_width = 1000;
 var cell_size = 50;
 var rect_size = 50;
 var unit_size = 32;
-var cell_colors = ['#404040', 'blue', 'black'];
+var cell_colors = ['#404040', 'green', 'blue', 'black'];
 var player_colors = ['blue', 'red', 'yellow']
 
-var unit_names_minirts = ["RESOURCE", "WORKER", "MELEE_ATTACKER", "RANGE_ATTACKER", "BARRACKS", "BASE"];
+var unit_names_minirts = ["RESOURCE", "WORKER", "MELEE_ATTACKER", "RANGE_ATTACKER", "FLIGHT", "BARRACKS", "BASE"];
 var unit_names_flag = ["FLAG_BASE", "FLAG_ATHLETE", "FLAG"];
 var unit_names_td = ["BASE", "WORKER", "RANGE_ATTACKER"];
 var x_down = null;
@@ -386,6 +386,17 @@ sprites["RANGE_ATTACKER"] = load_sprites({
     "_file" : "imgs/tiles.png",
     "_sizes" : [32, 32]
 });
+
+sprites["FLIGHT"] = load_sprites({
+    "up" : [myrange(15, 22), [0]],
+    "down": [myrange(15, 22), [1]],
+    "left": [[16], myrange(2, 9)],
+    "right": [[15], myrange(2, 9)],
+    "_file" : "imgs/tiles.png",
+    "_sizes" : [32, 32]
+});
+
+
 
 sprites["MELEE_ATTACKER"] = load_sprites({
     "up" : [myrange(15, 22), [9]],

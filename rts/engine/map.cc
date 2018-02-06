@@ -138,7 +138,6 @@ bool RTSMap::GenerateMap(const std::function<uint16_t(int)>& f, int nImpassable,
             // cout << "Player " << i << ": BASE: (" << x1 << ", " << y1 << ") RESOURCE: (" << x2 << ", " << y2 << ")" << endl;
         }
     } while(! success);
-    cout << "gen map done" << endl;
 
     ResetIntermediates();
     return true;
@@ -154,9 +153,6 @@ void RTSMap::ResetIntermediates() {
 
 void RTSMap::AddPlayer(int player_id, int base_x, int base_y,
     int resource_x, int resource_y, int init_resource) {
-    cout << player_id << endl;
-    cout << base_x << " " << base_y << endl;
-    cout << resource_x << " " << resource_y << endl;
     _infos.push_back({player_id, {base_x, base_y, 0}, {resource_x, resource_y, 0}, init_resource});
 }
 

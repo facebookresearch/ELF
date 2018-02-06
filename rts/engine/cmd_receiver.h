@@ -154,5 +154,9 @@ public:
     void SaveCmdReceiver(serializer::saver &saver) const;
     void LoadCmdReceiver(serializer::loader &loader);
 
+    // Commands helpers
+    bool SendCmdCreate(int build_type, const PointF& p, int player_id, int resource_used = 0);
+    bool SendCmdChangePlayerResource(int player_id, int delta);
+
     ~CmdReceiver() { }
 };
