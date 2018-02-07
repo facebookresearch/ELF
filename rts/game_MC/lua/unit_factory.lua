@@ -110,8 +110,8 @@ function rts_unit_factory.init_flight()
     --[[defense]]3,
     --[[speed]]0.4,
     --[[att]]30,
-    --[[att_r]]10,
-    --[[vis_r]]10,
+    --[[att_r]]5,
+    --[[vis_r]]5,
     --[[cds]]{0, 10, 0, 0},
     --[[allowed_cmds]]allowed_cmds,
     --[[attr]]UnitAttr.ATTR_NORMAL
