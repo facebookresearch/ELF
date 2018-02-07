@@ -27,7 +27,7 @@ end
 function rts_map_generator.generate(map, num_players, seed)
   math.randomseed(seed)
   map:clear_map()
-  map:init_map(20, 20, 1)
+  map:init_map(30, 30, 1)
   rts_map_generator.generate_forest(map, 3)
   rts_map_generator.generate_water(map, 3)
   local init_resource = 200

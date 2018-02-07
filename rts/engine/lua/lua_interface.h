@@ -2,6 +2,8 @@
 
 #include "elf/lua/interface.h"
 
+#include "utils.h"
+
 #include "engine/common.h"
 #include "engine/map.h"
 #include "engine/gamedef.h"
@@ -10,7 +12,12 @@
 #include "engine/cmd_receiver.h"
 
 
+
 namespace detail {
+
+struct _LuaStateProxy : public LuaClassInterface<StateProxy> {
+    static void Init();
+};
 
 struct _LuaCoord : public LuaClassInterface<Coord> {
     static void Init();
@@ -64,11 +71,6 @@ struct _LuaUnitTemplate : public LuaClassInterface<UnitTemplate> {
 struct _LuaCooldown : public LuaClassInterface<Cooldown> {
     static void Init();
 };
-
-struct _LuaCmdReceiver : public LuaClassInterface<CmdReceiver> {
-    static void Init();
-};
-
 
 }
 

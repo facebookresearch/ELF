@@ -202,11 +202,4 @@ void CmdReceiver::SetCmdDumper(const string& cmd_dumper_filename) {
     _cmd_dumper.reset(new ofstream(cmd_dumper_filename));
 }
 
-bool CmdReceiver::SendCmdCreate(int build_type, const PointF& p, int player_id, int resource_used) {
-    return SendCmd(CmdIPtr(new CmdCreate(INVALID, static_cast<UnitType>(build_type),
-        p, static_cast<PlayerId>(player_id), resource_used)));
-}
 
-bool CmdReceiver::SendCmdChangePlayerResource(int player_id, int delta) {
-    return SendCmd(CmdIPtr(new CmdChangePlayerResource(INVALID, static_cast<PlayerId>(player_id), delta)));
-}

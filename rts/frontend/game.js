@@ -10,14 +10,16 @@
 // Create the canvas
 var canvas = document.createElement("canvas");
 var ctx = canvas.getContext("2d");
-canvas.width = 1400;
-canvas.height = 1000;
-var left_frame_width = 1000;
-var cell_size = 50;
-var rect_size = 50;
+canvas.width = 2400;
+canvas.height = 2000;
+var left_frame_width = 2000;
+var cell_size = 40;
+var rect_size = 40;
 var unit_size = 32;
 var cell_colors = ['#404040', 'green', 'blue', 'black'];
 var player_colors = ['blue', 'red', 'yellow']
+var map_x = 20;
+var map_y = 20;
 
 var unit_names_minirts = ["RESOURCE", "WORKER", "MELEE_ATTACKER", "RANGE_ATTACKER", "FLIGHT", "BARRACKS", "BASE"];
 var unit_names_flag = ["FLAG_BASE", "FLAG_ATHLETE", "FLAG"];
@@ -134,7 +136,7 @@ document.addEventListener("keydown", function (e) {
 canvas.addEventListener("mousedown", function (e) {
     if (e.button === 0) {
         var xy0 = convert_xy_back(e.pageX, e.pageY);
-        if (xy0[0] > 20 || xy0[1] > 20) return;
+        if (xy0[0] > map_x || xy0[1] > map_y) return;
         x_down = e.pageX;
         y_down = e.pageY;
     }
@@ -142,7 +144,7 @@ canvas.addEventListener("mousedown", function (e) {
 
 canvas.addEventListener("mouseup", function (e) {
     var xy0 = convert_xy_back(e.pageX, e.pageY);
-    if (xy0[0] > 20 || xy0[1] > 20) return;
+    if (xy0[0] > map_x || xy0[1] > map_y) return;
     if (e.button === 0) {
         var xy = convert_xy_back(x_down, y_down);
         if (dragging && x_down && y_down) {
@@ -388,15 +390,13 @@ sprites["RANGE_ATTACKER"] = load_sprites({
 });
 
 sprites["FLIGHT"] = load_sprites({
-    "up" : [myrange(15, 22), [0]],
-    "down": [myrange(15, 22), [1]],
-    "left": [[16], myrange(2, 9)],
-    "right": [[15], myrange(2, 9)],
-    "_file" : "imgs/tiles.png",
+    "up" : [myrange(6, 9), [7]],
+    "down" : [myrange(6, 9), [4]],
+    "left" : [myrange(6, 9), [5]],
+    "right" : [myrange(6, 9), [6]],
+    "_file" : "imgs/People4.png",
     "_sizes" : [32, 32]
 });
-
-
 
 sprites["MELEE_ATTACKER"] = load_sprites({
     "up" : [myrange(15, 22), [9]],
@@ -537,6 +537,8 @@ var main = function () {
   dealer.onmessage = function (message) {
     var s = message.data;
     var game = JSON.parse(s);
+    map_x = game.rts_map.width;
+    map_y = game.rts_map.height;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     render(game);
   };

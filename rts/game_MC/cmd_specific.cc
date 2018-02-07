@@ -32,7 +32,7 @@ bool CmdGenerateMap::run(GameEnv *env, CmdReceiver*) {
 
 
 bool CmdGameStartSpecific::run(GameEnv* env, CmdReceiver* receiver) {
-    RTSUnitGenerator::Generate(env->GetMap(), *receiver, env->GetNumOfPlayers(), 0);
+    RTSUnitGenerator::Generate(&env->GetMap(), env->GetNumOfPlayers(), 0, receiver);
     return true;
 }
 

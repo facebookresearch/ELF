@@ -13,8 +13,9 @@ void RTSUnitGenerator::Init() {
     init("unit_generator.lua");
 }
 
-void RTSUnitGenerator::Generate(RTSMap& map, CmdReceiver& cmd_receiver, int num_players, int seed) {
-    Invoke<void>("rts_unit_generator", "generate", map, cmd_receiver, num_players, seed);
+void RTSUnitGenerator::Generate(RTSMap* map, int num_players, int seed, CmdReceiver* cmd_receiver) {
+    auto proxy = StateProxy{map, cmd_receiver};
+    Invoke<void>("rts_unit_generator", "generate", proxy, num_players, seed);
 }
 
 
@@ -43,6 +44,12 @@ UnitTemplate RTSUnitFactory::InitMeleeAttacker() {
 UnitTemplate RTSUnitFactory::InitRangeAttacker() {
     UnitTemplate ret;
     Invoke("rts_unit_factory", "init_range_attacker", &ret);
+    return ret;
+}
+
+UnitTemplate RTSUnitFactory::InitFlight() {
+    UnitTemplate ret;
+    Invoke("rts_unit_factory", "init_flight", &ret);
     return ret;
 }
 

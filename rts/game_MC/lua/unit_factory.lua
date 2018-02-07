@@ -1,5 +1,10 @@
 rts_unit_factory = {}
 
+--[[
+--Cooldown is specified by a vector of 4 numbers in the following order:
+--[CD_MOVE, CD_ATTACK, CD_GATHER, CD_BUILD]
+]]
+
 function __create_unit_template(cost, hp, defense, speed, att, att_r, vis_r,
   cds, allowed_cmds, attr)
 
@@ -31,7 +36,17 @@ end
 
 function rts_unit_factory.init_resource()
   local ut = __create_unit_template(
-    0, 1000, 1000, 0, 0, 0, 0, {0, 0, 0, 0}, {}, UnitAttr.ATTR_INVULNERABLE)
+    --[[cost]]0,
+    --[[hp]]1000,
+    --[[defense]]1000,
+    --[[speed]]0,
+    --[[att]]0,
+    --[[att_r]]0,
+    --[[vis_r]]0,
+    --[[cds]]{0, 0, 0, 0},
+    --[[allowed_cmds]]{},
+    --[[attr]]UnitAttr.ATTR_INVULNERABLE
+  )
   return ut
 end
 
@@ -39,34 +54,101 @@ end
 function rts_unit_factory.init_worker()
   local allowed_cmds = {CmdType.MOVE, CmdType.ATTACK, CmdType.BUILD, CmdType.GATHER}
   local ut = __create_unit_template(
-    50, 50, 0, 0.1, 2, 1, 3, {0, 10, 40, 40}, allowed_cmds, UnitAttr.ATTR_NORMAL)
+    --[[cost]]50,
+    --[[hp]]50,
+    --[[defense]]0,
+    --[[speed]]0.1,
+    --[[att]]2,
+    --[[att_r]]1,
+    --[[vis_r]]3,
+    --[[cds]]{0, 10, 40, 40},
+    --[[allowed_cmds]]allowed_cmds,
+    --[[attr]]UnitAttr.ATTR_NORMAL
+  )
   return ut
 end
 
 function rts_unit_factory.init_melee_attacker()
   local allowed_cmds = {CmdType.MOVE, CmdType.ATTACK}
   local ut = __create_unit_template(
-    100, 100, 1, 0.1, 15, 1, 3, {0, 15, 0, 0}, allowed_cmds, UnitAttr.ATTR_NORMAL)
+    --[[cost]]100,
+    --[[hp]]100,
+    --[[defense]]1,
+    --[[speed]]0.1,
+    --[[att]]15,
+    --[[att_r]]1,
+    --[[vis_r]]3,
+    --[[cds]]{0, 15, 0, 0},
+    --[[allowed_cmds]]allowed_cmds,
+    --[[attr]]UnitAttr.ATTR_NORMAL
+  )
   return ut
 end
 
 function rts_unit_factory.init_range_attacker()
   local allowed_cmds = {CmdType.MOVE, CmdType.ATTACK}
   local ut = __create_unit_template(
-    100, 50, 0, 0.2, 10, 5, 5, {0, 10, 0, 0}, allowed_cmds, UnitAttr.ATTR_NORMAL)
+    --[[cost]]100,
+    --[[hp]]50,
+    --[[defense]]0,
+    --[[speed]]0.2,
+    --[[att]]10,
+    --[[att_r]]5,
+    --[[vis_r]]5,
+    --[[cds]]{0, 10, 0, 0},
+    --[[allowed_cmds]]allowed_cmds,
+    --[[attr]]UnitAttr.ATTR_NORMAL
+  )
+  return ut
+end
+
+function rts_unit_factory.init_flight()
+  local allowed_cmds = {CmdType.MOVE, CmdType.ATTACK}
+  local ut = __create_unit_template(
+    --[[cost]]200,
+    --[[hp]]200,
+    --[[defense]]3,
+    --[[speed]]0.4,
+    --[[att]]30,
+    --[[att_r]]10,
+    --[[vis_r]]10,
+    --[[cds]]{0, 10, 0, 0},
+    --[[allowed_cmds]]allowed_cmds,
+    --[[attr]]UnitAttr.ATTR_NORMAL
+  )
   return ut
 end
 
 function rts_unit_factory.init_barracks()
   local allowed_cmds = {CmdType.BUILD}
   local ut = __create_unit_template(
-    200, 200, 1, 0.0, 0, 0, 5, {0, 0, 0, 50}, allowed_cmds, UnitAttr.ATTR_NORMAL)
+    --[[cost]]200,
+    --[[hp]]200,
+    --[[defense]]1,
+    --[[speed]]0.0,
+    --[[att]]0,
+    --[[att_r]]0,
+    --[[vis_r]]5,
+    --[[cds]]{0, 0, 0, 50},
+    --[[allowed_cmds]]allowed_cmds,
+    --[[attr]]UnitAttr.ATTR_NORMAL
+  )
   return ut
 end
 
 function rts_unit_factory.init_base()
   local allowed_cmds = {CmdType.BUILD}
   local ut = __create_unit_template(
-    500, 500, 2, 0.0, 0, 0, 5, {0, 0, 0, 50}, allowed_cmds, UnitAttr.ATTR_NORMAL)
+    --[[cost]]500,
+    --[[hp]]500,
+    --[[defense]]2,
+    --[[speed]]0.0,
+    --[[att]]0,
+    --[[att_r]]0,
+    --[[vis_r]]5,
+    --[[cds]]{0, 0, 0, 50},
+    --[[allowed_cmds]]allowed_cmds,
+    --[[attr]]UnitAttr.ATTR_NORMAL
+  )
   return ut
 end

@@ -77,6 +77,7 @@ void GameDef::Init() {
     _units[WORKER] = RTSUnitFactory::InitWorker();
     _units[MELEE_ATTACKER] = RTSUnitFactory::InitMeleeAttacker();
     _units[RANGE_ATTACKER] = RTSUnitFactory::InitRangeAttacker();
+    _units[FLIGHT] = RTSUnitFactory::InitFlight();
     _units[BARRACKS] = RTSUnitFactory::InitBarracks();
     _units[BASE] = RTSUnitFactory::InitBase();
 

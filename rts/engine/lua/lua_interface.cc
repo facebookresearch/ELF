@@ -2,6 +2,15 @@
 
 namespace detail {
 
+void _LuaStateProxy::Init() {
+    Register("StateProxy",
+        "send_cmd_create", &StateProxy::SendCmdCreate,
+        "send_cmd_change_player_resource", &StateProxy::SendCmdChangePlayerResource,
+        "get_x_size", &StateProxy::GetXSize,
+        "get_y_size", &StateProxy::GetYSize
+    );
+}
+
 void _LuaCoord::Init() {
     Register("Coord",
         "x", &Coord::x,
@@ -105,16 +114,10 @@ void _LuaCooldown::Init() {
     );
 }
 
-void _LuaCmdReceiver::Init() {
-    Register("CmdReceiver",
-        "send_cmd_create", &CmdReceiver::SendCmdCreate,
-        "send_cmd_change_player_resource", &CmdReceiver::SendCmdChangePlayerResource
-    );
-}
-
 }
 
 void reg_engine_lua_interfaces() {
+    detail::_LuaStateProxy::Init();
     detail::_LuaCoord::Init();
     detail::_LuaRTSMap::Init();
     detail::_LuaMapSlot::Init();
@@ -123,7 +126,6 @@ void reg_engine_lua_interfaces() {
     detail::_LuaUnitProperty::Init();
     detail::_LuaUnitTemplate::Init();
     detail::_LuaCooldown::Init();
-    detail::_LuaCmdReceiver::Init();
 
     detail::_LuaTerrain::Init();
     detail::_LuaUnitType::Init();
