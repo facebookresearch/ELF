@@ -15,3 +15,10 @@ add_dependencies(minirts-game minirts-game-headers)
 # python libraries
 pybind11_add_module(minirts python_wrapper.cc wrapper_callback.cc)
 target_link_libraries(minirts PRIVATE minirts-game)
+
+
+execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/lua/map_generator.lua ${CMAKE_BINARY_DIR}/map_generator.lua)
+execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/lua/unit_generator.lua ${CMAKE_BINARY_DIR}/unit_generator.lua)
+execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/lua/unit_factory.lua ${CMAKE_BINARY_DIR}/unit_factory.lua)
+execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/lua/attack_rule_book.lua ${CMAKE_BINARY_DIR}/attack_rule_book.lua)
+execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/lua/move_rule_book.lua ${CMAKE_BINARY_DIR}/move_rule_book.lua)

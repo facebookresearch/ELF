@@ -17,6 +17,7 @@
 #include "cmd_specific.gen.h"
 
 #include "aux_func.h"
+#include "engine/lua/cpp_interface.h"
 
 static const int kMoveToRes = 0;
 static const int kGathering = 1;
@@ -68,6 +69,11 @@ bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
         // For example, for AI, they could cheat and attack wherever they want.
         // For normal player you cannot attack a Unit outside the FOW.
         //
+        _done = true;
+        return true;
+    }
+
+    if (!AttackRuleBook::CanAttack(u->GetUnitType(), target->GetUnitType())) {
         _done = true;
         return true;
     }

@@ -26,5 +26,6 @@ function rts_unit_generator.generate(proxy, num_players, seed)
 
   proxy:send_cmd_create(UnitType.RESOURCE, __make_p(14, 18), enemy_id, 0)
   proxy:send_cmd_create(UnitType.BASE, __make_p(18, 16), enemy_id, 0)
+  proxy:send_cmd_create(UnitType.RANGE_ATTACKER, __make_p(20, 21), enemy_id, 0)
   proxy:send_cmd_change_player_resource(enemy_id, 100)
 end

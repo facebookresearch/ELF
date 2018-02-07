@@ -19,3 +19,8 @@ public:
     bool SendCmdCreate(int build_type, const PointF& p, int player_id, int resource_used = 0);
     bool SendCmdChangePlayerResource(int player_id, int delta);
 };
+
+
+struct AttackRules {
+    bool CanAttack(UnitType unit, UnitType target);
+};

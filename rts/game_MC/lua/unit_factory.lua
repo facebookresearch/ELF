@@ -52,7 +52,7 @@ end
 
 
 function rts_unit_factory.init_worker()
-  local allowed_cmds = {CmdType.MOVE, CmdType.ATTACK, CmdType.BUILD, CmdType.GATHER}
+  local allowed_cmds = {CmdType.MOVE, CmdType.BUILD, CmdType.GATHER}
   local ut = __create_unit_template(
     --[[cost]]50,
     --[[hp]]50,

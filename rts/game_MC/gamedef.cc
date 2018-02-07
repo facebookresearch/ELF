@@ -16,6 +16,7 @@
 #include "cmd_specific.gen.h"
 #include "engine/ai.h"
 #include "engine/lua/lua_interface.h"
+#include "engine/lua/cpp_interface.h"
 #include "lua/lua_interface.h"
 #include "lua/cpp_interface.h"
 #include "rule_ai.h"
@@ -45,6 +46,7 @@ void GameDef::GlobalInit() {
     reg_minirts_specific();
     reg_engine_cmd_lua();
     reg_engine_lua_interfaces();
+    reg_engine_cpp_interfaces();
     reg_lua_interfaces();
     reg_cpp_interfaces();
 
