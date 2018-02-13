@@ -80,6 +80,7 @@ void MCExtractor::extract(const RTSState &s, PlayerId player_id, bool respect_fo
     int myworker = 0;
     int mytroop = 0;
     int mybarrack = 0;
+    int myfactory = 0;
     float base_hp_level = 0.0;
 
     while (! unit_iter.end()) {
@@ -111,8 +112,9 @@ void MCExtractor::extract(const RTSState &s, PlayerId player_id, bool respect_fo
 
         if (self_unit) {
             if (t == WORKER) myworker += 1;
-            else if (t == MELEE_ATTACKER || t == RANGE_ATTACKER) mytroop += 1;
+            else if (t == MELEE_ATTACKER || t == RANGE_ATTACKER || t == FLIGHT) mytroop += 1;
             else if (t == BARRACKS) mybarrack += 1;
+            else if (t == FACTORY) myfactory += 1;
             else if (t == BASE) base_hp_level = hp_level;
        }
 

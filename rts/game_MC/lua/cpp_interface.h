@@ -33,7 +33,11 @@ struct RTSUnitFactory : public CppClassInterface<RTSUnitFactory> {
 
     static UnitTemplate InitFlight();
 
+    static UnitTemplate InitBomber();
+
     static UnitTemplate InitBarracks();
+
+    static UnitTemplate InitFactory();
 
     static UnitTemplate InitBase();
 };

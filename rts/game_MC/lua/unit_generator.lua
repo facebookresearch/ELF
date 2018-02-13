@@ -77,6 +77,6 @@ function rts_unit_generator.generate(proxy, num_players, seed)
   rts_unit_generator.generate_unit(proxy, parser, 1, UnitType.BARRACKS)
 
   -- change resources
-  proxy:send_cmd_change_player_resource(0, 100)
+  proxy:send_cmd_change_player_resource(0, 1500)
   proxy:send_cmd_change_player_resource(1, 100)
 end

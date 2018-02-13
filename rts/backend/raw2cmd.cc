@@ -14,23 +14,33 @@
 //
 CmdInput move_event(const Unit &u, char /*hotkey*/, const PointF& p, const UnitId &target_id, const GameEnv&) {
     // Don't need to check hotkey since there is only one type of action.
-    if (target_id == INVALID && ! p.IsInvalid()) {
-        // cout << "In move command [" << hotkey << "] @" << p << " target: " << target_id << endl;
-        return CmdInput(CmdInput::CI_MOVE, u.GetId(), p, target_id);
+    if (target_id == INVALID) {
+        if (! p.IsInvalid()) {
+            // cout << "In move command [" << hotkey << "] @" << p << " target: " << target_id << endl;
+            return CmdInput(CmdInput::CI_MOVE, u.GetId(), p, target_id);
+        }
     }
-    else return CmdInput();
+    else {
+        return CmdInput(CmdInput::CI_ATTACK, u.GetId(), p, target_id);
+    }
+    return CmdInput();
 }
 
 CmdInput attack_event(const Unit &u, char /*hotkey*/, const PointF& p, const UnitId &target_id, const GameEnv&) {
     // Don't need to check hotkey since there is only one type of action.
     // cout << "In attack command [" << hotkey << "] @" << p << " target: " << target_id << endl;
+    if (target_id == INVALID) {
+        if (! p.IsInvalid()) {
+            return CmdInput(CmdInput::CI_MOVE, u.GetId(), p, target_id);
+        }
+    }
     return CmdInput(CmdInput::CI_ATTACK, u.GetId(), p, target_id);
 }
 
 CmdInput gather_event(const Unit &u, char /*hotkey*/, const PointF& p, const UnitId &target_id, const GameEnv& env) {
     // Don't need to check hotkey since there is only one type of action.
     // cout << "In gather command [" << hotkey << "] @" << p << " target: " << target_id << endl;
-    UnitId base = env.FindClosestBase(u.GetPlayerId());
+    UnitId base = env.FindClosestBase(u.GetPlayerId(), p);
     return CmdInput(CmdInput::CI_GATHER, u.GetId(), p, target_id, base);
 }
 
@@ -53,6 +63,7 @@ CmdInput build_event(const Unit &u, char hotkey, const PointF& p, const UnitId& 
             build_p = p;
             if (hotkey == 'c') build_type = BASE;
             else if (hotkey == 'b') build_type = BARRACKS;
+            else if (hotkey == 'f') build_type = FACTORY;
             else return CmdInput();
             break;
         case BASE:
@@ -64,6 +75,12 @@ CmdInput build_event(const Unit &u, char hotkey, const PointF& p, const UnitId& 
             build_p.SetInvalid();
             if (hotkey == 'm') build_type = MELEE_ATTACKER;
             else if (hotkey == 'r') build_type = RANGE_ATTACKER;
+            else return CmdInput();
+            break;
+        case FACTORY:
+            build_p.SetInvalid();
+            if (hotkey == 'f') build_type = FLIGHT;
+            else if (hotkey == 'z') build_type = BOMBER;
             else return CmdInput();
             break;
         default:
@@ -83,7 +100,7 @@ void RawToCmd::setup_hotkeys() {
     add_hotkey("a", attack_event);
     add_hotkey("~", move_event);
     add_hotkey("t", gather_event);
-    add_hotkey("cbsmr", build_event);
+    add_hotkey("cbsmrfz", build_event);
 }
 
 RawMsgStatus RawToCmd::Process(Tick tick, const GameEnv &env, const string&s, vector<CmdBPtr> *cmds, vector<UICmd> *ui_cmds) {
@@ -106,8 +123,6 @@ RawMsgStatus RawToCmd::Process(Tick tick, const GameEnv &env, const string&s, ve
     float percent;
     PointF p, p2;
     set<UnitId> selected;
-
-    cout << "Cmd: " << s << endl;
 
     const RTSMap& m = env.GetMap();
 

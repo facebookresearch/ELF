@@ -127,11 +127,27 @@ UnitId GameEnv::FindClosestBase(PlayerId player_id) const {
     // Find closest base. [TODO]: Not efficient here.
     for (auto it = _units.begin(); it != _units.end(); ++it) {
         const Unit *u = it->second.get();
-        if ((u->GetUnitType() == BASE || u->GetUnitType() == FLAG_BASE) && u->GetPlayerId() == player_id) {
+        if (u->GetUnitType() == BASE && u->GetPlayerId() == player_id) {
             return u->GetId();
         }
     }
     return INVALID;
+}
+
+UnitId GameEnv::FindClosestBase(PlayerId player_id, const PointF& p) const {
+    UnitId id = INVALID;
+    float closest = 1e10;
+    for (auto it = _units.begin(); it != _units.end(); ++it) {
+        const Unit *u = it->second.get();
+        if (u->GetUnitType() == BASE && u->GetPlayerId() == player_id) {
+            float dist = PointF::L2Sqr(p, u->GetPointF());
+            if (dist < closest) {
+              closest = dist;
+              id = u->GetId();
+            }
+        }
+    }
+    return id;
 }
 
 PlayerId GameEnv::CheckBase(UnitType base_type) const{

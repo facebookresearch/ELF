@@ -21,7 +21,7 @@ var player_colors = ['blue', 'red', 'yellow']
 var map_x = 20;
 var map_y = 20;
 
-var unit_names_minirts = ["RESOURCE", "WORKER", "MELEE_ATTACKER", "RANGE_ATTACKER", "FLIGHT", "BARRACKS", "BASE"];
+var unit_names_minirts = ["RESOURCE", "WORKER", "MELEE_ATTACKER", "RANGE_ATTACKER", "FLIGHT", "BOMBER", "BARRACKS", "FACTORY", "BASE"];
 var unit_names_flag = ["FLAG_BASE", "FLAG_ATHLETE", "FLAG"];
 var unit_names_td = ["BASE", "WORKER", "RANGE_ATTACKER"];
 var x_down = null;
@@ -398,6 +398,16 @@ sprites["FLIGHT"] = load_sprites({
     "_sizes" : [32, 32]
 });
 
+sprites["BOMBER"] = load_sprites({
+    "up" : [myrange(0, 3), [3]],
+    "down" : [myrange(0, 3), [0]],
+    "left" : [myrange(0, 3), [1]],
+    "right" : [myrange(0, 3), [2]],
+    "_file" : "imgs/People4.png",
+    "_sizes" : [32, 32]
+});
+
+
 sprites["MELEE_ATTACKER"] = load_sprites({
     "up" : [myrange(15, 22), [9]],
     "down": [myrange(15, 22), [10]],
@@ -417,6 +427,10 @@ sprites["BASE"] = load_sprites({
 
 sprites["BARRACKS"] = load_sprites({
     "_file" : "imgs/barracks.png",
+});
+
+sprites["FACTORY"] = load_sprites({
+    "_file" : "imgs/factory.png",
 });
 
 var targets = load_sprites({

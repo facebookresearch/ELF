@@ -72,6 +72,10 @@ void Player::ComputeFOW(const Units &units) {
     set<Loc> clear_regions;
     for (auto it = units.begin(); it != units.end(); ++it) {
         const Unit *u = it->second.get();
+        // Hide resources
+        if (u->GetUnitType() == RESOURCE) {
+            continue;
+        }
         if (ExtractPlayerId(u->GetId()) == _player_id) {
             const int vis_r = u->GetProperty()._vis_r;
             Loc l = _map->GetLoc(u->GetPointF().ToCoord());

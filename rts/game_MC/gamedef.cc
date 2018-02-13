@@ -31,7 +31,7 @@ int GameDef::GetNumAction() {
 }
 
 bool GameDef::IsUnitTypeBuilding(UnitType t) const{
-    return (t == BASE) || (t == RESOURCE) || (t == BARRACKS);
+    return (t == BASE) || (t == RESOURCE) || (t == BARRACKS) || (t == FACTORY);
 }
 
 bool GameDef::HasBase() const{ return true; }
@@ -80,7 +80,9 @@ void GameDef::Init() {
     _units[MELEE_ATTACKER] = RTSUnitFactory::InitMeleeAttacker();
     _units[RANGE_ATTACKER] = RTSUnitFactory::InitRangeAttacker();
     _units[FLIGHT] = RTSUnitFactory::InitFlight();
+    _units[BOMBER] = RTSUnitFactory::InitBomber();
     _units[BARRACKS] = RTSUnitFactory::InitBarracks();
+    _units[FACTORY] = RTSUnitFactory::InitFactory();
     _units[BASE] = RTSUnitFactory::InitBase();
 
     //cout << _units[RESOURCE]._property._attr << endl;

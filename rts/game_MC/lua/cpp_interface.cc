@@ -53,12 +53,23 @@ UnitTemplate RTSUnitFactory::InitFlight() {
     return ret;
 }
 
+UnitTemplate RTSUnitFactory::InitBomber() {
+    UnitTemplate ret;
+    Invoke("rts_unit_factory", "init_bomber", &ret);
+    return ret;
+}
+
 UnitTemplate RTSUnitFactory::InitBarracks() {
     UnitTemplate ret;
     Invoke("rts_unit_factory", "init_barracks", &ret);
     return ret;
 }
 
+UnitTemplate RTSUnitFactory::InitFactory() {
+    UnitTemplate ret;
+    Invoke("rts_unit_factory", "init_factory", &ret);
+    return ret;
+}
 
 UnitTemplate RTSUnitFactory::InitBase() {
     UnitTemplate ret;

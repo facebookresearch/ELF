@@ -114,6 +114,7 @@ public:
 
     // Find the closest base.
     UnitId FindClosestBase(PlayerId player_id) const;
+    UnitId FindClosestBase(PlayerId player_id, const PointF& p) const;
 
     // Find empty place near a place, used by creating units.
     bool FindEmptyPlaceNearby(const PointF &p, int l1_radius, PointF *res_p) const;

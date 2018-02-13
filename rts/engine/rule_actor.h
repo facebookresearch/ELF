@@ -18,8 +18,8 @@
 #include <sstream>
 #include <algorithm>
 
-custom_enum(AIState, STATE_START = 0, STATE_BUILD_WORKER, STATE_BUILD_BARRACK,
-  STATE_BUILD_MELEE_TROOP, STATE_BUILD_RANGE_TROOP, STATE_ATTACK,
+custom_enum(AIState, STATE_START = 0, STATE_BUILD_WORKER, STATE_BUILD_BARRACK, STATE_BUILD_FACTORY,
+  STATE_BUILD_MELEE_TROOP, STATE_BUILD_RANGE_TROOP, STATE_BUILD_FLIGHT, STATE_ATTACK,
   STATE_ATTACK_IN_RANGE, STATE_HIT_AND_RUN, STATE_DEFEND, NUM_AISTATE);
 
 custom_enum(FlagState, FLAGSTATE_START = 0, FLAGSTATE_GET_FLAG, FLAGSTATE_ATTACK_FLAG,
@@ -124,6 +124,12 @@ public:
     CmdBPtr GetBuildBarracksCmd(const GameEnv &env) const {
         PointF p;
         if (env.FindEmptyPlaceNearby(_base_loc, 3, &p) && ! p.IsInvalid()) return _B(BARRACKS, p);
+        else return CmdBPtr();
+    }
+
+    CmdBPtr GetBuildFactoryCmd(const GameEnv &env) const {
+        PointF p;
+        if (env.FindEmptyPlaceNearby(_base_loc, 3, &p) && ! p.IsInvalid()) return _B(FACTORY, p);
         else return CmdBPtr();
     }
 
