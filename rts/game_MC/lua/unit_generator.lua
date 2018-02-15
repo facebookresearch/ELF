@@ -9,41 +9,28 @@ function __make_p(x, y)
 end
 
 
-function rts_unit_generator.generate2(proxy, num_players, seed)
-  math.randomseed(seed)
-  local X = proxy:get_x_size()
-  local Y = proxy:get_y_size()
-  print(X)
-  print(Y)
-  local player_id = 0
-  local enemy_id = 1
-
-  proxy:send_cmd_create(UnitType.RESOURCE, __make_p(2, 1), player_id, 0)
-  proxy:send_cmd_create(UnitType.WORKER, __make_p(4, 4), player_id, 0)
-  proxy:send_cmd_create(UnitType.WORKER, __make_p(5, 5), player_id, 0)
-  proxy:send_cmd_create(UnitType.WORKER, __make_p(6, 7), player_id, 0)
-  proxy:send_cmd_create(UnitType.FLIGHT, __make_p(8, 9), player_id, 0)
-  proxy:send_cmd_create(UnitType.BASE, __make_p(7, 2), player_id, 0)
-  proxy:send_cmd_change_player_resource(player_id, 100)
-
-  proxy:send_cmd_create(UnitType.RESOURCE, __make_p(14, 18), enemy_id, 0)
-  proxy:send_cmd_create(UnitType.BASE, __make_p(18, 16), enemy_id, 0)
-  proxy:send_cmd_create(UnitType.RANGE_ATTACKER, __make_p(20, 21), enemy_id, 0)
-  proxy:send_cmd_change_player_resource(enemy_id, 100)
-end
-
 local unit_type_to_cell = {}
-unit_type_to_cell[UnitType.RESOURCE] = {"C", "c"}
-unit_type_to_cell[UnitType.WORKER] = {"W", "w"}
-unit_type_to_cell[UnitType.FLIGHT] = {"F", "f"}
-unit_type_to_cell[UnitType.MELEE_ATTACKER] = {"M", "m"}
-unit_type_to_cell[UnitType.RANGE_ATTACKER] = {"R", "r"}
-unit_type_to_cell[UnitType.BASE] = {"B", "b"}
-unit_type_to_cell[UnitType.BARRACKS] = {"A", "a"}
+unit_type_to_cell[UnitType.RESOURCE] = "X"
+unit_type_to_cell[UnitType.WORKER] = "W"
+unit_type_to_cell[UnitType.ENGINEER] = "E"
+unit_type_to_cell[UnitType.SOLDIER] = "S"
+unit_type_to_cell[UnitType.TRUCK] = "R"
+unit_type_to_cell[UnitType.TANK] = "T"
+unit_type_to_cell[UnitType.CANNON] = "C"
+unit_type_to_cell[UnitType.FLIGHT] = "F"
+unit_type_to_cell[UnitType.BARRACK] = "A"
+unit_type_to_cell[UnitType.FACTORY] = "O"
+unit_type_to_cell[UnitType.HANGAR] = "H"
+unit_type_to_cell[UnitType.DEFENSE_TOWER] = "D"
+unit_type_to_cell[UnitType.BASE] = "B"
 
 
 function rts_unit_generator.generate_unit(proxy, parser, player_id, unit_type)
-  local ty = unit_type_to_cell[unit_type][player_id + 1]
+  local ty = unit_type_to_cell[unit_type]
+  -- if enemy, lower case
+  if player_id == 1 then
+    ty = ty:lower()
+  end
   local xs, ys = parser:get_locations(ty)
   for i = 1, #xs do
     proxy:send_cmd_create(unit_type, __make_p(xs[i], ys[i]), player_id, 0)
@@ -59,22 +46,14 @@ function rts_unit_generator.generate(proxy, num_players, seed)
   parser = map_parser:new("m1.map")
 
   -- your units
-  rts_unit_generator.generate_unit(proxy, parser, 0, UnitType.RESOURCE)
-  rts_unit_generator.generate_unit(proxy, parser, 0, UnitType.WORKER)
-  rts_unit_generator.generate_unit(proxy, parser, 0, UnitType.MELEE_ATTACKER)
-  rts_unit_generator.generate_unit(proxy, parser, 0, UnitType.RANGE_ATTACKER)
-  rts_unit_generator.generate_unit(proxy, parser, 0, UnitType.BASE)
-  rts_unit_generator.generate_unit(proxy, parser, 0, UnitType.FLIGHT)
-  rts_unit_generator.generate_unit(proxy, parser, 0, UnitType.BARRACKS)
+  for k, v in pairs(unit_type_to_cell) do
+    rts_unit_generator.generate_unit(proxy, parser, 0, k)
+  end
 
   -- enemy units
-  rts_unit_generator.generate_unit(proxy, parser, 1, UnitType.RESOURCE)
-  rts_unit_generator.generate_unit(proxy, parser, 1, UnitType.WORKER)
-  rts_unit_generator.generate_unit(proxy, parser, 1, UnitType.MELEE_ATTACKER)
-  rts_unit_generator.generate_unit(proxy, parser, 1, UnitType.RANGE_ATTACKER)
-  rts_unit_generator.generate_unit(proxy, parser, 1, UnitType.BASE)
-  rts_unit_generator.generate_unit(proxy, parser, 1, UnitType.FLIGHT)
-  rts_unit_generator.generate_unit(proxy, parser, 1, UnitType.BARRACKS)
+  for k, v in pairs(unit_type_to_cell) do
+    rts_unit_generator.generate_unit(proxy, parser, 1, k)
+  end
 
   -- change resources
   proxy:send_cmd_change_player_resource(0, 1500)

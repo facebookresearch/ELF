@@ -31,7 +31,7 @@ int GameDef::GetNumAction() {
 }
 
 bool GameDef::IsUnitTypeBuilding(UnitType t) const{
-    return (t == BASE) || (t == RESOURCE) || (t == BARRACKS) || (t == FACTORY);
+    return (t == BASE) || (t == RESOURCE) || (t == BARRACK) || (t == FACTORY);
 }
 
 bool GameDef::HasBase() const{ return true; }
@@ -66,28 +66,20 @@ void GameDef::GlobalInit() {
 
 void GameDef::Init() {
     _units.assign(GetNumUnitType(), UnitTemplate());
-    /*
-    _units[RESOURCE] = _C(0, 1000, 1000, 0, 0, 0, 0, vector<int>{0, 0, 0, 0}, vector<CmdType>{}, ATTR_INVULNERABLE);
-    _units[WORKER] = _C(50, 50, 0, 0.1, 2, 1, 3, vector<int>{0, 10, 40, 40}, vector<CmdType>{MOVE, ATTACK, BUILD, GATHER});
-    _units[MELEE_ATTACKER] = _C(100, 100, 1, 0.1, 15, 1, 3, vector<int>{0, 15, 0, 0}, vector<CmdType>{MOVE, ATTACK});
-    _units[RANGE_ATTACKER] = _C(100, 50, 0, 0.2, 10, 5, 5, vector<int>{0, 10, 0, 0}, vector<CmdType>{MOVE, ATTACK});
-    _units[BARRACKS] = _C(200, 200, 1, 0.0, 0, 0, 5, vector<int>{0, 0, 0, 50}, vector<CmdType>{BUILD});
-    _units[BASE] = _C(500, 500, 2, 0.0, 0, 0, 5, {0, 0, 0, 50}, vector<CmdType>{BUILD});
-    */
 
     _units[RESOURCE] = RTSUnitFactory::InitResource();
     _units[WORKER] = RTSUnitFactory::InitWorker();
-    _units[MELEE_ATTACKER] = RTSUnitFactory::InitMeleeAttacker();
-    _units[RANGE_ATTACKER] = RTSUnitFactory::InitRangeAttacker();
+    _units[ENGINEER] = RTSUnitFactory::InitEngineer();
+    _units[SOLDIER] = RTSUnitFactory::InitSoldier();
+    _units[TRUCK] = RTSUnitFactory::InitTruck();
+    _units[TANK] = RTSUnitFactory::InitTank();
+    _units[CANNON] = RTSUnitFactory::InitCannon();
     _units[FLIGHT] = RTSUnitFactory::InitFlight();
-    _units[BOMBER] = RTSUnitFactory::InitBomber();
-    _units[BARRACKS] = RTSUnitFactory::InitBarracks();
+    _units[BARRACK] = RTSUnitFactory::InitBarrack();
     _units[FACTORY] = RTSUnitFactory::InitFactory();
+    _units[HANGAR] = RTSUnitFactory::InitHangar();
+    _units[DEFENSE_TOWER] = RTSUnitFactory::InitDefenseTower();
     _units[BASE] = RTSUnitFactory::InitBase();
-
-    //cout << _units[RESOURCE]._property._attr << endl;
-    //cout << _units[WORKER]._property._attr << endl;
-    //cout << _units[MELEE_ATTACKER]._property._attr << endl;
 }
 
 vector<pair<CmdBPtr, int> > GameDef::GetInitCmds(const RTSGameOptions& options) const{

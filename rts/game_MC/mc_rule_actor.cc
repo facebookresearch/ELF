@@ -56,7 +56,7 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
     // If resource permit, build barracks.
     if (state[STATE_BUILD_BARRACK]) {
         *state_string = "Build barracks..NOOP";
-        if (_preload.Affordable(BARRACKS)) {
+        if (_preload.Affordable(BARRACK)) {
             // cout << "Building barracks!" << endl;
             const Unit *u = GameEnv::PickIdleOrGather(my_troops[WORKER], *_receiver);
             if (u != nullptr) {
@@ -64,7 +64,7 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
                 if (cmd != nullptr) {
                     *state_string = "Build barracks..Success";
                     store_cmd(u, std::move(cmd), assigned_cmds);
-                    _preload.Build(BARRACKS);
+                    _preload.Build(BARRACK);
                 }
             }
         }
@@ -73,24 +73,24 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
     // If we have barracks with resource, build troops.
     if (state[STATE_BUILD_MELEE_TROOP]) {
         *state_string = "Build Melee Troop..NOOP";
-        if (_preload.Affordable(MELEE_ATTACKER)) {
-            const Unit *u = GameEnv::PickFirstIdle(my_troops[BARRACKS], *_receiver);
+        if (_preload.Affordable(TRUCK)) {
+            const Unit *u = GameEnv::PickFirstIdle(my_troops[BARRACK], *_receiver);
             if (u != nullptr) {
                 *state_string = "Build Melee Troop..Success";
-                store_cmd(u, _B_CURR_LOC(MELEE_ATTACKER), assigned_cmds);
-                _preload.Build(MELEE_ATTACKER);
+                store_cmd(u, _B_CURR_LOC(TRUCK), assigned_cmds);
+                _preload.Build(TRUCK);
             }
         }
     }
 
     if (state[STATE_BUILD_RANGE_TROOP]) {
         *state_string = "Build Range Troop..NOOP";
-        if (_preload.Affordable(RANGE_ATTACKER)) {
-            const Unit *u = GameEnv::PickFirstIdle(my_troops[BARRACKS], *_receiver);
+        if (_preload.Affordable(TANK)) {
+            const Unit *u = GameEnv::PickFirstIdle(my_troops[BARRACK], *_receiver);
             if (u != nullptr) {
                 *state_string = "Build Range Troop..Success";
-                store_cmd(u, _B_CURR_LOC(RANGE_ATTACKER), assigned_cmds);
-                _preload.Build(RANGE_ATTACKER);
+                store_cmd(u, _B_CURR_LOC(TANK), assigned_cmds);
+                _preload.Build(TANK);
             }
         }
     }
@@ -99,8 +99,8 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
         *state_string = "Attack..Normal";
         // Then let's go and fight.
         auto cmd = _preload.GetAttackEnemyBaseCmd();
-        batch_store_cmds(my_troops[MELEE_ATTACKER], cmd, false, assigned_cmds);
-        batch_store_cmds(my_troops[RANGE_ATTACKER], cmd, false, assigned_cmds);
+        batch_store_cmds(my_troops[TRUCK], cmd, false, assigned_cmds);
+        batch_store_cmds(my_troops[TANK], cmd, false, assigned_cmds);
     }
 
     const auto& enemy_troops = _preload.EnemyTroops();
@@ -111,22 +111,22 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
     if (state[STATE_HIT_AND_RUN]) {
         *state_string = "Hit and run";
         // cout << "Enter hit and run procedure" << endl << flush;
-        if (enemy_troops[MELEE_ATTACKER].empty() && enemy_troops[RANGE_ATTACKER].empty() && ! enemy_troops[WORKER].empty()) {
+        if (enemy_troops[TRUCK].empty() && enemy_troops[TANK].empty() && ! enemy_troops[WORKER].empty()) {
             // cout << "Enemy only have worker" << endl << flush;
-            for (const Unit *u : my_troops[RANGE_ATTACKER]) {
+            for (const Unit *u : my_troops[TANK]) {
                 hit_and_run(env, u, enemy_troops[WORKER], assigned_cmds);
             }
         }
-        if (! enemy_troops[MELEE_ATTACKER].empty()) {
+        if (! enemy_troops[TRUCK].empty()) {
             // cout << "Enemy only have malee attacker" << endl << flush;
-            for (const Unit *u : my_troops[RANGE_ATTACKER]) {
-                hit_and_run(env, u, enemy_troops[MELEE_ATTACKER], assigned_cmds);
+            for (const Unit *u : my_troops[TANK]) {
+                hit_and_run(env, u, enemy_troops[TRUCK], assigned_cmds);
             }
         }
-        if (! enemy_troops[RANGE_ATTACKER].empty()) {
-            auto cmd = _A(enemy_troops[RANGE_ATTACKER][0]->GetId());
-            batch_store_cmds(my_troops[MELEE_ATTACKER], cmd, false, assigned_cmds);
-            batch_store_cmds(my_troops[RANGE_ATTACKER], cmd, false, assigned_cmds);
+        if (! enemy_troops[TANK].empty()) {
+            auto cmd = _A(enemy_troops[TANK][0]->GetId());
+            batch_store_cmds(my_troops[TRUCK], cmd, false, assigned_cmds);
+            batch_store_cmds(my_troops[TANK], cmd, false, assigned_cmds);
         }
     }
 
@@ -135,8 +135,8 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
       if (! enemy_troops_in_range.empty()) {
         *state_string = "Attack enemy in range..Success";
         auto cmd = _A(enemy_troops_in_range[0]->GetId());
-        batch_store_cmds(my_troops[MELEE_ATTACKER], cmd, false, assigned_cmds);
-        batch_store_cmds(my_troops[RANGE_ATTACKER], cmd, false, assigned_cmds);
+        batch_store_cmds(my_troops[TRUCK], cmd, false, assigned_cmds);
+        batch_store_cmds(my_troops[TANK], cmd, false, assigned_cmds);
       }
     }
 
@@ -179,15 +179,15 @@ bool MCRuleActor::GetActSimpleState(vector<int>* state) {
         _state[STATE_BUILD_WORKER] = 1;
     }
 
-    if (my_troops[WORKER].size() >= 3 && my_troops[BARRACKS].size() + cnt_under_construction[BARRACKS] < 1 && _preload.Affordable(BARRACKS)) {
+    if (my_troops[WORKER].size() >= 3 && my_troops[BARRACK].size() + cnt_under_construction[BARRACK] < 1 && _preload.Affordable(BARRACK)) {
         _state[STATE_BUILD_BARRACK] = 1;
     }
 
-    if (my_troops[BARRACKS].size() >= 1 && _preload.Affordable(MELEE_ATTACKER)) {
+    if (my_troops[BARRACK].size() >= 1 && _preload.Affordable(TRUCK)) {
         _state[STATE_BUILD_MELEE_TROOP] = 1;
     }
 
-    if (my_troops[MELEE_ATTACKER].size() >= 5 && ! enemy_troops[BASE].empty()) {
+    if (my_troops[TRUCK].size() >= 5 && ! enemy_troops[BASE].empty()) {
         _state[STATE_ATTACK] = 1;
     }
     if (! enemy_troops_in_range.empty() || ! enemy_attacking_economy.empty()) {
@@ -209,15 +209,15 @@ bool MCRuleActor::GetActHitAndRunState(vector<int>* state) {
     if (my_troops[WORKER].size() < 3 && _preload.Affordable(WORKER)) {
         _state[STATE_BUILD_WORKER] = 1;
     }
-    if (my_troops[WORKER].size() >= 3 && my_troops[BARRACKS].size() + cnt_under_construction[BARRACKS] < 1 && _preload.Affordable(BARRACKS)) {
+    if (my_troops[WORKER].size() >= 3 && my_troops[BARRACK].size() + cnt_under_construction[BARRACK] < 1 && _preload.Affordable(BARRACK)) {
         _state[STATE_BUILD_BARRACK] = 1;
     }
-    if (my_troops[BARRACKS].size() >= 1 && _preload.Affordable(RANGE_ATTACKER)) {
+    if (my_troops[BARRACK].size() >= 1 && _preload.Affordable(TANK)) {
         _state[STATE_BUILD_RANGE_TROOP] = 1;
     }
-    int range_troop_size = my_troops[RANGE_ATTACKER].size();
+    int range_troop_size = my_troops[TANK].size();
     if (range_troop_size >= 2) {
-        if (enemy_troops[MELEE_ATTACKER].empty() && enemy_troops[RANGE_ATTACKER].empty()
+        if (enemy_troops[TRUCK].empty() && enemy_troops[TANK].empty()
           && enemy_troops[WORKER].empty()) {
             _state[STATE_ATTACK] = 1;
         } else {

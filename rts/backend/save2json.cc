@@ -74,11 +74,7 @@ void save2json::Save(const RTSMap& m, json *game) {
     for (int y = 0; y < m.GetYSize(); y ++) {
         for (int x = 0; x < m.GetXSize(); x ++) {
            Loc loc = m.GetLoc(Coord(x, y));
-           Terrain t = FOG;
-           if (m(loc).type == NORMAL) t = NORMAL;
-           else if (m(loc).type == IMPASSABLE) t = IMPASSABLE;
-           else if (m(loc).type == WATER) t = WATER;
-           slots.push_back(t);
+           slots.push_back(m(loc).type);
         }
     }
     rts_map["slots"] = slots;
@@ -98,9 +94,7 @@ void save2json::SavePlayerMap(const Player& player, json *game) {
 
             Terrain t = FOG;
             if (f.CanSeeTerrain()) {
-                if (m(loc).type == NORMAL) t = NORMAL;
-                else if (m(loc).type == IMPASSABLE) t = IMPASSABLE;
-                else if (m(loc).type == WATER) t = WATER;
+                t = m(loc).type;
             } else {
                 // Add prev seen units.
                 for (const auto &u : f.seen_units()) {

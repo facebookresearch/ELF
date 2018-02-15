@@ -35,15 +35,27 @@ UnitTemplate RTSUnitFactory::InitWorker() {
     return ret;
 }
 
-UnitTemplate RTSUnitFactory::InitMeleeAttacker() {
+UnitTemplate RTSUnitFactory::InitEngineer() {
     UnitTemplate ret;
-    Invoke("rts_unit_factory", "init_melee_attacker", &ret);
+    Invoke("rts_unit_factory", "init_engineer", &ret);
     return ret;
 }
 
-UnitTemplate RTSUnitFactory::InitRangeAttacker() {
+UnitTemplate RTSUnitFactory::InitSoldier() {
     UnitTemplate ret;
-    Invoke("rts_unit_factory", "init_range_attacker", &ret);
+    Invoke("rts_unit_factory", "init_soldier", &ret);
+    return ret;
+}
+
+UnitTemplate RTSUnitFactory::InitTruck() {
+    UnitTemplate ret;
+    Invoke("rts_unit_factory", "init_truck", &ret);
+    return ret;
+}
+
+UnitTemplate RTSUnitFactory::InitTank() {
+    UnitTemplate ret;
+    Invoke("rts_unit_factory", "init_tank", &ret);
     return ret;
 }
 
@@ -53,21 +65,33 @@ UnitTemplate RTSUnitFactory::InitFlight() {
     return ret;
 }
 
-UnitTemplate RTSUnitFactory::InitBomber() {
+UnitTemplate RTSUnitFactory::InitCannon() {
     UnitTemplate ret;
-    Invoke("rts_unit_factory", "init_bomber", &ret);
+    Invoke("rts_unit_factory", "init_cannon", &ret);
     return ret;
 }
 
-UnitTemplate RTSUnitFactory::InitBarracks() {
+UnitTemplate RTSUnitFactory::InitBarrack() {
     UnitTemplate ret;
-    Invoke("rts_unit_factory", "init_barracks", &ret);
+    Invoke("rts_unit_factory", "init_barrack", &ret);
     return ret;
 }
 
 UnitTemplate RTSUnitFactory::InitFactory() {
     UnitTemplate ret;
     Invoke("rts_unit_factory", "init_factory", &ret);
+    return ret;
+}
+
+UnitTemplate RTSUnitFactory::InitHangar() {
+    UnitTemplate ret;
+    Invoke("rts_unit_factory", "init_hangar", &ret);
+    return ret;
+}
+
+UnitTemplate RTSUnitFactory::InitDefenseTower() {
+    UnitTemplate ret;
+    Invoke("rts_unit_factory", "init_defense_tower", &ret);
     return ret;
 }
 

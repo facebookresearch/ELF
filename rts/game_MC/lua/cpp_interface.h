@@ -27,17 +27,25 @@ struct RTSUnitFactory : public CppClassInterface<RTSUnitFactory> {
 
     static UnitTemplate InitWorker();
 
-    static UnitTemplate InitMeleeAttacker();
+    static UnitTemplate InitEngineer();
 
-    static UnitTemplate InitRangeAttacker();
+    static UnitTemplate InitSoldier();
+
+    static UnitTemplate InitTruck();
+
+    static UnitTemplate InitTank();
+
+    static UnitTemplate InitCannon();
 
     static UnitTemplate InitFlight();
 
-    static UnitTemplate InitBomber();
-
-    static UnitTemplate InitBarracks();
+    static UnitTemplate InitBarrack();
 
     static UnitTemplate InitFactory();
+
+    static UnitTemplate InitHangar();
+
+    static UnitTemplate InitDefenseTower();
 
     static UnitTemplate InitBase();
 };

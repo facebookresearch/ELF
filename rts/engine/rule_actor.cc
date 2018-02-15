@@ -242,37 +242,37 @@ bool RuleActor::act_per_unit(const GameEnv &env, const Unit *u, const int *state
 
         // If resource permit, build barracks.
         if (cmdtype == GATHER && state[STATE_BUILD_BARRACK] && ! region_hist->has_built_barracks) {
-            if (_preload.Affordable(BARRACKS)) {
+            if (_preload.Affordable(BARRACK)) {
                 *state_string = "Build barracks..Success";
                 CmdBPtr cmd = _preload.GetBuildBarracksCmd(env);
                 if (cmd != nullptr) {
                     store_cmd(u, std::move(cmd), assigned_cmds);
                     region_hist->has_built_barracks = true;
-                    _preload.Build(BARRACKS);
+                    _preload.Build(BARRACK);
                 }
             }
         }
     }
 
-    if (ut == BARRACKS && idle) {
+    if (ut == BARRACK && idle) {
         if (state[STATE_BUILD_MELEE_TROOP] && ! region_hist->has_built_melee) {
-            if (_preload.BuildIfAffordable(MELEE_ATTACKER)) {
+            if (_preload.BuildIfAffordable(TRUCK)) {
                 *state_string = "Build Melee Troop..Success";
-                store_cmd(u, _B_CURR_LOC(MELEE_ATTACKER), assigned_cmds);
+                store_cmd(u, _B_CURR_LOC(TRUCK), assigned_cmds);
                 region_hist->has_built_melee = true;
             }
         }
 
         if (state[STATE_BUILD_RANGE_TROOP] && ! region_hist->has_built_range) {
-            if (_preload.BuildIfAffordable(RANGE_ATTACKER)) {
+            if (_preload.BuildIfAffordable(TANK)) {
                 *state_string = "Build Range Troop..Success";
-                store_cmd(u, _B_CURR_LOC(RANGE_ATTACKER), assigned_cmds);
+                store_cmd(u, _B_CURR_LOC(TANK), assigned_cmds);
                 region_hist->has_built_range = true;
             }
         }
     }
 
-    if (state[STATE_ATTACK] && (ut == MELEE_ATTACKER || ut == RANGE_ATTACKER)) {
+    if (state[STATE_ATTACK] && (ut == TRUCK || ut == TANK)) {
         if (idle) store_cmd(u, _preload.GetAttackEnemyBaseCmd(), assigned_cmds);
     }
 
@@ -280,19 +280,19 @@ bool RuleActor::act_per_unit(const GameEnv &env, const Unit *u, const int *state
         // cout << "Enter hit and run procedure" << endl << flush;
         auto enemy_troops = _preload.EnemyTroops();
         *state_string = "Hit and run";
-        if (ut == RANGE_ATTACKER) {
+        if (ut == TANK) {
             // cout << "Enemy only have worker" << endl << flush;
-            if (enemy_troops[MELEE_ATTACKER].empty() && enemy_troops[RANGE_ATTACKER].empty() && ! enemy_troops[WORKER].empty()) {
+            if (enemy_troops[TRUCK].empty() && enemy_troops[TANK].empty() && ! enemy_troops[WORKER].empty()) {
                 hit_and_run(env, u, enemy_troops[WORKER], assigned_cmds);
             }
 
-            if (! enemy_troops[MELEE_ATTACKER].empty()) {
-                hit_and_run(env, u, enemy_troops[MELEE_ATTACKER], assigned_cmds);
+            if (! enemy_troops[TRUCK].empty()) {
+                hit_and_run(env, u, enemy_troops[TRUCK], assigned_cmds);
             }
         }
-        if (ut == RANGE_ATTACKER || ut == MELEE_ATTACKER) {
-            if (! enemy_troops[RANGE_ATTACKER].empty() && idle) {
-                store_cmd(u, _A(enemy_troops[RANGE_ATTACKER][0]->GetId()), assigned_cmds);
+        if (ut == TANK || ut == TRUCK) {
+            if (! enemy_troops[TANK].empty() && idle) {
+                store_cmd(u, _A(enemy_troops[TANK][0]->GetId()), assigned_cmds);
             }
         }
     }
@@ -300,7 +300,7 @@ bool RuleActor::act_per_unit(const GameEnv &env, const Unit *u, const int *state
     const auto& enemy_troops_in_range = _preload.EnemyTroopsInRange();
     const auto& enemy_attacking_economy = _preload.EnemyAttackingEconomy();
 
-    if ((ut == RANGE_ATTACKER || ut == MELEE_ATTACKER)
+    if ((ut == TANK || ut == TRUCK)
             && idle && state[STATE_ATTACK_IN_RANGE] && ! enemy_troops_in_range.empty()) {
         *state_string = "Attack enemy in range..Success";
         auto cmd = _A(enemy_troops_in_range[0]->GetId());

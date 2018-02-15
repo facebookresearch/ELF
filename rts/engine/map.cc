@@ -38,7 +38,7 @@ bool RTSMap::GenerateImpassable(const std::function<uint16_t(int)>& f, int nImpa
     for (int i = 0; i < nImpassable; ++i) {
         const int x = f(_m);
         const int y = f(_n);
-        _map[GetLoc(Coord(x, y))].type = IMPASSABLE;
+        _map[GetLoc(Coord(x, y))].type = ROCK;
     }
     return true;
 }
@@ -56,7 +56,7 @@ bool RTSMap::GenerateTDMaze(const std::function<uint16_t(int)>& f) {
     for (int x = 0; x < _m; x++) {
         for (int y = 0; y < _n; y++) {
         if ((x < _m - blank * 2) || (y < _n - blank * 2))
-            _map[GetLoc(Coord(x, y))].type = IMPASSABLE;
+            _map[GetLoc(Coord(x, y))].type = ROCK;
         }
     }
     int maze[m * n];
@@ -102,8 +102,8 @@ bool RTSMap::GenerateTDMaze(const std::function<uint16_t(int)>& f) {
         maze[curr] = 1;
         int xc = curr / m;
         int yc = curr % m;
-        _map[GetLoc(Coord(xc * 2, yc * 2))].type = NORMAL;
-        _map[GetLoc(Coord(xc * 2 - dx[coming_from], yc * 2 - dy[coming_from]))].type = NORMAL;
+        _map[GetLoc(Coord(xc * 2, yc * 2))].type = SOIL;
+        _map[GetLoc(Coord(xc * 2 - dx[coming_from], yc * 2 - dy[coming_from]))].type = SOIL;
         for (size_t i = 0; i < sizeof(dx) / sizeof(int); ++i) {
             int xn = xc + dx[i];
             int yn = yc + dy[i];

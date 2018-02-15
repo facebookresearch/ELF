@@ -112,8 +112,8 @@ void MCExtractor::extract(const RTSState &s, PlayerId player_id, bool respect_fo
 
         if (self_unit) {
             if (t == WORKER) myworker += 1;
-            else if (t == MELEE_ATTACKER || t == RANGE_ATTACKER || t == FLIGHT) mytroop += 1;
-            else if (t == BARRACKS) mybarrack += 1;
+            else if (t == TRUCK || t == TANK || t == FLIGHT) mytroop += 1;
+            else if (t == BARRACK) mybarrack += 1;
             else if (t == FACTORY) myfactory += 1;
             else if (t == BASE) base_hp_level = hp_level;
        }

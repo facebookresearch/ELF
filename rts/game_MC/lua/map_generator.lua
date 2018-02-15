@@ -2,20 +2,12 @@ local map_parser = require 'map_parser'
 
 rts_map_generator = {}
 
-function rts_map_generator.generate_water(map, parser)
-  local xs, ys = parser:get_water_locations()
+function rts_map_generator.generate_terrain(map, location_func, ty)
+  local xs, ys = location_func()
   for i = 1, #xs do
-    map:set_slot_type(Terrain.WATER, xs[i], ys[i], 0)
+    map:set_slot_type(ty, xs[i], ys[i], 0)
   end
 end
-
-function rts_map_generator.generate_forest(map, parser)
-  local xs, ys = parser:get_forest_locations()
-  for i = 1, #xs do
-    map:set_slot_type(Terrain.IMPASSABLE, xs[i], ys[i], 0)
-  end
-end
-
 
 function rts_map_generator.generate_base(map)
   local x = math.random(0, map:get_x_size() - 1)
@@ -41,9 +33,12 @@ end
 function rts_map_generator.generate(map, num_players, seed)
   math.randomseed(seed)
   map:clear_map()
+
   parser = map_parser:new("m1.map")
   map:init_map(parser:get_x_size(), parser:get_y_size(), 1)
-  rts_map_generator.generate_forest(map, parser)
-  rts_map_generator.generate_water(map, parser)
+  rts_map_generator.generate_terrain(map, function() return parser:get_sand_locations() end, Terrain.SAND)
+  rts_map_generator.generate_terrain(map, function() return parser:get_grass_locations() end, Terrain.GRASS)
+  rts_map_generator.generate_terrain(map, function() return parser:get_rock_locations() end, Terrain.ROCK)
+  rts_map_generator.generate_terrain(map, function() return parser:get_water_locations() end, Terrain.WATER)
   map:reset_intermediates()
 end

@@ -78,11 +78,11 @@ bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
             }
         }
         if (f(10) >= 8)
-            _CREATE(BARRACKS, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
+            _CREATE(BARRACK, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
         if (f(10) >= 5)
-            _CREATE(MELEE_ATTACKER, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
+            _CREATE(TRUCK, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
         if (f(10) >= 5)
-            _CREATE(RANGE_ATTACKER, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
+            _CREATE(TANK, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
     }
     return true;
 }

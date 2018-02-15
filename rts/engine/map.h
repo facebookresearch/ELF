@@ -25,7 +25,7 @@ struct MapSlot {
   std::vector<Loc> _nns;
 
   // Default constructor
-  MapSlot() : type(NORMAL), height(0) {
+  MapSlot() : type(SOIL), height(0) {
   }
 
   SERIALIZER(MapSlot, type, height, _nns);
@@ -104,7 +104,7 @@ public:
       Loc loc = GetLoc(c);
       const MapSlot &s = _map[loc];
       // cannot block the path
-      if (s.type == NORMAL) return false;
+      if (s.type == SOIL) return false;
 
       // [TODO] Add object radius here.
       return _locality.IsEmpty(p, kUnitRadius, id_exclude);
@@ -116,7 +116,7 @@ public:
 
       Loc loc = GetLoc(c);
       const MapSlot &s = _map[loc];
-      if (s.type == IMPASSABLE) return false;
+      if (s.type == ROCK) return false;
 
       // [TODO] Add object radius here.
       if (check_locality)
@@ -130,7 +130,7 @@ public:
 
       Loc loc = GetLoc(c);
       const MapSlot &s = _map[loc];
-      if (s.type == IMPASSABLE) return false;
+      if (s.type == ROCK) return false;
 
       // [TODO] Add object radius here.
       if (check_locality)

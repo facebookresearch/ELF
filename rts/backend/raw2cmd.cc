@@ -62,7 +62,7 @@ CmdInput build_event(const Unit &u, char hotkey, const PointF& p, const UnitId& 
             // Set the location.
             build_p = p;
             if (hotkey == 'c') build_type = BASE;
-            else if (hotkey == 'b') build_type = BARRACKS;
+            else if (hotkey == 'b') build_type = BARRACK;
             else if (hotkey == 'f') build_type = FACTORY;
             else return CmdInput();
             break;
@@ -71,16 +71,15 @@ CmdInput build_event(const Unit &u, char hotkey, const PointF& p, const UnitId& 
             if (hotkey == 's') build_type = WORKER;
             else return CmdInput();
             break;
-        case BARRACKS:
+        case BARRACK:
             build_p.SetInvalid();
-            if (hotkey == 'm') build_type = MELEE_ATTACKER;
-            else if (hotkey == 'r') build_type = RANGE_ATTACKER;
+            if (hotkey == 'm') build_type = TRUCK;
+            else if (hotkey == 'r') build_type = TANK;
             else return CmdInput();
             break;
         case FACTORY:
             build_p.SetInvalid();
             if (hotkey == 'f') build_type = FLIGHT;
-            else if (hotkey == 'z') build_type = BOMBER;
             else return CmdInput();
             break;
         default:
@@ -137,7 +136,7 @@ RawMsgStatus RawToCmd::Process(Tick tick, const GameEnv &env, const string&s, ve
             ii >> p;
             if (! m.IsIn(p)) return FAILED;
             {
-            UnitId closest_id = m.GetClosestUnitId(p, 1.5);
+            UnitId closest_id = m.GetClosestUnitId(p, 2.5);
             if (closest_id != INVALID) selected.insert(closest_id);
             }
             break;

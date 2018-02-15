@@ -68,7 +68,41 @@ function rts_unit_factory.init_worker()
   return ut
 end
 
-function rts_unit_factory.init_melee_attacker()
+function rts_unit_factory.init_engineer()
+  local allowed_cmds = {CmdType.MOVE, CmdType.BUILD}
+  local ut = __create_unit_template(
+    --[[cost]]50,
+    --[[hp]]50,
+    --[[defense]]0,
+    --[[speed]]0.1,
+    --[[att]]2,
+    --[[att_r]]1,
+    --[[vis_r]]3,
+    --[[cds]]{0, 10, 40, 40},
+    --[[allowed_cmds]]allowed_cmds,
+    --[[attr]]UnitAttr.ATTR_NORMAL
+  )
+  return ut
+end
+
+function rts_unit_factory.init_soldier()
+  local allowed_cmds = {CmdType.MOVE, CmdType.ATTACK}
+  local ut = __create_unit_template(
+    --[[cost]]50,
+    --[[hp]]50,
+    --[[defense]]0,
+    --[[speed]]0.1,
+    --[[att]]2,
+    --[[att_r]]1,
+    --[[vis_r]]3,
+    --[[cds]]{0, 10, 40, 40},
+    --[[allowed_cmds]]allowed_cmds,
+    --[[attr]]UnitAttr.ATTR_NORMAL
+  )
+  return ut
+end
+
+function rts_unit_factory.init_truck()
   local allowed_cmds = {CmdType.MOVE, CmdType.ATTACK}
   local ut = __create_unit_template(
     --[[cost]]100,
@@ -85,7 +119,24 @@ function rts_unit_factory.init_melee_attacker()
   return ut
 end
 
-function rts_unit_factory.init_range_attacker()
+function rts_unit_factory.init_tank()
+  local allowed_cmds = {CmdType.MOVE, CmdType.ATTACK}
+  local ut = __create_unit_template(
+    --[[cost]]100,
+    --[[hp]]50,
+    --[[defense]]0,
+    --[[speed]]0.2,
+    --[[att]]10,
+    --[[att_r]]5,
+    --[[vis_r]]5,
+    --[[cds]]{0, 10, 0, 0},
+    --[[allowed_cmds]]allowed_cmds,
+    --[[attr]]UnitAttr.ATTR_NORMAL
+  )
+  return ut
+end
+
+function rts_unit_factory.init_cannon()
   local allowed_cmds = {CmdType.MOVE, CmdType.ATTACK}
   local ut = __create_unit_template(
     --[[cost]]100,
@@ -119,26 +170,7 @@ function rts_unit_factory.init_flight()
   return ut
 end
 
-function rts_unit_factory.init_bomber()
-  local allowed_cmds = {CmdType.MOVE, CmdType.ATTACK}
-  local ut = __create_unit_template(
-    --[[cost]]200,
-    --[[hp]]50,
-    --[[defense]]0,
-    --[[speed]]0.05,
-    --[[att]]1000,
-    --[[att_r]]2,
-    --[[vis_r]]2,
-    --[[cds]]{0, 50, 0, 0},
-    --[[allowed_cmds]]allowed_cmds,
-    --[[attr]]UnitAttr.ATTR_NORMAL
-  )
-  return ut
-end
-
-
-
-function rts_unit_factory.init_barracks()
+function rts_unit_factory.init_barrack()
   local allowed_cmds = {CmdType.BUILD}
   local ut = __create_unit_template(
     --[[cost]]200,
@@ -157,6 +189,40 @@ end
 
 function rts_unit_factory.init_factory()
   local allowed_cmds = {CmdType.BUILD}
+  local ut = __create_unit_template(
+    --[[cost]]150,
+    --[[hp]]150,
+    --[[defense]]1,
+    --[[speed]]0.0,
+    --[[att]]0,
+    --[[att_r]]0,
+    --[[vis_r]]5,
+    --[[cds]]{0, 0, 0, 70},
+    --[[allowed_cmds]]allowed_cmds,
+    --[[attr]]UnitAttr.ATTR_NORMAL
+  )
+  return ut
+end
+
+function rts_unit_factory.init_hangar()
+  local allowed_cmds = {CmdType.BUILD}
+  local ut = __create_unit_template(
+    --[[cost]]150,
+    --[[hp]]150,
+    --[[defense]]1,
+    --[[speed]]0.0,
+    --[[att]]0,
+    --[[att_r]]0,
+    --[[vis_r]]5,
+    --[[cds]]{0, 0, 0, 70},
+    --[[allowed_cmds]]allowed_cmds,
+    --[[attr]]UnitAttr.ATTR_NORMAL
+  )
+  return ut
+end
+
+function rts_unit_factory.init_defense_tower()
+  local allowed_cmds = {CmdType.ATTACK}
   local ut = __create_unit_template(
     --[[cost]]150,
     --[[hp]]150,

@@ -113,6 +113,7 @@ private:
     PointF _pmin;
     PointF _pmax;
     float _margin;
+    float _selection_margin;
     int _n;
     int _m;
 
@@ -178,8 +179,10 @@ public:
     LocalitySearch(
         const PointF& pmin,
         const PointF& pmax,
-        const float max_radius = kUnitRadius)
-            : _pmin(pmin), _pmax(pmax), _margin(2 * max_radius) {
+        const float max_radius = kUnitRadius,
+        const float selection_margin = 0.3)
+            : _pmin(pmin), _pmax(pmax), _margin(2 * max_radius)
+            , _selection_margin(selection_margin) {
         _n = static_cast<int>((_pmax.x - _pmin.x + _margin) / _margin);
         _m = static_cast<int>((_pmax.y - _pmin.y + _margin) / _margin);
         _grid.resize(_n, std::vector<KeysToLocs>(_m));
@@ -311,7 +314,8 @@ public:
         float min_dist = std::numeric_limits<float>::max();
         for (const auto& item : _keys2locs) {
             const auto& q = item.second.first;
-            const float r = item.second.second;
+            // relax search
+            const float r = item.second.second + _selection_margin;
             const float dist_sqr = PointF::L2Sqr(p, q);
             if (dist_sqr < r * r && dist_sqr < min_dist) {
                 res = &item.first;

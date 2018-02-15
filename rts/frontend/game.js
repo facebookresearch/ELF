@@ -10,20 +10,18 @@
 // Create the canvas
 var canvas = document.createElement("canvas");
 var ctx = canvas.getContext("2d");
-canvas.width = 2400;
-canvas.height = 2000;
-var left_frame_width = 2000;
-var cell_size = 40;
-var rect_size = 40;
-var unit_size = 32;
-var cell_colors = ['#404040', 'green', 'blue', 'black'];
-var player_colors = ['blue', 'red', 'yellow']
-var map_x = 20;
-var map_y = 20;
+// max sizes
+var map_x = 40;
+var map_y = 40;
+var cell_size = 35;
 
-var unit_names_minirts = ["RESOURCE", "WORKER", "MELEE_ATTACKER", "RANGE_ATTACKER", "FLIGHT", "BOMBER", "BARRACKS", "FACTORY", "BASE"];
-var unit_names_flag = ["FLAG_BASE", "FLAG_ATHLETE", "FLAG"];
-var unit_names_td = ["BASE", "WORKER", "RANGE_ATTACKER"];
+canvas.width = map_x * cell_size + 400;
+canvas.height = map_y * cell_size;
+var left_frame_width = map_x * cell_size;
+var player_colors = ['blue', 'red', 'yellow']
+
+var terrains = ["GROUND", "SAND", "GRASS", "ROCK", "WATER", "FOG"];
+var unit_names_minirts = ["RESOURCE", "WORKER", "ENGINEER", "SOLDIER", "TRUCK", "TANK", "CANNON", "FLIGHT", "BARRACK", "FACTORY", "HANGAR", "DEFENSE_TOWER", "BASE"];
 var x_down = null;
 var y_down = null;
 var x_curr;
@@ -175,22 +173,15 @@ canvas.addEventListener("mousemove", function (e) {
 var onMap = function(m) {
     var counter = 0;
     for (y = 0; y < m.height; y++) {
-    	for (x = 0; x < m.width; x++){
-    		var color = cell_colors[m.slots[counter]];
-            var x1 = x * cell_size;
-            var y1 = y * cell_size;
-            ctx.beginPath();
-            ctx.fillStyle = color;
-            ctx.lineWidth = 1;
-		    ctx.rect(x1, y1, rect_size, rect_size);
-		    ctx.strokeStyle = 'black';
-		    ctx.stroke();
-		    ctx.fillRect(x1, y1, rect_size, rect_size);
-		    ctx.closePath();
+    	  for (x = 0; x < m.width; x++){
+            var type = m.slots[counter];
+            var spec = terrain_sprites[terrains[type]];
+            var x1 = x * cell_size + cell_size / 2;
+            var y1 = y * cell_size + cell_size / 2;
+            draw_terrain_sprite(spec, x1, y1);
             counter += 1;
     	}
 	}
-
 };
 
 var draw_hp = function(bbox, states, font_color, player_color){
@@ -214,38 +205,25 @@ var draw_hp = function(bbox, states, font_color, player_color){
     if (hp_ratio <= 0.2) color = 'red';
     ctx.fillStyle = color;
     ctx.fillRect(x1, y1, Math.floor((x2 - x1) * hp_ratio + 0.5), y2 - y1);
-    if (state_str){
+    if (state_str) {
     	ctx.beginPath();
     	ctx.fillStyle = font_color;
     	ctx.font = "10px Arial";
-		ctx.fillText(state_str,x2 + 10, Math.floor((y1 + y2) / 2));
-		ctx.closePath();
+      ctx.fillText(state_str,x2 + 10, Math.floor((y1 + y2) / 2));
+      ctx.closePath();
     }
 }
 
 var onUnit = function(u, isSelected) {
     var player_color = player_colors[u.player_id];
+    var sprites = player_sprites[player_color];
     var p =  u.p;
     var last_p = u.last_p;
-    var diffx = p.x - last_p.x;
-    var diffy = p.y - last_p.y;
-    var ori = "down";
-    if (Math.abs(diffx) > Math.abs(diffy)) {
-        if (diffx >= 0) {
-            ori = "right";
-        } else {
-            ori = "left";
-        }
-    } else {
-        if (diffy >= 0) {
-            ori = "down"
-        } else {
-            ori = "up"
-        }
-    }
+    var ori = 0;
     var xy = convert_xy(p.x, p.y);
 
-    draw_sprites(sprites[unit_names_minirts[u.unit_type]], xy[0], xy[1], ori);
+    var spec = sprites[unit_names_minirts[u.unit_type]];
+    draw_sprites(spec, xy[0], xy[1], ori);
 
     var hp_ratio = u.hp / u.max_hp;
     var state_str;
@@ -254,15 +232,17 @@ var onUnit = function(u, isSelected) {
             state_str = u.cmd.cmd[0] + u.cmd.state;
         }
     }
-    var x1 = xy[0] - unit_size / 2;
-    var y1 = xy[1] - 27;
-    var x2 = x1 + unit_size;
+    var sw = Math.floor(cell_size * spec["_select_scale"]);
+    var sh = Math.floor(cell_size * spec["_select_scale"]);
+    var x1 = xy[0] - Math.floor(sw * 0.4);
+    var y1 = xy[1] - sh / 2 - 10;
+    var x2 = x1 + Math.floor(sw * 0.8);
     var y2 = y1 + 5;
     draw_hp([x1, y1, x2, y2], [hp_ratio, state_str], 'white', player_color);
     if (isSelected) {
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.rect(x1 - 2, xy[1] - unit_size / 2 - 2, unit_size + 4, unit_size + 4);
+        ctx.rect(xy[0] - sw / 2 - 2, xy[1] - sh / 2 - 2, sw + 4, sh + 4);
         ctx.strokeStyle = player_color;
         ctx.stroke();
         ctx.closePath();
@@ -271,7 +251,7 @@ var onUnit = function(u, isSelected) {
 
 var onBullet = function(bullet) {
     var xy = convert_xy(bullet.p.x, bullet.p.y);
-    draw_sprites(bullets, xy[0], xy[1], bullet.state);
+    draw_bullet(bullets, xy[0], xy[1], bullet.state);
 }
 
 var onPlayerStats = function(player) {
@@ -282,9 +262,9 @@ var onPlayerStats = function(player) {
     var y1 = (player.player_id + 1) * 50;
     var label = ["PlayerId", player.player_id, "Resource", player.resource].join(" ");
     ctx.beginPath()
-	ctx.fillStyle = "Black";
-	ctx.font = "15px Arial";
-	ctx.fillText(label, x1, y1);
+    ctx.fillStyle = "Black";
+    ctx.font = "15px Arial";
+    ctx.fillText(label, x1, y1);
     ctx.closePath();
 }
 
@@ -297,8 +277,6 @@ var onPlayerSeenUnits = function(m) {
         for (var i in m.units) {
             onUnit(m.units[i], false);
         }
-        // console.log(m.units.length)
-
         ctx.globalAlpha = oldAlpha;
     }
 }
@@ -309,7 +287,9 @@ var draw_state = function(u) {
     var x2 = left_frame_width + 100;
     var y2 = 300;
     var title = unit_names_minirts[u.unit_type] + ' ' + u.cmd.cmd + '[' + u.cmd.state + ']';
-    ctx.fillText(title, x1, y1);
+    ctx.fillStyle = "Green";
+    ctx.font = "15px Arial";
+    ctx.fillText(title, x1, y1, 300);
     y1 += 20;
     var ratio = u.hp / u.max_hp;
     var label = "HP: " + u.hp + " / " + u.max_hp;
@@ -327,12 +307,9 @@ var draw_state = function(u) {
 }
 
 var convert_xy = function(x, y){
-    var xc = x * cell_size + Math.floor(rect_size / 2);
-    var yc = y * cell_size + Math.floor(rect_size / 2);
-
-    var x1 = xc - Math.floor(unit_size / 2);
-    var y1 = yc + Math.floor(rect_size / 2) - unit_size;
-    return [x1, y1];
+    var xc = x * cell_size + Math.floor(cell_size / 2);
+    var yc = y * cell_size + Math.floor(cell_size / 2);
+    return [xc, yc]
 };
 
 var convert_xy_back = function(x, y){
@@ -346,14 +323,85 @@ var load_sprites = function(spec) {
     var specReady = false;
     var specImage = new Image();
     specImage.onload = function () {
-		specReady = true;
-	};
-	specImage.src = spec["_file"];
+		    specReady = true;
+    };
+    specImage.src = spec["_file"];
     spec["image"] = specImage;
     return spec;
 };
 
-var draw_sprites = function(spec, px, py, ori) {
+var load_player_sprites = function(player) {
+    var sprites = {};
+    sprites["RESOURCE"] = load_sprites({
+        "_file" : "imgs/mineral1.png",
+        "_scale": 1.2,
+        "_select_scale" : 1
+    });
+    sprites["WORKER"] = load_sprites({
+        "_file": "rts/" + player + "/worker.png",
+        "_scale": 1.5,
+        "_select_scale" : 0.7
+    });
+    sprites["ENGINEER"] = load_sprites({
+        "_file": "rts/" + player + "/engineer.png",
+        "_scale": 1.5,
+        "_select_scale" : 0.7
+    });
+    sprites["SOLDIER"] = load_sprites({
+        "_file": "rts/" + player + "/soldier.png",
+        "_scale": 1.5,
+        "_select_scale" : 0.7
+    });
+    sprites["TRUCK"] = load_sprites({
+        "_file": "rts/" + player + "/truck.png",
+        "_scale": 1.5,
+        "_select_scale" : 1
+    });
+    sprites["TANK"] = load_sprites({
+        "_file": "rts/" + player + "/tank.png",
+        "_scale": 1.5,
+        "_select_scale" : 1
+    });
+    sprites["CANNON"] = load_sprites({
+        "_file": "rts/" + player + "/cannon.png",
+        "_scale": 2,
+        "_select_scale" : 1.3
+    });
+    sprites["FLIGHT"] = load_sprites({
+        "_file": "rts/" + player + "/flight.png",
+        "_scale": 1.5,
+        "_select_scale" : 1
+    });
+    sprites["BARRACK"] = load_sprites({
+        "_file": "rts/" + player + "/barrack.png",
+        "_scale": 1.5,
+        "_select_scale" : 1.3
+
+    });
+    sprites["FACTORY"] = load_sprites({
+        "_file": "rts/" + player + "/factory.png",
+        "_scale": 1.5,
+        "_select_scale" : 1.3
+    });
+    sprites["HANGAR"] = load_sprites({
+        "_file": "rts/" + player + "/hangar.png",
+        "_scale": 1.5,
+        "_select_scale" : 1.3
+    });
+    sprites["DEFENSE_TOWER"] = load_sprites({
+        "_file": "rts/" + player + "/defense_tower.png",
+        "_scale": 1.5,
+        "_select_scale" : 1
+    });
+    sprites["BASE"] = load_sprites({
+        "_file": "rts/" + player + "/base.png",
+        "_scale": 1.7,
+        "_select_scale" : 1.4
+    });
+    return sprites;
+}
+
+var draw_bullet = function(spec, px, py, ori) {
     var image = spec["image"]
     var width = image.width;
     var height = image.height;
@@ -372,82 +420,24 @@ var draw_sprites = function(spec, px, py, ori) {
     }
 };
 
-var myrange = function (j, k){
-	var n = k - j;
-	return Array.from(new Array(n), (x,i) => i + j);
+var draw_sprites = function(spec, px, py, ori) {
+    var image = spec["image"];
+    var scale = spec["_scale"];
+    var w = Math.floor(cell_size * scale);
+    var h = Math.floor(cell_size * scale);
+    ctx.drawImage(image, px - w / 2, py - h / 2, w, h);
+    // for debug
+    //ctx.beginPath();
+    //ctx.arc(px, py, 3, 0, 2 * Math.PI, false);
+    //ctx.fillStyle = 'black';
+    //ctx.fill();
+    //ctx.closePath();
+}
+
+var draw_terrain_sprite = function(spec, px, py) {
+    var image = spec["image"];
+    ctx.drawImage(image, px - cell_size / 2, py - cell_size / 2, cell_size, cell_size);
 };
-
-// load pics
-var sprites = {};
-
-sprites["RANGE_ATTACKER"] = load_sprites({
-    "up" : [myrange(15, 22), [0]],
-    "down": [myrange(15, 22), [1]],
-    "left": [[16], myrange(2, 9)],
-    "right": [[15], myrange(2, 9)],
-    "_file" : "imgs/tiles.png",
-    "_sizes" : [32, 32]
-});
-
-sprites["FLIGHT"] = load_sprites({
-    "up" : [myrange(6, 9), [7]],
-    "down" : [myrange(6, 9), [4]],
-    "left" : [myrange(6, 9), [5]],
-    "right" : [myrange(6, 9), [6]],
-    "_file" : "imgs/People4.png",
-    "_sizes" : [32, 32]
-});
-
-sprites["BOMBER"] = load_sprites({
-    "up" : [myrange(0, 3), [3]],
-    "down" : [myrange(0, 3), [0]],
-    "left" : [myrange(0, 3), [1]],
-    "right" : [myrange(0, 3), [2]],
-    "_file" : "imgs/People4.png",
-    "_sizes" : [32, 32]
-});
-
-
-sprites["MELEE_ATTACKER"] = load_sprites({
-    "up" : [myrange(15, 22), [9]],
-    "down": [myrange(15, 22), [10]],
-    "left": [[20], myrange(2, 9)],
-    "right": [[21], myrange(2, 9)],
-    "_file" : "imgs/tiles.png",
-    "_sizes" : [32, 32]
-});
-
-sprites["RESOURCE"] = load_sprites({
-    "_file" : "imgs/mineral1.png",
-});
-
-sprites["BASE"] = load_sprites({
-    "_file" : "imgs/base.png"
-});
-
-sprites["BARRACKS"] = load_sprites({
-    "_file" : "imgs/barracks.png",
-});
-
-sprites["FACTORY"] = load_sprites({
-    "_file" : "imgs/factory.png",
-});
-
-var targets = load_sprites({
-    "attack" : [[11], [6]],
-    "move" : [[14], [6]],
-    "_file" : "imgs/tiles.png",
-    "_sizes" : [32, 32]
-});
-
-sprites["WORKER"] = load_sprites({
-    "up" : [myrange(9, 12), [7]],
-    "down" : [myrange(9, 12), [4]],
-    "left" : [myrange(9, 12), [5]],
-    "right" : [myrange(9, 12), [6]],
-    "_file" : "imgs/People4.png",
-    "_sizes" : [32, 32]
-});
 
 var bullets = load_sprites({
     "BULLET_READY" : [[7], [0]],
@@ -458,32 +448,46 @@ var bullets = load_sprites({
     "_sizes" : [32, 32]
 });
 
-// capture the flag
-sprites["FLAG"] = load_sprites({
-    "_file" : "imgs/mineral1.png"
+var player_sprites = {
+  "blue" : load_player_sprites("blue"),
+  "red"  : load_player_sprites("red")
+};
+
+var terrain_sprites = {};
+
+terrain_sprites["GROUND"] = load_sprites({
+  "_file" : "rts/terrain/ground.png"
 });
 
-sprites["FLAG_ATHLETE"] = load_sprites({
-    "up" : [myrange(9, 12), [7]],
-    "down" : [myrange(9, 12), [4]],
-    "left" : [myrange(9, 12), [5]],
-    "right" : [myrange(9, 12), [6]],
-    "_file" : "imgs/People4.png",
-    "_sizes" : [32, 32]
+terrain_sprites["SAND"] = load_sprites({
+  "_file" : "rts/terrain/sand.png"
 });
 
-sprites["FLAG_BASE"] = load_sprites({
-    "_file" : "imgs/base.png",
+terrain_sprites["GRASS"] = load_sprites({
+  "_file" : "rts/terrain/grass.png"
+});
+
+terrain_sprites["ROCK"] = load_sprites({
+  "_file" : "rts/terrain/rock.png"
+});
+
+terrain_sprites["WATER"] = load_sprites({
+  "_file" : "rts/terrain/water.png"
+
+});
+
+terrain_sprites["FOG"] = load_sprites({
+  "_file" : "rts/terrain/fog.png"
 });
 
 
 var render = function (game) {
     tick = game.tick;
     ctx.beginPath()
-	ctx.fillStyle = "Black";
-	ctx.font = "15px Arial";
+	  ctx.fillStyle = "Black";
+	  ctx.font = "15px Arial";
     var label = "Tick: " + tick;
-	ctx.fillText(label, left_frame_width + 10, 20);
+	  ctx.fillText(label, left_frame_width + 10, 20);
     ctx.closePath();
     onMap(game.rts_map);
     if (! game.spectator) {
@@ -525,11 +529,11 @@ var render = function (game) {
         draw_state(unit);
     }
     ctx.beginPath();
-	ctx.fillStyle = "Black";
-	ctx.font = "15px Arial";
+    ctx.fillStyle = "Black";
+    ctx.font = "15px Arial";
     if (len > 1) {
         var label = len + " units";
-    	ctx.fillText(label ,left_frame_width + 50, 200);
+    	  ctx.fillText(label ,left_frame_width + 50, 200);
     }
     var label = "Current FPS is " + Math.floor(50 * Math.pow(1.3, speed));
     ctx.fillText(label, left_frame_width + 50, 570);
@@ -545,7 +549,7 @@ var render = function (game) {
 var main = function () {
   dealer = new WebSocket('ws://localhost:8000');
   dealer.onopen = function(event) {
-    console.log("WS Opened.");
+      console.log("WS Opened.");
   }
 
   dealer.onmessage = function (message) {
