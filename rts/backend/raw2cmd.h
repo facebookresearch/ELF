@@ -39,7 +39,8 @@ private:
     void add_hotkey(const string &keys, EventResp func);
     void setup_hotkeys();
 
-    static bool is_mouse_motion(char c) { return c == 'L' || c == 'R' || c == 'B'; }
+    static bool is_mouse_selection_motion(char c) { return c == 'R' || c == 'B'; }
+    static bool is_mouse_action_motion(char c) { return c == 'L'; }
 
 public:
     RawToCmd(PlayerId player_id = INVALID) : _player_id(player_id), _last_key('~') { setup_hotkeys(); }

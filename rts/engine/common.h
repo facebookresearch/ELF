@@ -238,6 +238,14 @@ struct Cooldown {
     HASH(Cooldown, _cd, _last);
 };
 
+struct BuildSkill {
+    int _unit_type;
+    string _hotkey;
+
+    UnitType GetUnitType() const { return static_cast<UnitType>(_unit_type); }
+    string GetHotKey() const { return _hotkey; }
+};
+
 STD_HASH(Cooldown);
 
 #endif

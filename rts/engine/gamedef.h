@@ -73,6 +73,9 @@ STD_HASH(UnitProperty);
 struct UnitTemplate {
     UnitProperty _property;
     set<CmdType> _allowed_cmds;
+    set<UnitType> _can_attack;
+    set<Terrain> _cant_move_over;
+    vector<BuildSkill> _build_skills;
     int _build_cost;
 
     int GetUnitCost() const { return _build_cost; }
@@ -80,7 +83,15 @@ struct UnitTemplate {
         if (cmd == CMD_DURATIVE_LUA) return true;
         return _allowed_cmds.find(cmd) != _allowed_cmds.end();
     }
+
+    bool CanAttack(UnitType unit_type) const { return _can_attack.find(unit_type) != _can_attack.end(); }
+    bool CanMoveOver(Terrain terrain) const { return _cant_move_over.find(terrain) == _cant_move_over.end(); }
+    const vector<BuildSkill>& GetBuildSkills() const { return _build_skills; }
+
     void AddAllowedCmd(int cmd) { _allowed_cmds.insert(static_cast<CmdType>(cmd)); }
+    void AddCanAttack(int unit_type) { _can_attack.insert(static_cast<UnitType>(unit_type)); }
+    void AddCantMoveOver(int terrain) { _cant_move_over.insert(static_cast<Terrain>(terrain)); }
+    void AddBuildSkill(BuildSkill skill) { _build_skills.push_back(std::move(skill)); }
 
     void SetProperty(UnitProperty prop) { _property = prop; }
 

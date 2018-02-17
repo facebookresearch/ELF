@@ -72,6 +72,10 @@ struct _LuaCooldown : public LuaClassInterface<Cooldown> {
     static void Init();
 };
 
+struct _LuaBuildSkill : public LuaClassInterface<BuildSkill> {
+    static void Init();
+};
+
 }
 
 void reg_engine_lua_interfaces();

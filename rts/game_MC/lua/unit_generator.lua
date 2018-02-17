@@ -43,7 +43,7 @@ function rts_unit_generator.generate(proxy, num_players, seed)
   local player_id = 0
   local enemy_id = 1
 
-  parser = map_parser:new("m1.map")
+  parser = map_parser:new("two_rivers.map")
 
   -- your units
   for k, v in pairs(unit_type_to_cell) do

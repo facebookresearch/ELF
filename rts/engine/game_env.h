@@ -116,6 +116,9 @@ public:
     UnitId FindClosestBase(PlayerId player_id) const;
     UnitId FindClosestBase(PlayerId player_id, const PointF& p) const;
 
+    // Find the closest enemy
+    UnitId FindClosestEnemy(PlayerId player_id, const PointF& p, float radius) const;
+
     // Find empty place near a place, used by creating units.
     bool FindEmptyPlaceNearby(const PointF &p, int l1_radius, PointF *res_p) const;
 
@@ -254,6 +257,7 @@ template <typename save_class, typename T>
 void GameEnv::FillIn(PlayerId player_id, const CmdReceiver& receiver, T *game) const {
     bool is_spectator = (player_id == INVALID);
 
+    save_class::SaveGameDef(_gamedef, game);
     save_class::SetPlayerId(player_id, game);
     save_class::SetSpectator(is_spectator, game);
 

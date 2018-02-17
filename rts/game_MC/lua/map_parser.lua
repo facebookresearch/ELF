@@ -41,7 +41,7 @@ function rts_map_parser:get_locations(ty)
   return xs, ys
 end
 
-function rts_map_parser:get_soil_locations()
+function rts_map_parser:get_grass_locations()
   return self:get_locations('.')
 end
 
@@ -49,7 +49,7 @@ function rts_map_parser:get_sand_locations()
   return self:get_locations('1')
 end
 
-function rts_map_parser:get_grass_locations()
+function rts_map_parser:get_soil_locations()
   return self:get_locations('2')
 end
 

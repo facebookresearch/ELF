@@ -23,4 +23,4 @@ execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURC
 execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/lua/attack_rule_book.lua ${CMAKE_BINARY_DIR}/attack_rule_book.lua)
 execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/lua/move_rule_book.lua ${CMAKE_BINARY_DIR}/move_rule_book.lua)
 execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/lua/map_parser.lua ${CMAKE_BINARY_DIR}/map_parser.lua)
-execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/lua/m1.map ${CMAKE_BINARY_DIR}/m1.map)
+execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/lua/two_rivers.map ${CMAKE_BINARY_DIR}/two_rivers.map)

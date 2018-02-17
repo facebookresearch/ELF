@@ -109,6 +109,32 @@ void save2json::SavePlayerMap(const Player& player, json *game) {
     (*game)["rts_map"] = rts_map;
 }
 
+void save2json::SaveGameDef(const GameDef& gamedef, json *game) {
+    json json_gd;
+    json u_def;
+    for (auto& ut : gamedef._units) {
+      json unit;
+      for (const auto& allowed_cmd : ut._allowed_cmds) {
+        json cmd;
+        cmd["id"] = allowed_cmd;
+        unit["allowed_cmds"].push_back(cmd);
+      }
+      for (const auto& can_attack : ut._can_attack) {
+        unit["can_attack"].push_back(can_attack);
+      }
+      for (const auto& build_skill : ut.GetBuildSkills()) {
+        json skill;
+        skill["unit_type"] = build_skill.GetUnitType();
+        skill["hotkey"] = build_skill.GetHotKey();
+        skill["price"] = gamedef.unit(build_skill.GetUnitType()).GetUnitCost();
+        unit["build_skills"].push_back(skill);
+      }
+      u_def.push_back(unit);
+    }
+    json_gd["units"] = u_def;
+    (*game)["gamedef"] = json_gd;
+}
+
 void save2json::SaveStats(const Player& player, json *game) {
     // Save the information for player.
     json pp;

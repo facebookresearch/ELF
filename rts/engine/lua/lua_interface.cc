@@ -100,7 +100,10 @@ void _LuaUnitTemplate::Init() {
     Register("UnitTemplate",
         "set_property", &UnitTemplate::SetProperty,
         "build_cost", &UnitTemplate::_build_cost,
-        "add_allowed_cmd", &UnitTemplate::AddAllowedCmd
+        "add_allowed_cmd", &UnitTemplate::AddAllowedCmd,
+        "add_can_attack", &UnitTemplate::AddCanAttack,
+        "add_cant_move_over", &UnitTemplate::AddCantMoveOver,
+        "add_build_skill", &UnitTemplate::AddBuildSkill
     );
 }
 
@@ -111,6 +114,13 @@ void _LuaCooldown::Init() {
         "set", &Cooldown::Set,
         "passed", &Cooldown::Passed,
         "start", &Cooldown::Start
+    );
+}
+
+void _LuaBuildSkill::Init() {
+    Register("BuildSkill",
+        "unit_type", &BuildSkill::_unit_type,
+        "hotkey", &BuildSkill::_hotkey
     );
 }
 
@@ -126,6 +136,7 @@ void reg_engine_lua_interfaces() {
     detail::_LuaUnitProperty::Init();
     detail::_LuaUnitTemplate::Init();
     detail::_LuaCooldown::Init();
+    detail::_LuaBuildSkill::Init();
 
     detail::_LuaTerrain::Init();
     detail::_LuaUnitType::Init();

@@ -34,7 +34,7 @@ function rts_map_generator.generate(map, num_players, seed)
   math.randomseed(seed)
   map:clear_map()
 
-  parser = map_parser:new("m1.map")
+  parser = map_parser:new("two_rivers.map")
   map:init_map(parser:get_x_size(), parser:get_y_size(), 1)
   rts_map_generator.generate_terrain(map, function() return parser:get_sand_locations() end, Terrain.SAND)
   rts_map_generator.generate_terrain(map, function() return parser:get_grass_locations() end, Terrain.GRASS)

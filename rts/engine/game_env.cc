@@ -150,6 +150,22 @@ UnitId GameEnv::FindClosestBase(PlayerId player_id, const PointF& p) const {
     return id;
 }
 
+UnitId GameEnv::FindClosestEnemy(PlayerId player_id, const PointF& p, float max_radius) const {
+    UnitId id = INVALID;
+    float closest = 1e10;
+    for (auto it = _units.begin(); it != _units.end(); ++it) {
+        const Unit* u = it->second.get();
+        if (u->GetPlayerId() != player_id && u->GetUnitType() != RESOURCE) {
+            float dist = PointF::L2Sqr(p, u->GetPointF());
+            if (dist < max_radius * max_radius && dist < closest) {
+              closest = dist;
+              id = u->GetId();
+            }
+        }
+    }
+    return id;
+}
+
 PlayerId GameEnv::CheckBase(UnitType base_type) const{
     PlayerId last_player_has_base = INVALID;
     for (auto it = _units.begin(); it != _units.end(); ++it) {

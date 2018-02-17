@@ -25,7 +25,7 @@ struct MapSlot {
   std::vector<Loc> _nns;
 
   // Default constructor
-  MapSlot() : type(SOIL), height(0) {
+  MapSlot() : type(GRASS), height(0) {
   }
 
   SERIALIZER(MapSlot, type, height, _nns);
