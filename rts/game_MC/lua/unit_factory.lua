@@ -78,7 +78,7 @@ function rts_unit_factory.init_worker()
   local cant_move_over = {Terrain.ROCK, Terrain.WATER}
   local build_skills = {
     __create_build_skill(UnitType.BASE, "b"),
-    __create_build_skill(UnitType.BARRACK, "a")
+    __create_build_skill(UnitType.BARRACK, "r")
   }
   local ut = __create_unit_template(
     --[[cost]]50,
@@ -371,7 +371,7 @@ function rts_unit_factory.init_base()
     --[[att]]0,
     --[[att_r]]0,
     --[[vis_r]]5,
-    --[[cds]]{0, 50, 0, 0},
+    --[[cds]]{0, 0, 0, 50},
     --[[allowed_cmds]]allowed_cmds,
     --[[attr]]UnitAttr.ATTR_NORMAL,
     --[[can_attack]]can_attack,

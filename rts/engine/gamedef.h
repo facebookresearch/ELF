@@ -88,6 +88,15 @@ struct UnitTemplate {
     bool CanMoveOver(Terrain terrain) const { return _cant_move_over.find(terrain) == _cant_move_over.end(); }
     const vector<BuildSkill>& GetBuildSkills() const { return _build_skills; }
 
+    UnitType GetUnitTypeFromHotKey(char hotkey) const {
+        for (const auto& skill : _build_skills) {
+            if (hotkey == skill.GetHotKey()[0]) {
+                return skill.GetUnitType();
+            }
+        }
+        return INVALID_UNITTYPE;
+    }
+
     void AddAllowedCmd(int cmd) { _allowed_cmds.insert(static_cast<CmdType>(cmd)); }
     void AddCanAttack(int unit_type) { _can_attack.insert(static_cast<UnitType>(unit_type)); }
     void AddCantMoveOver(int terrain) { _cant_move_over.insert(static_cast<Terrain>(terrain)); }

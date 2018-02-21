@@ -49,48 +49,24 @@ CmdInput gather_event(const Unit &u, char /*hotkey*/, const PointF& p, const Uni
     return CmdInput(CmdInput::CI_GATHER, u.GetId(), p, target_id, base);
 }
 
-CmdInput build_event(const Unit &u, char hotkey, const PointF& p, const UnitId& /*target_id*/, const GameEnv&) {
+CmdInput build_event(const Unit &u, char hotkey, const PointF& p, const UnitId& /*target_id*/, const GameEnv& env) {
     // Send the build command.
     // cout << "In build command [" << hotkey << "] @" << p << " target: " << target_id << endl;
     UnitType t = u.GetUnitType();
 
-    UnitType build_type;
+    // don't need a target point for buildings
     PointF build_p;
-
-    // For workers: c : base, b: barracks (for workers)
-    // For base: s : worker,
-    // For building: m : melee attacker, r: range attacker
-    // [TODO]: Make it more flexible and print corresponding prompts in GUI.
-    switch(t) {
-        case WORKER:
-            if (p.IsInvalid()) return CmdInput();
-            // Set the location.
-            build_p = p;
-            if (hotkey == 'c') build_type = BASE;
-            else if (hotkey == 'b') build_type = BARRACK;
-            else if (hotkey == 'f') build_type = FACTORY;
-            else return CmdInput();
-            break;
-        case BASE:
-            build_p.SetInvalid();
-            if (hotkey == 's') build_type = WORKER;
-            else return CmdInput();
-            break;
-        case BARRACK:
-            build_p.SetInvalid();
-            if (hotkey == 'm') build_type = TRUCK;
-            else if (hotkey == 'r') build_type = TANK;
-            else return CmdInput();
-            break;
-        case FACTORY:
-            build_p.SetInvalid();
-            if (hotkey == 'f') build_type = FLIGHT;
-            else return CmdInput();
-            break;
-        default:
+    if (t == WORKER || t == ENGINEER) {
+        if (p.IsInvalid()) {
             return CmdInput();
+        }
+        build_p = p;
     }
 
+    UnitType build_type = env.GetGameDef().unit(t).GetUnitTypeFromHotKey(hotkey);
+    if (build_type == INVALID_UNITTYPE) {
+        return CmdInput();
+    }
     return CmdInput(CmdInput::CI_BUILD, u.GetId(), build_p, INVALID, INVALID, build_type);
 }
 
@@ -104,7 +80,7 @@ void RawToCmd::setup_hotkeys() {
     add_hotkey("a", attack_event);
     add_hotkey("~m", move_event);
     add_hotkey("g", gather_event);
-    add_hotkey("cbsmrfz", build_event);
+    add_hotkey("brfhtscwe", build_event);
 }
 
 RawMsgStatus RawToCmd::Process(Tick tick, const GameEnv &env, const string&s, vector<CmdBPtr> *cmds, vector<UICmd> *ui_cmds) {
@@ -176,8 +152,8 @@ RawMsgStatus RawToCmd::Process(Tick tick, const GameEnv &env, const string&s, ve
 
     if (! is_mouse_selection_motion(c) && ! is_mouse_action_motion(c)) _last_key = c;
 
-     //cout << "#Hotkey " << _hotkey_maps.size() << "  player_id = " << _player_id << " _last_key = " << _last_key
-     //    << " #selected = " << selected.size() << " #prev-selected: " << _sel_unit_ids.size() << endl;
+    // cout << "#Hotkey " << _hotkey_maps.size() << "  player_id = " << _player_id << " _last_key = " << _last_key
+    //    << " #selected = " << selected.size() << " #prev-selected: " << _sel_unit_ids.size() << endl;
 
 
     if (is_mouse_action_motion(c) && _last_key == '~') clear_state();

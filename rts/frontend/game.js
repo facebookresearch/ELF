@@ -33,7 +33,7 @@ var button_left = left_frame_width + 30;
 var speed = 0;
 var min_speed = -10;
 var max_speed = 5;
-var last_game = null;
+var last_state = null;
 
 var range2 = document.createElement("INPUT");
 range2.type = "range";
@@ -148,6 +148,7 @@ function make_cursor(color) {
 var attack_cursor = make_cursor('red');
 var move_cursor = make_cursor('green');
 var gather_cursor = make_cursor('cyan');
+var build_cursor = make_cursor('grey');
 
 canvas.oncontextmenu = function (e) {
     e.preventDefault();
@@ -155,12 +156,12 @@ canvas.oncontextmenu = function (e) {
 
 
 function are_unit_types_selected(types) {
-    if (last_game === null) return false;
-    var selected = last_game.selected_units;
+    if (last_state === null) return false;
+    var selected = last_state.selected_units;
     if (!selected) return false;
     var any = false;
-    for (var i in last_game.units) {
-        var unit = last_game.units[i];
+    for (var i in last_state.units) {
+        var unit = last_state.units[i];
         if (selected.indexOf(unit.id) >= 0) {
             if (types.indexOf(unit.unit_type) >= 0) {
                 any = true;
@@ -187,6 +188,46 @@ function are_towers_selected() {
     return are_unit_types_selected(tower_ty);
 }
 
+function get_unit_type(id) {
+    if (last_state === null) return false;
+    for (var i in last_state.units) {
+        if (id === last_state.units[i].id) {
+            return last_state.units[i].unit_type;
+        }
+    }
+    return -1;
+}
+
+function is_build_cmd_allowed(key, types) {
+    if (last_state === null) return false;
+    var selected = last_state.selected_units;
+    if (!selected) return false;
+    if (selected.length != 1) return false;
+    var id = selected[0];
+    var ty = get_unit_type(id);
+    if (types.indexOf(ty) < 0) {
+        return false;
+    }
+    var def = last_state.gamedef.units[ty];
+    for (var i in def.build_skills) {
+        if (key == def.build_skills[i].hotkey) {
+            return true;
+        }
+    }
+    return false;
+
+}
+
+function is_worker_cmd_allowed(key) {
+    var worker_types = [1, 2];
+    return is_build_cmd_allowed(key, worker_types);
+}
+
+function is_building_cmd_allowed(key) {
+    var building_types = [8, 9, 10, 12];
+    return is_build_cmd_allowed(key, building_types);
+}
+
 document.addEventListener("keydown", function (e) {
     if (e.key == 'a') {
       if (are_units_selected() || are_towers_selected()) {
@@ -206,7 +247,13 @@ document.addEventListener("keydown", function (e) {
         send_cmd(tick + ' ' + e.key);
       }
     }
-    else send_cmd(tick + ' ' + e.key);
+    else if (is_worker_cmd_allowed(e.key)) {
+        document.body.style.cursor = build_cursor;
+        send_cmd(tick + ' ' + e.key);
+    }
+    else if (is_building_cmd_allowed(e.key)) {
+        send_cmd(tick + ' ' + e.key);
+    }
 }, false);
 
 canvas.addEventListener("mousedown", function (e) {
@@ -367,7 +414,7 @@ var draw_state = function(u, game) {
     var spec = sprites[unit_names_minirts[u.unit_type]];
     draw_sprites(spec, x1 + cell_size / 2, y1 + cell_size, null);
 
-    ctx.beginPath()
+    ctx.beginPath();
     var title = unit_names_minirts[u.unit_type] + ': ' + u.cmd.cmd + '[' + u.cmd.state + ']';
     ctx.fillStyle = "black";
     ctx.font = "10px Arial";
@@ -414,8 +461,25 @@ var draw_state = function(u, game) {
     ctx.beginPath()
     ctx.fillStyle = "black";
     ctx.font = "12px Arial";
-    ctx.fillText(title, x3, y3 + 20);
+    y3 += 20;
+    ctx.fillText(title, x3, y3);
     ctx.closePath();
+    y3 += 40;
+
+    for (var i in def.build_skills) {
+        var skill = def.build_skills[i];
+        var unit_name = unit_names_minirts[skill.unit_type];
+        var spec = sprites[unit_name];
+
+        draw_sprites(spec, x3 + cell_size / 2, y3 + cell_size / 2, 1);
+        ctx.beginPath();
+        var title = "[" + skill.hotkey + "]BUILD " + unit_name + " COST " + skill.price + " MINERALS";
+        ctx.fillStyle = "black";
+        ctx.font = "12px Arial";
+        ctx.fillText(title, x3 + cell_size + 10, y3 + cell_size / 2 + 3);
+        ctx.closePath();
+        y3 += cell_size + 10;
+    }
 }
 
 var convert_xy = function(x, y){
@@ -662,7 +726,7 @@ var main = function () {
   dealer.onmessage = function (message) {
     var s = message.data;
     var game = JSON.parse(s);
-    last_game = game;
+    last_state = game;
     map_x = game.rts_map.width;
     map_y = game.rts_map.height;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
