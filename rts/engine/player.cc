@@ -146,7 +146,7 @@ float Player::get_path_dist_heuristic(const Loc &p1, const Loc &p2) const {
     return dist;
 }
 
-bool Player::line_passable(UnitId id, const PointF &s, const PointF &t) const {
+bool Player::line_passable(const UnitTemplate& unit_def, UnitId id, const PointF &s, const PointF &t) const {
     const RTSMap &m = *_map;
 
     float dist = sqrt(PointF::L2Sqr(s, t));
@@ -173,7 +173,7 @@ bool Player::line_passable(UnitId id, const PointF &s, const PointF &t) const {
         last_lx = lx;
 
         if (lx != ls && lx != lt) {
-            if (! m.CanPass(x, id)) {
+            if (! m.CanPass(x, id, unit_def)) {
                 // cout << "(" << s << ") -> (" << t << ") line not passable due to (" << x << ")" << endl;
                 return false;
             }
@@ -184,13 +184,9 @@ bool Player::line_passable(UnitId id, const PointF &s, const PointF &t) const {
     return true;
 }
 
-/*
-bool Player::line_passable(UnitId id, const PointF &s, const PointF &t) const {
-    return _map->IsLinePassable(s, t);
-}
-*/
+bool Player::PathPlanning(Tick tick, UnitId id, const UnitTemplate& unit_def, const PointF &s, const PointF &t, int max_iteration,
+    bool verbose, Coord *first_block, float *dist) const {
 
-bool Player::PathPlanning(Tick tick, UnitId id, const PointF &s, const PointF &t, int max_iteration, bool verbose, Coord *first_block, float *dist) const {
     const RTSMap &m = *_map;
 
     Coord cs = s.ToCoord();
@@ -224,7 +220,7 @@ bool Player::PathPlanning(Tick tick, UnitId id, const PointF &s, const PointF &t
     }
 
     // Check if the two points are passable by a straight line. (Most common case).
-    if (line_passable(id, s, t)) {
+    if (line_passable(unit_def, id, s, t)) {
         _cache[make_pair(ls, lt)] = make_pair(tick, INVALID);
         return true;
     }
@@ -289,9 +285,9 @@ bool Player::PathPlanning(Tick tick, UnitId id, const PointF &s, const PointF &t
 
             // if we met with impassable location and has not reached the target (lt), skip.
             if (l_next != lt) {
-               if (GetDistanceSquared(s, next) >= 4 && ! m.CanPass(next, id, false)) continue;
-               if (GetDistanceSquared(s, next) < 4 && ! m.CanPass(next, id)) continue;
-           }
+               if (GetDistanceSquared(s, next) >= 4 && ! m.CanPass(next, id, unit_def, false)) continue;
+               if (GetDistanceSquared(s, next) < 4 && ! m.CanPass(next, id, unit_def)) continue;
+            }
 
             float h = get_path_dist_heuristic(l_next, lt);
             float next_dist = v.g + dists[i];
@@ -354,7 +350,7 @@ bool Player::PathPlanning(Tick tick, UnitId id, const PointF &s, const PointF &t
     // Starting from the end of path and check.
     for (size_t i = 0; i < traj.size(); i++) {
         Coord waypoint = m.GetCoord(traj[i]);
-        if (line_passable(id, s, PointF(waypoint.x, waypoint.y))) {
+        if (line_passable(unit_def, id, s, PointF(waypoint.x, waypoint.y))) {
             *first_block = waypoint;
             _cache[make_pair(ls, lt)] = make_pair(tick, traj[i]);
             return true;

@@ -128,14 +128,14 @@ function g_funcs.build(env, cmd)
             env:cd_start(global.CD_BUILD)
             cmd.build_state = kBuilding
         else
-            local nearby_p = env:find_nearby_empty_place(p)
+            local nearby_p = env:find_nearby_empty_place(u, p)
             env:move_towards_target(nearby_p)
         end
     elseif cmd.build_state == kBuilding then
         if u:cd_expired(global.CD_BUILD) then
             local build_p = p
             if not build_p:isvalid() then
-                build_p = env:find_nearby_empty_place(u:p()) 
+                build_p = env:find_nearby_empty_place(u, u:p()) 
             end
             if build_p:isvalid() then
                 env:send_cmd_create(cmd.build_type, build_p, u:player_id(), cost) 

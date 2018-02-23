@@ -60,7 +60,7 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
             // cout << "Building barracks!" << endl;
             const Unit *u = GameEnv::PickIdleOrGather(my_troops[WORKER], *_receiver);
             if (u != nullptr) {
-                CmdBPtr cmd = _preload.GetBuildBarracksCmd(env);
+                CmdBPtr cmd = _preload.GetBuildBarracksCmd(env, *u);
                 if (cmd != nullptr) {
                     *state_string = "Build barracks..Success";
                     store_cmd(u, std::move(cmd), assigned_cmds);

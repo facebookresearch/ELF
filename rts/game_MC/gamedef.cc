@@ -36,8 +36,9 @@ bool GameDef::IsUnitTypeBuilding(UnitType t) const{
 
 bool GameDef::HasBase() const{ return true; }
 
-bool GameDef::CheckAddUnit(RTSMap *_map, UnitType, const PointF& p) const{
-    return _map->CanPass(p, INVALID);
+bool GameDef::CheckAddUnit(RTSMap *_map, UnitType unit_type, const PointF& p) const{
+    const UnitTemplate& unit_def = _units[unit_type];
+    return _map->CanPass(p, INVALID, unit_def);
 }
 
 void GameDef::GlobalInit() {

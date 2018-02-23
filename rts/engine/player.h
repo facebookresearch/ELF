@@ -105,7 +105,7 @@ private:
 
     Loc _filter_with_fow(const Unit& u) const;
 
-    bool line_passable(UnitId id, const PointF &curr, const PointF &target) const;
+    bool line_passable(const UnitTemplate& unit_def, UnitId id, const PointF &curr, const PointF &target) const;
     float get_line_dist(const Loc &p1, const Loc &p2) const;
 
     // Update the heuristic value.
@@ -139,7 +139,8 @@ public:
     }
 
     // It will change _heuristics internally.
-    bool PathPlanning(Tick tick, UnitId id, const PointF &curr, const PointF &target, int max_iteration, bool verbose, Coord *first_block, float *est_dist) const;
+    bool PathPlanning(Tick tick, UnitId id, const UnitTemplate& unit_def, const PointF &curr, const PointF &target, int max_iteration,
+        bool verbose, Coord *first_block, float *est_dist) const;
 
     void SetPrivilege(PlayerPrivilege new_pv) { _privilege = new_pv; }
     PlayerPrivilege GetPrivilege() const { return _privilege; }

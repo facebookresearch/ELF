@@ -120,13 +120,13 @@ public:
     UnitId FindClosestEnemy(PlayerId player_id, const PointF& p, float radius) const;
 
     // Find empty place near a place, used by creating units.
-    bool FindEmptyPlaceNearby(const PointF &p, int l1_radius, PointF *res_p) const;
+    bool FindEmptyPlaceNearby(const UnitTemplate& unit_def, const PointF &p, int l1_radius, PointF *res_p) const;
 
     // Find empty place near a place, used by creating buildings.
     bool FindBuildPlaceNearby(const PointF &p, int l1_radius, PointF *res_p) const;
 
     // Find closest place to a group with a certain distance, used by hit and run.
-    bool FindClosestPlaceWithDistance(const PointF &p, int l1_radius,
+    bool FindClosestPlaceWithDistance(const Unit& u, const PointF &p, int l1_radius,
             const vector<const Unit *>& units, PointF *res_p) const;
 
     const Player &GetPlayer(PlayerId player_id) const {

@@ -183,7 +183,7 @@ PlayerId GameEnv::CheckBase(UnitType base_type) const{
     return last_player_has_base;
 }
 
-bool GameEnv::FindEmptyPlaceNearby(const PointF &p, int l1_radius, PointF *res_p) const {
+bool GameEnv::FindEmptyPlaceNearby(const UnitTemplate& unit_def, const PointF &p, int l1_radius, PointF *res_p) const {
     // Find an empty place by simple local grid search.
     const int margin = 2;
     const int cx = _map->GetXSize() / 2;
@@ -194,7 +194,7 @@ bool GameEnv::FindEmptyPlaceNearby(const PointF &p, int l1_radius, PointF *res_p
     for (int dx = -sx * l1_radius; dx != sx * l1_radius + sx; dx += sx) {
         for (int dy = -sy * l1_radius; dy != sy * l1_radius + sy; dy += sy) {
             PointF new_p(p.x + dx, p.y + dy);
-            if (_map->CanPass(new_p, INVALID) && _map->IsIn(new_p, margin)) {
+            if (_map->CanPass(new_p, INVALID, unit_def) && _map->IsIn(new_p, margin)) {
                 // It may not be a good strategy, though.
                 *res_p = new_p;
                 return true;
@@ -220,9 +220,10 @@ bool GameEnv::FindBuildPlaceNearby(const PointF &p, int l1_radius, PointF *res_p
 
 // given a set of units and a target point, a distance, find closest place to go to to maintain the distance.
 // can be used by hit and run or scout.
-bool GameEnv::FindClosestPlaceWithDistance(const PointF &p, int dist,
+bool GameEnv::FindClosestPlaceWithDistance(const Unit& u, const PointF &p, int dist,
   const vector<const Unit *>& units, PointF *res_p) const {
   const RTSMap &m = *_map;
+  const UnitTemplate& unit_def = _gamedef.unit(u.GetUnitType());
   vector<Loc> distances(m.GetXSize() * m.GetYSize());
   vector<Loc> current;
   vector<Loc> nextloc;
@@ -238,7 +239,7 @@ bool GameEnv::FindClosestPlaceWithDistance(const PointF &p, int dist,
           Coord c_curr = m.GetCoord(loc);
           for (size_t i = 0; i < sizeof(dx) / sizeof(int); ++i) {
               Coord next(c_curr.x + dx[i], c_curr.y + dy[i]);
-              if (_map->CanPass(next, INVALID) && _map->IsIn(next)) {
+              if (_map->CanPass(next, INVALID, unit_def) && _map->IsIn(next)) {
                   Loc l_next = m.GetLoc(next);
                   if (distances[l_next] == 0 || distances[l_next] > d) {
                     nextloc.push_back(l_next);

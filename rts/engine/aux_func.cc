@@ -12,7 +12,7 @@ static float trunc(float v, float b) {
 #define MT_ARRIVED 2
 #define MT_CANNOT_MOVE 3
 
-static int move_toward(const RTSMap& m, float speed, const UnitId& id,
+static int move_toward(const RTSMap& m, const UnitTemplate& unit_def, float speed, const UnitId& id,
         const PointF& curr, const PointF& target, PointF *move) {
     // Given curr location, move towards the target.
     PointF diff;
@@ -26,19 +26,19 @@ static int move_toward(const RTSMap& m, float speed, const UnitId& id,
         PointF next_p(curr);
         next_p += diff;
 
-        bool movable = m.CanPass(next_p, id);
+        bool movable = m.CanPass(next_p, id, unit_def);
         // cout << "MoveToward [" << id << "]: Try straight: " << next_p << " movable: " << movable << endl;
 
         if (! movable) {
             next_p = curr;
             next_p += diff.CCW90();
-            movable = m.CanPass(next_p, id);
+            movable = m.CanPass(next_p, id, unit_def);
             // cout << "MoveToward [" << id << "]: Try CCW: " << next_p << " movable: " << movable << endl;
         }
         if (! movable) {
             next_p = curr;
             next_p += diff.CW90();
-            movable = m.CanPass(next_p, id);
+            movable = m.CanPass(next_p, id, unit_def);
             // cout << "MoveToward [" << id << "]: Try CW: " << next_p << " movable: " << movable << endl;
         }
 
@@ -61,6 +61,7 @@ float micro_move(Tick tick, const Unit& u, const GameEnv &env, const PointF& tar
     const RTSMap &m = env.GetMap();
     const PointF &curr = u.GetPointF();
     const Player &player = env.GetPlayer(u.GetPlayerId());
+    const UnitTemplate& unit_def = env.GetGameDef().unit(u.GetUnitType());
 
     // cout << "Micro_move: Current: " << curr << " Target: " << target << endl;
     float dist_sqr = PointF::L2Sqr(target, curr);
@@ -80,7 +81,7 @@ float micro_move(Tick tick, const Unit& u, const GameEnv &env, const PointF& tar
             // Do path planning.
             Coord first_block;
             float est_dist;
-            planning_success = player.PathPlanning(tick, u.GetId(), curr, target,
+            planning_success = player.PathPlanning(tick, u.GetId(), unit_def, curr, target,
                 kMaxPlanningIteration, receiver->GetPathPlanningVerbose(), &first_block, &est_dist);
             if (planning_success && first_block.x >= 0 && first_block.y >= 0) {
                 waypoint.x = first_block.x;
@@ -88,7 +89,7 @@ float micro_move(Tick tick, const Unit& u, const GameEnv &env, const PointF& tar
             }
         }
         // cout << "micro_move: (" << curr << ") -> (" << waypoint << ") planning: " << planning_success << endl;
-        int ret = move_toward(m, property._speed, u.GetId(), curr, waypoint, &move);
+        int ret = move_toward(m, unit_def, property._speed, u.GetId(), curr, waypoint, &move);
         if (ret == MT_OK) {
             // Set actual move.
             receiver->SendCmd(CmdIPtr(new CmdTacticalMove(u.GetId(), move)));
@@ -102,22 +103,25 @@ float micro_move(Tick tick, const Unit& u, const GameEnv &env, const PointF& tar
     return dist_sqr;
 }
 
-bool find_nearby_empty_place(const RTSMap &m, const PointF &curr, PointF *p_nearby) {
+bool find_nearby_empty_place(const GameEnv& env, const Unit& u, const PointF &curr, PointF *p_nearby) {
+    const RTSMap &m = env.GetMap();
+    const UnitTemplate& unit_def = env.GetGameDef().unit(u.GetUnitType());
+
     PointF nn;
-    nn = curr.Left(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-    nn = curr.Right(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-    nn = curr.Up(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-    nn = curr.Down(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
+    nn = curr.Left(); if (m.CanPass(nn, INVALID, unit_def)) { *p_nearby = nn; return true; }
+    nn = curr.Right(); if (m.CanPass(nn, INVALID, unit_def)) { *p_nearby = nn; return true; }
+    nn = curr.Up(); if (m.CanPass(nn, INVALID, unit_def)) { *p_nearby = nn; return true; }
+    nn = curr.Down(); if (m.CanPass(nn, INVALID, unit_def)) { *p_nearby = nn; return true; }
 
-    nn = curr.LT(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-    nn = curr.LB(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-    nn = curr.RT(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-    nn = curr.RB(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
+    nn = curr.LT(); if (m.CanPass(nn, INVALID, unit_def)) { *p_nearby = nn; return true; }
+    nn = curr.LB(); if (m.CanPass(nn, INVALID, unit_def)) { *p_nearby = nn; return true; }
+    nn = curr.RT(); if (m.CanPass(nn, INVALID, unit_def)) { *p_nearby = nn; return true; }
+    nn = curr.RB(); if (m.CanPass(nn, INVALID, unit_def)) { *p_nearby = nn; return true; }
 
-    nn = curr.LL(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-    nn = curr.RR(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-    nn = curr.TT(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-    nn = curr.BB(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
+    nn = curr.LL(); if (m.CanPass(nn, INVALID, unit_def)) { *p_nearby = nn; return true; }
+    nn = curr.RR(); if (m.CanPass(nn, INVALID, unit_def)) { *p_nearby = nn; return true; }
+    nn = curr.TT(); if (m.CanPass(nn, INVALID, unit_def)) { *p_nearby = nn; return true; }
+    nn = curr.BB(); if (m.CanPass(nn, INVALID, unit_def)) { *p_nearby = nn; return true; }
 
     return false;
 }

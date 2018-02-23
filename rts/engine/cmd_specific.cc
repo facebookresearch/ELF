@@ -159,7 +159,6 @@ bool CmdBuild::run(const GameEnv &env, CmdReceiver *receiver) {
     const Unit *u = env.GetUnit(_id);
     if (u == nullptr) return false;
 
-    const RTSMap &m = env.GetMap();
     const PointF& curr = u->GetPointF();
     const UnitProperty &p = u->GetProperty();
     //const Player &player = env.GetPlayer(u->GetPlayerId());
@@ -180,7 +179,7 @@ bool CmdBuild::run(const GameEnv &env, CmdReceiver *receiver) {
             } else {
                 // Move to nearby location.
                 PointF nearby_p;
-                if (find_nearby_empty_place(m, _p, &nearby_p)) {
+                if (find_nearby_empty_place(env, *u, _p, &nearby_p)) {
                     micro_move(_tick, *u, env, _p, receiver);
                 }
             }
@@ -191,7 +190,7 @@ bool CmdBuild::run(const GameEnv &env, CmdReceiver *receiver) {
                 PointF build_p;
                 if (_p.IsInvalid()) {
                     build_p.SetInvalid();
-                    find_nearby_empty_place(m, curr, &build_p);
+                    find_nearby_empty_place(env, *u, curr, &build_p);
                 } else {
                     build_p = _p;
                 }

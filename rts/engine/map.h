@@ -14,6 +14,7 @@
 #include <vector>
 #include "common.h"
 #include "locality_search.h"
+#include "gamedef.h"
 
 struct MapSlot {
   // three layers, terrian, ground and air.
@@ -110,13 +111,13 @@ public:
       return _locality.IsEmpty(p, kUnitRadius, id_exclude);
   }
 
-  bool CanPass(const PointF &p, UnitId id_exclude, bool check_locality = true) const {
+  bool CanPass(const PointF &p, UnitId id_exclude, const UnitTemplate& unit_def = UnitTemplate(), bool check_locality = true) const {
       Coord c = p.ToCoord();
       if (! IsIn(c)) return false;
 
       Loc loc = GetLoc(c);
       const MapSlot &s = _map[loc];
-      if (s.type == ROCK) return false;
+      if (!unit_def.CanMoveOver(s.type)) return false;
 
       // [TODO] Add object radius here.
       if (check_locality)
@@ -125,12 +126,12 @@ public:
         return true;
   }
 
-  bool CanPass(const Coord &c, UnitId id_exclude, bool check_locality = true) const {
+  bool CanPass(const Coord &c, UnitId id_exclude, const UnitTemplate& unit_def = UnitTemplate(), bool check_locality = true) const {
       if (! IsIn(c)) return false;
 
       Loc loc = GetLoc(c);
       const MapSlot &s = _map[loc];
-      if (s.type == ROCK) return false;
+      if (!unit_def.CanMoveOver(s.type)) return false;
 
       // [TODO] Add object radius here.
       if (check_locality)

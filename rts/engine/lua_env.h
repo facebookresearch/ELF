@@ -99,7 +99,7 @@ public:
     LuaUnit GetSelf() const { return unit_; }
     int Tick() const;
 
-    PointF FindNearbyEmptyPlace(const PointF &p);
+    PointF FindNearbyEmptyPlace(const LuaUnit& u, const PointF &p);
     double MoveTowardsTarget(const PointF &target_p);
     double MoveTowards(const LuaUnit &u);
 

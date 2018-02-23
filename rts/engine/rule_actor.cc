@@ -195,7 +195,7 @@ bool RuleActor::hit_and_run(const GameEnv &env, const Unit *u, const vector<cons
             // try to hit and run
             PointF res_p;
             const PointF &mypf = u->GetPointF();
-            if (env.FindClosestPlaceWithDistance(mypf, HitAndRunDist3, targets, &res_p)) {
+            if (env.FindClosestPlaceWithDistance(*u, mypf, HitAndRunDist3, targets, &res_p)) {
                 store_cmd(u, _M(res_p), assigned_cmds);
             } else {
                 //fail, just attack back
@@ -244,7 +244,7 @@ bool RuleActor::act_per_unit(const GameEnv &env, const Unit *u, const int *state
         if (cmdtype == GATHER && state[STATE_BUILD_BARRACK] && ! region_hist->has_built_barracks) {
             if (_preload.Affordable(BARRACK)) {
                 *state_string = "Build barracks..Success";
-                CmdBPtr cmd = _preload.GetBuildBarracksCmd(env);
+                CmdBPtr cmd = _preload.GetBuildBarracksCmd(env, *u);
                 if (cmd != nullptr) {
                     store_cmd(u, std::move(cmd), assigned_cmds);
                     region_hist->has_built_barracks = true;

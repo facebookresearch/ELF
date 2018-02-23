@@ -121,15 +121,10 @@ public:
 
     CmdBPtr GetGatherCmd() const { return _G(_base_id, _resource_id); }
     CmdBPtr GetAttackEnemyBaseCmd() const { return _A(_opponent_base_id); }
-    CmdBPtr GetBuildBarracksCmd(const GameEnv &env) const {
+    CmdBPtr GetBuildBarracksCmd(const GameEnv &env, const Unit& u) const {
+        const UnitTemplate& unit_def = env.GetGameDef().unit(u.GetUnitType());
         PointF p;
-        if (env.FindEmptyPlaceNearby(_base_loc, 3, &p) && ! p.IsInvalid()) return _B(BARRACK, p);
-        else return CmdBPtr();
-    }
-
-    CmdBPtr GetBuildFactoryCmd(const GameEnv &env) const {
-        PointF p;
-        if (env.FindEmptyPlaceNearby(_base_loc, 3, &p) && ! p.IsInvalid()) return _B(FACTORY, p);
+        if (env.FindEmptyPlaceNearby(unit_def, _base_loc, 3, &p) && ! p.IsInvalid()) return _B(BARRACK, p);
         else return CmdBPtr();
     }
 

@@ -68,9 +68,9 @@ double LuaEnv::DistSqr(const PointF &target_p) {
     return PointF::L2Sqr(unit_.p_ref(), target_p);
 }
 
-PointF LuaEnv::FindNearbyEmptyPlace(const PointF &p) {
+PointF LuaEnv::FindNearbyEmptyPlace(const LuaUnit& u, const PointF &p) {
     PointF nearby_p;
-    find_nearby_empty_place(env_->GetMap(), p, &nearby_p);
+    find_nearby_empty_place(*env_, u.get(), p, &nearby_p);
     return nearby_p;
 }
 
