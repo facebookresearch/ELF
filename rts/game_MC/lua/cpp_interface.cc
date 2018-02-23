@@ -89,6 +89,12 @@ UnitTemplate RTSUnitFactory::InitHangar() {
     return ret;
 }
 
+UnitTemplate RTSUnitFactory::InitWorkshop() {
+    UnitTemplate ret;
+    Invoke("rts_unit_factory", "init_workshop", &ret);
+    return ret;
+}
+
 UnitTemplate RTSUnitFactory::InitDefenseTower() {
     UnitTemplate ret;
     Invoke("rts_unit_factory", "init_defense_tower", &ret);

@@ -21,7 +21,7 @@ var left_frame_width = map_x * cell_size;
 var player_colors = ['blue', 'red', 'yellow']
 
 var terrains = ["GROUND", "SAND", "GRASS", "ROCK", "WATER", "FOG"];
-var unit_names_minirts = ["RESOURCE", "WORKER", "ENGINEER", "SOLDIER", "TRUCK", "TANK", "CANNON", "FLIGHT", "BARRACK", "FACTORY", "HANGAR", "DEFENSE_TOWER", "BASE"];
+var unit_names_minirts = ["RESOURCE", "WORKER", "ENGINEER", "SOLDIER", "TRUCK", "TANK", "CANNON", "FLIGHT", "BARRACK", "FACTORY", "HANGAR", "WORKSHOP", "DEFENSE_TOWER", "BASE"];
 var x_down = null;
 var y_down = null;
 var x_curr;
@@ -224,7 +224,7 @@ function is_worker_cmd_allowed(key) {
 }
 
 function is_building_cmd_allowed(key) {
-    var building_types = [8, 9, 10, 12];
+    var building_types = [8, 9, 10, 11, 13];
     return is_build_cmd_allowed(key, building_types);
 }
 
@@ -561,6 +561,11 @@ var load_player_sprites = function(player) {
     });
     sprites["HANGAR"] = load_sprites({
         "_file": "rts/" + player + "/hangar.png",
+        "_scale": 1.5,
+        "_select_scale" : 1.3
+    });
+    sprites["WORKSHOP"] = load_sprites({
+        "_file": "rts/" + player + "/workshop.png",
         "_scale": 1.5,
         "_select_scale" : 1.3
     });

@@ -45,6 +45,8 @@ struct RTSUnitFactory : public CppClassInterface<RTSUnitFactory> {
 
     static UnitTemplate InitHangar();
 
+    static UnitTemplate InitWorkshop();
+
     static UnitTemplate InitDefenseTower();
 
     static UnitTemplate InitBase();

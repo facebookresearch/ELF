@@ -73,13 +73,14 @@ bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
         return true;
     }
 
-    if (!AttackRuleBook::CanAttack(u->GetUnitType(), target->GetUnitType())) {
+    const UnitProperty &property = u->GetProperty();
+    const float attack_mult = env.GetGameDef().unit(u->GetUnitType()).GetAttackMultiplier(target->GetUnitType());
+    const int damage = static_cast<int>(property._att * attack_mult);
+    if (damage == 0) {
         _done = true;
         return true;
     }
 
-    //const RTSMap &m = env.GetMap();
-    const UnitProperty &property = u->GetProperty();
     const PointF &curr = u->GetPointF();
     const PointF &target_p = target->GetPointF();
 
@@ -91,9 +92,9 @@ bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
     if (property.CD(CD_ATTACK).Passed(_tick) && in_attack_range) {
         // Melee delivers attack immediately, long-range will deliver attack via bullet.
         if (property._att_r <= 1.0) {
-            receiver->SendCmd(CmdIPtr(new CmdMeleeAttack(_id, _target, -property._att)));
+            receiver->SendCmd(CmdIPtr(new CmdMeleeAttack(_id, _target, -damage)));
         } else {
-            receiver->SendCmd(CmdIPtr(new CmdEmitBullet(_id, _target, curr, -property._att, 0.2)));
+            receiver->SendCmd(CmdIPtr(new CmdEmitBullet(_id, _target, curr, -damage, 0.2)));
         }
         receiver->SendCmd(CmdIPtr(new CmdCDStart(_id, CD_ATTACK)));
     } else if (! in_attack_range) {

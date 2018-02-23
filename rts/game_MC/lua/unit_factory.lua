@@ -13,7 +13,7 @@ function __create_build_skill(unit_type, hotkey)
 end
 
 function __create_unit_template(cost, hp, defense, speed, att, att_r, vis_r,
-  cds, allowed_cmds, attr, can_attack, cant_move_over, build_skills)
+  cds, allowed_cmds, attr, attack_multiplier, cant_move_over, build_skills)
 
   local up = UnitProperty.new()
   up:set_hp(hp)
@@ -38,8 +38,10 @@ function __create_unit_template(cost, hp, defense, speed, att, att_r, vis_r,
   for i = 1, #allowed_cmds do
     ut:add_allowed_cmd(allowed_cmds[i])
   end
-  for i = 1, #can_attack do
-    ut:add_can_attack(can_attack[i])
+  for i = 1, #attack_multiplier do
+    local ty = attack_multiplier[i][1];
+    local mult = attack_multiplier[i][2];
+    ut:set_attack_multiplier(ty, mult);
   end
   for i = 1, #cant_move_over do
     ut:add_cant_move_over(cant_move_over[i])
@@ -74,7 +76,8 @@ end
 function rts_unit_factory.init_worker()
   -- worker unit, can't attack, only can build
   local allowed_cmds = {CmdType.MOVE, CmdType.ATTACK, CmdType.BUILD, CmdType.GATHER}
-  local can_attack = {UnitType.WORKER, UnitType.ENGINEER, UnitType.SOLDIER, UnitType.TRUCK}
+  local attack_multiplier = {
+  }
   local cant_move_over = {Terrain.ROCK, Terrain.WATER}
   local build_skills = {
     __create_build_skill(UnitType.BASE, "b"),
@@ -91,7 +94,7 @@ function rts_unit_factory.init_worker()
     --[[cds]]{0, 40, 40, 150},
     --[[allowed_cmds]]allowed_cmds,
     --[[attr]]UnitAttr.ATTR_NORMAL,
-    --[[can_attack]]can_attack,
+    --[[attack_multiplier]]attack_multiplier,
     --[[cant_move_over]]cant_move_over,
     --[[build_skills]]build_skills
   )
@@ -101,11 +104,13 @@ end
 function rts_unit_factory.init_engineer()
   -- can build advanced buildings, vulnerable, expensive
   local allowed_cmds = {CmdType.MOVE, CmdType.BUILD}
-  local can_attack = {UnitType.WORKER, UnitType.ENGINEER, UnitType.SOLDIER}
+  local attack_multiplier = {
+  }
   local cant_move_over = {Terrain.ROCK, Terrain.WATER}
   local build_skills = {
     __create_build_skill(UnitType.FACTORY, "f"),
     __create_build_skill(UnitType.HANGAR, "h"),
+    __create_build_skill(UnitType.WORKSHOP, "w"),
     __create_build_skill(UnitType.DEFENSE_TOWER, "t")
   }
   local ut = __create_unit_template(
@@ -119,7 +124,7 @@ function rts_unit_factory.init_engineer()
     --[[cds]]{0, 0, 0, 250},
     --[[allowed_cmds]]allowed_cmds,
     --[[attr]]UnitAttr.ATTR_NORMAL,
-    --[[can_attack]]can_attack,
+    --[[attack_multiplier]]attack_multiplier,
     --[[cant_move_over]]cant_move_over,
     --[[build_skills]]build_skills
   )
@@ -129,8 +134,19 @@ end
 function rts_unit_factory.init_soldier()
   -- very cheap and weak unit, medium speed
   local allowed_cmds = {CmdType.MOVE, CmdType.ATTACK}
-  local can_attack = {UnitType.WORKER, UnitType.ENGINEER, UnitType.SOLDIER, UnitType.TRUCK, UnitType.TANK, UnitType.CANNON, UnitType.BARRACK,
-    UnitType.FACTORY, UnitType.HANGAR, UnitType.DEFENSE_TOWER, UnitType.BASE}
+  local attack_multiplier = {
+    {UnitType.WORKER, 1.0},
+    {UnitType.ENGINEER, 1.0},
+    {UnitType.TANK, 1.0},
+    {UnitType.CANNON, 1.0},
+    {UnitType.BARRACK, 1.0},
+    {UnitType.FACTORY, 1.0},
+    {UnitType.HANGAR, 1.0},
+    {UnitType.WORKSHOP, 1.0},
+    {UnitType.DEFENSE_TOWER, 1.0},
+    {UnitType.BASE, 1.0}
+  }
+
   local cant_move_over = {Terrain.ROCK, Terrain.WATER}
   local build_skills = {}
   local ut = __create_unit_template(
@@ -144,7 +160,7 @@ function rts_unit_factory.init_soldier()
     --[[cds]]{0, 10, 0, 0},
     --[[allowed_cmds]]allowed_cmds,
     --[[attr]]UnitAttr.ATTR_NORMAL,
-    --[[can_attack]]can_attack,
+    --[[attack_multiplier]]attack_multiplier,
     --[[cant_move_over]]cant_move_over,
     --[[build_skills]]build_skills
   )
@@ -154,8 +170,18 @@ end
 function rts_unit_factory.init_truck()
   -- fast but weak unit
   local allowed_cmds = {CmdType.MOVE, CmdType.ATTACK}
-  local can_attack = {UnitType.WORKER, UnitType.ENGINEER, UnitType.SOLDIER, UnitType.TRUCK, UnitType.TANK, UnitType.CANNON, UnitType.BARRACK,
-    UnitType.FACTORY, UnitType.HANGAR, UnitType.DEFENSE_TOWER, UnitType.BASE}
+  local attack_multiplier = {
+    {UnitType.WORKER, 1.0},
+    {UnitType.ENGINEER, 1.0},
+    {UnitType.SOLDIER, 1.0},
+    {UnitType.CANNON, 1.0},
+    {UnitType.BARRACK, 1.0},
+    {UnitType.FACTORY, 1.0},
+    {UnitType.HANGAR, 1.0},
+    {UnitType.WORKSHOP, 1.0},
+    {UnitType.DEFENSE_TOWER, 1.0},
+    {UnitType.BASE, 1.0}
+  }
   local cant_move_over = {Terrain.ROCK, Terrain.WATER}
   local build_skills = {}
   local ut = __create_unit_template(
@@ -169,7 +195,7 @@ function rts_unit_factory.init_truck()
     --[[cds]]{0, 15, 0, 0},
     --[[allowed_cmds]]allowed_cmds,
     --[[attr]]UnitAttr.ATTR_NORMAL,
-    --[[can_attack]]can_attack,
+    --[[attack_multiplier]]attack_multiplier,
     --[[cant_move_over]]cant_move_over,
     --[[build_skills]]build_skills
   )
@@ -179,8 +205,18 @@ end
 function rts_unit_factory.init_tank()
   -- medium slow, but more powerful unit
   local allowed_cmds = {CmdType.MOVE, CmdType.ATTACK}
-  local can_attack = {UnitType.WORKER, UnitType.ENGINEER, UnitType.SOLDIER, UnitType.TRUCK, UnitType.TANK, UnitType.CANNON, UnitType.FLIGHT,
-    UnitType.BARRACK, UnitType.FACTORY, UnitType.HANGAR, UnitType.DEFENSE_TOWER, UnitType.BASE}
+  local attack_multiplier = {
+    {UnitType.WORKER, 1.0},
+    {UnitType.ENGINEER, 1.0},
+    {UnitType.TRUCK, 1.0},
+    {UnitType.CANNON, 1.0},
+    {UnitType.BARRACK, 1.0},
+    {UnitType.FACTORY, 1.0},
+    {UnitType.HANGAR, 1.0},
+    {UnitType.WORKSHOP, 1.0},
+    {UnitType.DEFENSE_TOWER, 1.0},
+    {UnitType.BASE, 1.0}
+  }
   local cant_move_over = {Terrain.ROCK, Terrain.WATER}
   local build_skills = {}
   local ut = __create_unit_template(
@@ -194,7 +230,7 @@ function rts_unit_factory.init_tank()
     --[[cds]]{0, 20, 0, 0},
     --[[allowed_cmds]]allowed_cmds,
     --[[attr]]UnitAttr.ATTR_NORMAL,
-    --[[can_attack]]can_attack,
+    --[[attack_multiplier]]attack_multiplier,
     --[[cant_move_over]]cant_move_over,
     --[[build_skills]]build_skills
   )
@@ -204,8 +240,10 @@ end
 function rts_unit_factory.init_cannon()
   -- slow unit, but  powerful, and weak
   local allowed_cmds = {CmdType.MOVE, CmdType.ATTACK}
-  local can_attack = {UnitType.WORKER, UnitType.ENGINEER, UnitType.SOLDIER, UnitType.TRUCK, UnitType.TANK, UnitType.CANNON, UnitType.BARRACK,
-    UnitType.FACTORY, UnitType.HANGAR, UnitType.DEFENSE_TOWER, UnitType.BASE}
+  local attack_multiplier = {
+    {UnitType.FLIGHT, 2.0}
+  }
+
   local cant_move_over = {Terrain.ROCK, Terrain.WATER}
   local build_skills = {}
   local ut = __create_unit_template(
@@ -219,10 +257,7 @@ function rts_unit_factory.init_cannon()
     --[[cds]]{0, 30, 0, 0},
     --[[allowed_cmds]]allowed_cmds,
     --[[attr]]UnitAttr.ATTR_NORMAL,
-    --[[can_attack]]can_attack,
-    --[[cant_move_over]]cant_move_over,
-    --[[build_skills]]build_skills,
-    --[[can_attack]]can_attack,
+    --[[attack_multiplier]]attack_multiplier,
     --[[cant_move_over]]cant_move_over,
     --[[build_skills]]build_skills
   )
@@ -232,7 +267,13 @@ end
 function rts_unit_factory.init_flight()
   -- quick, good for scouting
   local allowed_cmds = {CmdType.MOVE, CmdType.ATTACK}
-  local can_attack = {UnitType.WORKER, UnitType.ENGINEER, UnitType.SOLDIER, UnitType.TRUCK, UnitType.TANK, UnitType.CANNON, UnitType.BARRACK}
+  local attack_multiplier = {
+    {UnitType.WORKER, 1.0},
+    {UnitType.ENGINEER, 1.0},
+    {UnitType.SOLDIER, 1.0},
+    {UnitType.TRUCK, 1.0},
+    {UnitType.TANK, 1.0}
+  }
   local cant_move_over = {}
   local build_skills = {}
   local ut = __create_unit_template(
@@ -246,8 +287,7 @@ function rts_unit_factory.init_flight()
     --[[cds]]{0, 20, 0, 0},
     --[[allowed_cmds]]allowed_cmds,
     --[[attr]]UnitAttr.ATTR_NORMAL,
-    --[[build_skills]]build_skills,
-    --[[can_attack]]can_attack,
+    --[[attack_multiplier]]attack_multiplier,
     --[[cant_move_over]]cant_move_over,
     --[[build_skills]]build_skills
   )
@@ -256,12 +296,12 @@ end
 
 function rts_unit_factory.init_barrack()
   local allowed_cmds = {CmdType.BUILD}
-  local can_attack = {}
   local cant_move_over = {}
   local build_skills = {
     __create_build_skill(UnitType.SOLDIER, "s"),
     __create_build_skill(UnitType.TRUCK, "t")
   }
+  local attack_multiplier = {}
   local ut = __create_unit_template(
     --[[cost]]200,
     --[[hp]]200,
@@ -273,7 +313,7 @@ function rts_unit_factory.init_barrack()
     --[[cds]]{0, 0, 0, 50},
     --[[allowed_cmds]]allowed_cmds,
     --[[attr]]UnitAttr.ATTR_NORMAL,
-    --[[can_attack]]can_attack,
+    --[[attack_multiplier]]attack_multiplier,
     --[[cant_move_over]]cant_move_over,
     --[[build_skills]]build_skills
   )
@@ -282,11 +322,10 @@ end
 
 function rts_unit_factory.init_factory()
   local allowed_cmds = {CmdType.BUILD}
-  local can_attack = {}
+  local attack_multiplier = {}
   local cant_move_over = {}
   local build_skills = {
-    __create_build_skill(UnitType.TANK, "t"),
-    __create_build_skill(UnitType.CANNON, "c")
+    __create_build_skill(UnitType.TANK, "t")
   }
   local ut = __create_unit_template(
     --[[cost]]300,
@@ -299,7 +338,7 @@ function rts_unit_factory.init_factory()
     --[[cds]]{0, 0, 0, 70},
     --[[allowed_cmds]]allowed_cmds,
     --[[attr]]UnitAttr.ATTR_NORMAL,
-    --[[can_attack]]can_attack,
+    --[[attack_multiplier]]attack_multiplier,
     --[[cant_move_over]]cant_move_over,
     --[[build_skills]]build_skills
   )
@@ -308,7 +347,7 @@ end
 
 function rts_unit_factory.init_hangar()
   local allowed_cmds = {CmdType.BUILD}
-  local can_attack = {}
+  local attack_multiplier = {}
   local cant_move_over = {}
   local build_skills = {
     __create_build_skill(UnitType.FLIGHT, "f")
@@ -324,17 +363,56 @@ function rts_unit_factory.init_hangar()
     --[[cds]]{0, 0, 0, 70},
     --[[allowed_cmds]]allowed_cmds,
     --[[attr]]UnitAttr.ATTR_NORMAL,
-    --[[can_attack]]can_attack,
+    --[[attack_multiplier]]attack_multiplier,
     --[[cant_move_over]]cant_move_over,
     --[[build_skills]]build_skills
   )
   return ut
 end
 
+function rts_unit_factory.init_workshop()
+  local allowed_cmds = {CmdType.BUILD}
+  local attack_multiplier = {}
+  local cant_move_over = {}
+  local build_skills = {
+    __create_build_skill(UnitType.CANNON, "c"),
+  }
+  local ut = __create_unit_template(
+    --[[cost]]250,
+    --[[hp]]250,
+    --[[defense]]5,
+    --[[speed]]0.0,
+    --[[att]]0,
+    --[[att_r]]0,
+    --[[vis_r]]5,
+    --[[cds]]{0, 0, 0, 70},
+    --[[allowed_cmds]]allowed_cmds,
+    --[[attr]]UnitAttr.ATTR_NORMAL,
+    --[[attack_multiplier]]attack_multiplier,
+    --[[cant_move_over]]cant_move_over,
+    --[[build_skills]]build_skills
+  )
+  return ut
+end
+
+
 function rts_unit_factory.init_defense_tower()
   local allowed_cmds = {CmdType.ATTACK}
-  local can_attack = {UnitType.WORKER, UnitType.ENGINEER, UnitType.SOLDIER, UnitType.TRUCK, UnitType.TANK, UnitType.CANNON, UnitType.FLIGHT,
-    UnitType.BARRACK, UnitType.FACTORY, UnitType.HANGAR, UnitType.DEFENSE_TOWER, UnitType.BASE}
+  local attack_multiplier = {
+    {UnitType.WORKER, 1.0},
+    {UnitType.ENGINEER, 1.0},
+    {UnitType.SOLDIER, 1.0},
+    {UnitType.TRUCK, 1.0},
+    {UnitType.TANK, 1.0},
+    {UnitType.CANNON, 1.0},
+    {UnitType.FLIGHT, 1.0},
+    {UnitType.BARRACK, 1.0},
+    {UnitType.FACTORY, 1.0},
+    {UnitType.HANGAR, 1.0},
+    {UnitType.WORKSHOP, 1.0},
+    {UnitType.DEFENSE_TOWER, 1.0},
+    {UnitType.BASE, 1.0}
+  }
   local cant_move_over = {Terrain.ROCK, Terrain.WATER}
   local build_skills = {}
   local ut = __create_unit_template(
@@ -348,7 +426,7 @@ function rts_unit_factory.init_defense_tower()
     --[[cds]]{0, 50, 0, 0},
     --[[allowed_cmds]]allowed_cmds,
     --[[attr]]UnitAttr.ATTR_NORMAL,
-    --[[can_attack]]can_attack,
+    --[[attack_multiplier]]attack_multiplier,
     --[[cant_move_over]]cant_move_over,
     --[[build_skills]]build_skills
   )
@@ -357,7 +435,7 @@ end
 
 function rts_unit_factory.init_base()
   local allowed_cmds = {CmdType.BUILD}
-  local can_attack = {}
+  local attack_multiplier = {}
   local cant_move_over = {}
   local build_skills = {
     __create_build_skill(UnitType.WORKER, "w"),
@@ -374,7 +452,7 @@ function rts_unit_factory.init_base()
     --[[cds]]{0, 0, 0, 50},
     --[[allowed_cmds]]allowed_cmds,
     --[[attr]]UnitAttr.ATTR_NORMAL,
-    --[[can_attack]]can_attack,
+    --[[attack_multiplier]]attack_multiplier,
     --[[cant_move_over]]cant_move_over,
     --[[build_skills]]build_skills
   )

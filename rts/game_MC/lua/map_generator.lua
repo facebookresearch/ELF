@@ -5,7 +5,7 @@ rts_map_generator = {}
 function rts_map_generator.generate_terrain(map, location_func, ty)
   local xs, ys = location_func()
   for i = 1, #xs do
-    map:set_slot_type(ty, xs[i], ys[i], 0)
+    map:set_slot_type(ty, xs[i] - 1, ys[i] - 1, 0)
   end
 end
 

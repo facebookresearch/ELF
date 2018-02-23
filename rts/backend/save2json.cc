@@ -119,8 +119,8 @@ void save2json::SaveGameDef(const GameDef& gamedef, json *game) {
         cmd["id"] = allowed_cmd;
         unit["allowed_cmds"].push_back(cmd);
       }
-      for (const auto& can_attack : ut._can_attack) {
-        unit["can_attack"].push_back(can_attack);
+      for (const auto& mult : ut._attack_multiplier) {
+        unit["attack_multiplier"].push_back(mult);
       }
       for (const auto& build_skill : ut.GetBuildSkills()) {
         json skill;

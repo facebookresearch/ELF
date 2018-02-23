@@ -78,6 +78,7 @@ void GameDef::Init() {
     _units[BARRACK] = RTSUnitFactory::InitBarrack();
     _units[FACTORY] = RTSUnitFactory::InitFactory();
     _units[HANGAR] = RTSUnitFactory::InitHangar();
+    _units[WORKSHOP] = RTSUnitFactory::InitWorkshop();
     _units[DEFENSE_TOWER] = RTSUnitFactory::InitDefenseTower();
     _units[BASE] = RTSUnitFactory::InitBase();
 }

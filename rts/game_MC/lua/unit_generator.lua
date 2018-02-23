@@ -21,6 +21,7 @@ unit_type_to_cell[UnitType.FLIGHT] = "F"
 unit_type_to_cell[UnitType.BARRACK] = "A"
 unit_type_to_cell[UnitType.FACTORY] = "O"
 unit_type_to_cell[UnitType.HANGAR] = "H"
+unit_type_to_cell[UnitType.WORKSHOP] = "K"
 unit_type_to_cell[UnitType.DEFENSE_TOWER] = "D"
 unit_type_to_cell[UnitType.BASE] = "B"
 
@@ -33,7 +34,7 @@ function rts_unit_generator.generate_unit(proxy, parser, player_id, unit_type)
   end
   local xs, ys = parser:get_locations(ty)
   for i = 1, #xs do
-    proxy:send_cmd_create(unit_type, __make_p(xs[i], ys[i]), player_id, 0)
+    proxy:send_cmd_create(unit_type, __make_p(xs[i] - 1, ys[i] - 1), player_id, 0)
   end
 end
 

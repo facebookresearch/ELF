@@ -101,7 +101,7 @@ void _LuaUnitTemplate::Init() {
         "set_property", &UnitTemplate::SetProperty,
         "build_cost", &UnitTemplate::_build_cost,
         "add_allowed_cmd", &UnitTemplate::AddAllowedCmd,
-        "add_can_attack", &UnitTemplate::AddCanAttack,
+        "set_attack_multiplier", &UnitTemplate::SetAttackMultiplier,
         "add_cant_move_over", &UnitTemplate::AddCantMoveOver,
         "add_build_skill", &UnitTemplate::AddBuildSkill
     );
