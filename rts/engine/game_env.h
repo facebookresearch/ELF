@@ -198,7 +198,7 @@ public:
     bool FilterWithFOW(const Unit &u) const {
         return _player_id == INVALID || _env.GetPlayer(_player_id).FilterWithFOW(u);
     }
-    // [TODO] This violates the behavior of Aspect. Will need to change. 
+    // [TODO] This violates the behavior of Aspect. Will need to change.
     const Units &GetAllUnits() const { return _env.GetUnits(); }
     const Player &GetPlayer() const { return _env.GetPlayer(_player_id); }
     const GameDef &GetGameDef() const { return _env.GetGameDef(); }
@@ -210,14 +210,14 @@ private:
 
 class UnitIterator {
 public:
-    enum Type { ALL = 0, BUILDING, MOVING }; 
+    enum Type { ALL = 0, BUILDING, MOVING };
 
     UnitIterator(const GameEnvAspect &aspect, Type type)
         : _aspect(aspect), _type(type) {
             _it = _aspect.GetAllUnits().begin();
             next();
         }
-    UnitIterator(const UnitIterator &i) 
+    UnitIterator(const UnitIterator &i)
         : _aspect(i._aspect), _type(i._type), _it(i._it) {
     }
 
@@ -244,7 +244,7 @@ private:
             if (_aspect.FilterWithFOW(u)) {
                 if (_type == ALL) break;
 
-                bool is_building = _aspect.GetGameDef().IsUnitTypeBuilding(u.GetUnitType());
+                bool is_building = GameDef::IsUnitTypeBuilding(u.GetUnitType());
                 if ((is_building && _type == BUILDING) || (! is_building && _type == MOVING)) break;
             }
             ++ _it;

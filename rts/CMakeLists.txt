@@ -16,6 +16,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../vendor/ ${CMAKE_BINARY_DIR}/vend
 add_subdirectory(engine)
 
 # compile the game itself
+# possibly need -DLUA_INCLUDE_DIR=/usr/local/include/ -DLUA_LIBRARY=/usr/local/lib/liblua.a\;/usr/lib64/libdl.so to find correct lua
 set(GAME_DIR "${CMAKE_CURRENT_SOURCE_DIR}/game_MC" CACHE PATH "Directory to the game implementation, e.g. ../game_MC")
 add_subdirectory(${GAME_DIR} ${CMAKE_BINARY_DIR}/minirts)
 set_target_properties(minirts PROPERTIES

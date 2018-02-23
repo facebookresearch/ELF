@@ -10,11 +10,28 @@
 #ifndef _MC_RULE_ACTOR_H_
 #define _MC_RULE_ACTOR_H_
 
+#include <map>
 #include "engine/rule_actor.h"
 
 class MCRuleActor : public RuleActor {
 public:
+     std::map<AIState, UnitType> _state_build_map = {
+        {STATE_BUILD_WORKER, WORKER},
+        {STATE_BUILD_SOLDIER, SOLDIER},
+        {STATE_BUILD_TRUCK, TRUCK},
+        {STATE_BUILD_TANK, TANK},
+        {STATE_BUILD_CANNON, CANNON},
+        {STATE_BUILD_FLIGHT, FLIGHT},
+        {STATE_BUILD_BARRACK, BARRACK},
+        {STATE_BUILD_HANGAR, HANGAR},
+        {STATE_BUILD_WORKSHOP, WORKSHOP},
+        {STATE_BUILD_FACTORY, FACTORY},
+        {STATE_BUILD_BASE, BASE},
+    };
     MCRuleActor(){ }
+
+    Unit* GetTargetUnit(const GameEnv &env, const vector<vector<const Unit*> > &enemy_troops, const Player& player);
+
     // Act by a state array, used by MiniRTS
     bool ActByState(const GameEnv &env, const vector<int>& state, string *state_string, AssignedCmds *assigned_cmds);
     // Act by a state array for each unit, used by MiniRTS

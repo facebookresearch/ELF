@@ -56,7 +56,7 @@ CmdInput build_event(const Unit &u, char hotkey, const PointF& p, const UnitId& 
 
     // don't need a target point for buildings
     PointF build_p;
-    if (t == WORKER || t == ENGINEER) {
+    if (t == WORKER) {
         if (p.IsInvalid()) {
             return CmdInput();
         }

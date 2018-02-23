@@ -12,7 +12,6 @@ end
 local unit_type_to_cell = {}
 unit_type_to_cell[UnitType.RESOURCE] = "X"
 unit_type_to_cell[UnitType.WORKER] = "W"
-unit_type_to_cell[UnitType.ENGINEER] = "E"
 unit_type_to_cell[UnitType.SOLDIER] = "S"
 unit_type_to_cell[UnitType.TRUCK] = "R"
 unit_type_to_cell[UnitType.TANK] = "T"
@@ -34,7 +33,11 @@ function rts_unit_generator.generate_unit(proxy, parser, player_id, unit_type)
   end
   local xs, ys = parser:get_locations(ty)
   for i = 1, #xs do
-    proxy:send_cmd_create(unit_type, __make_p(xs[i] - 1, ys[i] - 1), player_id, 0)
+    if ty == "x" or ty == "X" then
+        proxy:send_cmd_create(unit_type, __make_p(xs[i] - 1, ys[i] - 1), 2, 0)
+    else
+        proxy:send_cmd_create(unit_type, __make_p(xs[i] - 1, ys[i] - 1), player_id, 0)
+    end
   end
 end
 

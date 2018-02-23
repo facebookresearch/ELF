@@ -160,10 +160,10 @@ public:
         return make_string("p", _player_id, _resource);
     }
 
-    void ClearCache() { 
-        _heuristics.clear(); 
-        _cache.clear(); 
-        _resource = 0; 
+    void ClearCache() {
+        _heuristics.clear();
+        _cache.clear();
+        _resource = 0;
         for (auto &fog : _fogs) {
             fog.ResetFog();
         }

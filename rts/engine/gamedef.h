@@ -75,6 +75,7 @@ struct UnitTemplate {
     set<CmdType> _allowed_cmds;
     vector<float> _attack_multiplier;
     set<Terrain> _cant_move_over;
+    UnitType _build_from;
     vector<BuildSkill> _build_skills;
     int _build_cost;
 
@@ -102,6 +103,7 @@ struct UnitTemplate {
     void AddAllowedCmd(int cmd) { _allowed_cmds.insert(static_cast<CmdType>(cmd)); }
     void SetAttackMultiplier(int unit_type, double mult) { _attack_multiplier[unit_type] = static_cast<float>(mult); }
     void AddCantMoveOver(int terrain) { _cant_move_over.insert(static_cast<Terrain>(terrain)); }
+    void SetBuildFrom(int unit_type) { _build_from = (UnitType)unit_type; }
     void AddBuildSkill(BuildSkill skill) { _build_skills.push_back(std::move(skill)); }
 
     void SetProperty(UnitProperty prop) { _property = prop; }
@@ -132,7 +134,7 @@ public:
     // Get the number of game action in this game
     static int GetNumAction();
 
-    bool IsUnitTypeBuilding(UnitType t) const;
+    static bool IsUnitTypeBuilding(UnitType t);
     bool HasBase() const;
 
     // Check if the unit can be added at current location p.
