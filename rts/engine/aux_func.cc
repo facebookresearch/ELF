@@ -26,19 +26,19 @@ static int move_toward(const RTSMap& m, const UnitTemplate& unit_def, float spee
         PointF next_p(curr);
         next_p += diff;
 
-        bool movable = m.CanPass(next_p, id, unit_def);
+        bool movable = m.CanPass(next_p, id, false, unit_def);
         // cout << "MoveToward [" << id << "]: Try straight: " << next_p << " movable: " << movable << endl;
 
         if (! movable) {
             next_p = curr;
             next_p += diff.CCW90();
-            movable = m.CanPass(next_p, id, unit_def);
+            movable = m.CanPass(next_p, id, false, unit_def);
             // cout << "MoveToward [" << id << "]: Try CCW: " << next_p << " movable: " << movable << endl;
         }
         if (! movable) {
             next_p = curr;
             next_p += diff.CW90();
-            movable = m.CanPass(next_p, id, unit_def);
+            movable = m.CanPass(next_p, id, false, unit_def);
             // cout << "MoveToward [" << id << "]: Try CW: " << next_p << " movable: " << movable << endl;
         }
 
@@ -108,20 +108,20 @@ bool find_nearby_empty_place(const GameEnv& env, const Unit& u, const PointF &cu
     const UnitTemplate& unit_def = env.GetGameDef().unit(u.GetUnitType());
 
     PointF nn;
-    nn = curr.Left(); if (m.CanPass(nn, INVALID, unit_def)) { *p_nearby = nn; return true; }
-    nn = curr.Right(); if (m.CanPass(nn, INVALID, unit_def)) { *p_nearby = nn; return true; }
-    nn = curr.Up(); if (m.CanPass(nn, INVALID, unit_def)) { *p_nearby = nn; return true; }
-    nn = curr.Down(); if (m.CanPass(nn, INVALID, unit_def)) { *p_nearby = nn; return true; }
+    nn = curr.Left(); if (m.CanPass(nn, INVALID, false, unit_def)) { *p_nearby = nn; return true; }
+    nn = curr.Right(); if (m.CanPass(nn, INVALID, false, unit_def)) { *p_nearby = nn; return true; }
+    nn = curr.Up(); if (m.CanPass(nn, INVALID, false, unit_def)) { *p_nearby = nn; return true; }
+    nn = curr.Down(); if (m.CanPass(nn, INVALID, false, unit_def)) { *p_nearby = nn; return true; }
 
-    nn = curr.LT(); if (m.CanPass(nn, INVALID, unit_def)) { *p_nearby = nn; return true; }
-    nn = curr.LB(); if (m.CanPass(nn, INVALID, unit_def)) { *p_nearby = nn; return true; }
-    nn = curr.RT(); if (m.CanPass(nn, INVALID, unit_def)) { *p_nearby = nn; return true; }
-    nn = curr.RB(); if (m.CanPass(nn, INVALID, unit_def)) { *p_nearby = nn; return true; }
+    nn = curr.LT(); if (m.CanPass(nn, INVALID, false, unit_def)) { *p_nearby = nn; return true; }
+    nn = curr.LB(); if (m.CanPass(nn, INVALID, false, unit_def)) { *p_nearby = nn; return true; }
+    nn = curr.RT(); if (m.CanPass(nn, INVALID, false, unit_def)) { *p_nearby = nn; return true; }
+    nn = curr.RB(); if (m.CanPass(nn, INVALID, false, unit_def)) { *p_nearby = nn; return true; }
 
-    nn = curr.LL(); if (m.CanPass(nn, INVALID, unit_def)) { *p_nearby = nn; return true; }
-    nn = curr.RR(); if (m.CanPass(nn, INVALID, unit_def)) { *p_nearby = nn; return true; }
-    nn = curr.TT(); if (m.CanPass(nn, INVALID, unit_def)) { *p_nearby = nn; return true; }
-    nn = curr.BB(); if (m.CanPass(nn, INVALID, unit_def)) { *p_nearby = nn; return true; }
+    nn = curr.LL(); if (m.CanPass(nn, INVALID, false, unit_def)) { *p_nearby = nn; return true; }
+    nn = curr.RR(); if (m.CanPass(nn, INVALID, false, unit_def)) { *p_nearby = nn; return true; }
+    nn = curr.TT(); if (m.CanPass(nn, INVALID, false, unit_def)) { *p_nearby = nn; return true; }
+    nn = curr.BB(); if (m.CanPass(nn, INVALID, false, unit_def)) { *p_nearby = nn; return true; }
 
     return false;
 }

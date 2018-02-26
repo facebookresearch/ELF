@@ -34,7 +34,6 @@ static void UpdateValue(const Loc &p1, const Loc &p2, const T& value, map< pair<
     }
 }
 
-
 ///////////// Fog ///////////////////
 const set<UnitType> Fog::kSavableUnitTypes = {
     RESOURCE,
@@ -54,6 +53,7 @@ const set<Terrain> Fog::kSavableTerrainTypes = {
     WATER
 };
 
+
 void Fog::SetClear(Terrain terrain) {
     _fog = 0;
     _prev_seen_units.clear();
@@ -67,6 +67,7 @@ void Fog::SaveUnit(const Unit& u) {
         _prev_seen_units.push_back(u);
     }
 }
+
 
 ///////////// Player ///////////////////
 string Player::Draw() const {
@@ -210,7 +211,8 @@ bool Player::line_passable(const UnitTemplate& unit_def, UnitId id, const PointF
         last_lx = lx;
 
         if (lx != ls && lx != lt) {
-            if (! m.CanPass(x, id, unit_def)) {
+            bool seen_location = _fogs[lx].HasSeenTerrain();
+            if (! m.CanPass(x, id, seen_location, unit_def)) {
                 // cout << "(" << s << ") -> (" << t << ") line not passable due to (" << x << ")" << endl;
                 return false;
             }
@@ -322,8 +324,9 @@ bool Player::PathPlanning(Tick tick, UnitId id, const UnitTemplate& unit_def, co
 
             // if we met with impassable location and has not reached the target (lt), skip.
             if (l_next != lt) {
-               if (GetDistanceSquared(s, next) >= 4 && ! m.CanPass(next, id, unit_def, false)) continue;
-               if (GetDistanceSquared(s, next) < 4 && ! m.CanPass(next, id, unit_def)) continue;
+               bool seen_location = _fogs[l_next].HasSeenTerrain();
+               if (GetDistanceSquared(s, next) >= 4 && ! m.CanPass(next, id, seen_location, unit_def, false)) continue;
+               if (GetDistanceSquared(s, next) < 4 && ! m.CanPass(next, id, seen_location, unit_def)) continue;
             }
 
             float h = get_path_dist_heuristic(l_next, lt);

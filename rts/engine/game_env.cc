@@ -194,7 +194,7 @@ bool GameEnv::FindEmptyPlaceNearby(const UnitTemplate& unit_def, const PointF &p
     for (int dx = -sx * l1_radius; dx != sx * l1_radius + sx; dx += sx) {
         for (int dy = -sy * l1_radius; dy != sy * l1_radius + sy; dy += sy) {
             PointF new_p(p.x + dx, p.y + dy);
-            if (_map->CanPass(new_p, INVALID, unit_def) && _map->IsIn(new_p, margin)) {
+            if (_map->CanPass(new_p, INVALID, false, unit_def) && _map->IsIn(new_p, margin)) {
                 // It may not be a good strategy, though.
                 *res_p = new_p;
                 return true;
@@ -239,7 +239,7 @@ bool GameEnv::FindClosestPlaceWithDistance(const Unit& u, const PointF &p, int d
           Coord c_curr = m.GetCoord(loc);
           for (size_t i = 0; i < sizeof(dx) / sizeof(int); ++i) {
               Coord next(c_curr.x + dx[i], c_curr.y + dy[i]);
-              if (_map->CanPass(next, INVALID, unit_def) && _map->IsIn(next)) {
+              if (_map->CanPass(next, INVALID, false, unit_def) && _map->IsIn(next)) {
                   Loc l_next = m.GetLoc(next);
                   if (distances[l_next] == 0 || distances[l_next] > d) {
                     nextloc.push_back(l_next);
