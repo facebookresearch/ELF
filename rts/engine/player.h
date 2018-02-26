@@ -18,22 +18,27 @@
 class Unit;
 
 struct Fog {
+    static const set<UnitType> kSavableUnitTypes;
+
+    static const set<Terrain> kSavableTerrainTypes;
     // Fog level: 0 no fog, 100 completely invisible.
     int _fog = 100;
+    bool _has_seen_terrain;
     vector<Unit> _prev_seen_units;
 
     void MakeInvisible() {  _fog = 100; }
-    void SetClear() { _fog = 0; _prev_seen_units.clear(); }
+    void SetClear(Terrain terrain);
     bool CanSeeTerrain() const { return _fog < 50; }
     bool CanSeeUnit() const { return _fog < 30; }
+    bool HasSeenTerrain() const { return _has_seen_terrain; }
+    void ForgetTerrain() { _has_seen_terrain = false; }
 
-    void SaveUnit(const Unit &u) {
-        _prev_seen_units.push_back(u);
-    }
+    void SaveUnit(const Unit &u);
 
     void ResetFog() {
         _fog = 100;
-        _prev_seen_units.clear(); 
+        _has_seen_terrain = false;
+        _prev_seen_units.clear();
     }
 
     const vector<Unit> &seen_units() const { return _prev_seen_units; }

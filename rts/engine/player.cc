@@ -34,6 +34,40 @@ static void UpdateValue(const Loc &p1, const Loc &p2, const T& value, map< pair<
     }
 }
 
+
+///////////// Fog ///////////////////
+const set<UnitType> Fog::kSavableUnitTypes = {
+    RESOURCE,
+    BARRACK,
+    FACTORY,
+    HANGAR,
+    WORKSHOP,
+    DEFENSE_TOWER,
+    BASE
+};
+
+const set<Terrain> Fog::kSavableTerrainTypes = {
+    SOIL,
+    SAND,
+    GRASS,
+    ROCK,
+    WATER
+};
+
+void Fog::SetClear(Terrain terrain) {
+    _fog = 0;
+    _prev_seen_units.clear();
+    if (kSavableTerrainTypes.count(terrain) > 0) {
+        _has_seen_terrain = true;
+    }
+}
+
+void Fog::SaveUnit(const Unit& u) {
+    if (kSavableUnitTypes.count(u.GetUnitType()) > 0) {
+        _prev_seen_units.push_back(u);
+    }
+}
+
 ///////////// Player ///////////////////
 string Player::Draw() const {
     stringstream ss;
@@ -87,7 +121,8 @@ void Player::ComputeFOW(const Units &units) {
 
     // Clear these fog unit.
     for (const Loc &l : clear_regions) {
-        _fogs[l].SetClear();
+        Terrain terrain = (*_map)(l).type;
+        _fogs[l].SetClear(terrain);
     }
 
     // Second pass, remember the units that was in FoW
@@ -96,7 +131,9 @@ void Player::ComputeFOW(const Units &units) {
         if (ExtractPlayerId(u->GetId()) != _player_id) {
             Loc l = _filter_with_fow(*u);
             // Add the unit info to the loc.
-            if (l != -1) _fogs[l].SaveUnit(*u);
+            if (l != -1) {
+                _fogs[l].SaveUnit(*u);
+            }
         }
     }
 }

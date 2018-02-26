@@ -87,6 +87,7 @@ void save2json::SavePlayerMap(const Player& player, json *game) {
     rts_map["width"] = m.GetXSize();
     rts_map["height"] = m.GetYSize();
     json slots;
+    json seen_terrain;
     for (int y = 0; y < m.GetYSize(); y ++) {
         for (int x = 0; x < m.GetXSize(); x ++) {
             Loc loc = m.GetLoc(Coord(x, y, 0));
@@ -95,10 +96,15 @@ void save2json::SavePlayerMap(const Player& player, json *game) {
             Terrain t = FOG;
             if (f.CanSeeTerrain()) {
                 t = m(loc).type;
+                seen_terrain.push_back(false);
             } else {
                 // Add prev seen units.
                 for (const auto &u : f.seen_units()) {
                     Save(u, nullptr, &rts_map);
+                }
+                seen_terrain.push_back(f.HasSeenTerrain());
+                if (f.HasSeenTerrain()) {
+                    t = m(loc).type;
                 }
             }
 
@@ -106,6 +112,7 @@ void save2json::SavePlayerMap(const Player& player, json *game) {
         }
     }
     rts_map["slots"] = slots;
+    rts_map["seen_terrain"] = seen_terrain;
     (*game)["rts_map"] = rts_map;
 }
 

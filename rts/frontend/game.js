@@ -301,10 +301,11 @@ var onMap = function(m) {
     for (y = 0; y < m.height; y++) {
     	  for (x = 0; x < m.width; x++){
             var type = m.slots[counter];
+            var seen_before = m.seen_terrain[counter];
             var spec = terrain_sprites[terrains[type]];
             var x1 = x * cell_size + cell_size / 2;
             var y1 = y * cell_size + cell_size / 2;
-            draw_terrain_sprite(spec, x1, y1);
+            draw_terrain_sprite(spec, x1, y1, seen_before);
             counter += 1;
     	}
 	}
@@ -397,7 +398,7 @@ var onPlayerStats = function(player, game) {
 var onPlayerSeenUnits = function(m) {
     if ("units" in m) {
         var oldAlpha = ctx.globalAlpha;
-        ctx.globalAlpha = 0.3;
+        ctx.globalAlpha = 0.5;
 
         for (var i in m.units) {
             onUnit(m.units[i], false);
@@ -617,9 +618,18 @@ var draw_sprites = function(spec, px, py, scale) {
     //ctx.closePath();
 }
 
-var draw_terrain_sprite = function(spec, px, py) {
+var draw_terrain_sprite = function(spec, px, py, seen_before) {
+    var fog_image = terrain_sprites["FOG"]["image"];
     var image = spec["image"];
-    ctx.drawImage(image, px - cell_size / 2, py - cell_size / 2, cell_size, cell_size);
+    if (seen_before) {
+        ctx.drawImage(fog_image, px - cell_size / 2, py - cell_size / 2, cell_size, cell_size);
+        var oldAlpha = ctx.globalAlpha;
+        ctx.globalAlpha = 0.3;
+        ctx.drawImage(image, px - cell_size / 2, py - cell_size / 2, cell_size, cell_size);
+        ctx.globalAlpha = oldAlpha;
+    } else {
+        ctx.drawImage(image, px - cell_size / 2, py - cell_size / 2, cell_size, cell_size);
+    }
 };
 
 var bullets = load_sprites({
