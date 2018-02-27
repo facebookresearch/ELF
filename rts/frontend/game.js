@@ -301,7 +301,10 @@ var onMap = function(m) {
     for (y = 0; y < m.height; y++) {
     	  for (x = 0; x < m.width; x++){
             var type = m.slots[counter];
-            var seen_before = m.seen_terrain[counter];
+            var seen_before = false;
+            if (m.seen_terrain != null) {
+                seen_before = m.seen_terrain[counter];
+            }
             var spec = terrain_sprites[terrains[type]];
             var x1 = x * cell_size + cell_size / 2;
             var y1 = y * cell_size + cell_size / 2;
@@ -381,16 +384,20 @@ var onBullet = function(bullet) {
     draw_bullet(bullets, xy[0], xy[1], bullet.state);
 }
 
-var onPlayerStats = function(player, game) {
-    var x1 = left_frame_width + 10;
+var onPlayersStats = function(players, game) {
+    var x1 = left_frame_width;
     var y1 = 0;
-    draw_sprites(player_sprites[player_colors[player.player_id]]["RESOURCE"],
-        x1 + cell_size / 2, y1 + cell_size / 2, 0.7)
+    var label = "";
+    for (var i in players) {
+        var player = players[i];
+        label = label + "PLAYER " + player.player_id + ":" + player.resource + "  ";
+    }
     ctx.beginPath()
-	  ctx.fillStyle = "Black";
-	  ctx.font = "15px Arial";
-    var label = "MINIERALS: " + player.resource + "     TIME: " + game.tick;
-	  ctx.fillText(label, x1 + cell_size, y1 + cell_size / 2 + 5);
+    ctx.fillStyle = "Black";
+    ctx.font = "15px Arial";
+    ctx.fillText("TIME: " + game.tick, x1 + cell_size, y1 + cell_size / 2 + 5);
+    y1 += 20;
+    ctx.fillText(label, x1 + cell_size, y1 + cell_size / 2 + 5);
     ctx.closePath();
 }
 
@@ -411,7 +418,7 @@ var draw_state = function(u, game) {
     var player_color = player_colors[u.player_id];
     var sprites = player_sprites[player_colors[u.player_id]];
     var x1 = left_frame_width + 20;
-    var y1 = 50;
+    var y1 = 60;
     var spec = sprites[unit_names_minirts[u.unit_type]];
     draw_sprites(spec, x1 + cell_size / 2, y1 + cell_size, null);
 
@@ -682,9 +689,7 @@ var render = function (game) {
 
     var all_units = {};
     var selected = {};
-    for (var i in game.players) {
-        onPlayerStats(game.players[i], game);
-    }
+    onPlayersStats(game.players, game);
     for (var i in game.units) {
         var unit = game.units[i];
         all_units[unit.id] = unit;
