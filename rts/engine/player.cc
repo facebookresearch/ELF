@@ -318,6 +318,7 @@ bool Player::PathPlanning(Tick tick, UnitId id, const UnitTemplate& unit_def, co
         for (size_t i = 0; i < sizeof(dx) / sizeof(int); ++i) {
             Coord next(c_curr.x + dx[i], c_curr.y + dy[i]);
             Loc l_next = m.GetLoc(next);
+            if (!m.IsIn(l_next)) continue;
 
             // If we already push that before, skip.
             if (c_from.find(l_next) != c_from.end()) continue;
