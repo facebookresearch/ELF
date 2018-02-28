@@ -738,7 +738,13 @@ var render = function (game) {
 };
 
 var main = function () {
-  dealer = new WebSocket('ws://localhost:8000');
+  var param = new URLSearchParams(window.location.search);
+  if (param.has("player")) {
+      var port =  param.get("player");
+  } else {
+      var port = "0";
+  }
+  dealer = new WebSocket('ws://localhost:800' + port);
   dealer.onopen = function(event) {
       console.log("WS Opened.");
   }
@@ -754,5 +760,4 @@ var main = function () {
   };
 };
 
-var then = Date.now();
 main();
