@@ -26,11 +26,12 @@ public:
         {STATE_BUILD_HANGAR, HANGAR},
         {STATE_BUILD_WORKSHOP, WORKSHOP},
         {STATE_BUILD_FACTORY, FACTORY},
+        {STATE_BUILD_DEFENSE_TOWER, DEFENSE_TOWER},
         {STATE_BUILD_BASE, BASE},
     };
     MCRuleActor(){ }
 
-    Unit* GetTargetUnit(const GameEnv &env, const vector<vector<const Unit*> > &enemy_troops, const Player& player);
+    const Unit* GetTargetUnit(const GameEnv &env, const vector<vector<const Unit*> > &enemy_troops, const Player& player);
 
     // Act by a state array, used by MiniRTS
     bool ActByState(const GameEnv &env, const vector<int>& state, string *state_string, AssignedCmds *assigned_cmds);

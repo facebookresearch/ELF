@@ -211,6 +211,7 @@ bool RuleActor::GatherInfo(const GameEnv &env, string *state_string, AssignedCmd
 
     auto res = _preload.GetResult();
     if (res == Preload::NO_BASE) return false;
+    /*
     if (res == Preload::NO_RESOURCE) {
         // cout << "Check whether resource is empty .." << endl << flush;
         // If there is no resource, just attack opponent's base.
@@ -219,6 +220,7 @@ bool RuleActor::GatherInfo(const GameEnv &env, string *state_string, AssignedCmd
         batch_store_cmds(_preload.AllMyTroops(), _preload.GetAttackEnemyBaseCmd(), true, assigned_cmds);
         return false;
     }
+    */
     return true;
 }
 
