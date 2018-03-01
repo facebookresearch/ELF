@@ -13,7 +13,8 @@ var ctx = canvas.getContext("2d");
 // max sizes
 var map_x = 40;
 var map_y = 40;
-var cell_size = 35;
+var SCALER = 1.0;
+var cell_size = 30;
 
 canvas.width = map_x * cell_size + 400;
 canvas.height = map_y * cell_size;
@@ -29,12 +30,19 @@ var y_curr;
 var dragging = false;
 var tick = 0;
 var dealer;
-var button_left = left_frame_width + 30;
 var speed = 0;
 var min_speed = -10;
 var max_speed = 5;
 var last_state = null;
 
+var scale = function(x) {
+  var m = x / 2;
+  return m + Math.floor((x - m) * SCALER);
+}
+
+
+
+/*
 var range2 = document.createElement("INPUT");
 range2.type = "range";
 range2.min = min_speed;
@@ -64,11 +72,15 @@ range2.oninput = function(){
 
 document.body.appendChild(range2);
 
+
+var addRange = function(
+
 var addButton = function(text, cmd) {
     var button = document.createElement("button");
     button.innerHTML = text;
     button.style.position = "absolute";
     button.style.top = 500;
+    var button_left = left_frame_width + scale(30);
     button.style.left = button_left;
     button.style.zindex = 2;
     button.style.width = "50px";
@@ -117,12 +129,42 @@ range1.oninput = function(){
     send_cmd(tick + ' S ' + this.value);
 }
 document.body.appendChild(range1);
+*/
 
 document.body.appendChild(canvas);
 
 var send_cmd = function(s) {
   dealer.send(s);
 };
+
+var resize = function() {
+  var min_w = 400;
+  var min_h = 400;
+  var max_w = 1200;
+  var max_h = 1200;
+  var min_cz = 15;
+  var max_cz = 30;
+  var dw = 200;
+  var dh = 200;
+  var w = Math.min(Math.max(window.innerWidth - dw, min_w), max_w);
+  var h = Math.min(Math.max(window.innerHeight - dh, min_h), max_h);
+  var pw = 1.0 * (w - min_w) / (max_w - min_w);
+  var ph = 1.0 * (h - min_h) / (max_h - min_h);
+  SCALER = Math.min(pw, ph);
+  cell_size = min_cz + Math.floor(SCALER * (max_cz - min_cz));
+
+  canvas.width = map_x * cell_size + scale(400);
+  canvas.height = map_y * cell_size;
+  left_frame_width = map_x * cell_size;
+}
+
+window.onresize = function(e) {
+  resize();
+}
+
+window.onload = function(e) {
+  resize();
+}
 
 
 function make_cursor(color) {
@@ -321,7 +363,7 @@ var draw_hp = function(bbox, states, font_color, player_color, fill_color, progr
     var y2 = bbox[3];
     var hp_ratio = states[0];
     var state_str = states[1];
-    var margin = 3;
+    var margin = scale(3);
     ctx.fillStyle = 'black';
     ctx.lineWidth = margin;
     ctx.beginPath();
@@ -335,6 +377,7 @@ var draw_hp = function(bbox, states, font_color, player_color, fill_color, progr
     if (progress && hp_ratio <= 0.2) color = 'red';
     ctx.fillStyle = color;
     ctx.fillRect(x1, y1, Math.floor((x2 - x1) * hp_ratio + 0.5), y2 - y1);
+    /*
     if (state_str) {
         ctx.beginPath();
         ctx.fillStyle = font_color;
@@ -342,6 +385,7 @@ var draw_hp = function(bbox, states, font_color, player_color, fill_color, progr
         ctx.fillText(state_str, x2 + 10, y1 + cell_size * 0.3);
         ctx.closePath();
     }
+    */
 }
 
 var onUnit = function(u, isSelected) {
@@ -349,7 +393,6 @@ var onUnit = function(u, isSelected) {
     var sprites = player_sprites[player_color];
     var p =  u.p;
     var last_p = u.last_p;
-    var ori = 0;
     var xy = convert_xy(p.x, p.y);
 
     var spec = sprites[unit_names_minirts[u.unit_type]];
@@ -367,12 +410,12 @@ var onUnit = function(u, isSelected) {
     var x1 = xy[0] - Math.floor(sw * 0.4);
     var y1 = xy[1] - sh / 2 - 10;
     var x2 = x1 + Math.floor(sw * 0.8);
-    var y2 = y1 + 5;
+    var y2 = y1 + scale(5);
     draw_hp([x1, y1, x2, y2], [hp_ratio, state_str], 'white', player_color, 'green', true);
     if (isSelected) {
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.rect(xy[0] - sw / 2 - 2, xy[1] - sh / 2 - 2, sw + 4, sh + 4);
+        ctx.rect(xy[0] - sw / 2 - scale(2), xy[1] - sh / 2 - scale(2), sw + scale(4), sh + scale(4));
         ctx.strokeStyle = player_color;
         ctx.stroke();
         ctx.closePath();
@@ -395,9 +438,11 @@ var onPlayersStats = function(players, game) {
     ctx.beginPath()
     ctx.fillStyle = "Black";
     ctx.font = "15px Arial";
-    ctx.fillText("TIME: " + game.tick, x1 + cell_size, y1 + cell_size / 2 + 5);
-    y1 += 20;
-    ctx.fillText(label, x1 + cell_size, y1 + cell_size / 2 + 5);
+    //ctx.fillText("TIME: " + game.tick, x1 + cell_size, y1 + cell_size / 2 + 5);
+    var t = "W: " + window.innerWidth + " H: " + window.innerHeight + " S: " + SCALER;
+    ctx.fillText(t, x1 + cell_size, y1 + cell_size / 2 + scale(5));
+    y1 += scale(25);
+    ctx.fillText(label, x1 + cell_size, y1 + cell_size / 2 + scale(5));
     ctx.closePath();
 }
 
@@ -417,8 +462,8 @@ var onPlayerSeenUnits = function(m) {
 var draw_state = function(u, game) {
     var player_color = player_colors[u.player_id];
     var sprites = player_sprites[player_colors[u.player_id]];
-    var x1 = left_frame_width + 20;
-    var y1 = 60;
+    var x1 = left_frame_width + scale(20);
+    var y1 = scale(60);
     var spec = sprites[unit_names_minirts[u.unit_type]];
     draw_sprites(spec, x1 + cell_size / 2, y1 + cell_size, null);
 
@@ -426,13 +471,13 @@ var draw_state = function(u, game) {
     var title = unit_names_minirts[u.unit_type] + ': ' + u.cmd.cmd + '[' + u.cmd.state + ']';
     ctx.fillStyle = "black";
     ctx.font = "10px Arial";
-    ctx.fillText(title, x1 + 1.5 * cell_size + 5, y1 + cell_size / 2 + 5, 300);
+    ctx.fillText(title, x1 + 1.5 * cell_size + scale(5), y1 + cell_size / 2 + scale(5), scale(300));
     ctx.closePath();
     var ratio = u.hp / u.max_hp;
     var label = "HP: " + u.hp + " / " + u.max_hp;
-    var x2 = x1 + 1.5 * cell_size + 5;
-    var y2 = y1 + cell_size / 2 + 20;
-    draw_hp([x2, y2, x2 + 100, y2 + 15], [ratio, label], 'black', player_color, 'green', true);
+    var x2 = x1 + 1.5 * cell_size + scale(5);
+    var y2 = y1 + cell_size / 2 + scale(20);
+    draw_hp([x2, y2, x2 + scale(100), y2 + scale(15)], [ratio, label], 'black', player_color, 'green', true);
     if (u.player_id != game.player_id) {
       return;
     }
@@ -446,8 +491,8 @@ var draw_state = function(u, game) {
             if (cd.last === 0) curr = cd.cd;
             ratio = curr / cd.cd;
             var label = cd.name.split("_")[1] + ": " + curr + " / " + cd.cd;
-            draw_hp([x3, y3, x3 + 100, y3 + 15], [ratio, label], 'black', player_color, 'magenta', false);
-            y3 += 20;
+            draw_hp([x3, y3, x3 + scale(100), y3 + scale(15)], [ratio, label], 'black', player_color, 'magenta', false);
+            y3 += scale(20);
         }
     }
 
@@ -469,10 +514,10 @@ var draw_state = function(u, game) {
     ctx.beginPath()
     ctx.fillStyle = "black";
     ctx.font = "12px Arial";
-    y3 += 20;
+    y3 += scale(20);
     ctx.fillText(title, x3, y3);
     ctx.closePath();
-    y3 += 40;
+    y3 += scale(40);
 
     for (var i in def.build_skills) {
         var skill = def.build_skills[i];
@@ -484,9 +529,9 @@ var draw_state = function(u, game) {
         var title = "[" + skill.hotkey + "]BUILD " + unit_name + " COST " + skill.price + " MINERALS";
         ctx.fillStyle = "black";
         ctx.font = "12px Arial";
-        ctx.fillText(title, x3 + cell_size + 10, y3 + cell_size / 2 + 3);
+        ctx.fillText(title, x3 + cell_size + scale(10), y3 + cell_size / 2 + scale(3));
         ctx.closePath();
-        y3 += cell_size + 10;
+        y3 += cell_size + scale(10);
     }
 }
 
@@ -724,16 +769,18 @@ var render = function (game) {
     ctx.font = "15px Arial";
     if (len > 1) {
         var label = len + " units";
-    	  ctx.fillText(label ,left_frame_width + 50, 200);
+    	  ctx.fillText(label ,left_frame_width + scale(50), scale(200));
     }
-    var label = "Current FPS is " + Math.floor(50 * Math.pow(1.3, speed));
-    ctx.fillText(label, left_frame_width + 50, 570);
+    //var label = "Current FPS is " + Math.floor((scale(50)) * Math.pow(1.3, speed));
+    //ctx.fillText(label, left_frame_width + scale(50), scale(370));
     if (game.replay_length) {
-        range1.value = 100 * game.tick / game.replay_length;
+        //range1.value = 100 * game.tick / game.replay_length;
     }
 
+    /*
     var label = "Current progress_percent is " + range1.value;
-    ctx.fillText(label, left_frame_width + 50, 670);
+    ctx.fillText(label, left_frame_width + 25 + scale(25), 330 + scale(340));
+    */
     ctx.closePath();
 };
 
