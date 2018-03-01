@@ -103,6 +103,7 @@ void _LuaUnitTemplate::Init() {
         "add_allowed_cmd", &UnitTemplate::AddAllowedCmd,
         "set_attack_multiplier", &UnitTemplate::SetAttackMultiplier,
         "add_cant_move_over", &UnitTemplate::AddCantMoveOver,
+        "set_build_from", &UnitTemplate::SetBuildFrom,
         "add_build_skill", &UnitTemplate::AddBuildSkill
     );
 }

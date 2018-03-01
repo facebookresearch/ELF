@@ -13,7 +13,7 @@ function __create_build_skill(unit_type, hotkey)
 end
 
 function __create_unit_template(cost, hp, defense, speed, att, att_r, vis_r,
-  cds, allowed_cmds, attr, attack_multiplier, cant_move_over, build_skills)
+  cds, allowed_cmds, attr, attack_multiplier, cant_move_over, build_from, build_skills)
 
   local up = UnitProperty.new()
   up:set_hp(hp)
@@ -49,6 +49,7 @@ function __create_unit_template(cost, hp, defense, speed, att, att_r, vis_r,
   for i = 1, #build_skills do
     ut:add_build_skill(build_skills[i])
   end
+  ut:set_build_from(build_from)
   return ut
 end
 
@@ -67,6 +68,7 @@ function rts_unit_factory.init_resource()
     --[[attr]]UnitAttr.ATTR_INVULNERABLE,
     --[[can_attack]]{},
     --[[cant_move_over]]{},
+    --[[build_from]]-1,
     --[[build_skills]]{}
   )
   return ut
@@ -100,6 +102,7 @@ function rts_unit_factory.init_worker()
     --[[attr]]UnitAttr.ATTR_NORMAL,
     --[[attack_multiplier]]attack_multiplier,
     --[[cant_move_over]]cant_move_over,
+    --[[build_from]]UnitType.BASE,
     --[[build_skills]]build_skills
   )
   return ut
@@ -135,6 +138,7 @@ function rts_unit_factory.init_soldier()
     --[[attr]]UnitAttr.ATTR_NORMAL,
     --[[attack_multiplier]]attack_multiplier,
     --[[cant_move_over]]cant_move_over,
+    --[[build_from]]UnitType.BARRACK,
     --[[build_skills]]build_skills
   )
   return ut
@@ -169,6 +173,7 @@ function rts_unit_factory.init_truck()
     --[[attr]]UnitAttr.ATTR_NORMAL,
     --[[attack_multiplier]]attack_multiplier,
     --[[cant_move_over]]cant_move_over,
+    --[[build_from]]UnitType.WORKSHOP,
     --[[build_skills]]build_skills
   )
   return ut
@@ -203,6 +208,7 @@ function rts_unit_factory.init_tank()
     --[[attr]]UnitAttr.ATTR_NORMAL,
     --[[attack_multiplier]]attack_multiplier,
     --[[cant_move_over]]cant_move_over,
+    --[[build_from]]UnitType.FACTORY,
     --[[build_skills]]build_skills
   )
   return ut
@@ -230,6 +236,7 @@ function rts_unit_factory.init_cannon()
     --[[attr]]UnitAttr.ATTR_NORMAL,
     --[[attack_multiplier]]attack_multiplier,
     --[[cant_move_over]]cant_move_over,
+    --[[build_from]]UnitType.HANGAR,
     --[[build_skills]]build_skills
   )
   return ut
@@ -259,6 +266,7 @@ function rts_unit_factory.init_flight()
     --[[attr]]UnitAttr.ATTR_NORMAL,
     --[[attack_multiplier]]attack_multiplier,
     --[[cant_move_over]]cant_move_over,
+    --[[build_from]]UnitType.HANGAR,
     --[[build_skills]]build_skills
   )
   return ut
@@ -285,6 +293,7 @@ function rts_unit_factory.init_barrack()
     --[[attr]]UnitAttr.ATTR_NORMAL,
     --[[attack_multiplier]]attack_multiplier,
     --[[cant_move_over]]cant_move_over,
+    --[[build_from]]UnitType.WORKER,
     --[[build_skills]]build_skills
   )
   return ut
@@ -310,6 +319,7 @@ function rts_unit_factory.init_factory()
     --[[attr]]UnitAttr.ATTR_NORMAL,
     --[[attack_multiplier]]attack_multiplier,
     --[[cant_move_over]]cant_move_over,
+    --[[build_from]]UnitType.WORKER,
     --[[build_skills]]build_skills
   )
   return ut
@@ -335,6 +345,7 @@ function rts_unit_factory.init_hangar()
     --[[attr]]UnitAttr.ATTR_NORMAL,
     --[[attack_multiplier]]attack_multiplier,
     --[[cant_move_over]]cant_move_over,
+    --[[build_from]]UnitType.WORKER,
     --[[build_skills]]build_skills
   )
   return ut
@@ -360,6 +371,7 @@ function rts_unit_factory.init_workshop()
     --[[attr]]UnitAttr.ATTR_NORMAL,
     --[[attack_multiplier]]attack_multiplier,
     --[[cant_move_over]]cant_move_over,
+    --[[build_from]]UnitType.WORKER,
     --[[build_skills]]build_skills
   )
   return ut
@@ -397,6 +409,7 @@ function rts_unit_factory.init_defense_tower()
     --[[attr]]UnitAttr.ATTR_NORMAL,
     --[[attack_multiplier]]attack_multiplier,
     --[[cant_move_over]]cant_move_over,
+    --[[build_from]]UnitType.WORKER,
     --[[build_skills]]build_skills
   )
   return ut
@@ -422,6 +435,7 @@ function rts_unit_factory.init_base()
     --[[attr]]UnitAttr.ATTR_NORMAL,
     --[[attack_multiplier]]attack_multiplier,
     --[[cant_move_over]]cant_move_over,
+    --[[build_from]]UnitType.WORKER,
     --[[build_skills]]build_skills
   )
   return ut
