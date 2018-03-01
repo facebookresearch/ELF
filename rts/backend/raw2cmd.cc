@@ -45,7 +45,8 @@ CmdInput attack_event(const Unit &u, char /*hotkey*/, const PointF& p, const Uni
 CmdInput gather_event(const Unit &u, char /*hotkey*/, const PointF& p, const UnitId &target_id, const GameEnv& env) {
     // Don't need to check hotkey since there is only one type of action.
     // cout << "In gather command [" << hotkey << "] @" << p << " target: " << target_id << endl;
-    UnitId base = env.FindClosestBase(u.GetPlayerId(), p);
+    float d;
+    UnitId base = env.FindClosestBase(u.GetPlayerId(), p, &d);
     return CmdInput(CmdInput::CI_GATHER, u.GetId(), p, target_id, base);
 }
 

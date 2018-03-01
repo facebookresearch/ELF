@@ -132,7 +132,7 @@ function rts_unit_factory.init_soldier()
     --[[speed]]0.05,
     --[[att]]7,
     --[[att_r]]2,
-    --[[vis_r]]3,
+    --[[vis_r]]5,
     --[[cds]]{0, 10, 0, 0},
     --[[allowed_cmds]]allowed_cmds,
     --[[attr]]UnitAttr.ATTR_NORMAL,

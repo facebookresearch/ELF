@@ -134,7 +134,7 @@ UnitId GameEnv::FindClosestBase(PlayerId player_id) const {
     return INVALID;
 }
 
-UnitId GameEnv::FindClosestBase(PlayerId player_id, const PointF& p) const {
+UnitId GameEnv::FindClosestBase(PlayerId player_id, const PointF& p, float* d) const {
     UnitId id = INVALID;
     float closest = 1e10;
     for (auto it = _units.begin(); it != _units.end(); ++it) {
@@ -147,6 +147,7 @@ UnitId GameEnv::FindClosestBase(PlayerId player_id, const PointF& p) const {
             }
         }
     }
+    *d = closest;
     return id;
 }
 
@@ -353,7 +354,7 @@ const Unit *GameEnv::PickIdleOrGather(const vector<const Unit *> units, const Cm
         if (cmd == nullptr) return u;
         if (cmd->type() == GATHER) return u;
 
-        using CmdGatherLua = CmdDurativeLuaT<UnitId, UnitId>; 
+        using CmdGatherLua = CmdDurativeLuaT<UnitId, UnitId>;
         const CmdGatherLua *cmd_lua = dynamic_cast<const CmdGatherLua *>(cmd);
         if (cmd_lua != nullptr && cmd_lua->name() == "gather") return u;
     }
