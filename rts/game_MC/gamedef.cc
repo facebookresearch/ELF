@@ -31,7 +31,7 @@ int GameDef::GetNumAction() {
 }
 
 bool GameDef::IsUnitTypeBuilding(UnitType t) const{
-    return (t == BASE) || (t == RESOURCE) || (t == BARRACK) || (t == FACTORY);
+    return (t == BASE) || (t == RESOURCE) || (t == BARRACK) || (t == FACTORY) || (t == HANGAR) || (t == WORKSHOP);;
 }
 
 bool GameDef::HasBase() const{ return true; }
@@ -70,7 +70,6 @@ void GameDef::Init() {
 
     _units[RESOURCE] = RTSUnitFactory::InitResource();
     _units[WORKER] = RTSUnitFactory::InitWorker();
-    _units[ENGINEER] = RTSUnitFactory::InitEngineer();
     _units[SOLDIER] = RTSUnitFactory::InitSoldier();
     _units[TRUCK] = RTSUnitFactory::InitTruck();
     _units[TANK] = RTSUnitFactory::InitTank();
