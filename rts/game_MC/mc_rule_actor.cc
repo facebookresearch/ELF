@@ -53,6 +53,17 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
     const auto& all_my_troops = _preload.AllMyTroops();
     const auto& enemy_attacking_economy = _preload.EnemyAttackingEconomy();
     const Player& player = env.GetPlayer(_player_id);
+    const float building_radius_check = 3.0;
+
+    // Make guard towers auto attack
+    int tower_r = gamedef.unit(GUARD_TOWER)._property._att_r;
+    for (const Unit *u : my_troops[GUARD_TOWER]) {
+        UnitId closest_id = env.FindClosestEnemy(_player_id, u->GetPointF(), tower_r);
+        if (closest_id != INVALID) {
+            store_cmd(u, _A(closest_id), assigned_cmds);
+        }
+    }
+
     // cout << "entering act by state" << endl << flush;
     if (state[STATE_GATHER]) {
         for (const Unit *u : my_troops[PEASANT]) {
@@ -75,10 +86,9 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
         }
     }
     //cout << "after gather" << endl << flush;
-    for (int build_state = (int)STATE_BUILD_PEASANT; build_state < (int)STATE_BUILD_TOWN_HALL; build_state++) {
-        if (state[build_state]) {
-            //cout << "in build state " << build_state << " " << (AIState)build_state << endl << flush;
-            UnitType& build_unit = _state_build_map[(AIState)build_state];
+    for (const auto& state_pair : _state_build_map) {
+        if (state[state_pair.first]) {
+            const UnitType& build_unit = state_pair.second;
             if (_preload.BuildIfAffordable(build_unit)) {
                 //cout << "building " << build_unit << endl << flush;
                 const UnitType& build_from = gamedef.unit(build_unit)._build_from;
@@ -95,7 +105,7 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
                     if (u != nullptr) {
                         const UnitTemplate& unit_def = gamedef.unit(u->GetUnitType());
                         PointF p;
-                        if (env.FindEmptyPlaceNearby(unit_def, _preload.BaseLoc(), 3, &p) && ! p.IsInvalid())
+                        if (env.FindEmptyPlaceNearby(unit_def, _preload.BaseLoc(), building_radius_check, &p) && ! p.IsInvalid())
                             store_cmd(u, _B(build_unit, p), assigned_cmds);
                     }
                 }
@@ -105,15 +115,18 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
     //cout << "after build" << endl << flush;
     if (state[STATE_BUILD_TOWN_HALL]) {
         if (_preload.BuildIfAffordable(TOWN_HALL)) {
-            for (const Unit* resource : enemy_troops[RESOURCE]) {
+            for (const Unit* resource : my_troops[RESOURCE]) {
                 // check if there is a unit around resource
                 PointF resource_loc = resource->GetPointF();
-                UnitId closest_id = env.FindClosestEnemy(2, resource_loc, 3);
-                if (closest_id == INVALID) {
+                float dist=1e10;
+                env.FindClosestBase(_player_id, resource_loc, &dist);
+                if (dist > building_radius_check + 1.0) {
+                    // no base close to this resource
                     const Unit *u = GameEnv::PickIdleOrGather(my_troops[PEASANT], *_receiver);
                     PointF p;
                     const UnitTemplate& unit_def = gamedef.unit(u->GetUnitType());
-                    if (env.FindEmptyPlaceNearby(unit_def, resource_loc, 3, &p) && ! p.IsInvalid())
+
+                    if (env.FindEmptyPlaceNearby(unit_def, resource_loc, building_radius_check, &p) && ! p.IsInvalid())
                         store_cmd(u, _B(TOWN_HALL, p), assigned_cmds);
                 }
             }
@@ -353,15 +366,15 @@ bool MCRuleActor::GetActSimpleState(vector<int>* state) {
         _state[STATE_BUILD_BARRACK] = 1;
     }
 
-    if (my_troops[BARRACK].size() >= 1 && _preload.Affordable(SWORDMAN)) {
-        _state[STATE_BUILD_SWORDMAN] = 1;
+    if (my_troops[BARRACK].size() >= 1 && _preload.Affordable(SPEARMAN)) {
+        _state[STATE_BUILD_SPEARMAN] = 1;
     }
 
-    if (my_troops[SWORDMAN].size() >= 1) {
+    if (my_troops[SPEARMAN].size() >= 1) {
         _state[STATE_SCOUT] = 1;
     }
 
-    if (my_troops[SWORDMAN].size() >= 5) {
+    if (my_troops[SPEARMAN].size() >= 5) {
         _state[STATE_ATTACK] = 1;
     }
     if (! enemy_troops_in_range.empty() || ! enemy_attacking_economy.empty()) {
