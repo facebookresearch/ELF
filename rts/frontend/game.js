@@ -606,12 +606,12 @@ var load_player_sprites = function(player) {
         "_select_scale" : 0.7
     });
     sprites["SPEARMAN"] = load_sprites({
-        "_file": "rts/" + player + "/engineer.png",
+        "_file": "rts/" + player + "/spearman.png",
         "_scale": 1.5,
         "_select_scale" : 1
     });
     sprites["CAVALRY"] = load_sprites({
-        "_file": "rts/" + player + "/tank.png",
+        "_file": "rts/" + player + "/cavalry.png",
         "_scale": 1.5,
         "_select_scale" : 1
     });
