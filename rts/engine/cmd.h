@@ -39,7 +39,7 @@
 typedef int CmdType;
 
 #define INVALID_CMD -1
-#define CMD_BASE 0
+#define CMD_TOWN_HALL 0
 #define CMD_DURATIVE 1
 #define CMD_IMMEDIATE 2
 #define CMD_DURATIVE_LUA 3
@@ -79,7 +79,7 @@ public:
     bool just_started() const { return _tick == _start_tick; }
 
     virtual std::unique_ptr<CmdBase> clone() const { return std::unique_ptr<CmdBase>(new CmdBase(*this)); }
-    virtual CmdType type() const { return CMD_BASE; }
+    virtual CmdType type() const { return CMD_TOWN_HALL; }
 
     virtual string PrintInfo() const {
         std::stringstream ss;
@@ -108,7 +108,7 @@ public:
 
     virtual ~CmdBase() { }
 
-    SERIALIZER_BASE(CmdBase, _tick, _start_tick, _id, _cmd_id);
+    SERIALIZER_TOWN_HALL(CmdBase, _tick, _start_tick, _id, _cmd_id);
     SERIALIZER_ANCHOR(CmdBase);
     UNIQUE_PTR_COMPARE(CmdBase);
 };

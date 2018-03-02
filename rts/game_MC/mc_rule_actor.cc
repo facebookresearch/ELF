@@ -25,7 +25,7 @@ bool MCRuleActor::ActByState2(const GameEnv &env, const vector<int>& state, stri
     return true;
 }
 const Unit* MCRuleActor::GetTargetUnit(const GameEnv &env, const vector<vector<const Unit*> > &enemy_troops, const Player& player){
-    const vector<UnitType> &attack_order = {BASE, DEFENSE_TOWER, FACTORY, BARRACK, HANGAR, WORKSHOP};
+    const vector<UnitType> &attack_order = {TOWN_HALL, GUARD_TOWER, BLACKSMITH, BARRACK, STABLES, WORKSHOP};
     for (const UnitType &target_type : attack_order) {
         const auto& target_units = enemy_troops[target_type];
         if (!target_units.empty()) {
@@ -55,7 +55,7 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
     const Player& player = env.GetPlayer(_player_id);
     // cout << "entering act by state" << endl << flush;
     if (state[STATE_GATHER]) {
-        for (const Unit *u : my_troops[WORKER]) {
+        for (const Unit *u : my_troops[PEASANT]) {
             if (IsIdle(*_receiver, *u)) {
                 // Gather!
                 float dist, closest_dist=1e10;
@@ -75,7 +75,7 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
         }
     }
     //cout << "after gather" << endl << flush;
-    for (int build_state = (int)STATE_BUILD_WORKER; build_state < (int)STATE_BUILD_BASE; build_state++) {
+    for (int build_state = (int)STATE_BUILD_PEASANT; build_state < (int)STATE_BUILD_TOWN_HALL; build_state++) {
         if (state[build_state]) {
             //cout << "in build state " << build_state << " " << (AIState)build_state << endl << flush;
             UnitType& build_unit = _state_build_map[(AIState)build_state];
@@ -91,7 +91,7 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
                     }
                 } else {
                     //cout << "build from worker" << endl << flush;
-                    const Unit *u = GameEnv::PickIdleOrGather(my_troops[WORKER], *_receiver);
+                    const Unit *u = GameEnv::PickIdleOrGather(my_troops[PEASANT], *_receiver);
                     if (u != nullptr) {
                         const UnitTemplate& unit_def = gamedef.unit(u->GetUnitType());
                         PointF p;
@@ -103,18 +103,18 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
         }
     }
     //cout << "after build" << endl << flush;
-    if (state[STATE_BUILD_BASE]) {
-        if (_preload.BuildIfAffordable(BASE)) {
+    if (state[STATE_BUILD_TOWN_HALL]) {
+        if (_preload.BuildIfAffordable(TOWN_HALL)) {
             for (const Unit* resource : enemy_troops[RESOURCE]) {
                 // check if there is a unit around resource
                 PointF resource_loc = resource->GetPointF();
                 UnitId closest_id = env.FindClosestEnemy(2, resource_loc, 3);
                 if (closest_id == INVALID) {
-                    const Unit *u = GameEnv::PickIdleOrGather(my_troops[WORKER], *_receiver);
+                    const Unit *u = GameEnv::PickIdleOrGather(my_troops[PEASANT], *_receiver);
                     PointF p;
                     const UnitTemplate& unit_def = gamedef.unit(u->GetUnitType());
                     if (env.FindEmptyPlaceNearby(unit_def, resource_loc, 3, &p) && ! p.IsInvalid())
-                        store_cmd(u, _B(BASE, p), assigned_cmds);
+                        store_cmd(u, _B(TOWN_HALL, p), assigned_cmds);
                 }
             }
         }
@@ -131,7 +131,7 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
             const Fog &f = player.GetFog(loc);
             if (!f.HasSeenTerrain()) {
                 // Send a unit to scout, in this order
-                const vector<UnitType> &scout_order = {FLIGHT, TRUCK, TANK, SOLDIER, CANNON, WORKER};
+                const vector<UnitType> &scout_order = {DRAGON, SPEARMAN, CAVALRY, SWORDMAN, ARCHER, PEASANT};
                 for (const UnitType &target_type : scout_order) {
                     const auto& target_units = my_troops[target_type];
                     if (!target_units.empty()) {
@@ -150,7 +150,7 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
             auto cmd = _A(target_unit->GetId());
             for (const Unit *u : all_my_troops) {
                 const CmdDurative *curr_cmd = GetCurrCmd(*_receiver, *u);
-                if (curr_cmd == nullptr && u->GetUnitType() != WORKER) {
+                if (curr_cmd == nullptr && u->GetUnitType() != PEASANT) {
                     store_cmd(u, cmd->clone(), assigned_cmds);
                 }
             }
@@ -162,7 +162,7 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
         auto cmd = _A(enemy_troops_in_range[0]->GetId());
         for (const Unit *u : all_my_troops) {
             const CmdDurative *curr_cmd = GetCurrCmd(*_receiver, *u);
-            if (curr_cmd == nullptr && u->GetUnitType() != WORKER) {
+            if (curr_cmd == nullptr && u->GetUnitType() != PEASANT) {
                 store_cmd(u, cmd->clone(), assigned_cmds);
             }
         }
@@ -200,13 +200,13 @@ bool MCRuleActor::ActByStateOld(const GameEnv &env, const vector<int>& state, st
     *state_string = "NOOP";
 
     // Build workers.
-    if (state[STATE_BUILD_WORKER]) {
+    if (state[STATE_BUILD_PEASANT]) {
         *state_string = "Build worker..NOOP";
         const Unit *base = _preload.Base();
         if (IsIdle(*_receiver, *base)) {
-            if (_preload.BuildIfAffordable(WORKER)) {
+            if (_preload.BuildIfAffordable(PEASANT)) {
                 *state_string = "Build worker..Success";
-                store_cmd(base, _B_CURR_LOC(WORKER), assigned_cmds);
+                store_cmd(base, _B_CURR_LOC(PEASANT), assigned_cmds);
             }
         }
     }
@@ -214,7 +214,7 @@ bool MCRuleActor::ActByStateOld(const GameEnv &env, const vector<int>& state, st
     const auto& my_troops = _preload.MyTroops();
 
     // Ask workers to gather.
-    for (const Unit *u : my_troops[WORKER]) {
+    for (const Unit *u : my_troops[PEASANT]) {
         if (IsIdle(*_receiver, *u)) {
             // Gather!
             store_cmd(u, _preload.GetGatherCmd(), assigned_cmds);
@@ -226,7 +226,7 @@ bool MCRuleActor::ActByStateOld(const GameEnv &env, const vector<int>& state, st
         *state_string = "Build barracks..NOOP";
         if (_preload.Affordable(BARRACK)) {
             // cout << "Building barracks!" << endl;
-            const Unit *u = GameEnv::PickIdleOrGather(my_troops[WORKER], *_receiver);
+            const Unit *u = GameEnv::PickIdleOrGather(my_troops[PEASANT], *_receiver);
             if (u != nullptr) {
                 CmdBPtr cmd = _preload.GetBuildBarracksCmd(env, *u);
                 if (cmd != nullptr) {
@@ -241,24 +241,24 @@ bool MCRuleActor::ActByStateOld(const GameEnv &env, const vector<int>& state, st
     // If we have barracks with resource, build troops.
     if (state[STATE_BUILD_MELEE_TROOP]) {
         *state_string = "Build Melee Troop..NOOP";
-        if (_preload.Affordable(TRUCK)) {
+        if (_preload.Affordable(SPEARMAN)) {
             const Unit *u = GameEnv::PickFirstIdle(my_troops[BARRACK], *_receiver);
             if (u != nullptr) {
                 *state_string = "Build Melee Troop..Success";
-                store_cmd(u, _B_CURR_LOC(TRUCK), assigned_cmds);
-                _preload.Build(TRUCK);
+                store_cmd(u, _B_CURR_LOC(SPEARMAN), assigned_cmds);
+                _preload.Build(SPEARMAN);
             }
         }
     }
 
     if (state[STATE_BUILD_RANGE_TROOP]) {
         *state_string = "Build Range Troop..NOOP";
-        if (_preload.Affordable(TANK)) {
+        if (_preload.Affordable(CAVALRY)) {
             const Unit *u = GameEnv::PickFirstIdle(my_troops[BARRACK], *_receiver);
             if (u != nullptr) {
                 *state_string = "Build Range Troop..Success";
-                store_cmd(u, _B_CURR_LOC(TANK), assigned_cmds);
-                _preload.Build(TANK);
+                store_cmd(u, _B_CURR_LOC(CAVALRY), assigned_cmds);
+                _preload.Build(CAVALRY);
             }
         }
     }
@@ -267,8 +267,8 @@ bool MCRuleActor::ActByStateOld(const GameEnv &env, const vector<int>& state, st
         *state_string = "Attack..Normal";
         // Then let's go and fight.
         auto cmd = _preload.GetAttackEnemyBaseCmd();
-        batch_store_cmds(my_troops[TRUCK], cmd, false, assigned_cmds);
-        batch_store_cmds(my_troops[TANK], cmd, false, assigned_cmds);
+        batch_store_cmds(my_troops[SPEARMAN], cmd, false, assigned_cmds);
+        batch_store_cmds(my_troops[CAVALRY], cmd, false, assigned_cmds);
     }
 
     const auto& enemy_troops = _preload.EnemyTroops();
@@ -279,22 +279,22 @@ bool MCRuleActor::ActByStateOld(const GameEnv &env, const vector<int>& state, st
     if (state[STATE_HIT_AND_RUN]) {
         *state_string = "Hit and run";
         // cout << "Enter hit and run procedure" << endl << flush;
-        if (enemy_troops[TRUCK].empty() && enemy_troops[TANK].empty() && ! enemy_troops[WORKER].empty()) {
+        if (enemy_troops[SPEARMAN].empty() && enemy_troops[CAVALRY].empty() && ! enemy_troops[PEASANT].empty()) {
             // cout << "Enemy only have worker" << endl << flush;
-            for (const Unit *u : my_troops[TANK]) {
-                hit_and_run(env, u, enemy_troops[WORKER], assigned_cmds);
+            for (const Unit *u : my_troops[CAVALRY]) {
+                hit_and_run(env, u, enemy_troops[PEASANT], assigned_cmds);
             }
         }
-        if (! enemy_troops[TRUCK].empty()) {
+        if (! enemy_troops[SPEARMAN].empty()) {
             // cout << "Enemy only have malee attacker" << endl << flush;
-            for (const Unit *u : my_troops[TANK]) {
-                hit_and_run(env, u, enemy_troops[TRUCK], assigned_cmds);
+            for (const Unit *u : my_troops[CAVALRY]) {
+                hit_and_run(env, u, enemy_troops[SPEARMAN], assigned_cmds);
             }
         }
-        if (! enemy_troops[TANK].empty()) {
-            auto cmd = _A(enemy_troops[TANK][0]->GetId());
-            batch_store_cmds(my_troops[TRUCK], cmd, false, assigned_cmds);
-            batch_store_cmds(my_troops[TANK], cmd, false, assigned_cmds);
+        if (! enemy_troops[CAVALRY].empty()) {
+            auto cmd = _A(enemy_troops[CAVALRY][0]->GetId());
+            batch_store_cmds(my_troops[SPEARMAN], cmd, false, assigned_cmds);
+            batch_store_cmds(my_troops[CAVALRY], cmd, false, assigned_cmds);
         }
     }
 
@@ -303,8 +303,8 @@ bool MCRuleActor::ActByStateOld(const GameEnv &env, const vector<int>& state, st
       if (! enemy_troops_in_range.empty()) {
         *state_string = "Attack enemy in range..Success";
         auto cmd = _A(enemy_troops_in_range[0]->GetId());
-        batch_store_cmds(my_troops[TRUCK], cmd, false, assigned_cmds);
-        batch_store_cmds(my_troops[TANK], cmd, false, assigned_cmds);
+        batch_store_cmds(my_troops[SPEARMAN], cmd, false, assigned_cmds);
+        batch_store_cmds(my_troops[CAVALRY], cmd, false, assigned_cmds);
       }
     }
 
@@ -345,23 +345,23 @@ bool MCRuleActor::GetActSimpleState(vector<int>* state) {
 
     _state[STATE_GATHER] = 1;
 
-    if (my_troops[WORKER].size() < 3 && _preload.Affordable(WORKER)) {
-        _state[STATE_BUILD_WORKER] = 1;
+    if (my_troops[PEASANT].size() < 3 && _preload.Affordable(PEASANT)) {
+        _state[STATE_BUILD_PEASANT] = 1;
     }
 
-    if (my_troops[WORKER].size() >= 3 && my_troops[BARRACK].size() + cnt_under_construction[BARRACK] < 1 && _preload.Affordable(BARRACK)) {
+    if (my_troops[PEASANT].size() >= 3 && my_troops[BARRACK].size() + cnt_under_construction[BARRACK] < 1 && _preload.Affordable(BARRACK)) {
         _state[STATE_BUILD_BARRACK] = 1;
     }
 
-    if (my_troops[BARRACK].size() >= 1 && _preload.Affordable(SOLDIER)) {
-        _state[STATE_BUILD_SOLDIER] = 1;
+    if (my_troops[BARRACK].size() >= 1 && _preload.Affordable(SWORDMAN)) {
+        _state[STATE_BUILD_SWORDMAN] = 1;
     }
 
-    if (my_troops[SOLDIER].size() >= 1) {
+    if (my_troops[SWORDMAN].size() >= 1) {
         _state[STATE_SCOUT] = 1;
     }
 
-    if (my_troops[SOLDIER].size() >= 5) {
+    if (my_troops[SWORDMAN].size() >= 5) {
         _state[STATE_ATTACK] = 1;
     }
     if (! enemy_troops_in_range.empty() || ! enemy_attacking_economy.empty()) {
@@ -380,19 +380,19 @@ bool MCRuleActor::GetActHitAndRunState(vector<int>* state) {
     const auto& enemy_troops_in_range = _preload.EnemyTroopsInRange();
     const auto& enemy_attacking_economy = _preload.EnemyAttackingEconomy();
 
-    if (my_troops[WORKER].size() < 3 && _preload.Affordable(WORKER)) {
-        _state[STATE_BUILD_WORKER] = 1;
+    if (my_troops[PEASANT].size() < 3 && _preload.Affordable(PEASANT)) {
+        _state[STATE_BUILD_PEASANT] = 1;
     }
-    if (my_troops[WORKER].size() >= 3 && my_troops[BARRACK].size() + cnt_under_construction[BARRACK] < 1 && _preload.Affordable(BARRACK)) {
+    if (my_troops[PEASANT].size() >= 3 && my_troops[BARRACK].size() + cnt_under_construction[BARRACK] < 1 && _preload.Affordable(BARRACK)) {
         _state[STATE_BUILD_BARRACK] = 1;
     }
-    if (my_troops[BARRACK].size() >= 1 && _preload.Affordable(TANK)) {
+    if (my_troops[BARRACK].size() >= 1 && _preload.Affordable(CAVALRY)) {
         _state[STATE_BUILD_RANGE_TROOP] = 1;
     }
-    int range_troop_size = my_troops[TANK].size();
+    int range_troop_size = my_troops[CAVALRY].size();
     if (range_troop_size >= 2) {
-        if (enemy_troops[TRUCK].empty() && enemy_troops[TANK].empty()
-          && enemy_troops[WORKER].empty()) {
+        if (enemy_troops[SPEARMAN].empty() && enemy_troops[CAVALRY].empty()
+          && enemy_troops[PEASANT].empty()) {
             _state[STATE_ATTACK] = 1;
         } else {
             _state[STATE_HIT_AND_RUN] = 1;

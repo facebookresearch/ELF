@@ -127,7 +127,7 @@ UnitId GameEnv::FindClosestBase(PlayerId player_id) const {
     // Find closest base. [TODO]: Not efficient here.
     for (auto it = _units.begin(); it != _units.end(); ++it) {
         const Unit *u = it->second.get();
-        if (u->GetUnitType() == BASE && u->GetPlayerId() == player_id) {
+        if (u->GetUnitType() == TOWN_HALL && u->GetPlayerId() == player_id) {
             return u->GetId();
         }
     }
@@ -139,7 +139,7 @@ UnitId GameEnv::FindClosestBase(PlayerId player_id, const PointF& p, float* d) c
     float closest = 1e10;
     for (auto it = _units.begin(); it != _units.end(); ++it) {
         const Unit *u = it->second.get();
-        if (u->GetUnitType() == BASE && u->GetPlayerId() == player_id) {
+        if (u->GetUnitType() == TOWN_HALL && u->GetPlayerId() == player_id) {
             float dist = PointF::L2Sqr(p, u->GetPointF());
             if (dist < closest) {
               closest = dist;

@@ -22,7 +22,23 @@ var left_frame_width = map_x * cell_size;
 var player_colors = ['blue', 'red', 'yellow']
 
 var terrains = ["GROUND", "SAND", "GRASS", "ROCK", "WATER", "FOG"];
-var unit_names_minirts = ["RESOURCE", "WORKER", "SOLDIER", "TRUCK", "TANK", "CANNON", "FLIGHT", "BARRACK", "FACTORY", "HANGAR", "WORKSHOP", "DEFENSE_TOWER", "BASE"];
+var unit_names_minirts = ["RESOURCE", "PEASANT", "SWORDMAN", "SPEARMAN", "CAVALRY", "ARCHER", "DRAGON", "CATAPULT", "BARRACK", "BLACKSMITH", "STABLES", "WORKSHOP", "GUARD_TOWER", "TOWN_HALL"];
+var unit_id = {
+  "RESOURCE": 0,
+  "PEASANT": 1,
+  "SWORDMAN": 2,
+  "SPEARMAN": 3,
+  "CAVALRY": 4,
+  "ARCHER": 5,
+  "DRAGON": 6,
+  "CATAPULT": 7,
+  "BARRACK": 8,
+  "BLACKSMITH": 9,
+  "STABLES": 10,
+  "WORKSHOP": 11,
+  "GUARD_TOWER": 12,
+  "TOWN_HALL": 13};
+
 var x_down = null;
 var y_down = null;
 var x_curr;
@@ -216,22 +232,29 @@ function are_unit_types_selected(types) {
 }
 
 function are_workers_selected() {
-    var worker_ty = [1];
+    var worker_ty = [unit_id["PEASANT"]];
     return are_unit_types_selected(worker_ty);
 }
 
 function are_units_selected() {
-    var unit_ty = [1, 2, 3, 4, 5, 6, 7];
+    var unit_ty = [
+      unit_id["PEASANT"],
+      unit_id["SWORDMAN"],
+      unit_id["SPEARMAN"],
+      unit_id["CAVALRY"],
+      unit_id["ARCHER"],
+      unit_id["DRAGON"],
+      unit_id["CATAPULT"]];
     return are_unit_types_selected(unit_ty);
 }
 
 function are_towers_selected() {
-    var tower_ty = [11];
+    var tower_ty = [unit_id["GUARD_TOWER"]];
     return are_unit_types_selected(tower_ty);
 }
 
 function get_unit_type(id) {
-    if (last_state === null) return false;
+    if (last_state === null) return -1;
     for (var i in last_state.units) {
         if (id === last_state.units[i].id) {
             return last_state.units[i].unit_type;
@@ -261,12 +284,18 @@ function is_build_cmd_allowed(key, types) {
 }
 
 function is_worker_cmd_allowed(key) {
-    var worker_types = [1, 2];
+    var worker_types = [unit_id["PEASANT"]];
+    console.log(worker_types);
     return is_build_cmd_allowed(key, worker_types);
 }
 
 function is_building_cmd_allowed(key) {
-    var building_types = [8, 9, 10, 11, 13];
+    var building_types = [
+      unit_id["BARRACK"],
+      unit_id["BLACKSMITH"],
+      unit_id["STABLES"],
+      unit_id["WORKSHOP"],
+      unit_id["TOWN_HALL"]];
     return is_build_cmd_allowed(key, building_types);
 }
 
@@ -566,38 +595,38 @@ var load_player_sprites = function(player) {
         "_scale": 1.2,
         "_select_scale" : 1
     });
-    sprites["WORKER"] = load_sprites({
+    sprites["PEASANT"] = load_sprites({
         "_file": "rts/" + player + "/worker.png",
         "_scale": 1.5,
         "_select_scale" : 0.7
     });
-    sprites["ENGINEER"] = load_sprites({
-        "_file": "rts/" + player + "/engineer.png",
-        "_scale": 1.5,
-        "_select_scale" : 0.7
-    });
-    sprites["SOLDIER"] = load_sprites({
+    sprites["SWORDMAN"] = load_sprites({
         "_file": "rts/" + player + "/soldier.png",
         "_scale": 1.5,
         "_select_scale" : 0.7
     });
-    sprites["TRUCK"] = load_sprites({
-        "_file": "rts/" + player + "/truck.png",
+    sprites["SPEARMAN"] = load_sprites({
+        "_file": "rts/" + player + "/engineer.png",
         "_scale": 1.5,
         "_select_scale" : 1
     });
-    sprites["TANK"] = load_sprites({
+    sprites["CAVALRY"] = load_sprites({
         "_file": "rts/" + player + "/tank.png",
         "_scale": 1.5,
         "_select_scale" : 1
     });
-    sprites["CANNON"] = load_sprites({
+    sprites["ARCHER"] = load_sprites({
         "_file": "rts/" + player + "/cannon.png",
         "_scale": 2,
         "_select_scale" : 1.3
     });
-    sprites["FLIGHT"] = load_sprites({
+    sprites["DRAGON"] = load_sprites({
         "_file": "rts/" + player + "/flight.png",
+        "_scale": 1.5,
+        "_select_scale" : 1
+    });
+    sprites["CATAPULT"] = load_sprites({
+        "_file": "rts/" + player + "/truck.png",
         "_scale": 1.5,
         "_select_scale" : 1
     });
@@ -607,12 +636,12 @@ var load_player_sprites = function(player) {
         "_select_scale" : 1.3
 
     });
-    sprites["FACTORY"] = load_sprites({
+    sprites["BLACKSMITH"] = load_sprites({
         "_file": "rts/" + player + "/factory.png",
         "_scale": 1.5,
         "_select_scale" : 1.3
     });
-    sprites["HANGAR"] = load_sprites({
+    sprites["STABLES"] = load_sprites({
         "_file": "rts/" + player + "/hangar.png",
         "_scale": 1.5,
         "_select_scale" : 1.3
@@ -622,12 +651,12 @@ var load_player_sprites = function(player) {
         "_scale": 1.5,
         "_select_scale" : 1.3
     });
-    sprites["DEFENSE_TOWER"] = load_sprites({
+    sprites["GUARD_TOWER"] = load_sprites({
         "_file": "rts/" + player + "/defense_tower.png",
         "_scale": 1.5,
         "_select_scale" : 1
     });
-    sprites["BASE"] = load_sprites({
+    sprites["TOWN_HALL"] = load_sprites({
         "_file": "rts/" + player + "/base.png",
         "_scale": 1.7,
         "_select_scale" : 1.4

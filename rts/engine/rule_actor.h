@@ -19,8 +19,8 @@
 #include <algorithm>
 
 custom_enum(AIState, STATE_START = 0,
-  STATE_BUILD_WORKER, STATE_BUILD_SOLDIER, STATE_BUILD_TRUCK, STATE_BUILD_TANK, STATE_BUILD_CANNON, STATE_BUILD_FLIGHT,
-  STATE_BUILD_BARRACK, STATE_BUILD_FACTORY, STATE_BUILD_HANGAR, STATE_BUILD_WORKSHOP, STATE_BUILD_DEFENSE_TOWER, STATE_BUILD_BASE,
+  STATE_BUILD_PEASANT, STATE_BUILD_SWORDMAN, STATE_BUILD_SPEARMAN, STATE_BUILD_CAVALRY, STATE_BUILD_ARCHER, STATE_BUILD_DRAGON,
+  STATE_BUILD_BARRACK, STATE_BUILD_BLACKSMITH, STATE_BUILD_STABLES, STATE_BUILD_WORKSHOP, STATE_BUILD_GUARD_TOWER, STATE_BUILD_TOWN_HALL,
   STATE_ATTACK, STATE_ATTACK_IN_RANGE, STATE_DEFEND, STATE_SCOUT, STATE_GATHER,
   /*legacy for now*/STATE_BUILD_MELEE_TROOP, STATE_BUILD_RANGE_TROOP, STATE_HIT_AND_RUN,
   NUM_AISTATE);
@@ -41,13 +41,13 @@ custom_enum(FlagState, FLAGSTATE_START = 0, FLAGSTATE_GET_FLAG, FLAGSTATE_ATTACK
 #define _B_CURR_LOC(build_type) CmdBPtr(new CmdDurativeLuaT<int, PointF>("build", { "build_type", "p" }, build_type, PointF()))
 
 // Region commands.
-// BUILD_WORKER: for all idle bases in this region, build a worker.
+// BUILD_PEASANT: for all idle bases in this region, build a worker.
 // BUILD_BARRACK: Pick an idle/gathering worker in this region and build a barrack.
 // BUILD_MELEE_TROOP: For all barracks in this region, build melee troops.
 // BUILD_RANGE_TROOP: For all barracks in this region, build range troops.
 // ATTACK:            For all troops (except for workers) in this region, attack the opponent base.
 // ATTACK_IN_RANGE:   For all troops (including workers) in this region, attack enemy in range.
-custom_enum(AIStateRegion, SR_NOCHANGE = 0, SR_BUILD_WORKER, SR_BUILD_BARRACK, SR_BUILD_MELEE_TROOP, SR_BUILD_RANGE_TROOP, SR_ATTACK, SR_ATTACK_IN_RANGE, NUM_SR);
+custom_enum(AIStateRegion, SR_NOCHANGE = 0, SR_BUILD_PEASANT, SR_BUILD_BARRACK, SR_BUILD_MELEE_TROOP, SR_BUILD_RANGE_TROOP, SR_ATTACK, SR_ATTACK_IN_RANGE, NUM_SR);
 
 // Region history.
 struct RegionHist {
@@ -65,7 +65,7 @@ struct RegionHist {
 // Class to preload information from game environment for future use.
 class Preload {
 public:
-    enum Result { NOT_READY = -1, OK = 0, NO_BASE, NO_RESOURCE };
+    enum Result { NOT_READY = -1, OK = 0, NO_TOWN_HALL, NO_RESOURCE };
 
 private:
     vector<vector<const Unit*> > _my_troops;

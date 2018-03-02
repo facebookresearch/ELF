@@ -23,8 +23,8 @@
 bool CmdTowerDefenseGameStart::run(GameEnv *env, CmdReceiver *receiver) {
     const PlayerId player_id = 0;
     const PlayerId enemy_id = 1;
-    _CREATE(TOWER_BASE, PointF(0, 0), player_id);
-    _CREATE(TOWER_BASE, PointF(19, 19), enemy_id);
+    _CREATE(TOWER_TOWN_HALL, PointF(0, 0), player_id);
+    _CREATE(TOWER_TOWN_HALL, PointF(19, 19), enemy_id);
     _CHANGE_RES(player_id, 100);
     env->GenerateTDMaze();
     return true;

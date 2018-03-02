@@ -36,7 +36,7 @@ function g_run_cmd(cmd_id, env)
 end
 
 unit_init_attributes = {
-    ["BASE"] = { 
+    ["TOWN_HALL"] = { 
          hp = 1000, 
          attack_range = 0, 
          defend = 2

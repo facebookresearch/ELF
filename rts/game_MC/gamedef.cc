@@ -31,7 +31,7 @@ int GameDef::GetNumAction() {
 }
 
 bool GameDef::IsUnitTypeBuilding(UnitType t) const{
-    return (t == BASE) || (t == RESOURCE) || (t == BARRACK) || (t == FACTORY) || (t == HANGAR) || (t == WORKSHOP);;
+    return (t == TOWN_HALL) || (t == RESOURCE) || (t == BARRACK) || (t == BLACKSMITH) || (t == STABLES) || (t == WORKSHOP);;
 }
 
 bool GameDef::HasBase() const{ return true; }
@@ -69,18 +69,19 @@ void GameDef::Init() {
     _units.assign(GetNumUnitType(), UnitTemplate());
 
     _units[RESOURCE] = RTSUnitFactory::InitResource();
-    _units[WORKER] = RTSUnitFactory::InitWorker();
-    _units[SOLDIER] = RTSUnitFactory::InitSoldier();
-    _units[TRUCK] = RTSUnitFactory::InitTruck();
-    _units[TANK] = RTSUnitFactory::InitTank();
-    _units[CANNON] = RTSUnitFactory::InitCannon();
-    _units[FLIGHT] = RTSUnitFactory::InitFlight();
+    _units[PEASANT] = RTSUnitFactory::InitPeasant();
+    _units[SWORDMAN] = RTSUnitFactory::InitSwordman();
+    _units[SPEARMAN] = RTSUnitFactory::InitSpearman();
+    _units[CAVALRY] = RTSUnitFactory::InitCavalry();
+    _units[ARCHER] = RTSUnitFactory::InitArcher();
+    _units[DRAGON] = RTSUnitFactory::InitDragon();
+    _units[CATAPULT] = RTSUnitFactory::InitCatapult();
     _units[BARRACK] = RTSUnitFactory::InitBarrack();
-    _units[FACTORY] = RTSUnitFactory::InitFactory();
-    _units[HANGAR] = RTSUnitFactory::InitHangar();
+    _units[BLACKSMITH] = RTSUnitFactory::InitBlacksmith();
+    _units[STABLES] = RTSUnitFactory::InitStables();
     _units[WORKSHOP] = RTSUnitFactory::InitWorkshop();
-    _units[DEFENSE_TOWER] = RTSUnitFactory::InitDefenseTower();
-    _units[BASE] = RTSUnitFactory::InitBase();
+    _units[GUARD_TOWER] = RTSUnitFactory::InitGuardTower();
+    _units[TOWN_HALL] = RTSUnitFactory::InitTownHall();
 }
 
 vector<pair<CmdBPtr, int> > GameDef::GetInitCmds(const RTSGameOptions& options) const{
@@ -92,7 +93,7 @@ vector<pair<CmdBPtr, int> > GameDef::GetInitCmds(const RTSGameOptions& options) 
 }
 
 PlayerId GameDef::CheckWinner(const GameEnv& env, bool /*exceeds_max_tick*/) const {
-    return env.CheckBase(BASE);
+    return env.CheckBase(TOWN_HALL);
 }
 
 void GameDef::CmdOnDeadUnitImpl(GameEnv* env, CmdReceiver* receiver, UnitId /*_id*/, UnitId _target) const{
