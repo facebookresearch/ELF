@@ -43,7 +43,7 @@ void AIBase::save_structured_state(const GameEnv &env, Data *data) const {
         int y = int(u.GetPointF().y);
         _F(1, x, y) = 1.0;
         UnitType t = u.GetUnitType();
-        if ((u.GetPlayerId() == 0) && t == TOWER_TOWN_HALL) {
+        if ((u.GetPlayerId() == 0) && t == TOWER_BASE) {
             game->base_hp_level = u.GetProperty()._hp / (u.GetProperty()._max_hp + 1e-6);
         }
         ++ unit_iter;

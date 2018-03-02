@@ -26,7 +26,7 @@ int GameDef::GetNumAction() {
 }
 
 bool GameDef::IsUnitTypeBuilding(UnitType t) const{
-    return t == TOWER_TOWN_HALL;
+    return t == TOWER_BASE;
 }
 
 bool GameDef::HasBase() const{return false; }
@@ -56,7 +56,7 @@ void GameDef::GlobalInit() {
 
 void GameDef::Init() {
     _units.assign(GetNumUnitType(), UnitTemplate());
-    _units[TOWER_TOWN_HALL] = _C(0, 100, 0, 0.0, 9999, 1, 9999, {0, 0, 0, 0}, vector<CmdType>{ATTACK, BUILD_TOWER, TOWER_DEFENSE_WAVE_START});
+    _units[TOWER_BASE] = _C(0, 100, 0, 0.0, 9999, 1, 9999, {0, 0, 0, 0}, vector<CmdType>{ATTACK, BUILD_TOWER, TOWER_DEFENSE_WAVE_START});
     _units[TOWER] = _C(50, 100, 0, 0.0, 50, 3, 5, {0, 15, 0, 0}, vector<CmdType>{ATTACK}, ATTR_INVULNERABLE);
     _units[TOWER_ATTACKER] = _C(0, 50, 0, 0.1, 10, 1, 5, {0, 100, 0, 0}, vector<CmdType>{MOVE, ATTACK});
 }
@@ -69,7 +69,7 @@ vector<pair<CmdBPtr, int> > GameDef::GetInitCmds(const RTSGameOptions&) const{
 
 PlayerId GameDef::CheckWinner(const GameEnv& env, bool exceeds_max_tick) const{
     if (exceeds_max_tick) return 0;
-    return env.CheckBase(TOWER_TOWN_HALL);
+    return env.CheckBase(TOWER_BASE);
 }
 
 void GameDef::CmdOnDeadUnitImpl(GameEnv* env, CmdReceiver* receiver, UnitId _id, UnitId _target) const{

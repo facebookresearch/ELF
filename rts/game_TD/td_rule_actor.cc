@@ -13,10 +13,10 @@ bool TDRuleActor::TowerDefenseActByState(const GameEnv &env, int state, Assigned
     const auto &enemy_troops = _preload.EnemyTroops();
     const auto &my_troops = _preload.MyTroops();
     int tower_price = env.GetGameDef().unit(TOWER).GetUnitCost();
-    if (my_troops[TOWER_TOWN_HALL].empty()) {
+    if (my_troops[TOWER_BASE].empty()) {
         return false;
     }
-    const Unit *base = my_troops[TOWER_TOWN_HALL][0];
+    const Unit *base = my_troops[TOWER_BASE][0];
     if (_preload.Resource() >= tower_price) {
         int x = state / 20;
         int y = state % 20;
@@ -38,10 +38,10 @@ bool TDRuleActor::ActTowerDefenseSimple(const GameEnv &env, AssignedCmds *assign
     const auto &enemy_troops = _preload.EnemyTroops();
     const auto &my_troops = _preload.MyTroops();
     int tower_price = env.GetGameDef().unit(TOWER).GetUnitCost();
-    if (my_troops[TOWER_TOWN_HALL].empty()) {
+    if (my_troops[TOWER_BASE].empty()) {
         return false;
     }
-    const Unit *base = my_troops[TOWER_TOWN_HALL][0];
+    const Unit *base = my_troops[TOWER_BASE][0];
     if (_preload.Resource() >= tower_price) {
         PointF p;
         if (env.FindBuildPlaceNearby(PointF(9, 9), 2, &p) && ! p.IsInvalid()) {
@@ -64,17 +64,17 @@ bool TDRuleActor::ActTowerDefenseBuiltIn(const GameEnv&, AssignedCmds *assigned_
     const auto &enemy_troops = _preload.EnemyTroops();
     const auto &my_troops = _preload.MyTroops();
 
-    if (my_troops[TOWER_TOWN_HALL].empty()){
+    if (my_troops[TOWER_BASE].empty()){
         return false;
     }
-    const Unit *base = my_troops[TOWER_TOWN_HALL][0];
+    const Unit *base = my_troops[TOWER_BASE][0];
     const int ticks_per_wave = 200;
     int tick = _receiver->GetTick();
     if (tick % ticks_per_wave == 0) {
         store_cmd(base, CmdIPtr(new CmdTowerDefenseWaveStart(INVALID, int(tick / ticks_per_wave))), assigned_cmds);
     }
-    if (! enemy_troops[TOWER_TOWN_HALL].empty()) {
-        UnitId base_id = enemy_troops[TOWER_TOWN_HALL][0]->GetId();
+    if (! enemy_troops[TOWER_BASE].empty()) {
+        UnitId base_id = enemy_troops[TOWER_BASE][0]->GetId();
         for (const Unit *u : my_troops[TOWER_ATTACKER]) {
             store_cmd(u, _A(base_id), assigned_cmds);
         }
