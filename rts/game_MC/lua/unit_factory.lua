@@ -294,7 +294,7 @@ function rts_unit_factory.init_catapult()
     --[[defense]]2,
     --[[speed]]0.2,
     --[[att]]8,
-    --[[att_r]]3,
+    --[[att_r]]7,
     --[[vis_r]]6,
     --[[cds]]{0, 20, 0, 0},
     --[[allowed_cmds]]allowed_cmds,
