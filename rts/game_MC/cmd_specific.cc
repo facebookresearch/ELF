@@ -15,35 +15,24 @@
 #include "engine/cmd.gen.h"
 #include "engine/cmd_specific.gen.h"
 #include "cmd_specific.gen.h"
+#include "lua/cpp_interface.h"
 
 bool CmdGenerateMap::run(GameEnv *env, CmdReceiver*) {
-    return env->GenerateMap(_num_obstacles, _init_resource) ? true : false;
+    RTSMapGenerator::Generate(env->GetMap(), env->GetNumOfPlayers(), _seed);
+    // create fog for each player
+    for (int player_id = 0; player_id < env->GetNumOfPlayers(); ++player_id) {
+        env->GetPlayer(player_id).CreateFog();
+    }
+
+    return true;
 }
 
 #define _CREATE(...) receiver->SendCmd(CmdIPtr(new CmdCreate(INVALID, __VA_ARGS__)))
 #define _CHANGE_RES(...) receiver->SendCmd(CmdIPtr(new CmdChangePlayerResource(INVALID, __VA_ARGS__)))
 
 
-bool CmdGameStartSpecific::run(GameEnv*, CmdReceiver* receiver) {
-    const PlayerId player_id = 0;
-    const PlayerId enemy_id = 1;
-    _CREATE(RESOURCE, PointF(2, 1), player_id);
-    _CREATE(WORKER, PointF(4, 4), player_id);
-    _CREATE(WORKER, PointF(5, 5), player_id);
-    _CREATE(WORKER, PointF(6, 7), player_id);
-    //_CREATE(RANGE_ATTACKER, PointF(15, 18), player_id);
-    _CREATE(BASE, PointF(7, 2), player_id);
-    //_CREATE(BARRACKS, PointF(8, 5), player_id);
-    _CHANGE_RES(player_id, 100);
-
-    _CREATE(BASE, PointF(18, 16), enemy_id);
-    //_CREATE(WORKER, PointF(17, 15), enemy_id);
-    //_CREATE(WORKER, PointF(18, 15), enemy_id);
-    //_CREATE(WORKER, PointF(19, 16), enemy_id);
-    _CREATE(RESOURCE, PointF(14, 18), enemy_id);
-    //_CREATE(RANGE_ATTACKER, PointF(12, 11), enemy_id);
-    _CHANGE_RES(enemy_id, 100);
-
+bool CmdGameStartSpecific::run(GameEnv* env, CmdReceiver* receiver) {
+    RTSUnitGenerator::Generate(&env->GetMap(), env->GetNumOfPlayers(), 0, receiver);
     return true;
 }
 
@@ -54,15 +43,15 @@ bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
     bool shuffle_lr = (lr_seed == 0);
     bool shuffle_ud = (ud_seed == 0);
     auto shuffle_loc = [&] (PointF p, bool b1, bool b2) -> PointF {
-        int x = b1 ? 19 - p.x : p.x;
-        int y = b2 ? 19 - p.y : p.y;
+        int x = b1 ? env->GetMap().GetXSize() - 1 - p.x : p.x;
+        int y = b2 ? env->GetMap().GetYSize() - 1 - p.y : p.y;
         return PointF(x, y);
     };
 
     receiver->GetGameStats().PickBase(lr_seed * 2 + ud_seed);
     for (const auto &info : env->GetMap().GetPlayerMapInfo()) {
         PlayerId id = info.player_id;
-        _CREATE(BASE, shuffle_loc(PointF(info.base_coord), shuffle_lr, shuffle_ud), id);
+        _CREATE(TOWN_HALL, shuffle_loc(PointF(info.base_coord), shuffle_lr, shuffle_ud), id);
         _CREATE(RESOURCE, shuffle_loc(PointF(info.resource_coord), shuffle_lr, shuffle_ud), id);
         _CHANGE_RES(id, info.initial_resource);
         //base_locs[id] = PointF(info.base_coord);
@@ -85,15 +74,15 @@ bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
         // Generate workers (up to three).
         for (int i = 0; i < 3; i++) {
             if (f(10) >= 5) {
-                _CREATE(WORKER, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
+                _CREATE(PEASANT, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
             }
         }
         if (f(10) >= 8)
-            _CREATE(BARRACKS, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
+            _CREATE(BARRACK, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
         if (f(10) >= 5)
-            _CREATE(MELEE_ATTACKER, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
+            _CREATE(SPEARMAN, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
         if (f(10) >= 5)
-            _CREATE(RANGE_ATTACKER, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
+            _CREATE(CAVALRY, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
     }
     return true;
 }

@@ -39,12 +39,13 @@ using RTSGame = elf::GameBaseT<RTSStateExtend, AI, Replayer>;
 
 bool add_players(const string &args, int frame_skip, RTSGame *game) {
     //bool mcts = false;
+    int port = 8000;
     for (const auto& player : split(args, ',')) {
         cout << "Dealing with player = " << player << endl;
         if (player.find("tcp") == 0) {
             vector<string> params = split(player, '=');
             // int tick_start = (params.size() == 1 ? 0 : std::stoi(params[1]));
-            game->AddBot(new TCPAI("tcpai", 8000), 1);
+            game->AddBot(new TCPAI("tcpai", port++), 1);
             game->GetState().AppendPlayer("tcpai");
         } else if (player.find("mcts") == 0) {
             vector<string> params = split(player, '=');
@@ -70,7 +71,7 @@ bool add_players(const string &args, int frame_skip, RTSGame *game) {
             vector<string> params = split(player, '=');
             int tick_start = (params.size() >= 2 ? 0 : std::stoi(params[1]));
             string replay_name = (params.size() >= 3 ? params[2] : "");
-            game->AddSpectator(new TCPSpectator(replay_name, tick_start, 8000));
+            game->AddSpectator(new TCPSpectator(replay_name, tick_start, port++));
         } else if (player == "dummy") {
             game->GetState().AppendPlayer("dummy");
         }
@@ -142,6 +143,14 @@ RTSGameOptions GetOptions(const Parser &parser) {
 RTSGameOptions ai_vs_human(const Parser &parser, string *players) {
     RTSGameOptions options = GetOptions(parser);
     *players = "tcp,simple";
+    options.main_loop_quota = 40;
+
+    return options;
+}
+
+RTSGameOptions human_vs_human(const Parser &parser, string *players) {
+    RTSGameOptions options = GetOptions(parser);
+    *players = "tcp,tcp";
     options.main_loop_quota = 40;
 
     return options;
@@ -344,6 +353,7 @@ int main(int argc, char *argv[]) {
         { "replay", replay },
         { "replay_cmd", replay_cmd },
         { "humanplay", ai_vs_human },
+        { "humanhuman", human_vs_human },
         { "multiple_selfplay", nullptr},
         //{ "replay_rollout", nullptr},
         //{ "replay_mcts", nullptr},

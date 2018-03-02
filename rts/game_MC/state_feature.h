@@ -102,7 +102,7 @@ public:
     enum FeatureType {
         AFFILIATION = 0,
         HP_RATIO,
-        BASE_HP_RATIO,
+        TOWN_HALL_HP_RATIO,
         HISTORY_DECAY,
         NUM_FEATURE
     };

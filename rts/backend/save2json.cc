@@ -73,11 +73,8 @@ void save2json::Save(const RTSMap& m, json *game) {
     json slots;
     for (int y = 0; y < m.GetYSize(); y ++) {
         for (int x = 0; x < m.GetXSize(); x ++) {
-           Loc loc = m.GetLoc(x, y, 0);
-           Terrain t = FOG;
-           if (m(loc).type == NORMAL) t = NORMAL;
-           else if (m(loc).type == IMPASSABLE) t = IMPASSABLE;
-           slots.push_back(t);
+           Loc loc = m.GetLoc(Coord(x, y));
+           slots.push_back(m(loc).type);
         }
     }
     rts_map["slots"] = slots;
@@ -90,19 +87,24 @@ void save2json::SavePlayerMap(const Player& player, json *game) {
     rts_map["width"] = m.GetXSize();
     rts_map["height"] = m.GetYSize();
     json slots;
+    json seen_terrain;
     for (int y = 0; y < m.GetYSize(); y ++) {
         for (int x = 0; x < m.GetXSize(); x ++) {
-            Loc loc = m.GetLoc(x, y, 0);
+            Loc loc = m.GetLoc(Coord(x, y, 0));
             const Fog &f = player.GetFog(loc);
 
             Terrain t = FOG;
             if (f.CanSeeTerrain()) {
-                if (m(loc).type == NORMAL) t = NORMAL;
-                else if (m(loc).type == IMPASSABLE) t = IMPASSABLE;
+                t = m(loc).type;
+                seen_terrain.push_back(false);
             } else {
                 // Add prev seen units.
                 for (const auto &u : f.seen_units()) {
                     Save(u, nullptr, &rts_map);
+                }
+                seen_terrain.push_back(f.HasSeenTerrain());
+                if (f.HasSeenTerrain()) {
+                    t = m(loc).type;
                 }
             }
 
@@ -110,7 +112,34 @@ void save2json::SavePlayerMap(const Player& player, json *game) {
         }
     }
     rts_map["slots"] = slots;
+    rts_map["seen_terrain"] = seen_terrain;
     (*game)["rts_map"] = rts_map;
+}
+
+void save2json::SaveGameDef(const GameDef& gamedef, json *game) {
+    json json_gd;
+    json u_def;
+    for (auto& ut : gamedef._units) {
+      json unit;
+      for (const auto& allowed_cmd : ut._allowed_cmds) {
+        json cmd;
+        cmd["id"] = allowed_cmd;
+        unit["allowed_cmds"].push_back(cmd);
+      }
+      for (const auto& mult : ut._attack_multiplier) {
+        unit["attack_multiplier"].push_back(mult);
+      }
+      for (const auto& build_skill : ut.GetBuildSkills()) {
+        json skill;
+        skill["unit_type"] = build_skill.GetUnitType();
+        skill["hotkey"] = build_skill.GetHotKey();
+        skill["price"] = gamedef.unit(build_skill.GetUnitType()).GetUnitCost();
+        unit["build_skills"].push_back(skill);
+      }
+      u_def.push_back(unit);
+    }
+    json_gd["units"] = u_def;
+    (*game)["gamedef"] = json_gd;
 }
 
 void save2json::SaveStats(const Player& player, json *game) {

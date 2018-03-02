@@ -55,8 +55,8 @@ bool CmdCaptureFlagGameStart::run(GameEnv *env, CmdReceiver* receiver) {
     };
     env->GenerateImpassable(_num_obstacles);
     _CREATE(FLAG, PointF(9.5, 9.5), dummy_id);
-    _CREATE(FLAG_BASE, PointF(1, 9.5), player_id);
-    _CREATE(FLAG_BASE, PointF(18, 9.5), enemy_id);
+    _CREATE(FLAG_TOWN_HALL, PointF(1, 9.5), player_id);
+    _CREATE(FLAG_TOWN_HALL, PointF(18, 9.5), enemy_id);
     for (PlayerId player_id = 0; player_id < 2; player_id++) {
         for (int i = 0; i < 5; i++) {
             _CREATE(FLAG_ATHLETE, gen_loc(player_id, i), player_id);

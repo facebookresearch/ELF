@@ -29,7 +29,7 @@ protected:
   UnitProperty _property;
 
 public:
-  Unit() : Unit(INVALID, INVALID, WORKER, PointF(), UnitProperty()) {
+  Unit() : Unit(INVALID, INVALID, PEASANT, PointF(), UnitProperty()) {
   }
 
   Unit(Tick tick, UnitId id, UnitType t, const PointF &p, const UnitProperty& property)

@@ -12,6 +12,9 @@
 #include "game_env.h"
 #include <initializer_list>
 
+#include "cmd.gen.h"
+#include "cmd_specific.gen.h"
+
 bool CmdReceiver::StartDurativeCmd(CmdDurative *cmd) {
     UnitId id = cmd->id();
     if (id == INVALID) return false;
@@ -198,3 +201,5 @@ void CmdReceiver::SetCmdDumper(const string& cmd_dumper_filename) {
     // Set the command dumper if there is any file specified.
     _cmd_dumper.reset(new ofstream(cmd_dumper_filename));
 }
+
+

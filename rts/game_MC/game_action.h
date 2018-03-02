@@ -30,4 +30,3 @@ protected:
     int _action;
     std::vector<CmdInput> _unit_cmds;
 };
-

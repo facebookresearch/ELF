@@ -80,6 +80,7 @@ void MCExtractor::extract(const RTSState &s, PlayerId player_id, bool respect_fo
     int myworker = 0;
     int mytroop = 0;
     int mybarrack = 0;
+    int myfactory = 0;
     float base_hp_level = 0.0;
 
     while (! unit_iter.end()) {
@@ -110,10 +111,11 @@ void MCExtractor::extract(const RTSState &s, PlayerId player_id, bool respect_fo
         total_hp_ratio += hp_level;
 
         if (self_unit) {
-            if (t == WORKER) myworker += 1;
-            else if (t == MELEE_ATTACKER || t == RANGE_ATTACKER) mytroop += 1;
-            else if (t == BARRACKS) mybarrack += 1;
-            else if (t == BASE) base_hp_level = hp_level;
+            if (t == PEASANT) myworker += 1;
+            else if (t == SPEARMAN || t == CAVALRY || t == DRAGON) mytroop += 1;
+            else if (t == BARRACK) mybarrack += 1;
+            else if (t == BLACKSMITH) myfactory += 1;
+            else if (t == TOWN_HALL) base_hp_level = hp_level;
        }
 
         ++ unit_iter;
@@ -123,7 +125,7 @@ void MCExtractor::extract(const RTSState &s, PlayerId player_id, bool respect_fo
     if (ext_ut_prev_seen != nullptr && ext_hist_bin_prev_seen != nullptr && usage_.type >= PREV_SEEN) {
         for (int x = 0; x < m.GetXSize(); ++x) {
             for (int y = 0; y < m.GetYSize(); ++y) {
-                Loc loc = m.GetLoc(x, y);
+                Loc loc = m.GetLoc(Coord(x, y));
                 const Fog &f = player.GetFog(loc);
                 if (usage_.type == ONLY_PREV_SEEN && f.CanSeeTerrain()) continue;
                 for (const auto &u : f.seen_units()) {
@@ -152,7 +154,7 @@ void MCExtractor::extract(const RTSState &s, PlayerId player_id, bool respect_fo
     std::fill(state + c, state + c + m.GetXSize() * m.GetYSize(), 1.0);
 
     if (usage_.type >= BUILD_HISTORY) {
-        const int kChBaseHpRatio = ext_feature->Get(MCExtractorInfo::BASE_HP_RATIO);
+        const int kChBaseHpRatio = ext_feature->Get(MCExtractorInfo::TOWN_HALL_HP_RATIO);
         const int c = _OFFSET(kChBaseHpRatio, 0, 0, m);
         std::fill(state + c, state + c + m.GetXSize() * m.GetYSize(), base_hp_level);
     }

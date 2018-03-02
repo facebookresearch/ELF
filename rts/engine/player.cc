@@ -34,6 +34,41 @@ static void UpdateValue(const Loc &p1, const Loc &p2, const T& value, map< pair<
     }
 }
 
+///////////// Fog ///////////////////
+const set<UnitType> Fog::kSavableUnitTypes = {
+    RESOURCE,
+    BARRACK,
+    BLACKSMITH,
+    STABLES,
+    WORKSHOP,
+    GUARD_TOWER,
+    TOWN_HALL
+};
+
+const set<Terrain> Fog::kSavableTerrainTypes = {
+    SOIL,
+    SAND,
+    GRASS,
+    ROCK,
+    WATER
+};
+
+
+void Fog::SetClear(Terrain terrain) {
+    _fog = 0;
+    _prev_seen_units.clear();
+    if (kSavableTerrainTypes.count(terrain) > 0) {
+        _has_seen_terrain = true;
+    }
+}
+
+void Fog::SaveUnit(const Unit& u) {
+    if (kSavableUnitTypes.count(u.GetUnitType()) > 0) {
+        _prev_seen_units.push_back(u);
+    }
+}
+
+
 ///////////// Player ///////////////////
 string Player::Draw() const {
     stringstream ss;
@@ -41,7 +76,7 @@ string Player::Draw() const {
     for (int y = 0; y < _map->GetYSize(); ++y) {
         for (int x = 0; x < _map->GetXSize(); ++x) {
             // Draw the map (only level 0)
-            Loc loc = _map->GetLoc(x, y, 0);
+            Loc loc = _map->GetLoc(Coord(x, y, 0));
             if ( _fogs[loc].CanSeeTerrain() ) {
                 ss << (*_map)(loc).type << " ";
             } else {
@@ -51,6 +86,10 @@ string Player::Draw() const {
         ss << endl;
     }
     return ss.str();
+}
+
+void Player::CreateFog() {
+    _fogs.assign(_map->GetPlaneSize(), Fog());
 }
 
 void Player::ComputeFOW(const Units &units) {
@@ -63,13 +102,18 @@ void Player::ComputeFOW(const Units &units) {
         f.MakeInvisible();
     }
 
+
     // First pass, get the fog region.
     set<Loc> clear_regions;
     for (auto it = units.begin(); it != units.end(); ++it) {
         const Unit *u = it->second.get();
+        // Hide resources
+        if (u->GetUnitType() == RESOURCE) {
+            continue;
+        }
         if (ExtractPlayerId(u->GetId()) == _player_id) {
             const int vis_r = u->GetProperty()._vis_r;
-            Loc l = _map->GetLoc(u->GetPointF());
+            Loc l = _map->GetLoc(u->GetPointF().ToCoord());
             for (const Loc &loc : _map->GetSight(l, vis_r)) {
                 clear_regions.insert(loc);
             }
@@ -78,7 +122,8 @@ void Player::ComputeFOW(const Units &units) {
 
     // Clear these fog unit.
     for (const Loc &l : clear_regions) {
-        _fogs[l].SetClear();
+        Terrain terrain = (*_map)(l).type;
+        _fogs[l].SetClear(terrain);
     }
 
     // Second pass, remember the units that was in FoW
@@ -87,7 +132,9 @@ void Player::ComputeFOW(const Units &units) {
         if (ExtractPlayerId(u->GetId()) != _player_id) {
             Loc l = _filter_with_fow(*u);
             // Add the unit info to the loc.
-            if (l != -1) _fogs[l].SaveUnit(*u);
+            if (l != -1) {
+                _fogs[l].SaveUnit(*u);
+            }
         }
     }
 }
@@ -95,7 +142,7 @@ void Player::ComputeFOW(const Units &units) {
 Loc Player::_filter_with_fow(const Unit& u) const {
     if (! _map->IsIn(u.GetPointF())) return -1;
     // [TODO]: Could we do better?
-    Loc l = _map->GetLoc(u.GetPointF());
+    Loc l = _map->GetLoc(u.GetPointF().ToCoord());
     return (_fogs[l].CanSeeUnit() ? l : -1);
 }
 
@@ -137,7 +184,7 @@ float Player::get_path_dist_heuristic(const Loc &p1, const Loc &p2) const {
     return dist;
 }
 
-bool Player::line_passable(UnitId id, const PointF &s, const PointF &t) const {
+bool Player::line_passable(const UnitTemplate& unit_def, UnitId id, const PointF &s, const PointF &t) const {
     const RTSMap &m = *_map;
 
     float dist = sqrt(PointF::L2Sqr(s, t));
@@ -147,8 +194,8 @@ bool Player::line_passable(UnitId id, const PointF &s, const PointF &t) const {
     PointF::Diff(t, s, &v);
     v /= dist;
 
-    Loc ls = m.GetLoc(s);
-    Loc lt = m.GetLoc(t);
+    Loc ls = m.GetLoc(s.ToCoord());
+    Loc lt = m.GetLoc(t.ToCoord());
 
     const float step = dist / n;
 
@@ -164,7 +211,8 @@ bool Player::line_passable(UnitId id, const PointF &s, const PointF &t) const {
         last_lx = lx;
 
         if (lx != ls && lx != lt) {
-            if (! m.CanPass(x, id)) {
+            bool seen_location = _fogs[lx].HasSeenTerrain();
+            if (! m.CanPass(x, id, seen_location, unit_def)) {
                 // cout << "(" << s << ") -> (" << t << ") line not passable due to (" << x << ")" << endl;
                 return false;
             }
@@ -175,13 +223,9 @@ bool Player::line_passable(UnitId id, const PointF &s, const PointF &t) const {
     return true;
 }
 
-/*
-bool Player::line_passable(UnitId id, const PointF &s, const PointF &t) const {
-    return _map->IsLinePassable(s, t);
-}
-*/
+bool Player::PathPlanning(Tick tick, UnitId id, const UnitTemplate& unit_def, const PointF &s, const PointF &t, int max_iteration,
+    bool verbose, Coord *first_block, float *dist) const {
 
-bool Player::PathPlanning(Tick tick, UnitId id, const PointF &s, const PointF &t, int max_iteration, bool verbose, Coord *first_block, float *dist) const {
     const RTSMap &m = *_map;
 
     Coord cs = s.ToCoord();
@@ -215,7 +259,7 @@ bool Player::PathPlanning(Tick tick, UnitId id, const PointF &s, const PointF &t
     }
 
     // Check if the two points are passable by a straight line. (Most common case).
-    if (line_passable(id, s, t)) {
+    if (line_passable(unit_def, id, s, t)) {
         _cache[make_pair(ls, lt)] = make_pair(tick, INVALID);
         return true;
     }
@@ -274,15 +318,17 @@ bool Player::PathPlanning(Tick tick, UnitId id, const PointF &s, const PointF &t
         for (size_t i = 0; i < sizeof(dx) / sizeof(int); ++i) {
             Coord next(c_curr.x + dx[i], c_curr.y + dy[i]);
             Loc l_next = m.GetLoc(next);
+            if (!m.IsIn(l_next)) continue;
 
             // If we already push that before, skip.
             if (c_from.find(l_next) != c_from.end()) continue;
 
             // if we met with impassable location and has not reached the target (lt), skip.
             if (l_next != lt) {
-               if (GetDistanceSquared(s, next) >= 4 && ! m.CanPass(next, id, false)) continue;
-               if (GetDistanceSquared(s, next) < 4 && ! m.CanPass(next, id)) continue;
-           }
+               bool seen_location = _fogs[l_next].HasSeenTerrain();
+               if (GetDistanceSquared(s, next) >= 4 && ! m.CanPass(next, id, seen_location, unit_def, false)) continue;
+               if (GetDistanceSquared(s, next) < 4 && ! m.CanPass(next, id, seen_location, unit_def)) continue;
+            }
 
             float h = get_path_dist_heuristic(l_next, lt);
             float next_dist = v.g + dists[i];
@@ -345,7 +391,7 @@ bool Player::PathPlanning(Tick tick, UnitId id, const PointF &s, const PointF &t
     // Starting from the end of path and check.
     for (size_t i = 0; i < traj.size(); i++) {
         Coord waypoint = m.GetCoord(traj[i]);
-        if (line_passable(id, s, PointF(waypoint.x, waypoint.y))) {
+        if (line_passable(unit_def, id, s, PointF(waypoint.x, waypoint.y))) {
             *first_block = waypoint;
             _cache[make_pair(ls, lt)] = make_pair(tick, traj[i]);
             return true;

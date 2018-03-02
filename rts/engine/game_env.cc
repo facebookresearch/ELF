@@ -9,6 +9,7 @@
 
 #include "game_env.h"
 #include "cmd.h"
+#include "cmd_specific.gen.h"
 
 GameEnv::GameEnv() {
     // Load the map.
@@ -126,11 +127,44 @@ UnitId GameEnv::FindClosestBase(PlayerId player_id) const {
     // Find closest base. [TODO]: Not efficient here.
     for (auto it = _units.begin(); it != _units.end(); ++it) {
         const Unit *u = it->second.get();
-        if ((u->GetUnitType() == BASE || u->GetUnitType() == FLAG_BASE) && u->GetPlayerId() == player_id) {
+        if (u->GetUnitType() == TOWN_HALL && u->GetPlayerId() == player_id) {
             return u->GetId();
         }
     }
     return INVALID;
+}
+
+UnitId GameEnv::FindClosestBase(PlayerId player_id, const PointF& p, float* d) const {
+    UnitId id = INVALID;
+    float closest = 1e10;
+    for (auto it = _units.begin(); it != _units.end(); ++it) {
+        const Unit *u = it->second.get();
+        if (u->GetUnitType() == TOWN_HALL && u->GetPlayerId() == player_id) {
+            float dist = PointF::L2Sqr(p, u->GetPointF());
+            if (dist < closest) {
+              closest = dist;
+              id = u->GetId();
+            }
+        }
+    }
+    *d = closest;
+    return id;
+}
+
+UnitId GameEnv::FindClosestEnemy(PlayerId player_id, const PointF& p, float max_radius) const {
+    UnitId id = INVALID;
+    float closest = 1e10;
+    for (auto it = _units.begin(); it != _units.end(); ++it) {
+        const Unit* u = it->second.get();
+        if (u->GetPlayerId() != player_id && u->GetUnitType() != RESOURCE) {
+            float dist = PointF::L2Sqr(p, u->GetPointF());
+            if (dist < max_radius * max_radius && dist < closest) {
+              closest = dist;
+              id = u->GetId();
+            }
+        }
+    }
+    return id;
 }
 
 PlayerId GameEnv::CheckBase(UnitType base_type) const{
@@ -150,7 +184,7 @@ PlayerId GameEnv::CheckBase(UnitType base_type) const{
     return last_player_has_base;
 }
 
-bool GameEnv::FindEmptyPlaceNearby(const PointF &p, int l1_radius, PointF *res_p) const {
+bool GameEnv::FindEmptyPlaceNearby(const UnitTemplate& unit_def, const PointF &p, int l1_radius, PointF *res_p) const {
     // Find an empty place by simple local grid search.
     const int margin = 2;
     const int cx = _map->GetXSize() / 2;
@@ -161,7 +195,7 @@ bool GameEnv::FindEmptyPlaceNearby(const PointF &p, int l1_radius, PointF *res_p
     for (int dx = -sx * l1_radius; dx != sx * l1_radius + sx; dx += sx) {
         for (int dy = -sy * l1_radius; dy != sy * l1_radius + sy; dy += sy) {
             PointF new_p(p.x + dx, p.y + dy);
-            if (_map->CanPass(new_p, INVALID) && _map->IsIn(new_p, margin)) {
+            if (_map->CanPass(new_p, INVALID, false, unit_def) && _map->IsIn(new_p, margin)) {
                 // It may not be a good strategy, though.
                 *res_p = new_p;
                 return true;
@@ -187,9 +221,10 @@ bool GameEnv::FindBuildPlaceNearby(const PointF &p, int l1_radius, PointF *res_p
 
 // given a set of units and a target point, a distance, find closest place to go to to maintain the distance.
 // can be used by hit and run or scout.
-bool GameEnv::FindClosestPlaceWithDistance(const PointF &p, int dist,
+bool GameEnv::FindClosestPlaceWithDistance(const Unit& u, const PointF &p, int dist,
   const vector<const Unit *>& units, PointF *res_p) const {
   const RTSMap &m = *_map;
+  const UnitTemplate& unit_def = _gamedef.unit(u.GetUnitType());
   vector<Loc> distances(m.GetXSize() * m.GetYSize());
   vector<Loc> current;
   vector<Loc> nextloc;
@@ -205,7 +240,7 @@ bool GameEnv::FindClosestPlaceWithDistance(const PointF &p, int dist,
           Coord c_curr = m.GetCoord(loc);
           for (size_t i = 0; i < sizeof(dx) / sizeof(int); ++i) {
               Coord next(c_curr.x + dx[i], c_curr.y + dy[i]);
-              if (_map->CanPass(next, INVALID) && _map->IsIn(next)) {
+              if (_map->CanPass(next, INVALID, false, unit_def) && _map->IsIn(next)) {
                   Loc l_next = m.GetLoc(next);
                   if (distances[l_next] == 0 || distances[l_next] > d) {
                     nextloc.push_back(l_next);
@@ -277,7 +312,7 @@ int GameEnv::GetPrevSeenCount(PlayerId player_id) const {
 
     for (int x = 0; x < _map->GetXSize(); ++x) {
         for (int y = 0; y < _map->GetYSize(); ++y) {
-            Loc loc = _map->GetLoc(x, y);
+            Loc loc = _map->GetLoc(Coord(x, y));
             const Fog &f = player.GetFog(loc);
             if (f.CanSeeTerrain()) continue;
             for (const Unit &u : f.seen_units()) {
@@ -309,6 +344,19 @@ const Unit *GameEnv::PickFirst(const vector<const Unit *> units, const CmdReceiv
     for (const auto *u : units) {
         const CmdDurative *cmd = receiver.GetUnitDurativeCmd(u->GetId());
         if ( (t == INVALID_CMD && cmd == nullptr) || (cmd != nullptr && cmd->type() == t)) return u;
+    }
+    return nullptr;
+}
+
+const Unit *GameEnv::PickIdleOrGather(const vector<const Unit *> units, const CmdReceiver &receiver) {
+    for (const auto *u : units) {
+        const CmdDurative *cmd = receiver.GetUnitDurativeCmd(u->GetId());
+        if (cmd == nullptr) return u;
+        if (cmd->type() == GATHER) return u;
+
+        using CmdGatherLua = CmdDurativeLuaT<UnitId, UnitId>;
+        const CmdGatherLua *cmd_lua = dynamic_cast<const CmdGatherLua *>(cmd);
+        if (cmd_lua != nullptr && cmd_lua->name() == "gather") return u;
     }
     return nullptr;
 }
