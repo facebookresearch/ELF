@@ -29,39 +29,45 @@ UnitTemplate RTSUnitFactory::InitResource() {
     return ret;
 }
 
-UnitTemplate RTSUnitFactory::InitWorker() {
+UnitTemplate RTSUnitFactory::InitPeasant() {
     UnitTemplate ret;
-    Invoke("rts_unit_factory", "init_worker", &ret);
+    Invoke("rts_unit_factory", "init_peasant", &ret);
     return ret;
 }
 
-UnitTemplate RTSUnitFactory::InitSoldier() {
+UnitTemplate RTSUnitFactory::InitSwordman() {
     UnitTemplate ret;
-    Invoke("rts_unit_factory", "init_soldier", &ret);
+    Invoke("rts_unit_factory", "init_swordman", &ret);
     return ret;
 }
 
-UnitTemplate RTSUnitFactory::InitTruck() {
+UnitTemplate RTSUnitFactory::InitSpearman() {
     UnitTemplate ret;
-    Invoke("rts_unit_factory", "init_truck", &ret);
+    Invoke("rts_unit_factory", "init_spearman", &ret);
     return ret;
 }
 
-UnitTemplate RTSUnitFactory::InitTank() {
+UnitTemplate RTSUnitFactory::InitCavalry() {
     UnitTemplate ret;
-    Invoke("rts_unit_factory", "init_tank", &ret);
+    Invoke("rts_unit_factory", "init_cavalry", &ret);
     return ret;
 }
 
-UnitTemplate RTSUnitFactory::InitFlight() {
+UnitTemplate RTSUnitFactory::InitDragon() {
     UnitTemplate ret;
-    Invoke("rts_unit_factory", "init_flight", &ret);
+    Invoke("rts_unit_factory", "init_dragon", &ret);
     return ret;
 }
 
-UnitTemplate RTSUnitFactory::InitCannon() {
+UnitTemplate RTSUnitFactory::InitArcher() {
     UnitTemplate ret;
-    Invoke("rts_unit_factory", "init_cannon", &ret);
+    Invoke("rts_unit_factory", "init_archer", &ret);
+    return ret;
+}
+
+UnitTemplate RTSUnitFactory::InitCatapult() {
+    UnitTemplate ret;
+    Invoke("rts_unit_factory", "init_catapult", &ret);
     return ret;
 }
 
@@ -71,15 +77,15 @@ UnitTemplate RTSUnitFactory::InitBarrack() {
     return ret;
 }
 
-UnitTemplate RTSUnitFactory::InitFactory() {
+UnitTemplate RTSUnitFactory::InitBlacksmith() {
     UnitTemplate ret;
-    Invoke("rts_unit_factory", "init_factory", &ret);
+    Invoke("rts_unit_factory", "init_blacksmith", &ret);
     return ret;
 }
 
-UnitTemplate RTSUnitFactory::InitHangar() {
+UnitTemplate RTSUnitFactory::InitStables() {
     UnitTemplate ret;
-    Invoke("rts_unit_factory", "init_hangar", &ret);
+    Invoke("rts_unit_factory", "init_stables", &ret);
     return ret;
 }
 
@@ -89,15 +95,15 @@ UnitTemplate RTSUnitFactory::InitWorkshop() {
     return ret;
 }
 
-UnitTemplate RTSUnitFactory::InitDefenseTower() {
+UnitTemplate RTSUnitFactory::InitGuardTower() {
     UnitTemplate ret;
-    Invoke("rts_unit_factory", "init_defense_tower", &ret);
+    Invoke("rts_unit_factory", "init_guard_tower", &ret);
     return ret;
 }
 
-UnitTemplate RTSUnitFactory::InitBase() {
+UnitTemplate RTSUnitFactory::InitTownHall() {
     UnitTemplate ret;
-    Invoke("rts_unit_factory", "init_base", &ret);
+    Invoke("rts_unit_factory", "init_town_hall", &ret);
     return ret;
 }
 

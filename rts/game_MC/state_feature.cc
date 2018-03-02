@@ -111,11 +111,11 @@ void MCExtractor::extract(const RTSState &s, PlayerId player_id, bool respect_fo
         total_hp_ratio += hp_level;
 
         if (self_unit) {
-            if (t == WORKER) myworker += 1;
-            else if (t == TRUCK || t == TANK || t == FLIGHT) mytroop += 1;
+            if (t == PEASANT) myworker += 1;
+            else if (t == SPEARMAN || t == CAVALRY || t == DRAGON) mytroop += 1;
             else if (t == BARRACK) mybarrack += 1;
-            else if (t == FACTORY) myfactory += 1;
-            else if (t == BASE) base_hp_level = hp_level;
+            else if (t == BLACKSMITH) myfactory += 1;
+            else if (t == TOWN_HALL) base_hp_level = hp_level;
        }
 
         ++ unit_iter;
@@ -154,7 +154,7 @@ void MCExtractor::extract(const RTSState &s, PlayerId player_id, bool respect_fo
     std::fill(state + c, state + c + m.GetXSize() * m.GetYSize(), 1.0);
 
     if (usage_.type >= BUILD_HISTORY) {
-        const int kChBaseHpRatio = ext_feature->Get(MCExtractorInfo::BASE_HP_RATIO);
+        const int kChBaseHpRatio = ext_feature->Get(MCExtractorInfo::TOWN_HALL_HP_RATIO);
         const int c = _OFFSET(kChBaseHpRatio, 0, 0, m);
         std::fill(state + c, state + c + m.GetXSize() * m.GetYSize(), base_hp_level);
     }

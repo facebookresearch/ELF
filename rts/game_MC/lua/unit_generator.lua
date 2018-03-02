@@ -11,18 +11,18 @@ end
 
 local unit_type_to_cell = {}
 unit_type_to_cell[UnitType.RESOURCE] = "X"
-unit_type_to_cell[UnitType.WORKER] = "W"
-unit_type_to_cell[UnitType.SOLDIER] = "S"
-unit_type_to_cell[UnitType.TRUCK] = "R"
-unit_type_to_cell[UnitType.TANK] = "T"
-unit_type_to_cell[UnitType.CANNON] = "C"
-unit_type_to_cell[UnitType.FLIGHT] = "F"
+unit_type_to_cell[UnitType.PEASANT] = "W"
+unit_type_to_cell[UnitType.SWORDMAN] = "S"
+unit_type_to_cell[UnitType.SPEARMAN] = "R"
+unit_type_to_cell[UnitType.CAVALRY] = "T"
+unit_type_to_cell[UnitType.ARCHER] = "C"
+unit_type_to_cell[UnitType.DRAGON] = "F"
 unit_type_to_cell[UnitType.BARRACK] = "A"
-unit_type_to_cell[UnitType.FACTORY] = "O"
-unit_type_to_cell[UnitType.HANGAR] = "H"
+unit_type_to_cell[UnitType.BLACKSMITH] = "O"
+unit_type_to_cell[UnitType.STABLES] = "H"
 unit_type_to_cell[UnitType.WORKSHOP] = "K"
-unit_type_to_cell[UnitType.DEFENSE_TOWER] = "D"
-unit_type_to_cell[UnitType.BASE] = "B"
+unit_type_to_cell[UnitType.GUARD_TOWER] = "D"
+unit_type_to_cell[UnitType.TOWN_HALL] = "B"
 
 
 function rts_unit_generator.generate_unit(proxy, parser, player_id, unit_type)

@@ -469,7 +469,7 @@ class no_such_obj_exception {
 
 };
 
-#define SERIALIZER_BASE(BaseTypeName, ...) \
+#define SERIALIZER_TOWN_HALL(BaseTypeName, ...) \
     virtual std::string _signature() const { return typeid(BaseTypeName).name(); } \
     virtual serializer::saver &Save(serializer::saver &oo) const { \
         serializer::Save(oo, __VA_ARGS__); \

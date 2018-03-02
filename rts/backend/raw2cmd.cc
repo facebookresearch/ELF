@@ -57,7 +57,7 @@ CmdInput build_event(const Unit &u, char hotkey, const PointF& p, const UnitId& 
 
     // don't need a target point for buildings
     PointF build_p;
-    if (t == WORKER) {
+    if (t == PEASANT) {
         if (p.IsInvalid()) {
             return CmdInput();
         }
@@ -81,7 +81,7 @@ void RawToCmd::setup_hotkeys() {
     add_hotkey("a", attack_event);
     add_hotkey("~m", move_event);
     add_hotkey("g", gather_event);
-    add_hotkey("brfhtscwe", build_event);
+    add_hotkey("hbslwtcadp", build_event);
 }
 
 RawMsgStatus RawToCmd::Process(Tick tick, const GameEnv &env, const string&s, vector<CmdBPtr> *cmds, vector<UICmd> *ui_cmds) {

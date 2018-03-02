@@ -38,11 +38,11 @@ static void UpdateValue(const Loc &p1, const Loc &p2, const T& value, map< pair<
 const set<UnitType> Fog::kSavableUnitTypes = {
     RESOURCE,
     BARRACK,
-    FACTORY,
-    HANGAR,
+    BLACKSMITH,
+    STABLES,
     WORKSHOP,
-    DEFENSE_TOWER,
-    BASE
+    GUARD_TOWER,
+    TOWN_HALL
 };
 
 const set<Terrain> Fog::kSavableTerrainTypes = {

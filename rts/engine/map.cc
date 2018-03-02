@@ -135,7 +135,7 @@ bool RTSMap::GenerateMap(const std::function<uint16_t(int)>& f, int nImpassable,
             info.resource_coord = Coord(x2, y2);
             info.initial_resource = init_resource;
             _infos.emplace_back(info);
-            // cout << "Player " << i << ": BASE: (" << x1 << ", " << y1 << ") RESOURCE: (" << x2 << ", " << y2 << ")" << endl;
+            // cout << "Player " << i << ": TOWN_HALL: (" << x1 << ", " << y1 << ") RESOURCE: (" << x2 << ", " << y2 << ")" << endl;
         }
     } while(! success);
 

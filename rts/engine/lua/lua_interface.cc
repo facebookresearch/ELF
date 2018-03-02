@@ -45,7 +45,7 @@ void _LuaTerrain::Init() {
 }
 
 void _LuaUnitType::Init() {
-    Register("UnitType", _UnitType2string, BASE, INVALID_UNITTYPE);
+    Register("UnitType", _UnitType2string, TOWN_HALL, INVALID_UNITTYPE);
 }
 
 void _LuaUnitAttr::Init() {

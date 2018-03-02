@@ -51,7 +51,7 @@ bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
     receiver->GetGameStats().PickBase(lr_seed * 2 + ud_seed);
     for (const auto &info : env->GetMap().GetPlayerMapInfo()) {
         PlayerId id = info.player_id;
-        _CREATE(BASE, shuffle_loc(PointF(info.base_coord), shuffle_lr, shuffle_ud), id);
+        _CREATE(TOWN_HALL, shuffle_loc(PointF(info.base_coord), shuffle_lr, shuffle_ud), id);
         _CREATE(RESOURCE, shuffle_loc(PointF(info.resource_coord), shuffle_lr, shuffle_ud), id);
         _CHANGE_RES(id, info.initial_resource);
         //base_locs[id] = PointF(info.base_coord);
@@ -74,15 +74,15 @@ bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
         // Generate workers (up to three).
         for (int i = 0; i < 3; i++) {
             if (f(10) >= 5) {
-                _CREATE(WORKER, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
+                _CREATE(PEASANT, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
             }
         }
         if (f(10) >= 8)
             _CREATE(BARRACK, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
         if (f(10) >= 5)
-            _CREATE(TRUCK, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
+            _CREATE(SPEARMAN, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
         if (f(10) >= 5)
-            _CREATE(TANK, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
+            _CREATE(CAVALRY, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
     }
     return true;
 }
