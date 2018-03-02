@@ -59,3 +59,15 @@ function rts_unit_generator.generate(proxy, num_players, seed)
   proxy:send_cmd_change_player_resource(0, 1500)
   proxy:send_cmd_change_player_resource(1, 100)
 end
+
+
+function rts_unit_generator.generate_random(proxy, num_players, seed)
+  proxy:send_cmd_create(UnitType.BASE, __make_p(7, 7), 0, 0)
+  proxy:send_cmd_create(UnitType.TANK, __make_p(5, 10), 0, 0)
+  proxy:send_cmd_create(UnitType.BASE, __make_p(33, 33), 1, 0)
+
+
+  -- change resources
+  proxy:send_cmd_change_player_resource(0, 200)
+  proxy:send_cmd_change_player_resource(1, 200)
+end

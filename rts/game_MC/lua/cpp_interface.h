@@ -12,12 +12,16 @@ struct RTSMapGenerator : public CppClassInterface<RTSMapGenerator> {
     static void Init();
 
     static void Generate(RTSMap& map, int num_players, int seed);
+
+    static void GenerateRandom(RTSMap& map, int num_players, int seed);
 };
 
 struct RTSUnitGenerator : public CppClassInterface<RTSUnitGenerator> {
     static void Init();
 
     static void Generate(RTSMap* map, int num_players, int seed, CmdReceiver* cmd_receiver);
+
+    static void GenerateRandom(RTSMap* map, int num_players, int seed, CmdReceiver* cmd_receiver);
 };
 
 struct RTSUnitFactory : public CppClassInterface<RTSUnitFactory> {
