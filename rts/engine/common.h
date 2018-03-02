@@ -31,7 +31,7 @@ const int MAX_GAME_LENGTH_EXCEEDED = -2;
 custom_enum(UnitType, INVALID_UNITTYPE = -1,
     /* Minirts unit types*/
     //RESOURCE = 0, WORKER, MELEE_ATTACKER, RANGE_ATTACKER, FLIGHT, BOMBER, BARRACKS, FACTORY, BASE, NUM_MINIRTS_UNITTYPE,
-    RESOURCE = 0, WORKER, ENGINEER, SOLDIER, TRUCK, TANK, CANNON, FLIGHT, BARRACK, FACTORY, HANGAR, WORKSHOP, DEFENSE_TOWER, BASE, NUM_MINIRTS_UNITTYPE,
+    RESOURCE = 0, WORKER, SOLDIER, TRUCK, TANK, CANNON, FLIGHT, BARRACK, FACTORY, HANGAR, WORKSHOP, DEFENSE_TOWER, BASE, NUM_MINIRTS_UNITTYPE,
     /* Capture the flag unit type */
     FLAG_BASE = 0, FLAG_ATHLETE, FLAG, NUM_FLAG_UNITTYPE,
     /* Tower defense unit type */
@@ -183,7 +183,7 @@ struct PointF {
         return dx * dx + dy * dy;
     }
 
-    string info() const { 
+    string info() const {
         return std::to_string(x) + ", " + std::to_string(y);
     }
 

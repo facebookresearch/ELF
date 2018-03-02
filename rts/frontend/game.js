@@ -22,7 +22,7 @@ var left_frame_width = map_x * cell_size;
 var player_colors = ['blue', 'red', 'yellow']
 
 var terrains = ["GROUND", "SAND", "GRASS", "ROCK", "WATER", "FOG"];
-var unit_names_minirts = ["RESOURCE", "WORKER", "ENGINEER", "SOLDIER", "TRUCK", "TANK", "CANNON", "FLIGHT", "BARRACK", "FACTORY", "HANGAR", "WORKSHOP", "DEFENSE_TOWER", "BASE"];
+var unit_names_minirts = ["RESOURCE", "WORKER", "SOLDIER", "TRUCK", "TANK", "CANNON", "FLIGHT", "BARRACK", "FACTORY", "HANGAR", "WORKSHOP", "DEFENSE_TOWER", "BASE"];
 var x_down = null;
 var y_down = null;
 var x_curr;

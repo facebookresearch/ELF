@@ -27,8 +27,6 @@ struct RTSUnitFactory : public CppClassInterface<RTSUnitFactory> {
 
     static UnitTemplate InitWorker();
 
-    static UnitTemplate InitEngineer();
-
     static UnitTemplate InitSoldier();
 
     static UnitTemplate InitTruck();

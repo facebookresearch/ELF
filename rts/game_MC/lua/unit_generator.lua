@@ -12,7 +12,6 @@ end
 local unit_type_to_cell = {}
 unit_type_to_cell[UnitType.RESOURCE] = "X"
 unit_type_to_cell[UnitType.WORKER] = "W"
-unit_type_to_cell[UnitType.ENGINEER] = "E"
 unit_type_to_cell[UnitType.SOLDIER] = "S"
 unit_type_to_cell[UnitType.TRUCK] = "R"
 unit_type_to_cell[UnitType.TANK] = "T"

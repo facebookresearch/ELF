@@ -35,12 +35,6 @@ UnitTemplate RTSUnitFactory::InitWorker() {
     return ret;
 }
 
-UnitTemplate RTSUnitFactory::InitEngineer() {
-    UnitTemplate ret;
-    Invoke("rts_unit_factory", "init_engineer", &ret);
-    return ret;
-}
-
 UnitTemplate RTSUnitFactory::InitSoldier() {
     UnitTemplate ret;
     Invoke("rts_unit_factory", "init_soldier", &ret);
