@@ -86,8 +86,8 @@ void GameDef::Init() {
 vector<pair<CmdBPtr, int> > GameDef::GetInitCmds(const RTSGameOptions& options) const{
       vector<pair<CmdBPtr, int> > init_cmds;
       init_cmds.push_back(make_pair(CmdBPtr(new CmdGenerateMap(INVALID, options.seed)), 1));
-      init_cmds.push_back(make_pair(CmdBPtr(new CmdGameStartSpecific(INVALID)), 2));
-      //init_cmds.push_back(make_pair(CmdBPtr(new CmdGenerateUnit(INVALID, options.seed)), 2));
+      //init_cmds.push_back(make_pair(CmdBPtr(new CmdGameStartSpecific(INVALID)), 2));
+      init_cmds.push_back(make_pair(CmdBPtr(new CmdGenerateUnit(INVALID, options.seed)), 2));
       return init_cmds;
 }
 
@@ -97,6 +97,4 @@ PlayerId GameDef::CheckWinner(const GameEnv& env, bool /*exceeds_max_tick*/) con
 
 void GameDef::CmdOnDeadUnitImpl(GameEnv* env, CmdReceiver* receiver, UnitId /*_id*/, UnitId _target) const{
     Unit *target = env->GetUnit(_target);
-    if (target == nullptr) return;
-    receiver->SendCmd(CmdIPtr(new CmdRemove(_target)));
-}
+    if (target == nullptr) return; receiver->SendCmd(CmdIPtr(new CmdRemove(_target))); }

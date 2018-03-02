@@ -8,6 +8,10 @@ void RTSMapGenerator::Generate(RTSMap& map, int num_players, int seed) {
     Invoke<void>("rts_map_generator", "generate", map, num_players, seed);
 }
 
+void RTSMapGenerator::GenerateRandom(RTSMap& map, int num_players, int seed) {
+    Invoke<void>("rts_map_generator", "generate_random", map, num_players, seed);
+}
+
 
 void RTSUnitGenerator::Init() {
     init("unit_generator.lua");
@@ -18,6 +22,10 @@ void RTSUnitGenerator::Generate(RTSMap* map, int num_players, int seed, CmdRecei
     Invoke<void>("rts_unit_generator", "generate", proxy, num_players, seed);
 }
 
+void RTSUnitGenerator::GenerateRandom(RTSMap* map, int num_players, int seed, CmdReceiver* cmd_receiver) {
+    auto proxy = StateProxy{map, cmd_receiver};
+    Invoke<void>("rts_unit_generator", "generate_random", proxy, num_players, seed);
+}
 
 void RTSUnitFactory::Init() {
     init("unit_factory.lua");

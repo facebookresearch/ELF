@@ -15,6 +15,7 @@ public:
     // RTSMap commands
     int GetXSize() const { return map_->GetXSize(); }
     int GetYSize() const { return map_->GetYSize(); }
+    int GetSlotType(int x, int y, int z) { return map_->GetSlotType(x, y, z); }
     // CmdReceiver commands
     bool SendCmdCreate(int build_type, const PointF& p, int player_id, int resource_used = 0);
     bool SendCmdChangePlayerResource(int player_id, int delta);

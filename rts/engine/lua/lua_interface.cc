@@ -28,6 +28,7 @@ void _LuaRTSMap::Init() {
         "get_coord", &RTSMap::GetCoord,
         "init_map", &RTSMap::InitMap,
         "set_slot_type", &RTSMap::SetSlotType,
+        "get_slot_type", &RTSMap::GetSlotType,
         "reset_intermediates", &RTSMap::ResetIntermediates,
         "clear_map", &RTSMap::ClearMap,
         "add_player", &RTSMap::AddPlayer
