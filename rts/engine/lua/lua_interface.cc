@@ -7,7 +7,8 @@ void _LuaStateProxy::Init() {
         "send_cmd_create", &StateProxy::SendCmdCreate,
         "send_cmd_change_player_resource", &StateProxy::SendCmdChangePlayerResource,
         "get_x_size", &StateProxy::GetXSize,
-        "get_y_size", &StateProxy::GetYSize
+        "get_y_size", &StateProxy::GetYSize,
+        "get_slot_type", &StateProxy::GetSlotType
     );
 }
 
@@ -28,6 +29,7 @@ void _LuaRTSMap::Init() {
         "get_coord", &RTSMap::GetCoord,
         "init_map", &RTSMap::InitMap,
         "set_slot_type", &RTSMap::SetSlotType,
+        "get_slot_type", &RTSMap::GetSlotType,
         "reset_intermediates", &RTSMap::ResetIntermediates,
         "clear_map", &RTSMap::ClearMap,
         "add_player", &RTSMap::AddPlayer

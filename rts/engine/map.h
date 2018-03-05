@@ -86,8 +86,18 @@ public:
   const MapSlot &operator()(const Loc& loc) const { return _map[loc]; }
   MapSlot &operator()(const Loc& loc) { return _map[loc]; }
 
+  // Lua get/set
+  int GetSlotType(int x, int y, int z = 0) {
+    if (IsIn(x, y)) {
+        return static_cast<int>(_map[GetLoc(Coord(x, y, z))].type);
+    }
+    return static_cast<int>(INVALID_TERRAIN);
+  }
+
   void SetSlotType(int terrain_type, int x, int y, int z = 0) {
-      _map[GetLoc(Coord(x, y, z))].type = static_cast<Terrain>(terrain_type);
+      if (IsIn(x, y)) {
+          _map[GetLoc(Coord(x, y, z))].type = static_cast<Terrain>(terrain_type);
+      }
   }
 
   int GetXSize() const { return _m; }
