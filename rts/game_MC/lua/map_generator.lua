@@ -209,6 +209,5 @@ function rts_map_generator.generate_random(map, num_players, seed)
   rts_map_generator.generate_soil_and_sand(map)
   rts_map_generator.generate_rock(map)
 
-
   map:reset_intermediates()
 end
