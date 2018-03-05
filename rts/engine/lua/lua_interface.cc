@@ -7,7 +7,8 @@ void _LuaStateProxy::Init() {
         "send_cmd_create", &StateProxy::SendCmdCreate,
         "send_cmd_change_player_resource", &StateProxy::SendCmdChangePlayerResource,
         "get_x_size", &StateProxy::GetXSize,
-        "get_y_size", &StateProxy::GetYSize
+        "get_y_size", &StateProxy::GetYSize,
+        "get_slot_type", &StateProxy::GetSlotType
     );
 }
 

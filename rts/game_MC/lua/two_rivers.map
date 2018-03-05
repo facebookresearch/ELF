@@ -1,17 +1,18 @@
 # upper case - you, lower case - enemy
 # X|x - resource
-# W|w - worker
-# S|s - soldier
-# R|r - truck
-# T|t - tank
-# C|c - cannon
-# F|f - flight
+# W|w - peasant
+# S|s - swordman
+# R|r - spearman
+# T|t - cavalry
+# C|c - archer
+# F|f - dragon
 # A|a - barrack
-# O|o - factory
-# H|h - hangar
+# O|o - blacksmith
+# H|h - stables
+# U|u - catapult
 # K|k - workshop
-# D|d - defense tower
-# B|b - base
+# D|d - guard tower
+# B|b - town hall
 # .   - grass
 # 1   - sand
 # 2   - soil
@@ -22,7 +23,7 @@
 44211111.................2211122X1..1444
 441211X1..................11B1111...1444
 144221111...............W.1111......1444
-.1441111............................1444
+.1441111......T.....................1444
 ..141................................114
 ..141.................................14
 ..1411..............................1144

@@ -17,6 +17,7 @@ unit_type_to_cell[UnitType.SPEARMAN] = "R"
 unit_type_to_cell[UnitType.CAVALRY] = "T"
 unit_type_to_cell[UnitType.ARCHER] = "C"
 unit_type_to_cell[UnitType.DRAGON] = "F"
+unit_type_to_cell[UnitType.CATAPULT] = "U"
 unit_type_to_cell[UnitType.BARRACK] = "A"
 unit_type_to_cell[UnitType.BLACKSMITH] = "O"
 unit_type_to_cell[UnitType.STABLES] = "H"
@@ -60,12 +61,184 @@ function rts_unit_generator.generate(proxy, num_players, seed)
   proxy:send_cmd_change_player_resource(1, 100)
 end
 
+function can_pass(proxy, x, y)
+  local X = proxy:get_x_size()
+  local Y = proxy:get_y_size()
+  if not (x >= 0 and x < X and y >= 0 and y < Y) then
+    return false
+  end
+  local ty = proxy:get_slot_type(x, y, 0)
+  return not (ty == Terrain.WATER or ty == Terrain.ROCK)
+end
+
+
+function can_reach(proxy, sx, sy, tx, ty)
+  local X = proxy:get_x_size()
+  local Y = proxy:get_y_size()
+  local dx = {-1, -1, 1, 1}
+  local dy = {-1, 1, -1, 1}
+
+  function dfs(x, y, tx, ty, visited)
+    if x == tx and y == ty then
+      return true
+    end
+    visited[x * Y + y] = true
+    for i = 1, #dx do
+      local nx = x + dx[i]
+      local ny = y + dy[i]
+      if nx >= 0 and nx < X and ny >= 0 and ny < Y and visited[nx * Y + ny] == nil then
+        if can_pass(proxy, nx, ny) and dfs(nx, ny, tx, ty, visited) then
+          return true
+        end
+      end
+    end
+    return false
+  end
+  return dfs(sx, sy, tx, ty, {})
+end
+
+
+function add_base_and_workers(proxy, x, y, player_id)
+  local X = proxy:get_x_size()
+  local Y = proxy:get_y_size()
+  local n_workers = 3
+  proxy:send_cmd_create(UnitType.TOWN_HALL, __make_p(x, y), player_id, 0)
+  local taken = {}
+  taken[x * Y + y] = true
+  for i = 1, n_workers do
+    local found = false
+    while not found do
+      local xx = x + math.random(-5, 5)
+      local yy = y + math.random(-5, 5)
+      if can_pass(proxy, xx, yy) and taken[xx * Y + yy] == nil then
+        proxy:send_cmd_create(UnitType.PEASANT, __make_p(xx, yy), player_id, 0)
+        taken[xx * Y + yy] = true
+        found = true
+      end
+    end
+  end
+  local n_resource = 1
+  for i = 1, n_resource do
+    local found = false
+    while not found do
+      local xx = x + math.random(-5, 5)
+      local yy = y + math.random(-5, 5)
+      if can_pass(proxy, xx, yy) and taken[xx * Y + yy] == nil then
+        proxy:send_cmd_create(UnitType.RESOURCE, __make_p(xx, yy), player_id, 0)
+        taken[xx * Y + yy] = true
+        found = true
+      end
+    end
+  end
+end
+
+
+function generate_bases(proxy)
+  local X = proxy:get_x_size()
+  local Y = proxy:get_y_size()
+  local n_resource = 2
+  local N = 5
+  local dx = math.floor(X / N)
+  local dy = math.floor(Y / N)
+  local p = math.random(0, 999) / 1000
+  if p < 0.5 then
+    local found = false
+    while not found do
+      local xp1 = math.random(0, dx - 1)
+      local xp2 = math.random(0, dx - 1)
+      local x1 = math.random(2, N - 1) + xp1 * N
+      local y1 = math.random(2, N - 1)
+      local x2 = math.random(2, N - 1) + xp2 * N
+      local y2 = Y - 1 - math.random(2, N - 1)
+      if can_reach(proxy, x1, y1, x2, y2) then
+        found = true
+        add_base_and_workers(proxy, x1, y1, 0)
+        add_base_and_workers(proxy, x2, y2, 1)
+      end
+      for i = 1, n_resource do
+        local found = false
+        while not found do
+          local xx = math.random(2, X - 3)
+          local yy = math.random(2, N)
+          if can_pass(proxy, xx, yy) then
+            proxy:send_cmd_create(UnitType.RESOURCE, __make_p(xx, yy), 0, 0)
+            found = true
+          end
+        end
+      end
+      for i = 1, n_resource do
+        local found = false
+        while not found do
+          local xx = math.random(2, X - 3)
+          local yy = Y - 1 - math.random(2, N)
+          if can_pass(proxy, xx, yy) then
+            proxy:send_cmd_create(UnitType.RESOURCE, __make_p(xx, yy), 1, 0)
+            found = true
+          end
+        end
+      end
+    end
+  else
+    local found = false
+    while not found do
+      local yp1 = math.random(0, dy - 1)
+      local yp2 = math.random(0, dy - 1)
+      local x1 = math.random(2, N - 1)
+      local y1 = math.random(2, N - 1) + yp1 * N
+      local x2 = X - 1 - math.random(2, N - 1)
+      local y2 = math.random(2, N - 1) + yp2 * N
+      if can_reach(proxy, x1, y1, x2, y2) then
+        found = true
+        add_base_and_workers(proxy, x1, y1, 0)
+        add_base_and_workers(proxy, x2, y2, 1)
+      end
+      for i = 1, n_resource do
+        local found = false
+        while not found do
+          local xx = math.random(2, N)
+          local yy = math.random(2, Y - 3)
+          if can_pass(proxy, xx, yy) then
+            proxy:send_cmd_create(UnitType.RESOURCE, __make_p(xx, yy), 0, 0)
+            found = true
+          end
+        end
+      end
+      for i = 1, n_resource do
+        local found = false
+        while not found do
+          local xx = X - 1 - math.random(2, N)
+          local yy = math.random(2, Y - 3)
+          if can_pass(proxy, xx, yy) then
+            proxy:send_cmd_create(UnitType.RESOURCE, __make_p(xx, yy), 1, 0)
+            found = true
+          end
+        end
+      end
+    end
+
+  end
+end
+
+function generate_resource(proxy, player_id)
+  local X = proxy:get_x_size()
+  local Y = proxy:get_y_size()
+  local n_resource = 3
+  for i = 1, n_resource do
+    local found = false
+    while not found do
+      local xx = math.random(0, X - 1)
+      local yy = math.random(0, Y - 1)
+      if can_pass(proxy, xx, yy) then
+        proxy:send_cmd_create(UnitType.RESOURCE, __make_p(xx, yy), player_id, 0)
+        found = true
+      end
+    end
+  end
+end
 
 function rts_unit_generator.generate_random(proxy, num_players, seed)
-  proxy:send_cmd_create(UnitType.BASE, __make_p(7, 7), 0, 0)
-  proxy:send_cmd_create(UnitType.TANK, __make_p(5, 10), 0, 0)
-  proxy:send_cmd_create(UnitType.BASE, __make_p(33, 33), 1, 0)
-
+  math.randomseed(seed)
+  generate_bases(proxy)
 
   -- change resources
   proxy:send_cmd_change_player_resource(0, 200)
