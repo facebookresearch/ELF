@@ -18,8 +18,7 @@
 #include "lua/cpp_interface.h"
 
 bool CmdGenerateMap::run(GameEnv *env, CmdReceiver*) {
-    //RTSMapGenerator::Generate(env->GetMap(), env->GetNumOfPlayers(), _seed);
-    RTSMapGenerator::Generate(env->GetMap(), env->GetNumOfPlayers(), _seed);
+    RTSMapGenerator::GenerateRandom(env->GetMap(), env->GetNumOfPlayers(), _seed);
     // create fog for each player
     for (int player_id = 0; player_id < env->GetNumOfPlayers(); ++player_id) {
         env->GetPlayer(player_id).CreateFog();
@@ -37,7 +36,7 @@ bool CmdGameStartSpecific::run(GameEnv*, CmdReceiver*) {
 }
 
 bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
-    RTSUnitGenerator::Generate(&env->GetMap(), env->GetNumOfPlayers(), _seed, receiver);
+    RTSUnitGenerator::GenerateRandom(&env->GetMap(), env->GetNumOfPlayers(), _seed, receiver);
     return true;
 }
 

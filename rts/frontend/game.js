@@ -58,7 +58,6 @@ var scale = function(x) {
 
 
 
-/*
 var range2 = document.createElement("INPUT");
 range2.type = "range";
 range2.min = min_speed;
@@ -89,14 +88,13 @@ range2.oninput = function(){
 document.body.appendChild(range2);
 
 
-var addRange = function(
+var button_left = left_frame_width + scale(30);
 
 var addButton = function(text, cmd) {
     var button = document.createElement("button");
     button.innerHTML = text;
     button.style.position = "absolute";
     button.style.top = 500;
-    var button_left = left_frame_width + scale(30);
     button.style.left = button_left;
     button.style.zindex = 2;
     button.style.width = "50px";
@@ -145,7 +143,6 @@ range1.oninput = function(){
     send_cmd(tick + ' S ' + this.value);
 }
 document.body.appendChild(range1);
-*/
 
 document.body.appendChild(canvas);
 
@@ -467,9 +464,7 @@ var onPlayersStats = function(players, game) {
     ctx.beginPath()
     ctx.fillStyle = "Black";
     ctx.font = "15px Arial";
-    //ctx.fillText("TIME: " + game.tick, x1 + cell_size, y1 + cell_size / 2 + 5);
-    var t = "W: " + window.innerWidth + " H: " + window.innerHeight + " S: " + SCALER;
-    ctx.fillText(t, x1 + cell_size, y1 + cell_size / 2 + scale(5));
+    ctx.fillText("TIME: " + game.tick, x1 + cell_size, y1 + cell_size / 2 + 5);
     y1 += scale(25);
     ctx.fillText(label, x1 + cell_size, y1 + cell_size / 2 + scale(5));
     ctx.closePath();
