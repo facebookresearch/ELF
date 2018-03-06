@@ -121,9 +121,10 @@ function add_base_and_workers(proxy, x, y, player_id)
   for i = 1, n_resource do
     local found = false
     while not found do
-      local xx = x + math.random(-5, 5)
-      local yy = y + math.random(-5, 5)
-      if can_pass(proxy, xx, yy) and taken[xx * Y + yy] == nil then
+      local xx = x + math.random(-3, 3)
+      local yy = y + math.random(-3, 3)
+      local dist = math.abs(xx - x) + math.abs(yy - y)
+      if dist >= 4 and can_pass(proxy, xx, yy) and taken[xx * Y + yy] == nil then
         proxy:send_cmd_create(UnitType.RESOURCE, __make_p(xx, yy), player_id, 0)
         taken[xx * Y + yy] = true
         found = true
@@ -141,81 +142,50 @@ function generate_bases(proxy)
   local dx = math.floor(X / N)
   local dy = math.floor(Y / N)
   local p = math.random(0, 999) / 1000
-  if p < 0.5 then
-    local found = false
-    while not found do
-      local xp1 = math.random(0, dx - 1)
-      local xp2 = math.random(0, dx - 1)
-      local x1 = math.random(2, N - 1) + xp1 * N
-      local y1 = math.random(2, N - 1)
-      local x2 = math.random(2, N - 1) + xp2 * N
-      local y2 = Y - 1 - math.random(2, N - 1)
-      if can_reach(proxy, x1, y1, x2, y2) then
-        found = true
-        add_base_and_workers(proxy, x1, y1, 0)
-        add_base_and_workers(proxy, x2, y2, 1)
-      end
-      for i = 1, n_resource do
-        local found = false
-        while not found do
-          local xx = math.random(2, X - 3)
-          local yy = math.random(2, N)
-          if can_pass(proxy, xx, yy) then
-            proxy:send_cmd_create(UnitType.RESOURCE, __make_p(xx, yy), 0, 0)
-            found = true
-          end
-        end
-      end
-      for i = 1, n_resource do
-        local found = false
-        while not found do
-          local xx = math.random(2, X - 3)
-          local yy = Y - 1 - math.random(2, N)
-          if can_pass(proxy, xx, yy) then
-            proxy:send_cmd_create(UnitType.RESOURCE, __make_p(xx, yy), 1, 0)
-            found = true
-          end
-        end
-      end
-    end
-  else
-    local found = false
-    while not found do
-      local yp1 = math.random(0, dy - 1)
-      local yp2 = math.random(0, dy - 1)
-      local x1 = math.random(2, N - 1)
-      local y1 = math.random(2, N - 1) + yp1 * N
-      local x2 = X - 1 - math.random(2, N - 1)
-      local y2 = math.random(2, N - 1) + yp2 * N
-      if can_reach(proxy, x1, y1, x2, y2) then
-        found = true
-        add_base_and_workers(proxy, x1, y1, 0)
-        add_base_and_workers(proxy, x2, y2, 1)
-      end
-      for i = 1, n_resource do
-        local found = false
-        while not found do
-          local xx = math.random(2, N)
-          local yy = math.random(2, Y - 3)
-          if can_pass(proxy, xx, yy) then
-            proxy:send_cmd_create(UnitType.RESOURCE, __make_p(xx, yy), 0, 0)
-            found = true
-          end
-        end
-      end
-      for i = 1, n_resource do
-        local found = false
-        while not found do
-          local xx = X - 1 - math.random(2, N)
-          local yy = math.random(2, Y - 3)
-          if can_pass(proxy, xx, yy) then
-            proxy:send_cmd_create(UnitType.RESOURCE, __make_p(xx, yy), 1, 0)
-            found = true
-          end
-        end
-      end
-    end
+  local dir = p < 0.5
 
+  local found = false
+  while not found do
+    local xp1 = math.random(0, dx - 1)
+    local xp2 = math.random(0, dx - 1)
+    local x1 = math.random(2, N - 1) + xp1 * N
+    local y1 = math.random(2, N - 1)
+    local x2 = math.random(2, N - 1) + xp2 * N
+    local y2 = Y - 1 - math.random(2, N - 1)
+    -- swap the coordinates
+    if dir then
+      x1, y1 = y1, x1
+      x2, y2 = y2, x2
+    end
+    if can_reach(proxy, x1, y1, x2, y2) then
+      found = true
+      add_base_and_workers(proxy, x1, y1, 0)
+      add_base_and_workers(proxy, x2, y2, 1)
+    end
+  end
+
+
+  for player_id = 0, 1 do
+    for i = 1, n_resource do
+      local found = false
+      while not found do
+        local xx = math.random(2, X - 3)
+        local yy = 0
+        if player_id == 0 then
+          yy = math.random(2, N)
+        else
+          yy = Y - 1 - math.random(2, N)
+        end
+        -- swap the coordinates
+        if dir then
+          xx, yy = yy, xx
+        end
+        if can_pass(proxy, xx, yy) then
+          proxy:send_cmd_create(UnitType.RESOURCE, __make_p(xx, yy), player_id, 0)
+          found = true
+        end
+      end
+    end
   end
 end
 
