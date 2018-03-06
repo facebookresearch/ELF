@@ -31,7 +31,7 @@ int GameDef::GetNumAction() {
 }
 
 bool GameDef::IsUnitTypeBuilding(UnitType t) const{
-    return (t == TOWN_HALL) || (t == RESOURCE) || (t == BARRACK) || (t == BLACKSMITH) || (t == STABLES) || (t == WORKSHOP);;
+    return (t == TOWN_HALL) || (t == RESOURCE) || (t == BARRACK) || (t == BLACKSMITH) || (t == STABLE) || (t == WORKSHOP);;
 }
 
 bool GameDef::HasBase() const{ return true; }
@@ -78,7 +78,7 @@ void GameDef::Init() {
     _units[CATAPULT] = RTSUnitFactory::InitCatapult();
     _units[BARRACK] = RTSUnitFactory::InitBarrack();
     _units[BLACKSMITH] = RTSUnitFactory::InitBlacksmith();
-    _units[STABLES] = RTSUnitFactory::InitStables();
+    _units[STABLE] = RTSUnitFactory::InitStables();
     _units[WORKSHOP] = RTSUnitFactory::InitWorkshop();
     _units[GUARD_TOWER] = RTSUnitFactory::InitGuardTower();
     _units[TOWN_HALL] = RTSUnitFactory::InitTownHall();

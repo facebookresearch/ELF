@@ -22,7 +22,7 @@ var left_frame_width = map_x * cell_size;
 var player_colors = ['blue', 'red', 'yellow']
 
 var terrains = ["GROUND", "SAND", "GRASS", "ROCK", "WATER", "FOG"];
-var unit_names_minirts = ["RESOURCE", "PEASANT", "SWORDMAN", "SPEARMAN", "CAVALRY", "ARCHER", "DRAGON", "CATAPULT", "BARRACK", "BLACKSMITH", "STABLES", "WORKSHOP", "GUARD_TOWER", "TOWN_HALL"];
+var unit_names_minirts = ["RESOURCE", "PEASANT", "SWORDMAN", "SPEARMAN", "CAVALRY", "ARCHER", "DRAGON", "CATAPULT", "BARRACK", "BLACKSMITH", "STABLE", "WORKSHOP", "GUARD_TOWER", "TOWN_HALL"];
 var unit_id = {
   "RESOURCE": 0,
   "PEASANT": 1,
@@ -34,7 +34,7 @@ var unit_id = {
   "CATAPULT": 7,
   "BARRACK": 8,
   "BLACKSMITH": 9,
-  "STABLES": 10,
+  "STABLE": 10,
   "WORKSHOP": 11,
   "GUARD_TOWER": 12,
   "TOWN_HALL": 13};
@@ -290,7 +290,7 @@ function is_building_cmd_allowed(key) {
     var building_types = [
       unit_id["BARRACK"],
       unit_id["BLACKSMITH"],
-      unit_id["STABLES"],
+      unit_id["STABLE"],
       unit_id["WORKSHOP"],
       unit_id["TOWN_HALL"]];
     return is_build_cmd_allowed(key, building_types);
@@ -586,75 +586,75 @@ var load_sprites = function(spec) {
 var load_player_sprites = function(player) {
     var sprites = {};
     sprites["RESOURCE"] = load_sprites({
-        "_file" : "imgs/mineral1.png",
+        "_file" : "rts/medieval/" + player + "/coin.png",
         "_scale": 1.2,
         "_select_scale" : 1
     });
     sprites["PEASANT"] = load_sprites({
-        "_file": "rts/" + player + "/worker.png",
+        "_file": "rts/medieval/" + player + "/peasant.png",
         "_scale": 1.5,
-        "_select_scale" : 0.7
+        "_select_scale" : 1
     });
     sprites["SWORDMAN"] = load_sprites({
-        "_file": "rts/" + player + "/soldier.png",
+        "_file": "rts/medieval/" + player + "/swordman.png",
         "_scale": 1.5,
-        "_select_scale" : 0.7
+        "_select_scale" : 1
     });
     sprites["SPEARMAN"] = load_sprites({
-        "_file": "rts/" + player + "/spearman.png",
+        "_file": "rts/medieval/" + player + "/spearman.png",
         "_scale": 1.5,
         "_select_scale" : 1
     });
     sprites["CAVALRY"] = load_sprites({
-        "_file": "rts/" + player + "/cavalry.png",
+        "_file": "rts/medieval/" + player + "/cavalry.png",
         "_scale": 1.5,
         "_select_scale" : 1
     });
     sprites["ARCHER"] = load_sprites({
-        "_file": "rts/" + player + "/cannon.png",
-        "_scale": 2,
-        "_select_scale" : 1.3
+        "_file": "rts/medieval/" + player + "/archer.png",
+        "_scale": 1.5,
+        "_select_scale" : 1
     });
     sprites["DRAGON"] = load_sprites({
-        "_file": "rts/" + player + "/flight.png",
-        "_scale": 1.5,
-        "_select_scale" : 1
+        "_file": "rts/medieval/" + player + "/dragon.png",
+        "_scale": 2,
+        "_select_scale" : 1.5
     });
     sprites["CATAPULT"] = load_sprites({
-        "_file": "rts/" + player + "/truck.png",
-        "_scale": 1.5,
-        "_select_scale" : 1
+        "_file": "rts/medieval/" + player + "/catapult.png",
+        "_scale": 2,
+        "_select_scale" : 1.5
     });
     sprites["BARRACK"] = load_sprites({
-        "_file": "rts/" + player + "/barrack.png",
-        "_scale": 1.5,
-        "_select_scale" : 1.3
+        "_file": "rts/medieval/" + player + "/barrack.png",
+        "_scale": 2,
+        "_select_scale" : 1.2
 
     });
     sprites["BLACKSMITH"] = load_sprites({
-        "_file": "rts/" + player + "/factory.png",
-        "_scale": 1.5,
-        "_select_scale" : 1.3
+        "_file": "rts/medieval/" + player + "/blacksmith.png",
+        "_scale": 2,
+        "_select_scale" : 1.2
     });
-    sprites["STABLES"] = load_sprites({
-        "_file": "rts/" + player + "/hangar.png",
-        "_scale": 1.5,
-        "_select_scale" : 1.3
+    sprites["STABLE"] = load_sprites({
+        "_file": "rts/medieval/" + player + "/stable.png",
+        "_scale": 2,
+        "_select_scale" : 1.2
     });
     sprites["WORKSHOP"] = load_sprites({
-        "_file": "rts/" + player + "/workshop.png",
-        "_scale": 1.5,
-        "_select_scale" : 1.3
+        "_file": "rts/medieval/" + player + "/workshop.png",
+        "_scale": 2,
+        "_select_scale" : 1.2
     });
     sprites["GUARD_TOWER"] = load_sprites({
-        "_file": "rts/" + player + "/defense_tower.png",
+        "_file": "rts/medieval/" + player + "/guard_tower.png",
         "_scale": 1.5,
         "_select_scale" : 1
     });
     sprites["TOWN_HALL"] = load_sprites({
-        "_file": "rts/" + player + "/base.png",
-        "_scale": 1.7,
-        "_select_scale" : 1.4
+        "_file": "rts/medieval/" + player + "/town_hall.png",
+        "_scale": 2.5,
+        "_select_scale" : 1.5
     });
     return sprites;
 }
@@ -685,7 +685,7 @@ var draw_sprites = function(spec, px, py, scale) {
     }
     var w = Math.floor(cell_size * scale);
     var h = Math.floor(cell_size * scale);
-    ctx.drawImage(image, px - w / 2, py - h / 2, w, h);
+    ctx.drawImage(image, px - w / 2, py - 0.7 * h, w, h);
     // for debug
     //ctx.beginPath();
     //ctx.arc(px, py, 3, 0, 2 * Math.PI, false);

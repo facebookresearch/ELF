@@ -36,7 +36,7 @@ bool CmdGameStartSpecific::run(GameEnv*, CmdReceiver*) {
 }
 
 bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
-    RTSUnitGenerator::GenerateRandom(&env->GetMap(), env->GetNumOfPlayers(), _seed, receiver);
+    RTSUnitGenerator::Generate(&env->GetMap(), env->GetNumOfPlayers(), _seed, receiver);
     return true;
 }
 

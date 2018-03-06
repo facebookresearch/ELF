@@ -85,7 +85,7 @@ function rts_unit_factory.init_peasant()
     __create_build_skill(UnitType.TOWN_HALL, "h"),
     __create_build_skill(UnitType.BARRACK, "b"),
     __create_build_skill(UnitType.BLACKSMITH, "s"),
-    __create_build_skill(UnitType.STABLES, "l"),
+    __create_build_skill(UnitType.STABLE, "l"),
     __create_build_skill(UnitType.WORKSHOP, "w"),
     __create_build_skill(UnitType.GUARD_TOWER, "t")
   }
@@ -118,7 +118,7 @@ function rts_unit_factory.init_swordman()
     {UnitType.CATAPULT, 1.0},
     {UnitType.BARRACK, 1.0},
     {UnitType.BLACKSMITH, 1.0},
-    {UnitType.STABLES, 1.0},
+    {UnitType.STABLE, 1.0},
     {UnitType.WORKSHOP, 1.0},
     {UnitType.GUARD_TOWER, 1.0},
     {UnitType.TOWN_HALL, 1.0}
@@ -155,7 +155,7 @@ function rts_unit_factory.init_spearman()
     {UnitType.BARRACK, 1.0},
     {UnitType.CATAPULT, 1.0},
     {UnitType.BLACKSMITH, 1.0},
-    {UnitType.STABLES, 1.0},
+    {UnitType.STABLE, 1.0},
     {UnitType.WORKSHOP, 1.0},
     {UnitType.GUARD_TOWER, 1.0},
     {UnitType.TOWN_HALL, 1.0}
@@ -191,7 +191,7 @@ function rts_unit_factory.init_cavalry()
     {UnitType.CATAPULT, 1.0},
     {UnitType.BARRACK, 1.0},
     {UnitType.BLACKSMITH, 1.0},
-    {UnitType.STABLES, 1.0},
+    {UnitType.STABLE, 1.0},
     {UnitType.WORKSHOP, 1.0},
     {UnitType.GUARD_TOWER, 1.0},
     {UnitType.TOWN_HALL, 1.0}
@@ -211,7 +211,7 @@ function rts_unit_factory.init_cavalry()
     --[[attr]]UnitAttr.ATTR_NORMAL,
     --[[attack_multiplier]]attack_multiplier,
     --[[cant_move_over]]cant_move_over,
-    --[[build_from]]UnitType.STABLES,
+    --[[build_from]]UnitType.STABLE,
     --[[build_skills]]build_skills
   )
   return ut
@@ -427,7 +427,7 @@ function rts_unit_factory.init_guard_tower()
     {UnitType.CATAPULT, 1.0},
     {UnitType.BARRACK, 1.0},
     {UnitType.BLACKSMITH, 1.0},
-    {UnitType.STABLES, 1.0},
+    {UnitType.STABLE, 1.0},
     {UnitType.WORKSHOP, 1.0},
     {UnitType.GUARD_TOWER, 1.0},
     {UnitType.TOWN_HALL, 1.0}

@@ -20,7 +20,7 @@ unit_type_to_cell[UnitType.DRAGON] = "F"
 unit_type_to_cell[UnitType.CATAPULT] = "U"
 unit_type_to_cell[UnitType.BARRACK] = "A"
 unit_type_to_cell[UnitType.BLACKSMITH] = "O"
-unit_type_to_cell[UnitType.STABLES] = "H"
+unit_type_to_cell[UnitType.STABLE] = "H"
 unit_type_to_cell[UnitType.WORKSHOP] = "K"
 unit_type_to_cell[UnitType.GUARD_TOWER] = "D"
 unit_type_to_cell[UnitType.TOWN_HALL] = "B"
@@ -209,6 +209,7 @@ end
 function rts_unit_generator.generate_random(proxy, num_players, seed)
   math.randomseed(seed)
   generate_bases(proxy)
+
 
   -- change resources
   proxy:send_cmd_change_player_resource(0, 200)
