@@ -8,7 +8,6 @@ function rts_map_generator.generate_terrain(map, location_func, ty)
     map:set_slot_type(ty, xs[i] - 1, ys[i] - 1, 0)
   end
 end
-
 function rts_map_generator.generate_base(map)
   local x = math.random(0, map:get_x_size() - 1)
   local y = math.random(0, map:get_y_size() - 1) return x, y
@@ -31,8 +30,7 @@ end
 
 function rts_map_generator.generate(map, num_players, seed)
   math.randomseed(seed)
-  map:clear_map()
-
+  map:clear_map() 
   parser = map_parser:new("two_rivers.map")
   map:init_map(parser:get_x_size(), parser:get_y_size(), 1)
   rts_map_generator.generate_terrain(map, function() return parser:get_sand_locations() end, Terrain.SAND)
@@ -206,7 +204,7 @@ function rts_map_generator.generate_random(map, num_players, seed)
 
   map:init_map(X, Y, 1)
   rts_map_generator.generate_water(map)
-  rts_map_generator.generate_soil_and_sand(map)
+  --rts_map_generator.generate_soil_and_sand(map)
   rts_map_generator.generate_rock(map)
 
 

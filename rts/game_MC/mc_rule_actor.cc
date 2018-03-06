@@ -25,7 +25,7 @@ bool MCRuleActor::ActByState2(const GameEnv &env, const vector<int>& state, stri
     return true;
 }
 const Unit* MCRuleActor::GetTargetUnit(const GameEnv &env, const vector<vector<const Unit*> > &enemy_troops, const Player& player){
-    const vector<UnitType> &attack_order = {TOWN_HALL, GUARD_TOWER, BLACKSMITH, BARRACK, STABLES, WORKSHOP};
+    const vector<UnitType> &attack_order = {TOWN_HALL, GUARD_TOWER, BLACKSMITH, BARRACK, STABLE, WORKSHOP};
     for (const UnitType &target_type : attack_order) {
         const auto& target_units = enemy_troops[target_type];
         if (!target_units.empty()) {

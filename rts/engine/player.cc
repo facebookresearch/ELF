@@ -39,7 +39,7 @@ const set<UnitType> Fog::kSavableUnitTypes = {
     RESOURCE,
     BARRACK,
     BLACKSMITH,
-    STABLES,
+    STABLE,
     WORKSHOP,
     GUARD_TOWER,
     TOWN_HALL
