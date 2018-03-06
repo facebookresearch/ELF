@@ -26,19 +26,19 @@ static int move_toward(const RTSMap& m, const UnitTemplate& unit_def, float spee
         PointF next_p(curr);
         next_p += diff;
 
-        bool movable = m.CanPass(next_p, id, false, unit_def);
+        bool movable = m.CanPass(next_p, id, true, unit_def);
         // cout << "MoveToward [" << id << "]: Try straight: " << next_p << " movable: " << movable << endl;
 
         if (! movable) {
             next_p = curr;
             next_p += diff.CCW90();
-            movable = m.CanPass(next_p, id, false, unit_def);
+            movable = m.CanPass(next_p, id, true, unit_def);
             // cout << "MoveToward [" << id << "]: Try CCW: " << next_p << " movable: " << movable << endl;
         }
         if (! movable) {
             next_p = curr;
             next_p += diff.CW90();
-            movable = m.CanPass(next_p, id, false, unit_def);
+            movable = m.CanPass(next_p, id, true, unit_def);
             // cout << "MoveToward [" << id << "]: Try CW: " << next_p << " movable: " << movable << endl;
         }
 
