@@ -550,7 +550,7 @@ var draw_state = function(u, game) {
 
         draw_sprites(spec, x3 + cell_size / 2, y3 + cell_size / 2, 1);
         ctx.beginPath();
-        var title = "[" + skill.hotkey + "]BUILD " + unit_name + " COST " + skill.price + " MINERALS";
+        var title = "[" + skill.hotkey + "]BUILD " + unit_name + " COST " + skill.price + " GOLD";
         ctx.fillStyle = "black";
         ctx.font = "12px Arial";
         ctx.fillText(title, x3 + cell_size + scale(10), y3 + cell_size / 2 + scale(3));

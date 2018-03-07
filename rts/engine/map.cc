@@ -205,21 +205,44 @@ set<UnitId> RTSMap::GetUnitIdInRegion(const PointF &left_top, const PointF &righ
 }
 
 vector<Loc> RTSMap::GetSight(const Loc& loc, int range) const {
-    Coord c = GetCoord(loc);
+    Coord s = GetCoord(loc);
     vector<Loc> res;
 
-    const int xmin = std::max(0, c.x - range);
-    const int xmax = std::min(_m - 1, c.x + range);
+    const int xmin = std::max(0, s.x - range);
+    const int xmax = std::min(_m - 1, s.x + range);
 
     for (int x = xmin; x <= xmax; ++x) {
-        const int yrange = range - std::abs(c.x  - x);
-        const int ymin = std::max(0, c.y - yrange);
-        const int ymax = std::min(_n - 1, c.y + yrange);
+        const int yrange = range - std::abs(s.x  - x);
+        const int ymin = std::max(0, s.y - yrange);
+        const int ymax = std::min(_n - 1, s.y + yrange);
         for (int y = ymin; y <= ymax; ++y) {
-            res.push_back(GetLoc(Coord(x, y)));
+            auto t = Coord(x, y);
+            if (CanSee(s, t)) {
+                res.push_back(GetLoc(t));
+            }
         }
     }
     return res;
+}
+
+bool RTSMap::CanSee(const Coord& s, const Coord& t) const {
+  const float dx = t.x - s.x;
+  const float dy = t.y - s.y;
+  float r = sqrt(dx * dx + dy * dy);
+  auto p = PointF(s);
+  while (true) {
+    const auto c = p.ToCoord();
+    if (c == t) break;
+    if (c != s && IsIn(c)) {
+        const auto terrain = _map[GetLoc(c)].type;
+        if (terrain == WATER || terrain == ROCK) {
+            return false;
+        }
+    }
+    p.x += 0.5 * dx / r;
+    p.y += 0.5 * dy / r;
+  }
+  return true;
 }
 
 string RTSMap::PrintCoord(Loc loc) const {
