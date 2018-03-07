@@ -239,8 +239,8 @@ bool RTSMap::CanSee(const Coord& s, const Coord& t) const {
             return false;
         }
     }
-    p.x += dx / r;
-    p.y += dy / r;
+    p.x += 0.5 * dx / r;
+    p.y += 0.5 * dy / r;
   }
   return true;
 }
