@@ -162,6 +162,8 @@ public:
       return _locality.LinePassable(s, t, kUnitRadius, 1e-4, &block_id, &result);
   }
 
+  bool CanSee(const Coord& s, const Coord& t) const;
+
   // Move a unit to next_loc;
   bool MoveUnit(const UnitId &id, const PointF& new_loc);
   bool AddUnit(const UnitId &id, const PointF& new_loc);

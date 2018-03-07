@@ -70,6 +70,14 @@ struct Coord {
         return ii;
     }
 
+    bool operator==(const Coord& other) const {
+      return x == other.x && y == other.y && z == other.z;
+    }
+
+    bool operator!=(const Coord& other) const {
+      return !(*this == other);
+    }
+
     SERIALIZER(Coord, x, y, z);
     HASH(Coord, x, y, z);
 };
