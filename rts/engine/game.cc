@@ -180,3 +180,4 @@ void RTSStateExtend::IncTick() {
         this_thread::sleep_until(_time_loop_start + chrono::milliseconds(_options.main_loop_quota));
     }
 }
+

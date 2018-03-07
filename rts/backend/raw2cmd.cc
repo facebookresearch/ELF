@@ -14,62 +14,60 @@
 //
 CmdInput move_event(const Unit &u, char /*hotkey*/, const PointF& p, const UnitId &target_id, const GameEnv&) {
     // Don't need to check hotkey since there is only one type of action.
-    if (target_id == INVALID && ! p.IsInvalid()) {
-        // cout << "In move command [" << hotkey << "] @" << p << " target: " << target_id << endl;
-        return CmdInput(CmdInput::CI_MOVE, u.GetId(), p, target_id);
+    if (target_id == INVALID) {
+        if (! p.IsInvalid()) {
+            // cout << "In move command [" << hotkey << "] @" << p << " target: " << target_id << endl;
+            return CmdInput(CmdInput::CI_MOVE, u.GetId(), p, target_id);
+        }
     }
-    else return CmdInput();
+    else {
+        return CmdInput(CmdInput::CI_ATTACK, u.GetId(), p, target_id);
+    }
+    return CmdInput();
 }
 
-CmdInput attack_event(const Unit &u, char /*hotkey*/, const PointF& p, const UnitId &target_id, const GameEnv&) {
+CmdInput attack_event(const Unit &u, char /*hotkey*/, const PointF& p, const UnitId &target_id, const GameEnv& env) {
     // Don't need to check hotkey since there is only one type of action.
     // cout << "In attack command [" << hotkey << "] @" << p << " target: " << target_id << endl;
+    if (target_id == INVALID) {
+        if (! p.IsInvalid()) {
+            UnitId new_target_id = env.FindClosestEnemy(u.GetPlayerId(), p, 1.5);
+            if (new_target_id == INVALID) {
+               return CmdInput(CmdInput::CI_MOVE, u.GetId(), p, new_target_id);
+            } else {
+               return CmdInput(CmdInput::CI_ATTACK, u.GetId(), p, new_target_id);
+            }
+        }
+    }
     return CmdInput(CmdInput::CI_ATTACK, u.GetId(), p, target_id);
 }
 
 CmdInput gather_event(const Unit &u, char /*hotkey*/, const PointF& p, const UnitId &target_id, const GameEnv& env) {
     // Don't need to check hotkey since there is only one type of action.
     // cout << "In gather command [" << hotkey << "] @" << p << " target: " << target_id << endl;
-    UnitId base = env.FindClosestBase(u.GetPlayerId());
+    float d;
+    UnitId base = env.FindClosestBase(u.GetPlayerId(), p, &d);
     return CmdInput(CmdInput::CI_GATHER, u.GetId(), p, target_id, base);
 }
 
-CmdInput build_event(const Unit &u, char hotkey, const PointF& p, const UnitId& /*target_id*/, const GameEnv&) {
+CmdInput build_event(const Unit &u, char hotkey, const PointF& p, const UnitId& /*target_id*/, const GameEnv& env) {
     // Send the build command.
     // cout << "In build command [" << hotkey << "] @" << p << " target: " << target_id << endl;
     UnitType t = u.GetUnitType();
 
-    UnitType build_type;
+    // don't need a target point for buildings
     PointF build_p;
-
-    // For workers: c : base, b: barracks (for workers)
-    // For base: s : worker,
-    // For building: m : melee attacker, r: range attacker
-    // [TODO]: Make it more flexible and print corresponding prompts in GUI.
-    switch(t) {
-        case WORKER:
-            if (p.IsInvalid()) return CmdInput();
-            // Set the location.
-            build_p = p;
-            if (hotkey == 'c') build_type = BASE;
-            else if (hotkey == 'b') build_type = BARRACKS;
-            else return CmdInput();
-            break;
-        case BASE:
-            build_p.SetInvalid();
-            if (hotkey == 's') build_type = WORKER;
-            else return CmdInput();
-            break;
-        case BARRACKS:
-            build_p.SetInvalid();
-            if (hotkey == 'm') build_type = MELEE_ATTACKER;
-            else if (hotkey == 'r') build_type = RANGE_ATTACKER;
-            else return CmdInput();
-            break;
-        default:
+    if (t == PEASANT) {
+        if (p.IsInvalid()) {
             return CmdInput();
+        }
+        build_p = p;
     }
 
+    UnitType build_type = env.GetGameDef().unit(t).GetUnitTypeFromHotKey(hotkey);
+    if (build_type == INVALID_UNITTYPE) {
+        return CmdInput();
+    }
     return CmdInput(CmdInput::CI_BUILD, u.GetId(), build_p, INVALID, INVALID, build_type);
 }
 
@@ -81,9 +79,9 @@ void RawToCmd::add_hotkey(const string& s, EventResp f) {
 
 void RawToCmd::setup_hotkeys() {
     add_hotkey("a", attack_event);
-    add_hotkey("~", move_event);
-    add_hotkey("t", gather_event);
-    add_hotkey("cbsmr", build_event);
+    add_hotkey("~m", move_event);
+    add_hotkey("g", gather_event);
+    add_hotkey("hbslwtcadp", build_event);
 }
 
 RawMsgStatus RawToCmd::Process(Tick tick, const GameEnv &env, const string&s, vector<CmdBPtr> *cmds, vector<UICmd> *ui_cmds) {
@@ -107,8 +105,6 @@ RawMsgStatus RawToCmd::Process(Tick tick, const GameEnv &env, const string&s, ve
     PointF p, p2;
     set<UnitId> selected;
 
-    cout << "Cmd: " << s << endl;
-
     const RTSMap& m = env.GetMap();
 
     istringstream ii(s);
@@ -122,7 +118,7 @@ RawMsgStatus RawToCmd::Process(Tick tick, const GameEnv &env, const string&s, ve
             ii >> p;
             if (! m.IsIn(p)) return FAILED;
             {
-            UnitId closest_id = m.GetClosestUnitId(p, 1.5);
+            UnitId closest_id = m.GetClosestUnitId(p, 2.5);
             if (closest_id != INVALID) selected.insert(closest_id);
             }
             break;
@@ -155,10 +151,14 @@ RawMsgStatus RawToCmd::Process(Tick tick, const GameEnv &env, const string&s, ve
             break;
     }
 
-    if (! is_mouse_motion(c)) _last_key = c;
+    if (! is_mouse_selection_motion(c) && ! is_mouse_action_motion(c)) _last_key = c;
 
     // cout << "#Hotkey " << _hotkey_maps.size() << "  player_id = " << _player_id << " _last_key = " << _last_key
-    //     << " #selected = " << selected.size() << " #prev-selected: " << _sel_unit_ids.size() << endl;
+    //    << " #selected = " << selected.size() << " #prev-selected: " << _sel_unit_ids.size() << endl;
+
+
+    if (is_mouse_action_motion(c) && _last_key == '~') clear_state();
+    if (_hotkey_maps.find(_last_key) == _hotkey_maps.end()) _last_key = '~';
 
     // Rules:
     //   1. we cannot control other player's units.
@@ -191,8 +191,15 @@ RawMsgStatus RawToCmd::Process(Tick tick, const GameEnv &env, const string&s, ve
         }
     }
 
-    // Command not issued. if it is a mouse event, simply reselect the unit (or deselect)
-    if (! cmd_success && is_mouse_motion(c)) select_new_units(selected);
+    if (! cmd_success) {
+        if (is_mouse_selection_motion(c)) {
+          if (!selected.empty()) select_new_units(selected);
+        }
+        if (is_mouse_action_motion(c)) {
+          if (!selected.empty()) select_new_units(selected);
+        }
+    }
+
     if (cmd_success) _last_key = '~';
 
     if (t > tick) return EXCEED_TICK;

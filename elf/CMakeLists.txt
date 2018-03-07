@@ -1,5 +1,5 @@
 # find sources
-file(GLOB SOURCES lib/*.cc tar_loader.cc)
+file(GLOB SOURCES lib/*.cc tar_loader.cc lua/*.cc)
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	# require at least gcc 4.9

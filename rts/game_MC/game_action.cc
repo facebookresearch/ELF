@@ -32,6 +32,7 @@ bool RTSMCAction::Send(const GameEnv &env, CmdReceiver &receiver) {
             case HIT_AND_RUN:
                 rule_actor.GetActHitAndRunState(&state);
                 break;
+
             default:
                 throw std::range_error("Invalid type: " + std::to_string(_type));
         }

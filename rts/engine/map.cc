@@ -10,11 +10,6 @@
 #include "map.h"
 #include "time.h"
 
-// Constructor
-RTSMap::RTSMap() {
-    load_default_map();
-    reset_intermediates();
-}
 
 bool RTSMap::find_two_nearby_empty_slots(const std::function<uint16_t(int)>& f, int *x1, int *y1, int *x2, int *y2, int i) const {
     const int kDist = 4;
@@ -31,12 +26,19 @@ bool RTSMap::find_two_nearby_empty_slots(const std::function<uint16_t(int)>& f, 
     return false;
 }
 
+void RTSMap::InitMap(int m, int n, int level) {
+  _m = m;
+  _n = n;
+  _level = level;
+  _map.assign(m * n * level, MapSlot());
+}
+
 bool RTSMap::GenerateImpassable(const std::function<uint16_t(int)>& f, int nImpassable) {
     _map.assign(_m * _n * _level, MapSlot());
     for (int i = 0; i < nImpassable; ++i) {
         const int x = f(_m);
         const int y = f(_n);
-        _map[GetLoc(Coord(x, y))].type = IMPASSABLE;
+        _map[GetLoc(Coord(x, y))].type = ROCK;
     }
     return true;
 }
@@ -54,7 +56,7 @@ bool RTSMap::GenerateTDMaze(const std::function<uint16_t(int)>& f) {
     for (int x = 0; x < _m; x++) {
         for (int y = 0; y < _n; y++) {
         if ((x < _m - blank * 2) || (y < _n - blank * 2))
-            _map[GetLoc(Coord(x, y))].type = IMPASSABLE;
+            _map[GetLoc(Coord(x, y))].type = ROCK;
         }
     }
     int maze[m * n];
@@ -100,8 +102,8 @@ bool RTSMap::GenerateTDMaze(const std::function<uint16_t(int)>& f) {
         maze[curr] = 1;
         int xc = curr / m;
         int yc = curr % m;
-        _map[GetLoc(Coord(xc * 2, yc * 2))].type = NORMAL;
-        _map[GetLoc(Coord(xc * 2 - dx[coming_from], yc * 2 - dy[coming_from]))].type = NORMAL;
+        _map[GetLoc(Coord(xc * 2, yc * 2))].type = SOIL;
+        _map[GetLoc(Coord(xc * 2 - dx[coming_from], yc * 2 - dy[coming_from]))].type = SOIL;
         for (size_t i = 0; i < sizeof(dx) / sizeof(int); ++i) {
             int xn = xc + dx[i];
             int yn = yc + dy[i];
@@ -133,20 +135,25 @@ bool RTSMap::GenerateMap(const std::function<uint16_t(int)>& f, int nImpassable,
             info.resource_coord = Coord(x2, y2);
             info.initial_resource = init_resource;
             _infos.emplace_back(info);
-            // cout << "Player " << i << ": BASE: (" << x1 << ", " << y1 << ") RESOURCE: (" << x2 << ", " << y2 << ")" << endl;
+            // cout << "Player " << i << ": TOWN_HALL: (" << x1 << ", " << y1 << ") RESOURCE: (" << x2 << ", " << y2 << ")" << endl;
         }
     } while(! success);
 
-    reset_intermediates();
+    ResetIntermediates();
     return true;
 }
 
-void RTSMap::reset_intermediates() {
+void RTSMap::ResetIntermediates() {
     // Locality Search
     _locality = LocalitySearch<UnitId>(PointF(-0.5, -0.5), PointF(_m + 0.5, _n + 0.5));
 
     // Precompute map structure.
     precompute_all_pair_distances();
+}
+
+void RTSMap::AddPlayer(int player_id, int base_x, int base_y,
+    int resource_x, int resource_y, int init_resource) {
+    _infos.push_back({player_id, {base_x, base_y, 0}, {resource_x, resource_y, 0}, init_resource});
 }
 
 void RTSMap::load_default_map() {
@@ -198,21 +205,44 @@ set<UnitId> RTSMap::GetUnitIdInRegion(const PointF &left_top, const PointF &righ
 }
 
 vector<Loc> RTSMap::GetSight(const Loc& loc, int range) const {
-    Coord c = GetCoord(loc);
+    Coord s = GetCoord(loc);
     vector<Loc> res;
 
-    const int xmin = std::max(0, c.x - range);
-    const int xmax = std::min(_m - 1, c.x + range);
+    const int xmin = std::max(0, s.x - range);
+    const int xmax = std::min(_m - 1, s.x + range);
 
     for (int x = xmin; x <= xmax; ++x) {
-        const int yrange = range - std::abs(c.x  - x);
-        const int ymin = std::max(0, c.y - yrange);
-        const int ymax = std::min(_n - 1, c.y + yrange);
+        const int yrange = range - std::abs(s.x  - x);
+        const int ymin = std::max(0, s.y - yrange);
+        const int ymax = std::min(_n - 1, s.y + yrange);
         for (int y = ymin; y <= ymax; ++y) {
-            res.push_back(GetLoc(x, y));
+            auto t = Coord(x, y);
+            if (CanSee(s, t)) {
+                res.push_back(GetLoc(t));
+            }
         }
     }
     return res;
+}
+
+bool RTSMap::CanSee(const Coord& s, const Coord& t) const {
+  const float dx = t.x - s.x;
+  const float dy = t.y - s.y;
+  float r = sqrt(dx * dx + dy * dy);
+  auto p = PointF(s);
+  while (true) {
+    const auto c = p.ToCoord();
+    if (c == t) break;
+    if (c != s && IsIn(c)) {
+        const auto terrain = _map[GetLoc(c)].type;
+        if (terrain == WATER || terrain == ROCK) {
+            return false;
+        }
+    }
+    p.x += dx / r;
+    p.y += dy / r;
+  }
+  return true;
 }
 
 string RTSMap::PrintCoord(Loc loc) const {
@@ -230,12 +260,8 @@ Coord RTSMap::GetCoord(Loc loc) const {
     return Coord(xy % _m,  xy / _m, z);
 }
 
-Loc RTSMap::GetLoc(int x, int y, int z) const {
-    return (z * _n + y) * _m + x;
-}
-
 Loc RTSMap::GetLoc(const Coord &c) const {
-    return GetLoc(c.x, c.y, c.z);
+    return (c.z * _n + c.y) * _m + c.x;
 }
 
 // Draw the map
@@ -245,7 +271,7 @@ string RTSMap::Draw() const {
     for (int j = 0; j < _n; ++j) {
         for (int i = 0; i < _m; ++i) {
             // Draw the map (only level 0)
-            Loc loc = GetLoc(i, j, 0);
+            Loc loc = GetLoc(Coord(i, j, 0));
             ss << _map[loc].type << " ";
         }
         ss << endl;

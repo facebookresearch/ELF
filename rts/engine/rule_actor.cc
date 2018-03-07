@@ -67,7 +67,7 @@ void Preload::collect_stats(const GameEnv &env, int player_id, const CmdReceiver
 
             // Check damage from
             UnitType unit_type = u->GetUnitType();
-            if (unit_type == WORKER || unit_type == BASE) {
+            if (unit_type == PEASANT || unit_type == TOWN_HALL) {
                 UnitId damage_from = u->GetProperty().GetLastDamageFrom();
                 if (damage_from != INVALID) {
                     const Unit *source = env.GetUnit(damage_from);
@@ -99,17 +99,17 @@ void Preload::GatherInfo(const GameEnv& env, int player_id, const CmdReceiver &r
 
     if (!env.GetGameDef().HasBase()) return;
 
-    if (_my_troops[BASE].empty() || _enemy_troops[BASE].empty()) {
-        _result = NO_BASE;
-        // cout << "_result = NO_BASE" << endl;
+    if (_my_troops[TOWN_HALL].empty() || _enemy_troops[TOWN_HALL].empty()) {
+        _result = NO_TOWN_HALL;
+        // cout << "_result = NO_TOWN_HALL" << endl;
         return;
     }
 
     // cout << "Base not empty" << endl << flush;
-    _base = _my_troops[BASE][0];
+    _base = _my_troops[TOWN_HALL][0];
     _base_id = _base->GetId();
-    _base_loc = _my_troops[BASE][0]->GetPointF();
-    _opponent_base_id = _enemy_troops[BASE][0]->GetId();
+    _base_loc = _my_troops[TOWN_HALL][0]->GetPointF();
+    _opponent_base_id = _enemy_troops[TOWN_HALL][0]->GetId();
 
     for (int i = 0; i < _num_unit_type; ++i) {
         _prices[i] = env.GetGameDef().unit((UnitType)i).GetUnitCost();
@@ -195,7 +195,7 @@ bool RuleActor::hit_and_run(const GameEnv &env, const Unit *u, const vector<cons
             // try to hit and run
             PointF res_p;
             const PointF &mypf = u->GetPointF();
-            if (env.FindClosestPlaceWithDistance(mypf, HitAndRunDist3, targets, &res_p)) {
+            if (env.FindClosestPlaceWithDistance(*u, mypf, HitAndRunDist3, targets, &res_p)) {
                 store_cmd(u, _M(res_p), assigned_cmds);
             } else {
                 //fail, just attack back
@@ -210,7 +210,7 @@ bool RuleActor::GatherInfo(const GameEnv &env, string *state_string, AssignedCmd
     _preload.GatherInfo(env, _player_id, *_receiver);
 
     auto res = _preload.GetResult();
-    if (res == Preload::NO_BASE) return false;
+    if (res == Preload::NO_TOWN_HALL) return false;
     if (res == Preload::NO_RESOURCE) {
         // cout << "Check whether resource is empty .." << endl << flush;
         // If there is no resource, just attack opponent's base.
@@ -228,51 +228,51 @@ bool RuleActor::act_per_unit(const GameEnv &env, const Unit *u, const int *state
     bool idle = (curr_cmd == nullptr);
     CmdType cmdtype = idle ? INVALID_CMD : curr_cmd->type();
 
-    if (ut == BASE && state[STATE_BUILD_WORKER] && idle) {
-        if (_preload.BuildIfAffordable(WORKER)) {
+    if (ut == TOWN_HALL && state[STATE_BUILD_PEASANT] && idle) {
+        if (_preload.BuildIfAffordable(PEASANT)) {
             *state_string = "Build worker..Success";
-            store_cmd(u, _B(WORKER), assigned_cmds);
+            store_cmd(u, _B_CURR_LOC(PEASANT), assigned_cmds);
         }
     }
 
     // Ask workers to gather.
-    if (ut == WORKER) {
+    if (ut == PEASANT) {
         // Gather!
         if (idle) store_cmd(u, _preload.GetGatherCmd(), assigned_cmds);
 
         // If resource permit, build barracks.
         if (cmdtype == GATHER && state[STATE_BUILD_BARRACK] && ! region_hist->has_built_barracks) {
-            if (_preload.Affordable(BARRACKS)) {
+            if (_preload.Affordable(BARRACK)) {
                 *state_string = "Build barracks..Success";
-                CmdBPtr cmd = _preload.GetBuildBarracksCmd(env);
+                CmdBPtr cmd = _preload.GetBuildBarracksCmd(env, *u);
                 if (cmd != nullptr) {
                     store_cmd(u, std::move(cmd), assigned_cmds);
                     region_hist->has_built_barracks = true;
-                    _preload.Build(BARRACKS);
+                    _preload.Build(BARRACK);
                 }
             }
         }
     }
 
-    if (ut == BARRACKS && idle) {
+    if (ut == BARRACK && idle) {
         if (state[STATE_BUILD_MELEE_TROOP] && ! region_hist->has_built_melee) {
-            if (_preload.BuildIfAffordable(MELEE_ATTACKER)) {
+            if (_preload.BuildIfAffordable(SPEARMAN)) {
                 *state_string = "Build Melee Troop..Success";
-                store_cmd(u, _B(MELEE_ATTACKER), assigned_cmds);
+                store_cmd(u, _B_CURR_LOC(SPEARMAN), assigned_cmds);
                 region_hist->has_built_melee = true;
             }
         }
 
         if (state[STATE_BUILD_RANGE_TROOP] && ! region_hist->has_built_range) {
-            if (_preload.BuildIfAffordable(RANGE_ATTACKER)) {
+            if (_preload.BuildIfAffordable(CAVALRY)) {
                 *state_string = "Build Range Troop..Success";
-                store_cmd(u, _B(RANGE_ATTACKER), assigned_cmds);
+                store_cmd(u, _B_CURR_LOC(CAVALRY), assigned_cmds);
                 region_hist->has_built_range = true;
             }
         }
     }
 
-    if (state[STATE_ATTACK] && (ut == MELEE_ATTACKER || ut == RANGE_ATTACKER)) {
+    if (state[STATE_ATTACK] && (ut == SPEARMAN || ut == CAVALRY)) {
         if (idle) store_cmd(u, _preload.GetAttackEnemyBaseCmd(), assigned_cmds);
     }
 
@@ -280,19 +280,19 @@ bool RuleActor::act_per_unit(const GameEnv &env, const Unit *u, const int *state
         // cout << "Enter hit and run procedure" << endl << flush;
         auto enemy_troops = _preload.EnemyTroops();
         *state_string = "Hit and run";
-        if (ut == RANGE_ATTACKER) {
+        if (ut == CAVALRY) {
             // cout << "Enemy only have worker" << endl << flush;
-            if (enemy_troops[MELEE_ATTACKER].empty() && enemy_troops[RANGE_ATTACKER].empty() && ! enemy_troops[WORKER].empty()) {
-                hit_and_run(env, u, enemy_troops[WORKER], assigned_cmds);
+            if (enemy_troops[SPEARMAN].empty() && enemy_troops[CAVALRY].empty() && ! enemy_troops[PEASANT].empty()) {
+                hit_and_run(env, u, enemy_troops[PEASANT], assigned_cmds);
             }
 
-            if (! enemy_troops[MELEE_ATTACKER].empty()) {
-                hit_and_run(env, u, enemy_troops[MELEE_ATTACKER], assigned_cmds);
+            if (! enemy_troops[SPEARMAN].empty()) {
+                hit_and_run(env, u, enemy_troops[SPEARMAN], assigned_cmds);
             }
         }
-        if (ut == RANGE_ATTACKER || ut == MELEE_ATTACKER) {
-            if (! enemy_troops[RANGE_ATTACKER].empty() && idle) {
-                store_cmd(u, _A(enemy_troops[RANGE_ATTACKER][0]->GetId()), assigned_cmds);
+        if (ut == CAVALRY || ut == SPEARMAN) {
+            if (! enemy_troops[CAVALRY].empty() && idle) {
+                store_cmd(u, _A(enemy_troops[CAVALRY][0]->GetId()), assigned_cmds);
             }
         }
     }
@@ -300,7 +300,7 @@ bool RuleActor::act_per_unit(const GameEnv &env, const Unit *u, const int *state
     const auto& enemy_troops_in_range = _preload.EnemyTroopsInRange();
     const auto& enemy_attacking_economy = _preload.EnemyAttackingEconomy();
 
-    if ((ut == RANGE_ATTACKER || ut == MELEE_ATTACKER)
+    if ((ut == CAVALRY || ut == SPEARMAN)
             && idle && state[STATE_ATTACK_IN_RANGE] && ! enemy_troops_in_range.empty()) {
         *state_string = "Attack enemy in range..Success";
         auto cmd = _A(enemy_troops_in_range[0]->GetId());

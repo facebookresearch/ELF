@@ -11,6 +11,7 @@
 #define _SAVE2JSON_H_
 
 #include "engine/common.h"
+#include "engine/gamedef.h"
 #include "json.hpp"
 
 using json = nlohmann::json;
@@ -33,6 +34,7 @@ public:
   static void Save(const RTSMap& m, json *game);
   static void SaveStats(const Player& player, json *game);
   static void SavePlayerMap(const Player& player, json *game);
+  static void SaveGameDef(const GameDef& gamedef, json *game);
   // static void Save(const AI &bot, json *game);
   static void Save(const Unit& unit, const CmdReceiver *receiver, json *game);
   static void Save(const Bullet& bullet, json *game);

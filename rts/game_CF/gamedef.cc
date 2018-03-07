@@ -26,7 +26,7 @@ int GameDef::GetNumAction() {
 }
 
 bool GameDef::IsUnitTypeBuilding(UnitType t) const{
-    return t == FLAG_BASE;
+    return t == FLAG_TOWN_HALL;
 }
 
 bool GameDef::HasBase() const {return false; }
@@ -50,9 +50,9 @@ void GameDef::GlobalInit() {
 
 void GameDef::Init() {
     _units.assign(GetNumUnitType(), UnitTemplate());
-    _units[FLAG_BASE] = _C(0, 1, 0, 0.0, 0, 0, 5, {0, 0, 0, 1}, vector<CmdType>{BUILD}, ATTR_INVULNERABLE);
+    _units[FLAG_TOWN_HALL] = _C(0, 1, 0, 0.0, 0, 0, 5, {0, 0, 0, 1}, vector<CmdType>{BUILD}, ATTR_INVULNERABLE);
     _units[FLAG] = _C(0, 1, 0, 0, 0, 0, 0, vector<int>{0, 0, 0, 0}, vector<CmdType>{}, ATTR_INVULNERABLE);
-    _units[FLAG_ATHLETE] = _C(0, 100, 0, 0.1, 10, 1, 3, vector<int>{0, 15, 0, 0}, vector<CmdType>{MOVE, ATTACK, GET_FLAG, ESCORT_FLAG_TO_BASE});
+    _units[FLAG_ATHLETE] = _C(0, 100, 0, 0.1, 10, 1, 3, vector<int>{0, 15, 0, 0}, vector<CmdType>{MOVE, ATTACK, GET_FLAG, ESCORT_FLAG_TO_TOWN_HALL});
 }
 
 vector<pair<CmdBPtr, int> > GameDef::GetInitCmds(const RTSGameOptions& options) const{

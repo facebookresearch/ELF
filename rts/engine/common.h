@@ -30,16 +30,16 @@ const int MAX_GAME_LENGTH_EXCEEDED = -2;
 
 custom_enum(UnitType, INVALID_UNITTYPE = -1,
     /* Minirts unit types*/
-    RESOURCE = 0, WORKER, MELEE_ATTACKER, RANGE_ATTACKER, BARRACKS, BASE, NUM_MINIRTS_UNITTYPE,
+    RESOURCE = 0, PEASANT, SWORDMAN, SPEARMAN, CAVALRY, ARCHER, DRAGON, CATAPULT, BARRACK, BLACKSMITH, STABLE, WORKSHOP, GUARD_TOWER, TOWN_HALL, NUM_MINIRTS_UNITTYPE,
     /* Capture the flag unit type */
-    FLAG_BASE = 0, FLAG_ATHLETE, FLAG, NUM_FLAG_UNITTYPE,
+    FLAG_TOWN_HALL = 0, FLAG_ATHLETE, FLAG, NUM_FLAG_UNITTYPE,
     /* Tower defense unit type */
     TOWER_BASE = 0, TOWER_ATTACKER, TOWER, NUM_TD_UNITTYPE
     );
 
 custom_enum(UnitAttr, INVALID_UNITATTR = -1, ATTR_NORMAL = 0, ATTR_INVULNERABLE, NUM_UNITATTR);
 custom_enum(CDType, INVALID_CDTYPE = -1, CD_MOVE = 0, CD_ATTACK, CD_GATHER, CD_BUILD, NUM_COOLDOWN);
-custom_enum(Terrain, INVALID_TERRAIN = -1, NORMAL = 0, IMPASSABLE = 1, FOG = 2);
+custom_enum(Terrain, INVALID_TERRAIN = -1, SOIL = 0, SAND = 1, GRASS = 2, ROCK = 3, WATER = 4, FOG = 5);
 custom_enum(Level, INVALID_LEVEL = -1, GROUND = 0, AIR, NUM_LEVEL);
 custom_enum(BulletState, INVALID_BULLETSTATE = -1, BULLET_READY = 0, BULLET_EXPLODE1, BULLET_EXPLODE2, BULLET_EXPLODE3, BULLET_DONE);
 
@@ -70,6 +70,14 @@ struct Coord {
         return ii;
     }
 
+    bool operator==(const Coord& other) const {
+      return x == other.x && y == other.y && z == other.z;
+    }
+
+    bool operator!=(const Coord& other) const {
+      return !(*this == other);
+    }
+
     SERIALIZER(Coord, x, y, z);
     HASH(Coord, x, y, z);
 };
@@ -87,6 +95,8 @@ struct PointF {
     PointF(const Coord& c) :  x(c.x), y(c.y) { }
     Coord ToCoord() const { return Coord((int)(x + 0.5), (int)(y + 0.5)); }
 
+    PointF self() const { return *this; }
+
     PointF Left() const { PointF c(*this); c.x -= 1.0; return c; }
     PointF Right() const { PointF c(*this); c.x += 1.0; return c; }
     PointF Up() const { PointF c(*this); c.y -= 1.0; return c; }
@@ -103,6 +113,7 @@ struct PointF {
     PointF BB() const { PointF c(*this); c.y += 2.0; return c; }
 
     bool IsInvalid() const { return x < -1e17 || y < -1e17; }
+    bool IsValid() const { return ! IsInvalid(); }
     void SetInvalid() { x = -1e18; y = -1e18; }
 
     PointF CCW90() const {
@@ -179,6 +190,12 @@ struct PointF {
         return dx * dx + dy * dy;
     }
 
+    string info() const {
+        return std::to_string(x) + ", " + std::to_string(y);
+    }
+
+    void SetIntXY(int xx, int yy) { x = xx; y = yy; }
+
     SERIALIZER(PointF, x, y);
     HASH(PointF, x, y);
 };
@@ -226,6 +243,14 @@ struct Cooldown {
 
     SERIALIZER(Cooldown, _last, _cd);
     HASH(Cooldown, _cd, _last);
+};
+
+struct BuildSkill {
+    int _unit_type;
+    string _hotkey;
+
+    UnitType GetUnitType() const { return static_cast<UnitType>(_unit_type); }
+    string GetHotKey() const { return _hotkey; }
 };
 
 STD_HASH(Cooldown);

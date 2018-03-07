@@ -18,22 +18,27 @@
 class Unit;
 
 struct Fog {
+    static const set<UnitType> kSavableUnitTypes;
+
+    static const set<Terrain> kSavableTerrainTypes;
     // Fog level: 0 no fog, 100 completely invisible.
     int _fog = 100;
+    bool _has_seen_terrain;
     vector<Unit> _prev_seen_units;
 
     void MakeInvisible() {  _fog = 100; }
-    void SetClear() { _fog = 0; _prev_seen_units.clear(); }
+    void SetClear(Terrain terrain);
     bool CanSeeTerrain() const { return _fog < 50; }
     bool CanSeeUnit() const { return _fog < 30; }
+    bool HasSeenTerrain() const { return _has_seen_terrain; }
+    void ForgetTerrain() { _has_seen_terrain = false; }
 
-    void SaveUnit(const Unit &u) {
-        _prev_seen_units.push_back(u);
-    }
+    void SaveUnit(const Unit &u);
 
     void ResetFog() {
         _fog = 100;
-        _prev_seen_units.clear(); 
+        _has_seen_terrain = false;
+        _prev_seen_units.clear();
     }
 
     const vector<Unit> &seen_units() const { return _prev_seen_units; }
@@ -105,7 +110,7 @@ private:
 
     Loc _filter_with_fow(const Unit& u) const;
 
-    bool line_passable(UnitId id, const PointF &curr, const PointF &target) const;
+    bool line_passable(const UnitTemplate& unit_def, UnitId id, const PointF &curr, const PointF &target) const;
     float get_line_dist(const Loc &p1, const Loc &p2) const;
 
     // Update the heuristic value.
@@ -119,7 +124,6 @@ public:
     }
     Player(const RTSMap& m, const std::string &name, int player_id)
         : _map(&m), _player_id(player_id), _name(name), _privilege(PV_NORMAL), _resource(0) {
-        _fogs.assign(_map->GetPlaneSize(), Fog());
     }
 
     const RTSMap& GetMap() const { return *_map; }
@@ -128,6 +132,7 @@ public:
     const std::string &GetName() const { return _name; }
     int GetResource() const { return _resource; }
 
+    void CreateFog();
     string Draw() const;
     void ComputeFOW(const map<UnitId, unique_ptr<Unit> > &units);
     bool FilterWithFOW(const Unit& u) const;
@@ -139,7 +144,8 @@ public:
     }
 
     // It will change _heuristics internally.
-    bool PathPlanning(Tick tick, UnitId id, const PointF &curr, const PointF &target, int max_iteration, bool verbose, Coord *first_block, float *est_dist) const;
+    bool PathPlanning(Tick tick, UnitId id, const UnitTemplate& unit_def, const PointF &curr, const PointF &target, int max_iteration,
+        bool verbose, Coord *first_block, float *est_dist) const;
 
     void SetPrivilege(PlayerPrivilege new_pv) { _privilege = new_pv; }
     PlayerPrivilege GetPrivilege() const { return _privilege; }

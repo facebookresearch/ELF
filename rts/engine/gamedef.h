@@ -41,16 +41,23 @@ struct UnitProperty {
     inline Cooldown &CD(CDType t) { return _cds[t]; }
     inline const Cooldown &CD(CDType t) const { return _cds[t]; }
     inline UnitId GetLastDamageFrom() const { return _damage_from; }
+    void SetCooldown(int t, Cooldown cd) { _cds[static_cast<CDType>(t)] = cd; }
+
+    // setters for lua
+    void SetSpeed(double speed) { _speed = static_cast<float>(speed); }
+    void SetAttr(int attr) { _attr = static_cast<UnitAttr>(attr); }
 
     string Draw(Tick tick) const {
-        string s = make_string(_hp, _max_hp);
+        stringstream ss;
+        ss << "Tick: " << tick << " ";
+        ss << "H: " << _hp << "/" << _max_hp << " ";
         for (int i = 0; i < NUM_COOLDOWN; ++i) {
             CDType t = (CDType)i;
             int cd_val = CD(t)._cd;
             int diff = std::min(tick - CD(t)._last, cd_val);
-            s += make_string(t, diff, cd_val) + " ";
+            ss << t << " [last=" << CD(t)._last << "][diff=" << diff << "][cd=" << cd_val << "]; ";
         }
-        return s;
+        return ss.str();
     }
     inline string PrintInfo() const { return std::to_string(_hp) + "/" + std::to_string(_max_hp); }
 
@@ -66,12 +73,41 @@ STD_HASH(UnitProperty);
 struct UnitTemplate {
     UnitProperty _property;
     set<CmdType> _allowed_cmds;
+    vector<float> _attack_multiplier;
+    set<Terrain> _cant_move_over;
+    UnitType _build_from;
+    vector<BuildSkill> _build_skills;
     int _build_cost;
+
+    UnitTemplate() : _attack_multiplier(NUM_MINIRTS_UNITTYPE, 0.0) {}
 
     int GetUnitCost() const { return _build_cost; }
     bool CmdAllowed(CmdType cmd) const {
+        if (cmd == CMD_DURATIVE_LUA) return true;
         return _allowed_cmds.find(cmd) != _allowed_cmds.end();
     }
+
+    float GetAttackMultiplier(UnitType unit_type) const { return _attack_multiplier[unit_type]; }
+    bool CanMoveOver(Terrain terrain) const { return _cant_move_over.find(terrain) == _cant_move_over.end(); }
+    const vector<BuildSkill>& GetBuildSkills() const { return _build_skills; }
+
+    UnitType GetUnitTypeFromHotKey(char hotkey) const {
+        for (const auto& skill : _build_skills) {
+            if (hotkey == skill.GetHotKey()[0]) {
+                return skill.GetUnitType();
+            }
+        }
+        return INVALID_UNITTYPE;
+    }
+
+    void AddAllowedCmd(int cmd) { _allowed_cmds.insert(static_cast<CmdType>(cmd)); }
+    void SetAttackMultiplier(int unit_type, double mult) { _attack_multiplier[unit_type] = static_cast<float>(mult); }
+    void AddCantMoveOver(int terrain) { _cant_move_over.insert(static_cast<Terrain>(terrain)); }
+    void SetBuildFrom(int unit_type) { _build_from = (UnitType)unit_type;}
+    void AddBuildSkill(BuildSkill skill) { _build_skills.push_back(std::move(skill)); }
+
+    void SetProperty(UnitProperty prop) { _property = prop; }
+
 };
 
 UnitTemplate _C(int cost, int hp, int defense, float speed, int att, int att_r, int vis_r,
