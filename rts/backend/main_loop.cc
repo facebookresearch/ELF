@@ -167,7 +167,7 @@ RTSGameOptions ai_vs_ai(const Parser &parser, string *players) {
 
 RTSGameOptions ai_vs_ai2(const Parser &parser, string *players) {
     RTSGameOptions options = GetOptions(parser);
-    *players = "simple,hit_and_run";
+    *players = "simple,tower_defense";
     int vis_after = parser.GetItem<int>("vis_after");
     if (vis_after >= 0) *players += ",spectator=" + std::to_string(parser.GetItem<int>("vis_after"));
 

@@ -21,7 +21,7 @@
 static AI *get_ai(int game_idx, const mcts::TSOptions &mcts_opt, const AIOptions &opt, Context::AIComm *ai_comm) {
     // std::cout << "AI type = " << ai_type << " Backup AI type = " << backup_ai_type << std::endl;
     if (opt.type == "AI_SIMPLE") return new SimpleAI(opt);
-    else if (opt.type == "AI_HIT_AND_RUN") return new HitAndRunAI(opt);
+    else if (opt.type == "AI_TOWER_DEFENSE") return new TowerDefenseAI(opt);
     else if (opt.type == "AI_NN") {
         TrainedAI *main_ai = new TrainedAI(opt);
         main_ai->InitAIComm(ai_comm);

@@ -46,7 +46,7 @@ public:
     bool GetActSimpleState(vector<int>* state);
     // Determine state array for HitAndRunAI
 
-    bool GetActHitAndRunState(vector<int>* state);
+    bool GetActTowerDefenseState(vector<int>* state);
     // [REGION_MAX_RANGE_X][REGION_MAX_RANGE_Y][REGION_RANGE_CHANNEL]
     bool ActWithMap(const GameEnv &env, const vector<vector<vector<int>>>& action_map, string *state_string, AssignedCmds *assigned_cmds);
 };

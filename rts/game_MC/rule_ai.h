@@ -17,17 +17,17 @@ private:
     }
 };
 
-// HitAndRun AI, rule-based AI for Mini-RTS
-class HitAndRunAI : public AI {
+// TowerDefense AI, rule-based AI for Mini-RTS
+class TowerDefenseAI : public AI {
 public:
-    HitAndRunAI(const AIOptions &opt) : AI(opt.name)  { }
+    TowerDefenseAI(const AIOptions &opt) : AI(opt.name)  { }
 
-    // SERIALIZER_DERIVED(HitAndRunAI, AIBase, _state);
+    // SERIALIZER_DERIVED(TowerDefenseAI, AIBase, _state);
 
 private:
     bool Act(const RTSState &, RTSMCAction *action, const atomic_bool *) override {
         action->Init(id(), name());
-        action->SetHitAndRunAI();
+        action->SetTowerDefenseAI();
         return true;
     }
 };
@@ -36,7 +36,7 @@ class RandomAI : public AI {
 public:
     RandomAI(int seed) : AI("random"), rng_(seed)  { }
 
-    // SERIALIZER_DERIVED(HitAndRunAI, AIBase, _state);
+    // SERIALIZER_DERIVED(TowerDefenseAI, AIBase, _state);
 
 private:
     std::mt19937 rng_;
@@ -55,7 +55,7 @@ public:
         specified_action_ = a;
     }
 
-    // SERIALIZER_DERIVED(HitAndRunAI, AIBase, _state);
+    // SERIALIZER_DERIVED(TowerDefenseAI, AIBase, _state);
 
 private:
     int specified_action_ = -1;
@@ -69,4 +69,3 @@ private:
         return true;
     }
 };
-

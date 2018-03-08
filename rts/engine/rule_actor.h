@@ -174,7 +174,19 @@ public:
     // Gather information needed for action.
     bool GatherInfo(const GameEnv &env, string *state_string, AssignedCmds *assigned_cmds);
 
-    bool ActByCmd(const GameEnv &env, const vector<CmdInput>& cmd_inputs, string * /*state_string*/, AssignedCmds *assigned_cmds) {
+    bool ActByCmd(const GameEnv &env, const vector<CmdInput>& cmd_inputs, string * state_string, AssignedCmds *assigned_cmds) {
+        GatherInfo(env, state_string, assigned_cmds);
+        const GameDef& gamedef = env.GetGameDef();
+        // Make guard towers auto attack
+        int tower_r = gamedef.unit(GUARD_TOWER)._property._att_r;
+        const auto& my_troops = _preload.MyTroops();
+        for (const Unit *u : my_troops[GUARD_TOWER]) {
+            UnitId closest_id = env.FindClosestEnemy(_player_id, u->GetPointF(), tower_r);
+            if (closest_id != INVALID) {
+                store_cmd(u, _A(closest_id), assigned_cmds);
+            }
+        }
+
         for (const CmdInput &cmd : cmd_inputs) {
             // std::cout << cmd.info() << std::endl;
             CmdBPtr c = cmd.GetCmd();
