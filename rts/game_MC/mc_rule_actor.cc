@@ -384,33 +384,38 @@ bool MCRuleActor::GetActSimpleState(vector<int>* state) {
     return true;
 }
 
-bool MCRuleActor::GetActHitAndRunState(vector<int>* state) {
+bool MCRuleActor::GetActTowerDefenseState(vector<int>* state) {
     vector<int> &_state = *state;
 
     const auto& my_troops = _preload.MyTroops();
     const auto& cnt_under_construction = _preload.CntUnderConstruction();
-    const auto& enemy_troops = _preload.EnemyTroops();
+    //const auto& enemy_troops = _preload.EnemyTroops();
     const auto& enemy_troops_in_range = _preload.EnemyTroopsInRange();
     const auto& enemy_attacking_economy = _preload.EnemyAttackingEconomy();
 
-    if (my_troops[PEASANT].size() < 3 && _preload.Affordable(PEASANT)) {
+    if (my_troops[PEASANT].size() < 4 && _preload.Affordable(PEASANT)) {
         _state[STATE_BUILD_PEASANT] = 1;
     }
-    if (my_troops[PEASANT].size() >= 3 && my_troops[BARRACK].size() + cnt_under_construction[BARRACK] < 1 && _preload.Affordable(BARRACK)) {
-        _state[STATE_BUILD_BARRACK] = 1;
+    if (my_troops[PEASANT].size() >= 4 && my_troops[GUARD_TOWER].size() + cnt_under_construction[GUARD_TOWER] < 2 && _preload.Affordable(GUARD_TOWER)) {
+        _state[STATE_BUILD_GUARD_TOWER] = 1;
     }
-    if (my_troops[BARRACK].size() >= 1 && _preload.Affordable(CAVALRY)) {
-        _state[STATE_BUILD_RANGE_TROOP] = 1;
+
+    if (my_troops[PEASANT].size() >= 4 && my_troops[BLACKSMITH].size() + cnt_under_construction[BLACKSMITH] < 1 && _preload.Affordable(BLACKSMITH)) {
+        _state[STATE_BUILD_BLACKSMITH] = 1;
     }
-    int range_troop_size = my_troops[CAVALRY].size();
-    if (range_troop_size >= 2) {
-        if (enemy_troops[SPEARMAN].empty() && enemy_troops[CAVALRY].empty()
-          && enemy_troops[PEASANT].empty()) {
-            _state[STATE_ATTACK] = 1;
-        } else {
-            _state[STATE_HIT_AND_RUN] = 1;
-        }
+
+    if (my_troops[BLACKSMITH].size() >= 1 && _preload.Affordable(SWORDMAN)) {
+        _state[STATE_BUILD_SWORDMAN] = 1;
     }
+
+    if (my_troops[SWORDMAN].size() >= 1) {
+        _state[STATE_SCOUT] = 1;
+    }
+
+    if (my_troops[SWORDMAN].size() >= 5) {
+        _state[STATE_ATTACK] = 1;
+    }
+
     if (! enemy_troops_in_range.empty() || ! enemy_attacking_economy.empty()) {
         _state[STATE_DEFEND] = 1;
     }

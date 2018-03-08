@@ -58,10 +58,10 @@ void GameDef::GlobalInit() {
         return new SimpleAI(ai_options);
     });
 
-    AIFactory<AI>::RegisterAI("hit_and_run", [](const std::string &spec) {
+    AIFactory<AI>::RegisterAI("tower_defense", [](const std::string &spec) {
         (void)spec;
         AIOptions ai_options;
-        return new HitAndRunAI(ai_options);
+        return new TowerDefenseAI(ai_options);
     });
 }
 
@@ -98,4 +98,6 @@ PlayerId GameDef::CheckWinner(const GameEnv& env, bool /*exceeds_max_tick*/) con
 
 void GameDef::CmdOnDeadUnitImpl(GameEnv* env, CmdReceiver* receiver, UnitId /*_id*/, UnitId _target) const{
     Unit *target = env->GetUnit(_target);
-    if (target == nullptr) return; receiver->SendCmd(CmdIPtr(new CmdRemove(_target))); }
+    if (target == nullptr) return;
+    receiver->SendCmd(CmdIPtr(new CmdRemove(_target)));
+}

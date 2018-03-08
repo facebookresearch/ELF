@@ -21,9 +21,9 @@ public:
                           // std::cout << "Initialize backup as ai_simple" << std::endl;
                           _backup_ai.reset(new SimpleAI(opt2));
                       }
-                      else if (kv.second == "AI_HIT_AND_RUN" || kv.second == "ai_hit_and_run") {
+                      else if (kv.second == "AI_TOWER_DEFENSE" || kv.second == "ai_tower_defense") {
                           // std::cout << "Initialize backup as ai_hit_and_run" << std::endl;
-                          _backup_ai.reset(new HitAndRunAI(opt2));
+                          _backup_ai.reset(new TowerDefenseAI(opt2));
                       }
                   } else {
                       std::cout << "Unrecognized (key, value) = (" << kv.first << "," << kv.second << ")" << std::endl;
@@ -99,4 +99,3 @@ protected:
         if (_main_ai != nullptr) _main_ai->SetId(id());
     }
 };
-
