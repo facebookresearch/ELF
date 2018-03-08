@@ -163,7 +163,7 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
             auto cmd = _A(target_unit->GetId());
             for (const Unit *u : all_my_troops) {
                 const CmdDurative *curr_cmd = GetCurrCmd(*_receiver, *u);
-                if (curr_cmd == nullptr && u->GetUnitType() != PEASANT) {
+                if (curr_cmd == nullptr && u->GetUnitType() != PEASANT && !gamedef.IsUnitTypeBuilding(u->GetUnitType())) {
                     store_cmd(u, cmd->clone(), assigned_cmds);
                 }
             }
@@ -175,7 +175,7 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
         auto cmd = _A(enemy_troops_in_range[0]->GetId());
         for (const Unit *u : all_my_troops) {
             const CmdDurative *curr_cmd = GetCurrCmd(*_receiver, *u);
-            if (curr_cmd == nullptr && u->GetUnitType() != PEASANT) {
+            if (curr_cmd == nullptr && u->GetUnitType() != PEASANT && !gamedef.IsUnitTypeBuilding(u->GetUnitType())) {
                 store_cmd(u, cmd->clone(), assigned_cmds);
             }
         }
