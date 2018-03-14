@@ -47,11 +47,13 @@ void GameEnv::Reset() {
     for (auto& player : _players) {
         player.ClearCache();
     }
+    _frozen = false;
 }
 
-void GameEnv::AddPlayer(const std::string &name, PlayerPrivilege pv) {
+void GameEnv::AddPlayer(const std::string &name, PlayerPrivilege pv, PlayerType pt) {
     _players.emplace_back(*_map, name, _players.size());
     _players.back().SetPrivilege(pv);
+    _players.back().SetType(pt);
 }
 
 void GameEnv::RemovePlayer() {

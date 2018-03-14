@@ -29,6 +29,7 @@ struct CmdInput {
     // ready signal.
     // When not ready, id/target/base are not usable and should be used after ApplyEnv().
     bool ready = false;
+    string instruction;
     PointF unit_loc;
 
     // By default this is ready.

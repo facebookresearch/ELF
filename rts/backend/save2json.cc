@@ -81,6 +81,10 @@ void save2json::Save(const RTSMap& m, json *game) {
     (*game)["rts_map"] = rts_map;
 }
 
+void save2json::SetFrozen(bool frozen, json *game) {
+    (*game)["frozen"] = frozen;
+}
+
 void save2json::SavePlayerMap(const Player& player, json *game) {
     json rts_map;
     const RTSMap &m = player.GetMap();
@@ -141,6 +145,21 @@ void save2json::SaveGameDef(const GameDef& gamedef, json *game) {
     json_gd["units"] = u_def;
     (*game)["gamedef"] = json_gd;
 }
+
+
+void save2json::SavePlayerInstructions(const Player& player, json *game) {
+    json instructions;
+    for (const auto& inst : player.GetInstructions()) {
+        json json_inst;
+        json_inst["tick_issued"] = inst._tick_issued;
+        json_inst["tick_finished"] = inst._tick_finished;
+        json_inst["text"] = inst._text;
+        json_inst["done"] = inst._done;
+        instructions.push_back(json_inst);
+    }
+    (*game)["instructions"] = instructions;
+}
+
 
 void save2json::SaveStats(const Player& player, json *game) {
     // Save the information for player.

@@ -9,4 +9,4 @@ CMD_IMMEDIATE(LoadMap, std::string, s);
 CMD_IMMEDIATE(RandomSeed, uint64_t, seed);
 CMD_IMMEDIATE(Comment, std::string, comment);
 CMD_IMMEDIATE(CDStart, CDType, cd_type);
-
+CMD_IMMEDIATE(FreezeGame, bool, freeze);

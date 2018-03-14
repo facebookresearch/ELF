@@ -12,7 +12,7 @@
 
 /////////// RawToCmd /////////////////
 //
-CmdInput move_event(const Unit &u, char /*hotkey*/, const PointF& p, const UnitId &target_id, const GameEnv&) {
+CmdInput move_event(const Unit &u, char hotkey, const PointF& p, const UnitId &target_id, const GameEnv&) {
     // Don't need to check hotkey since there is only one type of action.
     if (target_id == INVALID) {
         if (! p.IsInvalid()) {
@@ -71,6 +71,17 @@ CmdInput build_event(const Unit &u, char hotkey, const PointF& p, const UnitId& 
     return CmdInput(CmdInput::CI_BUILD, u.GetId(), build_p, INVALID, INVALID, build_type);
 }
 
+string read_instruction(istream& is) {
+    string instruction;
+    for (string piece; is >> piece; ) {
+        if (!instruction.empty()) {
+            instruction += ' ';
+        }
+        instruction += piece;
+    }
+    return instruction;
+}
+
 void RawToCmd::add_hotkey(const string& s, EventResp f) {
     for (size_t i = 0; i < s.size(); ++i) {
         _hotkey_maps.insert(make_pair(s[i], f));
@@ -102,6 +113,7 @@ RawMsgStatus RawToCmd::Process(Tick tick, const GameEnv &env, const string&s, ve
     Tick t;
     char c;
     float percent;
+    string instruction;
     PointF p, p2;
     set<UnitId> selected;
 
@@ -144,6 +156,16 @@ RawMsgStatus RawToCmd::Process(Tick tick, const GameEnv &env, const string&s, ve
             // cout << "Get slider bar notification " << percent << endl;
             ui_cmds->push_back(UICmd::GetUISlideBar(percent));
             return PROCESSED;
+        case 'X':
+            instruction = read_instruction(ii);
+            cmds->emplace_back(CmdBPtr(new CmdIssueInstruction(INVALID, _player_id, instruction)));
+            ui_cmds->push_back(UICmd::GetIssueInstruction(instruction));
+            break;
+        case 'Z':
+            instruction = read_instruction(ii);
+            cmds->emplace_back(CmdBPtr(new CmdFinishInstruction(INVALID, _player_id, instruction)));
+            ui_cmds->push_back(UICmd::GetFinishInstruction(instruction));
+            break;
         case 'P':
             ui_cmds->push_back(UICmd::GetToggleGamePause());
             return PROCESSED;

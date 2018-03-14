@@ -9,8 +9,8 @@ RTSState::RTSState() {
     _env.ClearAllPlayers();
 }
 
-void RTSState::AppendPlayer(const string &name) {
-    _env.AddPlayer(name, PV_KNOW_ALL);
+void RTSState::AppendPlayer(const string &name, PlayerType player_type) {
+    _env.AddPlayer(name, PV_NORMAL, player_type);
 }
 
 void RTSState::RemoveLastPlayer() {
@@ -125,9 +125,9 @@ elf::GameResult RTSState::PostAct() {
     // if (_tick_prompt) *_output_stream << "Start executing cmds... " << endl << flush;
     _cmd_receiver.ExecuteDurativeCmds(_env, _verbose);
     _cmd_receiver.ExecuteImmediateCmds(&_env, _verbose);
+
     // cout << "Compute Fow" << endl;
     _env.ComputeFOW();
-    
     /*
     if (GetTick() % 50 == 0) {
         cout << "[" << GetTick() << "] Player 0: prev seen count: " << endl;
