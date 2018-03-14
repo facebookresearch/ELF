@@ -194,6 +194,12 @@ bool CmdBuild::run(const GameEnv &env, CmdReceiver *receiver) {
                 } else {
                     build_p = _p;
                 }
+                if (!env.GetMap().CanPass(build_p, INVALID, true, env.GetGameDef().unit(_build_type))) {
+                    // cannot build here, money back, end
+                    receiver->SendCmd(CmdIPtr(new CmdChangePlayerResource(_id, u->GetPlayerId(), cost)));
+                    _done = true;
+                    return true;
+                }
                 if (! build_p.IsInvalid()) {
                     receiver->SendCmd(CmdIPtr(new CmdCreate(_id, _build_type, build_p, u->GetPlayerId(), cost)));
                     _done = true;

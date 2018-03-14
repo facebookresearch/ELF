@@ -286,7 +286,7 @@ function rts_unit_factory.init_catapult()
     {UnitType.SPEARMAN, 1.0},
     {UnitType.CAVALRY, 1.0}
   }
-  local cant_move_over = {}
+  local cant_move_over = {Terrain.ROCK, Terrain.WATER}
   local build_skills = {}
   local ut = __create_unit_template(
     --[[cost]]200,
@@ -310,7 +310,7 @@ end
 
 function rts_unit_factory.init_barrack()
   local allowed_cmds = {CmdType.BUILD}
-  local cant_move_over = {}
+  local cant_move_over = {Terrain.ROCK, Terrain.WATER}
   local build_skills = {
     __create_build_skill(UnitType.SPEARMAN, "s")
   }
@@ -337,7 +337,7 @@ end
 function rts_unit_factory.init_blacksmith()
   local allowed_cmds = {CmdType.BUILD}
   local attack_multiplier = {}
-  local cant_move_over = {}
+  local cant_move_over = {Terrain.ROCK, Terrain.WATER}
   local build_skills = {
     __create_build_skill(UnitType.SWORDMAN, "s")
   }
@@ -363,7 +363,7 @@ end
 function rts_unit_factory.init_stables()
   local allowed_cmds = {CmdType.BUILD}
   local attack_multiplier = {}
-  local cant_move_over = {}
+  local cant_move_over = {Terrain.ROCK, Terrain.WATER}
   local build_skills = {
     __create_build_skill(UnitType.CAVALRY, "c")
   }
@@ -389,7 +389,7 @@ end
 function rts_unit_factory.init_workshop()
   local allowed_cmds = {CmdType.BUILD}
   local attack_multiplier = {}
-  local cant_move_over = {}
+  local cant_move_over = {Terrain.ROCK, Terrain.WATER}
   local build_skills = {
     __create_build_skill(UnitType.ARCHER, "a"),
     __create_build_skill(UnitType.DRAGON, "d"),
@@ -439,7 +439,7 @@ function rts_unit_factory.init_guard_tower()
     --[[hp]]150,
     --[[defense]]5,
     --[[speed]]0.0,
-    --[[att]]0,
+    --[[att]]10,
     --[[att_r]]5,
     --[[vis_r]]5,
     --[[cds]]{0, 50, 0, 0},
@@ -456,7 +456,7 @@ end
 function rts_unit_factory.init_town_hall()
   local allowed_cmds = {CmdType.BUILD}
   local attack_multiplier = {}
-  local cant_move_over = {}
+  local cant_move_over = {Terrain.ROCK, Terrain.WATER}
   local build_skills = {
     __create_build_skill(UnitType.PEASANT, "p"),
   }
