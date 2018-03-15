@@ -42,7 +42,13 @@ bool add_players(const string &args, int frame_skip, RTSGame *game) {
     int port = 8000;
     for (const auto& player : split(args, ',')) {
         cout << "Dealing with player = " << player << endl;
-        if (player.find("tcp") == 0) {
+        if (player.find("tcp_team") == 0) {
+            vector<string> params = split(player, '=');
+            const int player_id = game->AddBot(new TCPPlayerAI("tcpteamai", 8000), 1);
+            game->AddBot(new TCPCoachAI("tcpteamai", 8001, player_id), 1);
+            game->GetState().AppendPlayer("tcpplayer", PT_PLAYER);
+            game->GetState().AppendPlayer("tcpcoach", PT_COACH);
+        } else if (player.find("tcp") == 0) {
             vector<string> params = split(player, '=');
             // int tick_start = (params.size() == 1 ? 0 : std::stoi(params[1]));
             game->AddBot(new TCPAI("tcpai", port++), 1);
@@ -145,6 +151,13 @@ RTSGameOptions ai_vs_human(const Parser &parser, string *players) {
     *players = "tcp,simple";
     options.main_loop_quota = 40;
 
+    return options;
+}
+
+RTSGameOptions ai_vs_team(const Parser &parser, string *players) {
+    RTSGameOptions options = GetOptions(parser);
+    *players = "tcp_team,simple";
+    options.main_loop_quota = 40;
     return options;
 }
 
@@ -353,6 +366,7 @@ int main(int argc, char *argv[]) {
         { "replay", replay },
         { "replay_cmd", replay_cmd },
         { "humanplay", ai_vs_human },
+        { "teamplay", ai_vs_team },
         { "humanhuman", human_vs_human },
         { "multiple_selfplay", nullptr},
         //{ "replay_rollout", nullptr},

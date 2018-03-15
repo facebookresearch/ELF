@@ -9,3 +9,5 @@ CMD_IMMEDIATE(MeleeAttack, UnitId, target, int, att);
 CMD_IMMEDIATE(OnDeadUnit, UnitId, target);
 CMD_IMMEDIATE(Harvest, UnitId, target, int, delta);
 CMD_IMMEDIATE(ChangePlayerResource, PlayerId, player_id, int, delta);
+CMD_IMMEDIATE(IssueInstruction, PlayerId, player_id, string, instruction);
+CMD_IMMEDIATE(FinishInstruction, PlayerId, player_id, string, instruction);

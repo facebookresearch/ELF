@@ -33,8 +33,13 @@ public:
     void PreAct() override;
     void IncTick() override;
 
-    bool forward(RTSAction &a) {
-        return RTSState::forward(a);
+    bool forward(RTSAction &actions) {
+        if (! RTSState::forward(actions)) return false;
+        // Then we also need to send UI commands, if there is any.
+        for (const auto &cmd : actions.ui_cmds()) {
+            dispatch_cmds(cmd);
+        }
+        return true;
     }
 
     bool forward(ReplayLoader::Action &actions) override {
@@ -56,7 +61,6 @@ private:
     // Next snapshot to load.
     int _snapshot_to_load;
 
-    bool _paused;
     bool _tick_prompt;
     bool _tick_verbose;
 
@@ -74,4 +78,6 @@ private:
     CmdReturn dispatch_cmds(const UICmd& cmd);
 
     bool change_simulation_speed(float fraction);
+
+    bool _paused;
 };

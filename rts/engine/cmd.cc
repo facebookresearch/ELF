@@ -110,3 +110,11 @@ bool CmdComment::run(GameEnv*, CmdReceiver*) {
     return true;
 }
 
+bool CmdFreezeGame::run(GameEnv *env, CmdReceiver*) {
+    if (_freeze) {
+        env->FreezeGame();
+    } else {
+        env->UnfreezeGame();
+    }
+    return true;
+}

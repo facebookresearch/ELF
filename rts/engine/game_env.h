@@ -50,6 +50,9 @@ private:
     // This happens if the time tick exceeds max_tick, or there is anything wrong.
     bool _terminated;
 
+    // Froze the game in order to issue an instruction
+    bool _frozen = false;
+
 public:
     GameEnv();
 
@@ -62,7 +65,7 @@ public:
     void Reset();
 
     // Add and remove players.
-    void AddPlayer(const std::string &name, PlayerPrivilege pv);
+    void AddPlayer(const std::string &name, PlayerPrivilege pv, PlayerType pt);
     void RemovePlayer();
 
     int GetNumOfPlayers() const { return _players.size(); }
@@ -175,6 +178,10 @@ public:
     void SaveSnapshot(serializer::saver &saver) const;
     void LoadSnapshot(serializer::loader &loader);
 
+    void FreezeGame() { _frozen = true; }
+    void UnfreezeGame() { _frozen = false; }
+    bool IsFrozen() const { return _frozen; }
+
     // Compute the hash code.
     uint64_t CurrentHashCode() const;
 
@@ -260,6 +267,7 @@ void GameEnv::FillIn(PlayerId player_id, const CmdReceiver& receiver, T *game) c
     save_class::SaveGameDef(_gamedef, game);
     save_class::SetPlayerId(player_id, game);
     save_class::SetSpectator(is_spectator, game);
+    save_class::SetFrozen(_frozen, game);
 
     if (is_spectator) {
         // Show all the maps.
@@ -272,6 +280,7 @@ void GameEnv::FillIn(PlayerId player_id, const CmdReceiver& receiver, T *game) c
         // cout << "Save maps and stats" << endl << flush;
         save_class::SavePlayerMap(_players[player_id], game);
         save_class::SaveStats(_players[player_id], game);
+        save_class::SavePlayerInstructions(_players[player_id], game);
     }
 
     // cout << "Save units" << endl << flush;

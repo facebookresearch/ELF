@@ -61,7 +61,10 @@ private:
     int specified_action_ = -1;
     std::mt19937 rng_;
 
-    bool Act(const RTSState &, RTSMCAction *action, const atomic_bool *) override {
+    bool Act(const RTSState & s, RTSMCAction *action, const atomic_bool *) override {
+        if (s.env().IsFrozen()) {
+            return false;
+        }
         action->Init(id(), name());
         int a = specified_action_;
         if (a < 0) a = rng_() % NUM_AISTATE;

@@ -200,7 +200,7 @@ function rts_map_generator.generate_random(map, num_players, seed)
   math.randomseed(seed)
   map:clear_map()
   local X = 40
-  local Y = 40
+  local Y = 30
 
   map:init_map(X, Y, 1)
   rts_map_generator.generate_water(map)

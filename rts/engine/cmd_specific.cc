@@ -48,8 +48,6 @@ CMD_DURATIVE(Gather, UnitId, base, UnitId, resource, int, state = 0);
 bool CmdMove::run(const GameEnv &env, CmdReceiver *receiver) {
     const Unit *u = env.GetUnit(_id);
     if (u == nullptr) return false;
-
-    // cout << "id: " << u.GetId() << " from " << u.GetPointF() << " to " << u.GetLastCmd().p << endl;
     if (micro_move(_tick, *u, env, _p, receiver) < kDistEps) _done = true;
     return true;
 }
@@ -243,6 +241,20 @@ bool CmdChangePlayerResource::run(GameEnv *env, CmdReceiver *receiver) {
         receiver->FinishDurativeCmd(_id);
         return false;
     }
+    return true;
+}
+
+bool CmdIssueInstruction::run(GameEnv *env, CmdReceiver *receiver) {
+    auto& player = env->GetPlayer(_player_id);
+    player.IssueInstruction(_tick, _instruction);
+    env->UnfreezeGame();
+    return true;
+}
+
+bool CmdFinishInstruction::run(GameEnv *env, CmdReceiver *receiver) {
+    auto& player = env->GetPlayer(_player_id);
+    player.FinishInstruction(_tick);
+    env->FreezeGame();
     return true;
 }
 

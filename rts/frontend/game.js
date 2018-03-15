@@ -12,12 +12,21 @@ var canvas = document.createElement("canvas");
 var ctx = canvas.getContext("2d");
 // max sizes
 var map_x = 40;
-var map_y = 40;
+var map_y = 30;
 var SCALER = 1.0;
-var cell_size = 30;
+var cell_size = 40;
+var inst_id = 0;
+var game_type = "duel";
+var player_intf_id = "0";
+var cmd_input = null;
+var cmd_hsitory = null;
+var cmd_button = null;
+var range1 = null;
+var range2 = null;
+
 
 canvas.width = map_x * cell_size + 400;
-canvas.height = map_y * cell_size;
+canvas.height = map_y * cell_size + 200;
 var left_frame_width = map_x * cell_size;
 var player_colors = ['blue', 'red', 'yellow']
 
@@ -37,8 +46,7 @@ var unit_id = {
   "STABLE": 10,
   "WORKSHOP": 11,
   "GUARD_TOWER": 12,
-  "TOWN_HALL": 13};
-
+  "TOWN_HALL": 13}; 
 var x_down = null;
 var y_down = null;
 var x_curr;
@@ -56,93 +64,113 @@ var scale = function(x) {
   return m + Math.floor((x - m) * SCALER);
 }
 
-
-
-var range2 = document.createElement("INPUT");
-range2.type = "range";
-range2.min = min_speed;
-range2.max = max_speed;
-range2.value = 0;
-range2.step = 1;
-range2.style.position = "absolute";
-range2.style.top = 600;
-range2.style.left = left_frame_width + 50;
-range2.style.zindex = 2;
-range2.style.width = "300px";
-range2.style.height = "30px";
-range2.oninput = function(){
-    var update = this.value - speed;
-    speed = this.value;
-    if (update > 0) {
-        for (var i = 0; i < update;i++){
-            send_cmd(tick + ' F');
-        }
-    }
-    if (update < 0) {
-        for (var i = 0; i < -update;i++){
-            send_cmd(tick + ' W');
-        }
-    }
+var is_coach_intf = function() {
+  return player_intf_id === "1";
 }
 
-document.body.appendChild(range2);
+var is_player_intf = function() {
+  return player_intf_id === "0";
+}
 
+var is_spectator_intf = function() {
+  return !is_coach_intf() && !is_player_intf();
+}
+
+
+var is_player = function(player) {
+  return player.player_id === 0;
+}
+
+var is_coach = function(player) {
+  return player.player_id === 1;
+}
 
 var button_left = left_frame_width + scale(30);
 
-var addButton = function(text, cmd) {
-    var button = document.createElement("button");
-    button.innerHTML = text;
-    button.style.position = "absolute";
-    button.style.top = 500;
-    button.style.left = button_left;
-    button.style.zindex = 2;
-    button.style.width = "50px";
-    button.style.height = "30px";
-    button_left += 100;
-    document.body.appendChild(button);
-    button.addEventListener ("click", function() {
-        if (cmd == "F") {
-            console.log(speed);
-            if (speed >= max_speed) return;
-            else {
-                speed = speed + 1;
-                range2.value = speed;
-            }
-        }
-        if (cmd == "W") {
-            console.log(speed);
-            if (speed <= min_speed) return;
-            else {
-                speed = speed - 1;
-                range2.value = speed;
-            }
-        }
-        send_cmd(tick + ' ' + cmd);
-    });
+var make_spectator_intf = function() {
+  range2 = document.createElement("INPUT");
+  range2.type = "range";
+  range2.min = min_speed;
+  range2.max = max_speed;
+  range2.value = 0;
+  range2.step = 1;
+  range2.style.position = "absolute";
+  range2.style.top = 700;
+  range2.style.left = left_frame_width + 50;
+  range2.style.zindex = 2;
+  range2.style.width = "300px";
+  range2.style.height = "30px";
+  range2.oninput = function(){
+      var update = this.value - speed;
+      speed = this.value;
+      if (update > 0) {
+          for (var i = 0; i < update;i++){
+              send_cmd(tick + ' F');
+          }
+      }
+      if (update < 0) {
+          for (var i = 0; i < -update;i++){
+              send_cmd(tick + ' W');
+          }
+      }
+  }
+
+  document.body.appendChild(range2);
+
+  var addButton = function(text, cmd) {
+      var button = document.createElement("button");
+      button.innerHTML = text;
+      button.style.position = "absolute";
+      button.style.top = 600;
+      button.style.left = button_left;
+      button.style.zindex = 2;
+      button.style.width = "50px";
+      button.style.height = "30px";
+      button_left += 100;
+      document.body.appendChild(button);
+      button.addEventListener ("click", function() {
+          if (cmd == "F") {
+              console.log(speed);
+              if (speed >= max_speed) return;
+              else {
+                  speed = speed + 1;
+                  range2.value = speed;
+              }
+          }
+          if (cmd == "W") {
+              console.log(speed);
+              if (speed <= min_speed) return;
+              else {
+                  speed = speed - 1;
+                  range2.value = speed;
+              }
+          }
+          send_cmd(tick + ' ' + cmd);
+      });
+  };
+
+  addButton("Faster", "F");
+  addButton("Slower", "W");
+  addButton("Cycle", "C");
+  addButton("Pause", "P");
+
+  range1 = document.createElement("INPUT");
+  range1.type = "range";
+  range1.min = 0;
+  range1.max = 100;
+  range1.value = 0;
+  range1.step = 1;
+  range1.style.position = "absolute";
+  range1.style.top = 800;
+  range1.style.left = left_frame_width + 50;
+  range1.style.zindex = 2;
+  range1.style.width = "300px";
+  range1.style.height = "30px";
+  range1.oninput = function(){
+      send_cmd(tick + ' S ' + this.value);
+  }
+  document.body.appendChild(range1);
 };
-
-addButton("Faster", "F");
-addButton("Slower", "W");
-addButton("Cycle", "C");
-addButton("Pause", "P");
-
-var range1 = document.createElement("INPUT");
-range1.type = "range";
-range1.min = 0;
-range1.max = 100;
-range1.value = 0;
-range1.step = 1;
-range1.style.position = "absolute";
-range1.style.top = 700;
-range1.style.left = left_frame_width + 50;
-range1.style.zindex = 2;
-range1.style.width = "300px";
-range1.style.height = "30px";
-range1.oninput = function(){
-    send_cmd(tick + ' S ' + this.value);
-}
-document.body.appendChild(range1);
 
 document.body.appendChild(canvas);
 
@@ -150,13 +178,37 @@ var send_cmd = function(s) {
   dealer.send(s);
 };
 
+var draw_instructions = function(instructions) {
+  if (instructions === null) {
+    return;
+  }
+  var history = "";
+  for (var i in instructions) {
+    var inst = instructions[i];
+    if (inst["done"] === true) {
+      var item = i + ": " + inst["text"];
+      history = item + "\n" + history;
+    }
+  }
+  cmd_history.value = history;
+  var cur_inst = "";
+  for (var i in instructions) {
+    var inst = instructions[i];
+    if (inst["done"] === false) {
+      cur_inst = inst["text"];
+    }
+  }
+  cmd_input.value = cur_inst;
+};
+
+
 var resize = function() {
   var min_w = 400;
   var min_h = 400;
   var max_w = 1200;
   var max_h = 1200;
-  var min_cz = 15;
-  var max_cz = 30;
+  var min_cz = 20;
+  var max_cz = 40;
   var dw = 200;
   var dh = 200;
   var w = Math.min(Math.max(window.innerWidth - dw, min_w), max_w);
@@ -167,8 +219,17 @@ var resize = function() {
   cell_size = min_cz + Math.floor(SCALER * (max_cz - min_cz));
 
   canvas.width = map_x * cell_size + scale(400);
-  canvas.height = map_y * cell_size;
+  canvas.height = map_y * cell_size + scale(200);
   left_frame_width = map_x * cell_size;
+
+  cmd_input.style.width = map_x * cell_size - 200;
+  cmd_input.style.top = map_y * cell_size + 40;
+
+  cmd_history.style.width = map_x * cell_size - 200;
+  cmd_history.style.top = map_y * cell_size + 90;
+
+  cmd_button.style.top = map_y * cell_size + 38;
+  cmd_button.style.left = map_x * cell_size - 180;
 }
 
 window.onresize = function(e) {
@@ -207,6 +268,105 @@ var build_cursor = make_cursor('grey');
 
 canvas.oncontextmenu = function (e) {
     e.preventDefault();
+};
+
+
+var make_coach_intf = function() {
+  cmd_input = document.createElement("INPUT");
+  cmd_input.type = "text";
+  cmd_input.value = "";
+  cmd_input.style.position = "absolute";
+  cmd_input.style.top = map_y * cell_size + 30;
+  cmd_input.style.left = 10;
+  cmd_input.style.width = map_x * cell_size - 200;
+  cmd_input.style.height = 20;
+  cmd_input.style.fontSize = "15px";
+  cmd_input.addEventListener ("keydown", function(e) {
+      if (e.keyCode === 13 && cmd_input.value != "") {
+          send_cmd(tick + ' X ' + cmd_input.value);
+          cmd_history.value = inst_id + ": " + cmd_input.value + "\n" + cmd_history.value;
+          inst_id = inst_id + 1;
+          cmd_input.value = "";
+      }
+  });
+  document.body.appendChild(cmd_input);
+
+  cmd_history = document.createElement("textarea");
+  cmd_history.type = "text";
+  cmd_history.value = "";
+  cmd_history.readOnly = "true";
+  cmd_history.style.resize = "none";
+  cmd_history.disabled = "true";
+  cmd_history.style.position = "absolute";
+  cmd_history.style.left = 10;
+  cmd_history.style.height = 150;
+  cmd_history.style.fontSize = "15px";
+  cmd_history.style.top = map_y * cell_size + 80;
+  document.body.appendChild(cmd_history);
+
+  cmd_button = document.createElement("button");
+  cmd_button.innerHTML = "Send Instruction";
+  cmd_button.style.position = "absolute";
+  cmd_button.style.top = map_y * cell_size + 38;
+  cmd_button.style.left = 10 + cmd_input.style.width + 5;
+  cmd_button.style.fontSize = "15px";
+  cmd_button.width = 50;
+  cmd_button.height = 20;
+  cmd_button.zindex = 2;
+  cmd_button.addEventListener("click", function() {
+      if (cmd_input.value != "") {
+          send_cmd(tick + ' X ' + cmd_input.value);
+          cmd_history.value = inst_id + ": " + cmd_input.value + "\n" + cmd_history.value;
+          inst_id = inst_id + 1;
+          cmd_input.value = "";
+      }
+  });
+  document.body.appendChild(cmd_button);
+};
+
+
+var make_player_intf = function() {
+  cmd_input = document.createElement("textarea");
+  cmd_input.type = "text";
+  cmd_input.value = "";
+  cmd_input.readOnly = "true";
+  cmd_input.style.resize = "none";
+  cmd_input.disabled = "true";
+  cmd_input.style.position = "absolute";
+  cmd_input.style.top = map_y * cell_size + 30;
+  cmd_input.style.left = 10;
+  cmd_input.style.width = map_x * cell_size - 200;
+  cmd_input.style.height = 20;
+  cmd_input.style.fontSize = "15px";
+  cmd_input.style.color = "red";
+  document.body.appendChild(cmd_input);
+
+  cmd_history = document.createElement("textarea");
+  cmd_history.type = "text";
+  cmd_history.value = "";
+  cmd_history.readOnly = "true";
+  cmd_history.style.resize = "none";
+  cmd_history.disabled = "true";
+  cmd_history.style.position = "absolute";
+  cmd_history.style.left = 10;
+  cmd_history.style.height = 150;
+  cmd_history.style.fontSize = "15px";
+  cmd_history.style.top = map_y * cell_size + 80;
+  document.body.appendChild(cmd_history);
+
+  cmd_button = document.createElement("button");
+  cmd_button.innerHTML = "Finish Instruction";
+  cmd_button.style.position = "absolute";
+  cmd_button.style.top = map_y * cell_size + 38;
+  cmd_button.style.left = 10 + cmd_input.style.width + 5;
+  cmd_button.style.fontSize = "15px";
+  cmd_button.width = 50;
+  cmd_button.height = 20;
+  cmd_button.zindex = 2;
+  cmd_button.addEventListener("click", function() {
+    send_cmd(tick + ' Z ' + cmd_input.value);
+  });
+  document.body.appendChild(cmd_button);
 };
 
 
@@ -457,9 +617,17 @@ var onPlayersStats = function(players, game) {
     var x1 = left_frame_width;
     var y1 = 0;
     var label = "";
-    for (var i in players) {
-        var player = players[i];
-        label = label + "PLAYER " + player.player_id + ":" + player.resource + "  ";
+    if (players.length === 1) {
+      if (is_coach_intf()) {
+        label = "[COACH] MINERALS: " + players[0].resource;
+      } else {
+        label = "[PLAYER] MINERALS: " + players[0].resource;
+      }
+    } else {
+      for (var i in players) {
+          var player = players[i];
+          label = label + "PLAYER " + player.player_id + ":" + player.resource + "  ";
+      }
     }
     ctx.beginPath()
     ctx.fillStyle = "Black";
@@ -469,6 +637,25 @@ var onPlayersStats = function(players, game) {
     ctx.fillText(label, x1 + cell_size, y1 + cell_size / 2 + scale(5));
     ctx.closePath();
 }
+
+var onPlayerStats = function(player, game) {
+    var x1 = left_frame_width;
+    var y1 = 0;
+    console.log(player);
+    if (is_coach_intf()) {
+      var label = "[COACH] MINERALS: " + player.resource;
+    } else {
+      var label = "[PLAYER] MINERALS: " + player.resource;
+    }
+    ctx.beginPath()
+    ctx.fillStyle = "Black";
+    ctx.font = "15px Arial";
+    ctx.fillText("TIME: " + game.tick, x1 + cell_size, y1 + cell_size / 2 + 5);
+    y1 += scale(25);
+    ctx.fillText(label, x1 + cell_size, y1 + cell_size / 2 + scale(5));
+    ctx.closePath();
+}
+
 
 // Draw units that have been seen.
 var onPlayerSeenUnits = function(m) {
@@ -586,7 +773,8 @@ var load_sprites = function(spec) {
 var load_player_sprites = function(player) {
     var sprites = {};
     sprites["RESOURCE"] = load_sprites({
-        "_file" : "rts/medieval/" + player + "/coin.png",
+       //"_file" : "rts/medieval/" + player + "/coin.png",
+        "_file" : "imgs/mineral1.png",
         "_scale": 1.2,
         "_select_scale" : 1
     });
@@ -751,14 +939,18 @@ terrain_sprites["FOG"] = load_sprites({
 
 
 var render = function (game) {
+    map_x = game.rts_map.width;
+    map_y = game.rts_map.height;
+    resize();
     onMap(game.rts_map);
     if (! game.spectator) {
-       onPlayerSeenUnits(game.rts_map);
+      onPlayerSeenUnits(game.rts_map);
     }
 
     var all_units = {};
     var selected = {};
     onPlayersStats(game.players, game);
+
     for (var i in game.units) {
         var unit = game.units[i];
         all_units[unit.id] = unit;
@@ -782,6 +974,12 @@ var render = function (game) {
     for (var i in game.bullets) {
         onBullet(game.bullets[i]);
     }
+
+    if (is_player_intf()) {
+      draw_instructions(game["instructions"]);
+    }
+
+
     var len = Object.keys(selected).length;
     if (len == 1) {
         var idx = Object.keys(selected)[0];
@@ -795,29 +993,61 @@ var render = function (game) {
         var label = len + " units";
     	  ctx.fillText(label ,left_frame_width + scale(50), scale(200));
     }
-    //var label = "Current FPS is " + Math.floor((scale(50)) * Math.pow(1.3, speed));
-    //ctx.fillText(label, left_frame_width + scale(50), scale(370));
-    if (game.replay_length) {
-        //range1.value = 100 * game.tick / game.replay_length;
+    if (is_spectator_intf()) {
+      var label = "Current FPS is " + Math.floor((scale(50)) * Math.pow(1.3, speed));
+      ctx.fillText(label, left_frame_width + scale(50), scale(370));
+
+      if (game.replay_length) {
+          range1.value = 100 * game.tick / game.replay_length;
+      }
+
+      var label = "Current progress_percent is " + range1.value;
+      ctx.fillText(label, left_frame_width + 25 + scale(25), 330 + scale(340));
     }
 
-    /*
-    var label = "Current progress_percent is " + range1.value;
-    ctx.fillText(label, left_frame_width + 25 + scale(25), 330 + scale(340));
-    */
+    var label = "Enter you instruction here:";
+    ctx.fillText(label, 0, map_y * cell_size + 20);
+    var label = "Log of past instructions:";
+    ctx.fillText(label, 0, map_y * cell_size + 70);
+
+    if (game.frozen) {
+      ctx.fillStyle = "White";
+      ctx.font = "20px Arial";
+      if (is_coach_intf()) {
+        var label = "Game is frozen: please issue an instruction";
+      } else {
+        var label = "Game is frozen: please wait for an instruction";
+      }
+      ctx.fillText(label, Math.floor(0.5 *map_x * cell_size) - scale(350), Math.floor(0.5 * map_y * cell_size));
+    }
+
     ctx.closePath();
 };
 
 var main = function () {
   var param = new URLSearchParams(window.location.search);
-  if (param.has("player")) {
-      var port =  param.get("player");
+  if (param.has("type")) {
+    game_type = param.get("type");
+  } else {
+    game_type = "duel";
+  }
+  if (param.has("player_id")) {
+      var port =  param.get("player_id");
   } else {
       var port = "0";
   }
+  player_intf_id = port;
   dealer = new WebSocket('ws://localhost:800' + port);
   dealer.onopen = function(event) {
       console.log("WS Opened.");
+  }
+
+  if (is_coach_intf()) {
+    make_coach_intf();
+  } else if (is_player_intf()) {
+    make_player_intf();
+  } else {
+    make_spectator_intf();
   }
 
   dealer.onmessage = function (message) {

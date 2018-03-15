@@ -416,3 +416,17 @@ string Player::PrintHeuristicsCache() const {
     }
     return ss.str();
 }
+
+
+void Player::IssueInstruction(Tick tick, const string& instruction) {
+    _instructions.emplace_back(Instruction());
+    _instructions.back()._text = instruction;
+    _instructions.back()._tick_issued = tick;
+}
+
+
+void Player::FinishInstruction(Tick tick) {
+    assert(!_instructions.empty());
+    _instructions.back()._tick_finished = tick;
+    _instructions.back()._done = true;
+}

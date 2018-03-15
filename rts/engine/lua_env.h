@@ -35,8 +35,7 @@ public:
     int att_r() const { return  pty()._att_r; }
 
     PlayerId player_id() const { return unit_->GetPlayerId(); }
-
-    bool CDExpired(int cd_type) {
+bool CDExpired(int cd_type) {
         // std::cout << unit_->GetProperty().Draw(tick_) << std::endl;
         return unit_->GetProperty().CD((CDType)cd_type).Passed(tick_); 
     }

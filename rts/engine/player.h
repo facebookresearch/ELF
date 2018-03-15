@@ -17,6 +17,15 @@
 
 class Unit;
 
+struct Instruction {
+    Instruction() : _text(), _tick_issued(-1), _tick_finished(-1), _done(false) {}
+    string _text;
+    Tick _tick_issued;
+    Tick _tick_finished;
+    bool _done;
+};
+
+
 struct Fog {
     static const set<UnitType> kSavableUnitTypes;
 
@@ -50,6 +59,9 @@ struct Fog {
 // KnowAll Player knows everything and can attack objects outside its FOW.
 custom_enum(PlayerPrivilege, PV_NORMAL = 0, PV_KNOW_ALL);
 
+// Type of player
+custom_enum(PlayerType, PT_PLAYER = 0, PT_COACH);
+
 class Player {
 private:
     const RTSMap *_map;
@@ -61,12 +73,17 @@ private:
     // Type of players, different player could have different privileges.
     PlayerPrivilege _privilege;
 
+    PlayerType _type;
+
     // Used in score computation.
     // How many resources the player have.
     int _resource;
 
     // Current fog of war. This containers have the same size as the map.
     vector<Fog> _fogs;
+
+    // Instruction that the player needs to follow
+    vector<Instruction> _instructions;
 
     // Heuristic function for path-planning.
     // Loc x Loc -> min distance (in discrete space).
@@ -120,10 +137,10 @@ private:
     float get_path_dist_heuristic(const Loc &p1, const Loc &p2) const;
 
 public:
-    Player() : _map(nullptr), _player_id(INVALID), _privilege(PV_NORMAL), _resource(0) {
+    Player() : _map(nullptr), _player_id(INVALID), _privilege(PV_NORMAL), _type(PT_PLAYER), _resource(0) {
     }
     Player(const RTSMap& m, const std::string &name, int player_id)
-        : _map(&m), _player_id(player_id), _name(name), _privilege(PV_NORMAL), _resource(0) {
+        : _map(&m), _player_id(player_id), _name(name), _privilege(PV_NORMAL), _type(PT_PLAYER), _resource(0) {
     }
 
     const RTSMap& GetMap() const { return *_map; }
@@ -131,8 +148,7 @@ public:
     PlayerId GetId() const { return _player_id; }
     const std::string &GetName() const { return _name; }
     int GetResource() const { return _resource; }
-
-    void CreateFog();
+void CreateFog();
     string Draw() const;
     void ComputeFOW(const map<UnitId, unique_ptr<Unit> > &units);
     bool FilterWithFOW(const Unit& u) const;
@@ -149,6 +165,9 @@ public:
 
     void SetPrivilege(PlayerPrivilege new_pv) { _privilege = new_pv; }
     PlayerPrivilege GetPrivilege() const { return _privilege; }
+
+    void SetType(PlayerType new_pt) { _type = new_pt; }
+    PlayerType GetType() const { return _type; }
 
     int ChangeResource(int delta) {
         _resource += delta;
@@ -178,6 +197,10 @@ public:
     // 24-30 encoding player id.
     static PlayerId ExtractPlayerId(UnitId id) { return (id >> 24); }
     static UnitId CombinePlayerId(UnitId raw_id, PlayerId player_id) { return (raw_id & 0xffffff) | (player_id << 24); }
+
+    void IssueInstruction(Tick tick, const string& instruction);
+    void FinishInstruction(Tick tick);
+    const vector<Instruction>& GetInstructions() const { return _instructions; }
 
     SERIALIZER(Player, _player_id, _name, _privilege, _resource, _fogs, _heuristics, _cache);
     HASH(Player, _player_id, _privilege, _resource);

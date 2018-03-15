@@ -107,7 +107,12 @@ function add_base_and_workers(proxy, x, y, player_id)
   taken[x * Y + y] = true
   for i = 1, n_workers do
     local found = false
+    local iter = 0
     while not found do
+      iter = iter + 1
+      if iter > 20 then
+        break
+      end
       local xx = x + math.random(-5, 5)
       local yy = y + math.random(-5, 5)
       if can_pass(proxy, xx, yy) and taken[xx * Y + yy] == nil then
@@ -120,7 +125,12 @@ function add_base_and_workers(proxy, x, y, player_id)
   local n_resource = 1
   for i = 1, n_resource do
     local found = false
+    local iter = 0
     while not found do
+      iter = iter + 1
+      if iter > 20 then
+        break
+      end
       local xx = x + math.random(-3, 3)
       local yy = y + math.random(-3, 3)
       local dist = math.abs(xx - x) + math.abs(yy - y)
@@ -145,7 +155,9 @@ function generate_bases(proxy)
   local dir = p < 0.5
 
   local found = false
+  local iter = 0
   while not found do
+    iter = iter + 1
     local xp1 = math.random(0, dx - 1)
     local xp2 = math.random(0, dx - 1)
     local x1 = math.random(2, N - 1) + xp1 * N
@@ -157,15 +169,14 @@ function generate_bases(proxy)
       x1, y1 = y1, x1
       x2, y2 = y2, x2
     end
-    if can_reach(proxy, x1, y1, x2, y2) then
+    if can_reach(proxy, x1, y1, x2, y2) or iter > 20 then
       found = true
       add_base_and_workers(proxy, x1, y1, 0)
-      add_base_and_workers(proxy, x2, y2, 1)
+      add_base_and_workers(proxy, x2, y2, 2)
     end
   end
-
-
-  for player_id = 0, 1 do
+  local players = {0, 2}
+  for p, player_id in ipairs(players) do
     for i = 1, n_resource do
       local found = false
       while not found do
@@ -210,8 +221,7 @@ function rts_unit_generator.generate_random(proxy, num_players, seed)
   math.randomseed(seed)
   generate_bases(proxy)
 
-
   -- change resources
   proxy:send_cmd_change_player_resource(0, 200)
-  proxy:send_cmd_change_player_resource(1, 200)
+  proxy:send_cmd_change_player_resource(2, 200)
 end
