@@ -197,7 +197,7 @@ bool GameEnv::FindEmptyPlaceNearby(const UnitTemplate& unit_def, const PointF &p
     for (int dx = -sx * l1_radius; dx != sx * l1_radius + sx; dx += sx) {
         for (int dy = -sy * l1_radius; dy != sy * l1_radius + sy; dy += sy) {
             PointF new_p(p.x + dx, p.y + dy);
-            if (_map->CanPass(new_p, INVALID, false, unit_def) && _map->IsIn(new_p, margin)) {
+            if (_map->CanPass(new_p, INVALID, true, unit_def) && _map->IsIn(new_p, margin)) {
                 // It may not be a good strategy, though.
                 *res_p = new_p;
                 return true;

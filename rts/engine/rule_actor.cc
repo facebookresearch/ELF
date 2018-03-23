@@ -164,7 +164,6 @@ bool RuleActor::store_cmd(const Unit *u, CmdBPtr&& cmd, AssignedCmds *m) const {
             if (curr_cmd_att->target() == cmd_att->target()) return false;
         }
     }
-
     (*m)[u->GetId()] = std::move(cmd);
     return true;
 }
@@ -230,7 +229,7 @@ bool RuleActor::act_per_unit(const GameEnv &env, const Unit *u, const int *state
     if (ut == TOWN_HALL && state[STATE_BUILD_PEASANT] && idle) {
         if (_preload.BuildIfAffordable(PEASANT)) {
             *state_string = "Build worker..Success";
-            store_cmd(u, _B_CURR_LOC(PEASANT), assigned_cmds);
+            store_cmd(u, _B(PEASANT), assigned_cmds);
         }
     }
 
@@ -257,7 +256,7 @@ bool RuleActor::act_per_unit(const GameEnv &env, const Unit *u, const int *state
         if (state[STATE_BUILD_MELEE_TROOP] && ! region_hist->has_built_melee) {
             if (_preload.BuildIfAffordable(SPEARMAN)) {
                 *state_string = "Build Melee Troop..Success";
-                store_cmd(u, _B_CURR_LOC(SPEARMAN), assigned_cmds);
+                store_cmd(u, _B(SPEARMAN), assigned_cmds);
                 region_hist->has_built_melee = true;
             }
         }
@@ -265,7 +264,7 @@ bool RuleActor::act_per_unit(const GameEnv &env, const Unit *u, const int *state
         if (state[STATE_BUILD_RANGE_TROOP] && ! region_hist->has_built_range) {
             if (_preload.BuildIfAffordable(CAVALRY)) {
                 *state_string = "Build Range Troop..Success";
-                store_cmd(u, _B_CURR_LOC(CAVALRY), assigned_cmds);
+                store_cmd(u, _B(CAVALRY), assigned_cmds);
                 region_hist->has_built_range = true;
             }
         }

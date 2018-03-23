@@ -45,6 +45,16 @@ const Unit* MCRuleActor::GetTargetUnit(const GameEnv &env, const vector<vector<c
     return nullptr;
 }
 
+vector<const Unit *> MCRuleActor::GetArmy(const GameEnv &env, const vector<const Unit *>& all_my_troops) {
+    vector<const Unit *> my_army;
+    for (const Unit *u : all_my_troops) {
+        if (u->GetUnitType() != PEASANT && !env.GetGameDef().IsUnitTypeBuilding(u->GetUnitType())) {
+            my_army.push_back(u);
+        }
+    }
+    return my_army;
+}
+
 bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, string* /*state_string*/, AssignedCmds *assigned_cmds) {
     const GameDef& gamedef = env.GetGameDef();
     const auto& my_troops = _preload.MyTroops();
@@ -97,7 +107,7 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
                     //cout << "build from building" << endl << flush;
                     const Unit *u = GameEnv::PickFirstIdle(my_troops[build_from], *_receiver);
                     if (u != nullptr) {
-                        store_cmd(u, _B_CURR_LOC(build_unit), assigned_cmds);
+                        store_cmd(u, _B(build_unit), assigned_cmds);
                     }
                 } else {
                     //cout << "build from worker" << endl << flush;
@@ -160,25 +170,13 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
     if (state[STATE_ATTACK]) {
         const Unit* target_unit = GetTargetUnit(env, enemy_troops, player);
         if (target_unit != nullptr) {
-            auto cmd = _A(target_unit->GetId());
-            for (const Unit *u : all_my_troops) {
-                const CmdDurative *curr_cmd = GetCurrCmd(*_receiver, *u);
-                if (curr_cmd == nullptr && u->GetUnitType() != PEASANT && !gamedef.IsUnitTypeBuilding(u->GetUnitType())) {
-                    store_cmd(u, cmd->clone(), assigned_cmds);
-                }
-            }
+            batch_store_cmds(GetArmy(env, all_my_troops), _A(target_unit->GetId()), false, assigned_cmds);
         }
     }
 
     if (state[STATE_ATTACK_IN_RANGE]) {
       if (! enemy_troops_in_range.empty()) {
-        auto cmd = _A(enemy_troops_in_range[0]->GetId());
-        for (const Unit *u : all_my_troops) {
-            const CmdDurative *curr_cmd = GetCurrCmd(*_receiver, *u);
-            if (curr_cmd == nullptr && u->GetUnitType() != PEASANT && !gamedef.IsUnitTypeBuilding(u->GetUnitType())) {
-                store_cmd(u, cmd->clone(), assigned_cmds);
-            }
-        }
+            batch_store_cmds(GetArmy(env, all_my_troops), _A(enemy_troops_in_range[0]->GetId()), false, assigned_cmds);
       }
     }
     //cout << "after attack" << endl << flush;
@@ -187,18 +185,18 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
       // Group Retaliation. All troops attack.
       const Unit *enemy_at_resource = _preload.EnemyAtResource();
       if (enemy_at_resource != nullptr) {
-          batch_store_cmds(all_my_troops, _A(enemy_at_resource->GetId()), true, assigned_cmds);
+          batch_store_cmds(GetArmy(env, all_my_troops), _A(enemy_at_resource->GetId()), true, assigned_cmds);
       }
 
       const Unit *enemy_at_base = _preload.EnemyAtBase();
       if (enemy_at_base != nullptr) {
-          batch_store_cmds(all_my_troops, _A(enemy_at_base->GetId()), true, assigned_cmds);
+          batch_store_cmds(GetArmy(env, all_my_troops), _A(enemy_at_base->GetId()), true, assigned_cmds);
       }
 
       if (! enemy_attacking_economy.empty()) {
         auto it = enemy_attacking_economy.begin();
         auto cmd = _A((*it)->GetId());
-        batch_store_cmds(all_my_troops, cmd, true, assigned_cmds);
+        batch_store_cmds(GetArmy(env, all_my_troops), cmd, true, assigned_cmds);
       }
     }
     //cout << "after defend" << endl << flush;
@@ -219,7 +217,7 @@ bool MCRuleActor::ActByStateOld(const GameEnv &env, const vector<int>& state, st
         if (IsIdle(*_receiver, *base)) {
             if (_preload.BuildIfAffordable(PEASANT)) {
                 *state_string = "Build worker..Success";
-                store_cmd(base, _B_CURR_LOC(PEASANT), assigned_cmds);
+                store_cmd(base, _B(PEASANT), assigned_cmds);
             }
         }
     }
@@ -258,7 +256,7 @@ bool MCRuleActor::ActByStateOld(const GameEnv &env, const vector<int>& state, st
             const Unit *u = GameEnv::PickFirstIdle(my_troops[BARRACK], *_receiver);
             if (u != nullptr) {
                 *state_string = "Build Melee Troop..Success";
-                store_cmd(u, _B_CURR_LOC(SPEARMAN), assigned_cmds);
+                store_cmd(u, _B(SPEARMAN), assigned_cmds);
                 _preload.Build(SPEARMAN);
             }
         }
@@ -270,7 +268,7 @@ bool MCRuleActor::ActByStateOld(const GameEnv &env, const vector<int>& state, st
             const Unit *u = GameEnv::PickFirstIdle(my_troops[BARRACK], *_receiver);
             if (u != nullptr) {
                 *state_string = "Build Range Troop..Success";
-                store_cmd(u, _B_CURR_LOC(CAVALRY), assigned_cmds);
+                store_cmd(u, _B(CAVALRY), assigned_cmds);
                 _preload.Build(CAVALRY);
             }
         }
@@ -393,6 +391,8 @@ bool MCRuleActor::GetActTowerDefenseState(vector<int>* state) {
     const auto& enemy_troops_in_range = _preload.EnemyTroopsInRange();
     const auto& enemy_attacking_economy = _preload.EnemyAttackingEconomy();
 
+    _state[STATE_GATHER] = 1;
+
     if (my_troops[PEASANT].size() < 4 && _preload.Affordable(PEASANT)) {
         _state[STATE_BUILD_PEASANT] = 1;
     }
@@ -416,7 +416,11 @@ bool MCRuleActor::GetActTowerDefenseState(vector<int>* state) {
         _state[STATE_ATTACK] = 1;
     }
 
-    if (! enemy_troops_in_range.empty() || ! enemy_attacking_economy.empty()) {
+    if (! enemy_troops_in_range.empty()) {
+        _state[STATE_ATTACK_IN_RANGE] = 1;
+    }
+
+    if (! enemy_attacking_economy.empty()) {
         _state[STATE_DEFEND] = 1;
     }
     return true;

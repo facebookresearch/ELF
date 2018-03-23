@@ -32,6 +32,8 @@ public:
 
     const Unit* GetTargetUnit(const GameEnv &env, const vector<vector<const Unit*> > &enemy_troops, const Player& player);
 
+    vector<const Unit *> GetArmy(const GameEnv &env, const vector<const Unit *>& all_my_troops);
+
     // Act by a state array, used by MiniRTS
     bool ActByStateOld(const GameEnv &env, const vector<int>& state, string *state_string, AssignedCmds *assigned_cmds);
 

@@ -29,16 +29,16 @@ custom_enum(FlagState, FLAGSTATE_START = 0, FLAGSTATE_GET_FLAG, FLAGSTATE_ATTACK
     FLAGSTATE_ESCORT_FLAG, FLAGSTATE_PROTECT_FLAG, //FLAGSTATE_ATTACK, FLAGSTATE_MOVE,
     NUM_FLAGSTATE);
 
-// #define _A(target) CmdBPtr(new CmdAttack(INVALID, target))
-// #define _G(...) CmdBPtr(new CmdGather(INVALID, __VA_ARGS__))
-// #define _B(...) CmdBPtr(new CmdBuild(INVALID, __VA_ARGS__))
+#define _A(target) CmdBPtr(new CmdAttack(INVALID, target))
+#define _G(...) CmdBPtr(new CmdGather(INVALID, __VA_ARGS__))
+#define _B(...) CmdBPtr(new CmdBuild(INVALID, __VA_ARGS__))
 
 // Some easy macros
 #define _M(...) CmdBPtr(new CmdMove(INVALID, __VA_ARGS__))
-#define _A(target) CmdBPtr(new CmdDurativeLuaT<UnitId>("attack", { "target" }, target))
-#define _G(base, resource) CmdBPtr(new CmdDurativeLuaT<UnitId, UnitId>("gather", { "base", "resource" }, base, resource))
-#define _B(build_type, p) CmdBPtr(new CmdDurativeLuaT<int, PointF>("build", { "build_type", "p" }, build_type, p))
-#define _B_CURR_LOC(build_type) CmdBPtr(new CmdDurativeLuaT<int, PointF>("build", { "build_type", "p" }, build_type, PointF()))
+//#define _A(target) CmdBPtr(new CmdDurativeLuaT<UnitId>("attack", { "target" }, target))
+//#define _G(base, resource) CmdBPtr(new CmdDurativeLuaT<UnitId, UnitId>("gather", { "base", "resource" }, base, resource))
+//#define _B(build_type, p) CmdBPtr(new CmdDurativeLuaT<int, PointF>("build", { "build_type", "p" }, build_type, p))
+//#define _B_CURR_LOC(build_type) CmdBPtr(new CmdDurativeLuaT<int, PointF>("build", { "build_type", "p" }, build_type, PointF()))
 
 // Region commands.
 // BUILD_PEASANT: for all idle bases in this region, build a worker.
