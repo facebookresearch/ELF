@@ -222,6 +222,6 @@ function rts_unit_generator.generate_random(proxy, num_players, seed)
   generate_bases(proxy)
 
   -- change resources
-  proxy:send_cmd_change_player_resource(0, 200)
+  proxy:send_cmd_change_player_resource(0, 2000)
   proxy:send_cmd_change_player_resource(2, 200)
 end

@@ -166,6 +166,11 @@ RawMsgStatus RawToCmd::Process(Tick tick, const GameEnv &env, const string&s, ve
             cmds->emplace_back(CmdBPtr(new CmdFinishInstruction(INVALID, _player_id, instruction)));
             ui_cmds->push_back(UICmd::GetFinishInstruction(instruction));
             break;
+        case 'I':
+            instruction = read_instruction(ii);
+            cmds->emplace_back(CmdBPtr(new CmdInterruptInstruction(INVALID, _player_id, instruction)));
+            ui_cmds->push_back(UICmd::GetInterruptInstruction(instruction));
+            break;
         case 'P':
             ui_cmds->push_back(UICmd::GetToggleGamePause());
             return PROCESSED;

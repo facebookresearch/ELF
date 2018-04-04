@@ -245,6 +245,7 @@ bool CmdChangePlayerResource::run(GameEnv *env, CmdReceiver *receiver) {
 }
 
 bool CmdIssueInstruction::run(GameEnv *env, CmdReceiver *receiver) {
+    cout << "issue " << _player_id << endl;
     auto& player = env->GetPlayer(_player_id);
     player.IssueInstruction(_tick, _instruction);
     env->UnfreezeGame();
@@ -252,6 +253,15 @@ bool CmdIssueInstruction::run(GameEnv *env, CmdReceiver *receiver) {
 }
 
 bool CmdFinishInstruction::run(GameEnv *env, CmdReceiver *receiver) {
+    cout << "finish " << _player_id << endl;
+    auto& player = env->GetPlayer(_player_id);
+    player.FinishInstruction(_tick);
+    env->FreezeGame();
+    return true;
+}
+
+bool CmdInterruptInstruction::run(GameEnv *env, CmdReceiver *receiver) {
+    cout << "int " << _player_id << endl;
     auto& player = env->GetPlayer(_player_id);
     player.FinishInstruction(_tick);
     env->FreezeGame();

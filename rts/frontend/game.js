@@ -21,14 +21,17 @@ var player_intf_id = "0";
 var cmd_input = null;
 var cmd_hsitory = null;
 var cmd_button = null;
+var cmd_inter = null;
 var range1 = null;
 var range2 = null;
+var start_time = null;
+var curr_inst = "";
 
 
 canvas.width = map_x * cell_size + 400;
 canvas.height = map_y * cell_size + 200;
 var left_frame_width = map_x * cell_size;
-var player_colors = ['blue', 'red', 'yellow']
+var player_colors = ['blue', 'red', 'red']
 
 var terrains = ["GROUND", "SAND", "GRASS", "ROCK", "WATER", "FOG"];
 var unit_names_minirts = ["RESOURCE", "PEASANT", "SWORDMAN", "SPEARMAN", "CAVALRY", "ARCHER", "DRAGON", "CATAPULT", "BARRACK", "BLACKSMITH", "STABLE", "WORKSHOP", "GUARD_TOWER", "TOWN_HALL"];
@@ -218,7 +221,7 @@ var resize = function() {
   SCALER = Math.min(pw, ph);
   cell_size = min_cz + Math.floor(SCALER * (max_cz - min_cz));
 
-  canvas.width = map_x * cell_size + scale(400);
+  canvas.width = map_x * cell_size + scale(500);
   canvas.height = map_y * cell_size + scale(200);
   left_frame_width = map_x * cell_size;
 
@@ -230,6 +233,11 @@ var resize = function() {
 
   cmd_button.style.top = map_y * cell_size + 38;
   cmd_button.style.left = map_x * cell_size - 180;
+
+  if (cmd_inter != null) {
+    cmd_inter.style.top = map_y * cell_size + 63;
+    cmd_inter.style.left = map_x * cell_size - 180;
+  }
 }
 
 window.onresize = function(e) {
@@ -305,12 +313,12 @@ var make_coach_intf = function() {
   document.body.appendChild(cmd_history);
 
   cmd_button = document.createElement("button");
-  cmd_button.innerHTML = "Send Instruction";
+  cmd_button.innerHTML = "Issue Instruction";
   cmd_button.style.position = "absolute";
   cmd_button.style.top = map_y * cell_size + 38;
   cmd_button.style.left = 10 + cmd_input.style.width + 5;
   cmd_button.style.fontSize = "15px";
-  cmd_button.width = 50;
+  cmd_button.width = 150;
   cmd_button.height = 20;
   cmd_button.zindex = 2;
   cmd_button.addEventListener("click", function() {
@@ -318,10 +326,27 @@ var make_coach_intf = function() {
           send_cmd(tick + ' X ' + cmd_input.value);
           cmd_history.value = inst_id + ": " + cmd_input.value + "\n" + cmd_history.value;
           inst_id = inst_id + 1;
+          curr_instr = cmd_input.value;
           cmd_input.value = "";
       }
   });
   document.body.appendChild(cmd_button);
+
+  cmd_inter = document.createElement("button");
+  cmd_inter.innerHTML = "Interrupt Instruction";
+  cmd_inter.style.position = "absolute";
+  cmd_inter.style.top = map_y * cell_size + 63;
+  cmd_inter.style.left = 10 + cmd_input.style.width + 5;
+  cmd_inter.style.fontSize = "15px";
+  cmd_inter.width = 150;
+  cmd_inter.height = 20;
+  cmd_inter.zindex = 2;
+  cmd_inter.disabled = "true";
+  cmd_inter.addEventListener("click", function() {
+      send_cmd(tick + ' I ' + curr_inst);
+  });
+  document.body.appendChild(cmd_inter);
+
 };
 
 
@@ -442,7 +467,6 @@ function is_build_cmd_allowed(key, types) {
 
 function is_worker_cmd_allowed(key) {
     var worker_types = [unit_id["PEASANT"]];
-    console.log(worker_types);
     return is_build_cmd_allowed(key, worker_types);
 }
 
@@ -613,6 +637,13 @@ var onBullet = function(bullet) {
     draw_bullet(bullets, xy[0], xy[1], bullet.state);
 }
 
+var pad_zero = function(x) {
+  if (x < 10) {
+    return "0" + String(x);
+  }
+  return String(x);
+}
+
 var onPlayersStats = function(players, game) {
     var x1 = left_frame_width;
     var y1 = 0;
@@ -632,26 +663,16 @@ var onPlayersStats = function(players, game) {
     ctx.beginPath()
     ctx.fillStyle = "Black";
     ctx.font = "15px Arial";
-    ctx.fillText("TIME: " + game.tick, x1 + cell_size, y1 + cell_size / 2 + 5);
-    y1 += scale(25);
-    ctx.fillText(label, x1 + cell_size, y1 + cell_size / 2 + scale(5));
-    ctx.closePath();
-}
-
-var onPlayerStats = function(player, game) {
-    var x1 = left_frame_width;
-    var y1 = 0;
-    console.log(player);
-    if (is_coach_intf()) {
-      var label = "[COACH] MINERALS: " + player.resource;
+    if (is_spectator_intf()) {
+      ctx.fillText("TICK: " + game.tick, x1 + cell_size, y1 + cell_size / 2 + 5);
     } else {
-      var label = "[PLAYER] MINERALS: " + player.resource;
+      var diff_ms = ((new Date()) - start_time) / 1000;
+      var sec = Math.floor(diff_ms % 60);
+      var min = Math.floor((diff_ms / 60) % 60);
+
+      ctx.fillText("TIME: " + pad_zero(min) + ":" + pad_zero(sec), x1 + cell_size, y1 + cell_size / 2 + 5);
     }
-    ctx.beginPath()
-    ctx.fillStyle = "Black";
-    ctx.font = "15px Arial";
-    ctx.fillText("TIME: " + game.tick, x1 + cell_size, y1 + cell_size / 2 + 5);
-    y1 += scale(25);
+    y1 += scale(30);
     ctx.fillText(label, x1 + cell_size, y1 + cell_size / 2 + scale(5));
     ctx.closePath();
 }
@@ -679,7 +700,11 @@ var draw_state = function(u, game) {
     draw_sprites(spec, x1 + cell_size / 2, y1 + cell_size, null);
 
     ctx.beginPath();
-    var title = unit_names_minirts[u.unit_type] + ': ' + u.cmd.cmd + '[' + u.cmd.state + ']';
+    if (is_spectator_intf()) {
+      var title = unit_names_minirts[u.unit_type] + ': ' + u.cmd.cmd + '[' + u.cmd.state + ']';
+    } else {
+      var title = unit_names_minirts[u.unit_type];
+    }
     ctx.fillStyle = "black";
     ctx.font = "10px Arial";
     ctx.fillText(title, x1 + 1.5 * cell_size + scale(5), y1 + cell_size / 2 + scale(5), scale(300));
@@ -1021,10 +1046,19 @@ var render = function (game) {
       ctx.fillText(label, Math.floor(0.5 *map_x * cell_size) - scale(350), Math.floor(0.5 * map_y * cell_size));
     }
 
+    if (is_coach_intf()) {
+      cmd_button.disabled = !game.frozen;
+      cmd_input.disabled = !game.frozen;
+      cmd_inter.disabled = game.frozen;
+    } else {
+      cmd_button.disabled = game.frozen;
+    }
+
     ctx.closePath();
 };
 
 var main = function () {
+  start_time = new Date();
   var param = new URLSearchParams(window.location.search);
   if (param.has("type")) {
     game_type = param.get("type");
