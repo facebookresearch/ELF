@@ -16,7 +16,6 @@ var map_y = 30;
 var SCALER = 1.0;
 var cell_size = 40;
 var inst_id = 0;
-var game_type = "duel";
 var player_intf_id = "0";
 var cmd_input = null;
 var cmd_hsitory = null;
@@ -26,6 +25,10 @@ var range1 = null;
 var range2 = null;
 var start_time = null;
 var curr_inst = "";
+var button_faster = null;
+var button_slower = null;
+var button_cycle = null;
+var button_pause = null;
 
 
 canvas.width = map_x * cell_size + 400;
@@ -88,7 +91,6 @@ var is_coach = function(player) {
   return player.player_id === 1;
 }
 
-var button_left = left_frame_width + scale(30);
 
 var make_spectator_intf = function() {
   range2 = document.createElement("INPUT");
@@ -98,7 +100,7 @@ var make_spectator_intf = function() {
   range2.value = 0;
   range2.step = 1;
   range2.style.position = "absolute";
-  range2.style.top = 700;
+  range2.style.top = 320;
   range2.style.left = left_frame_width + 50;
   range2.style.zindex = 2;
   range2.style.width = "300px";
@@ -119,12 +121,13 @@ var make_spectator_intf = function() {
   }
 
   document.body.appendChild(range2);
+  var button_left = left_frame_width + scale(50);
 
   var addButton = function(text, cmd) {
       var button = document.createElement("button");
       button.innerHTML = text;
       button.style.position = "absolute";
-      button.style.top = 600;
+      button.style.top = 200;
       button.style.left = button_left;
       button.style.zindex = 2;
       button.style.width = "50px";
@@ -150,12 +153,13 @@ var make_spectator_intf = function() {
           }
           send_cmd(tick + ' ' + cmd);
       });
+      return button;
   };
 
-  addButton("Faster", "F");
-  addButton("Slower", "W");
-  addButton("Cycle", "C");
-  addButton("Pause", "P");
+  button_faster = addButton("Faster", "F");
+  button_slower = addButton("Slower", "W");
+  button_cycle = addButton("Cycle", "C");
+  button_pause = addButton("Pause", "P");
 
   range1 = document.createElement("INPUT");
   range1.type = "range";
@@ -164,7 +168,7 @@ var make_spectator_intf = function() {
   range1.value = 0;
   range1.step = 1;
   range1.style.position = "absolute";
-  range1.style.top = 800;
+  range1.style.top = 420;
   range1.style.left = left_frame_width + 50;
   range1.style.zindex = 2;
   range1.style.width = "300px";
@@ -173,6 +177,36 @@ var make_spectator_intf = function() {
       send_cmd(tick + ' S ' + this.value);
   }
   document.body.appendChild(range1);
+
+  cmd_input = document.createElement("textarea");
+  cmd_input.type = "text";
+  cmd_input.value = "";
+  cmd_input.readOnly = "true";
+  cmd_input.style.resize = "none";
+  cmd_input.disabled = "true";
+  cmd_input.style.position = "absolute";
+  cmd_input.style.top = map_y * cell_size + 30;
+  cmd_input.style.left = 10;
+  cmd_input.style.width = map_x * cell_size - 200;
+  cmd_input.style.height = 20;
+  cmd_input.style.fontSize = "15px";
+  cmd_input.style.color = "red";
+  document.body.appendChild(cmd_input);
+
+  cmd_history = document.createElement("textarea");
+  cmd_history.type = "text";
+  cmd_history.value = "";
+  cmd_history.readOnly = "true";
+  cmd_history.style.resize = "none";
+  cmd_history.disabled = "true";
+  cmd_history.style.position = "absolute";
+  cmd_history.style.left = 10;
+  cmd_history.style.height = 150;
+  cmd_history.style.fontSize = "15px";
+  cmd_history.style.top = map_y * cell_size + 80;
+  document.body.appendChild(cmd_history);
+
+  cmd_button = document.createElement("button");
 };
 
 document.body.appendChild(canvas);
@@ -237,6 +271,15 @@ var resize = function() {
   if (cmd_inter != null) {
     cmd_inter.style.top = map_y * cell_size + 63;
     cmd_inter.style.left = map_x * cell_size - 180;
+  }
+
+  if (is_spectator_intf()) {
+    button_faster.style.left = left_frame_width + scale(50) + scale(0 * 100);
+    button_slower.style.left = left_frame_width + scale(50) + scale(1 * 100);
+    button_cycle.style.left = left_frame_width + scale(50) + scale(2 * 100);
+    button_pause.style.left = left_frame_width + scale(50) + scale(3 * 100);
+    range1.style.left = left_frame_width + scale(50);
+    range2.style.left = left_frame_width + scale(50);
   }
 }
 
@@ -1000,7 +1043,7 @@ var render = function (game) {
         onBullet(game.bullets[i]);
     }
 
-    if (is_player_intf()) {
+    if (is_player_intf() || is_spectator_intf()) {
       draw_instructions(game["instructions"]);
     }
 
@@ -1020,17 +1063,21 @@ var render = function (game) {
     }
     if (is_spectator_intf()) {
       var label = "Current FPS is " + Math.floor((scale(50)) * Math.pow(1.3, speed));
-      ctx.fillText(label, left_frame_width + scale(50), scale(370));
+      ctx.fillText(label, left_frame_width + scale(50), 300);
 
       if (game.replay_length) {
           range1.value = 100 * game.tick / game.replay_length;
       }
 
       var label = "Current progress_percent is " + range1.value;
-      ctx.fillText(label, left_frame_width + 25 + scale(25), 330 + scale(340));
+      ctx.fillText(label, left_frame_width + scale(50), 400);
     }
 
-    var label = "Enter you instruction here:";
+    if (is_coach_intf()) {
+      var label = "Enter you instruction here:";
+    } else {
+      var label = "Current instruction to perform:";
+    }
     ctx.fillText(label, 0, map_y * cell_size + 20);
     var label = "Log of past instructions:";
     ctx.fillText(label, 0, map_y * cell_size + 70);
@@ -1067,10 +1114,11 @@ var main = function () {
   }
   if (param.has("player_id")) {
       var port =  param.get("player_id");
+      player_intf_id = port;
   } else {
       var port = "0";
+      player_intf_id = "2";
   }
-  player_intf_id = port;
   dealer = new WebSocket('ws://localhost:800' + port);
   dealer.onopen = function(event) {
       console.log("WS Opened.");

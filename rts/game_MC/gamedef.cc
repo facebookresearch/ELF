@@ -89,7 +89,11 @@ vector<pair<CmdBPtr, int> > GameDef::GetInitCmds(const RTSGameOptions& options) 
       init_cmds.push_back(make_pair(CmdBPtr(new CmdGenerateMap(INVALID, options.seed)), 1));
       //init_cmds.push_back(make_pair(CmdBPtr(new CmdGameStartSpecific(INVALID)), 2));
       init_cmds.push_back(make_pair(CmdBPtr(new CmdGenerateUnit(INVALID, options.seed)), 2));
-      init_cmds.push_back(make_pair(CmdBPtr(new CmdFreezeGame(INVALID, true)), 3));
+      cout << "init " << endl;
+      if (options.team_play) {
+          cout << "frez " << endl;
+          init_cmds.push_back(make_pair(CmdBPtr(new CmdFreezeGame(INVALID, true)), 3));
+      }
       return init_cmds;
 }
 

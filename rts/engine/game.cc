@@ -34,6 +34,7 @@ RTSStateExtend::RTSStateExtend(const RTSGameOptions &options)
        _output_stream_owned = true;
     }
     _paused = false;
+    _env.SetTeamPlay(options.team_play);
 }
 
 RTSStateExtend::~RTSStateExtend() {

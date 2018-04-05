@@ -158,6 +158,7 @@ RTSGameOptions ai_vs_team(const Parser &parser, string *players) {
     RTSGameOptions options = GetOptions(parser);
     *players = "tcp_team,simple";
     options.main_loop_quota = 40;
+    options.team_play = true;
     return options;
 }
 
@@ -246,6 +247,13 @@ RTSGameOptions replay(const Parser &parser, string *players) {
     *players = "dummy,dummy,spectator=" + std::to_string(parser.GetItem<int>("vis_after")) + "=" + parser.GetItem<string>("load_replay");
     return options;
 }
+
+RTSGameOptions teamreplay(const Parser &parser, string *players) {
+    RTSGameOptions options = GetOptions(parser);
+    *players = "dummy,dummy,dummy,spectator=" + std::to_string(parser.GetItem<int>("vis_after")) + "=" + parser.GetItem<string>("load_replay");
+    return options;
+}
+
 /*
 void replay_mcts(const Parser &parser) {
     string filename = parser.GetItem<string>("load_binary_string");
@@ -364,6 +372,7 @@ int main(int argc, char *argv[]) {
         { "mcts", ai_vs_mcts },
 
         { "replay", replay },
+        { "teamreplay", teamreplay },
         { "replay_cmd", replay_cmd },
         { "humanplay", ai_vs_human },
         { "teamplay", ai_vs_team },

@@ -52,6 +52,7 @@ private:
 
     // Froze the game in order to issue an instruction
     bool _frozen = false;
+    bool _team_play = false;
 
 public:
     GameEnv();
@@ -178,9 +179,20 @@ public:
     void SaveSnapshot(serializer::saver &saver) const;
     void LoadSnapshot(serializer::loader &loader);
 
-    void FreezeGame() { _frozen = true; }
-    void UnfreezeGame() { _frozen = false; }
-    bool IsFrozen() const { return _frozen; }
+    void FreezeGame() {
+        if (IsTeamPlay()) {
+            _frozen = true;
+        }
+    }
+    void UnfreezeGame() {
+        if (IsTeamPlay()) {
+            _frozen = false;
+        }
+    }
+    bool IsFrozen() const { return _frozen && IsTeamPlay(); }
+
+    void SetTeamPlay(const bool team_play) { _team_play = team_play; }
+    bool IsTeamPlay() const { return _team_play; }
 
     // Compute the hash code.
     uint64_t CurrentHashCode() const;
@@ -275,6 +287,7 @@ void GameEnv::FillIn(PlayerId player_id, const CmdReceiver& receiver, T *game) c
         for (size_t i = 0; i < _players.size(); ++i) {
             save_class::SaveStats(_players[i], game);
         }
+        save_class::SavePlayerInstructions(_players[0], game);
     } else {
         // Show only visible maps
         // cout << "Save maps and stats" << endl << flush;
