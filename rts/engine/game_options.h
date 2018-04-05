@@ -55,6 +55,8 @@ struct RTSGameOptions {
     // Handicap_level used in Capture the Flag.
     int handicap_level = 0;
 
+    bool team_play = false;
+
     string PrintInfo() const {
         std::stringstream ss;
 
