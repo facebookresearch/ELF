@@ -2,7 +2,8 @@
 
 #include "common.h"
 
-custom_enum(UICtrlType, UI_SLIDEBAR, UI_FASTER_SIMULATION, UI_SLOWER_SIMULATION, UI_CYCLEPLAYER, TOGGLE_GAME_PAUSE, UI_ISSUE_INSTRUCTION, UI_FINISH_INSTRUCTION);
+custom_enum(UICtrlType, UI_SLIDEBAR, UI_FASTER_SIMULATION, UI_SLOWER_SIMULATION, UI_CYCLEPLAYER, TOGGLE_GAME_PAUSE, UI_ISSUE_INSTRUCTION,
+    UI_FINISH_INSTRUCTION, UI_INTERRUPT_INSTRUCTION);
 
 struct UICmd {
     UICtrlType cmd;
@@ -19,6 +20,7 @@ struct UICmd {
     static UICmd GetToggleGamePause() { UICmd cmd; cmd.cmd = TOGGLE_GAME_PAUSE; return cmd; }
     static UICmd GetIssueInstruction(const string& instruction) { UICmd cmd; cmd.cmd = UI_ISSUE_INSTRUCTION; cmd.arg3 = instruction; return cmd; }
     static UICmd GetFinishInstruction(const string& instruction) { UICmd cmd; cmd.cmd = UI_FINISH_INSTRUCTION; cmd.arg3 = instruction; return cmd; }
+    static UICmd GetInterruptInstruction(const string& instruction) { UICmd cmd; cmd.cmd = UI_INTERRUPT_INSTRUCTION; cmd.arg3 = instruction; return cmd; }
 
     std::string PrintInfo() const {
         //case UI_SLIDEBAR: oo << make_string("percent:", arg2); break;

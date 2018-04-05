@@ -157,9 +157,9 @@ bool TCPCoachAI::Act(const State &s, RTSMCAction *action, const std::atomic_bool
     _ctrl.ExtractWithId(s, _player_id, &game);
     _ctrl.Send(game.dump());
 
-    if (!s.env().IsFrozen()) {
-        return false;
-    }
+    //if (!s.env().IsFrozen()) {
+    //    return false;
+    //}
 
     vector<CmdBPtr> cmds;
     vector<UICmd> ui_cmds;
