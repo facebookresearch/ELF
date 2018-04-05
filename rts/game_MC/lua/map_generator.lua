@@ -91,7 +91,7 @@ function add_line(map, sx, sy, tx, ty, terrain, has_hole)
 end
 
 function gen_holes_mask(N)
-  local n_holes = math.random(1, math.min(3, N))
+  local n_holes = math.random(2, math.min(3, N))
   local holes_mask = {}
   for i = 1, N do
     holes_mask[i] = false
