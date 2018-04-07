@@ -20,7 +20,7 @@ using namespace std::chrono;
 
 ////////////////////////// RTSStateExtend ////////////////////////////////////
 RTSStateExtend::RTSStateExtend(const RTSGameOptions &options)
-    : _options(options), _snapshot_to_load(-1), _paused(false), _output_stream_owned(false), _output_stream(nullptr) {
+    : _options(options), _snapshot_to_load(-1), _output_stream_owned(false), _output_stream(nullptr) {
     if (_options.output_file.empty()) {
         _output_stream = _options.output_stream;
         _output_stream_owned = false;
@@ -33,6 +33,8 @@ RTSStateExtend::RTSStateExtend(const RTSGameOptions &options)
        _output_stream = new ofstream(_options.output_file);
        _output_stream_owned = true;
     }
+    _paused = false;
+    _env.SetTeamPlay(options.team_play);
 }
 
 RTSStateExtend::~RTSStateExtend() {
@@ -63,6 +65,12 @@ CmdReturn RTSStateExtend::dispatch_cmds(const UICmd& cmd) {
         case TOGGLE_GAME_PAUSE:
             _paused = ! _paused;
             break;
+        case UI_ISSUE_INSTRUCTION:
+            _env.UnfreezeGame();
+            break;
+        case UI_FINISH_INSTRUCTION:
+            _env.FreezeGame();
+            break;
         default:
             cout << "Cmd not handled! " << cmd.PrintInfo() << endl;
             break;
@@ -79,7 +87,6 @@ bool RTSStateExtend::Init() {
 
     _clock.Restart();
     _snapshot_to_load = -1;
-    _paused = false;
 
     const int game_counter = RTSState::env().GetGameCounter();
     _prefix = _options.save_replay_prefix + std::to_string(game_counter);
@@ -137,17 +144,18 @@ elf::GameResult RTSStateExtend::PostAct() {
     _clock.Record("Act");
 
     if (_paused) return elf::GAME_NORMAL;
+    if (_env.IsFrozen()) return elf::GAME_NORMAL;
 
     if (_tick_prompt) *_output_stream << "Forwarding ... " << endl << flush;
 
     elf::GameResult res = RTSState::PostAct();
 
-    Tick t = RTSState::GetTick();
-    const GameEnv &env = RTSState::env();
+    //Tick t = RTSState::GetTick();
+    //const GameEnv &env = RTSState::env();
 
     if (res != elf::GAME_NORMAL) {
         if (_output_stream) {
-            *_output_stream << "[" << t << "][" << env.GetGameCounter() << "] Player " << env.GetWinnerId() << " won!" << endl << flush;
+            // *_output_stream << "[" << t << "][" << env.GetGameCounter() << "] Player " << env.GetWinnerId() << " won!" << endl << flush;
             if (res == elf::GAME_ERROR) {
                 *_output_stream << RTSState::receiver().GetGameStats().GetLastError();
             }
@@ -180,3 +188,4 @@ void RTSStateExtend::IncTick() {
         this_thread::sleep_until(_time_loop_start + chrono::milliseconds(_options.main_loop_quota));
     }
 }
+

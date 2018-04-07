@@ -35,6 +35,7 @@ public:
     void Receive(const RTSState &s, vector<CmdBPtr> *cmds, vector<UICmd> *ui_cmds);
     void Send(const string &s) { server_->send(s); }
     void Extract(const RTSState &s, json *game);
+    void ExtractWithId(const RTSState &s, int player_id, json *game);
 
 private:
     RawToCmd _raw_converter;
@@ -74,4 +75,35 @@ private:
     int _vis_after;
 
     vector<string> _history_states;
+};
+
+class TCPCoachAI : public AI {
+public:
+    TCPCoachAI(const std::string &name, int port, int player_id) : AI(name), _ctrl(port), _player_id(player_id) { }
+    bool Act(const State &s, RTSMCAction *action, const std::atomic_bool *) override;
+
+private:
+    WebCtrl _ctrl;
+    int _player_id;
+
+protected:
+  void on_set_id() override {
+      this->AI::on_set_id();
+      _ctrl.SetId(id());
+  }
+};
+
+class TCPPlayerAI : public AI {
+public:
+    TCPPlayerAI(const std::string &name, int port) : AI(name), _ctrl(port) { }
+    bool Act(const State &s, RTSMCAction *action, const std::atomic_bool *) override;
+
+private:
+    WebCtrl _ctrl;
+
+protected:
+    void on_set_id() override {
+        this->AI::on_set_id();
+        _ctrl.SetId(id());
+    }
 };

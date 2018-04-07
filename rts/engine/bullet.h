@@ -44,7 +44,7 @@ public:
     }
 
     Bullet(const PointF &p, const UnitId &id_from, int att, float speed)
-        : _p(p), _id_from(id_from), _state(BULLET_READY), _att(att), _target_id(INVALID), _speed(speed) {
+        : _p(p), _id_from(id_from), _state(BULLET_CREATE), _att(att), _target_id(INVALID), _speed(speed) {
     }
 
     void SetTargetUnitId(const UnitId &id) { _target_id = id; }

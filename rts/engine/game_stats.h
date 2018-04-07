@@ -37,15 +37,15 @@ struct FacilityStats {
     std::vector<int> base_choices;
     int games = 0;
 
-    const int NUM_BASE_CHOICES = 4;
+    const int NUM_TOWN_HALL_CHOICES = 4;
 
     FacilityStats() {
-        base_choices.resize(NUM_BASE_CHOICES);
+        base_choices.resize(NUM_TOWN_HALL_CHOICES);
         std::fill(base_choices.begin(), base_choices.end(), 0);
     }
 
     void feed(int base_choice) {
-        if (base_choice >= 0 && base_choice < NUM_BASE_CHOICES) {
+        if (base_choice >= 0 && base_choice < NUM_TOWN_HALL_CHOICES) {
             base_choices[base_choice] ++;
         }
         games ++;
@@ -53,7 +53,7 @@ struct FacilityStats {
 
     std::string info() const {
         std::stringstream ss;
-        for (int i = 0; i < NUM_BASE_CHOICES; i++) {
+        for (int i = 0; i < NUM_TOWN_HALL_CHOICES; i++) {
             ss << "Base loc" << i << " rate: " << (float)base_choices[i] / games << " " << base_choices[i] << "/" << games << endl;
         }
         return ss.str();

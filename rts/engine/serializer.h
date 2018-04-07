@@ -21,6 +21,7 @@
 #include <utility>
 #include <unordered_map>
 #include <memory>
+#include <typeinfo>
 #include "pq_extend.h"
 
 namespace serializer {
@@ -107,6 +108,24 @@ public:
         if (! s.is_binary()) s.get() << " ";
         s << v.second;
         if (! s.is_binary()) s.get() << " ";
+        return s;
+    }
+
+    template <std::size_t I, typename... Ts>
+    typename std::enable_if<I < sizeof...(Ts), void>::type _save_tuple(const std::tuple<Ts...>& v) {
+        *this << std::get<I>(v);
+        if (! this->is_binary()) this->get() << " ";
+        this->_save_tuple<I + 1, Ts...>(v);
+    }
+
+    template <std::size_t I, typename... Ts>
+    typename std::enable_if<I == sizeof...(Ts), void>::type _save_tuple(const std::tuple<Ts...>&) {
+    }
+
+    template <typename... Ts>
+    friend saver &operator<<(saver &s, const std::tuple<Ts...>& v) {
+        if (! s.is_binary()) s.get() << " ";
+        s._save_tuple<0, Ts...>(v);
         return s;
     }
 
@@ -249,6 +268,22 @@ public:
             l >> tmp;
             v.push(std::move(tmp));
         }
+        return l;
+    }
+
+    template <std::size_t I, typename... Ts>
+    typename std::enable_if<I < sizeof...(Ts), void>::type _load_tuple(std::tuple<Ts...>& v) {
+        *this >> std::get<I>(v);
+        this->_load_tuple<I + 1, Ts...>(v);
+    }
+
+    template <std::size_t I, typename... Ts>
+    typename std::enable_if<I == sizeof...(Ts), void>::type _load_tuple(std::tuple<Ts...>&) {
+    }
+
+    template <typename... Ts>
+    friend loader &operator>>(loader &l, std::tuple<Ts...>& v) {
+        l._load_tuple<0, Ts...>(v);
         return l;
     }
 
@@ -434,8 +469,8 @@ class no_such_obj_exception {
 
 };
 
-#define SERIALIZER_BASE(BaseTypeName, ...) \
-    virtual std::string _signature() const { return #BaseTypeName; } \
+#define SERIALIZER_TOWN_HALL(BaseTypeName, ...) \
+    virtual std::string _signature() const { return typeid(BaseTypeName).name(); } \
     virtual serializer::saver &Save(serializer::saver &oo) const { \
         serializer::Save(oo, __VA_ARGS__); \
         if (! oo.is_binary()) oo.get() << " "; \
@@ -446,7 +481,7 @@ class no_such_obj_exception {
     } \
 
 #define SERIALIZER_DERIVED(TypeName, BaseTypeName, ...) \
-    std::string _signature() const override { return #TypeName; } \
+    std::string _signature() const override { return typeid(TypeName).name(); } \
     serializer::saver &Save(serializer::saver &oo) const override { \
         BaseTypeName::Save(oo); \
         serializer::Save(oo, __VA_ARGS__); \
@@ -459,7 +494,7 @@ class no_such_obj_exception {
     } \
 
 #define SERIALIZER_DERIVED0(TypeName, BaseTypeName) \
-    std::string _signature() const override { return #TypeName; } \
+    std::string _signature() const override { return typeid(TypeName).name(); } \
 
 #define SERIALIZER_ANCHOR(AnchorTypeName) \
     static std::map<std::string, std::function<AnchorTypeName *()> > _name2obj; \
@@ -488,9 +523,9 @@ class no_such_obj_exception {
         return *p1 < *p2; \
     } \
 
-#define S_ITEM(TypeName) { #TypeName, []() { return new TypeName(); } }
+#define S_ITEM(TypeName) { typeid(TypeName).name(), []() { return new TypeName(); } }
 #define SERIALIZER_ANCHOR_INIT(AnchorTypeName, ...) std::map<std::string, std::function<AnchorTypeName *()> > AnchorTypeName::_name2obj = { S_ITEM(AnchorTypeName), __VA_ARGS__ }
 
-#define SERIALIZER_ANCHOR_FUNC(AnchorTypeName, TypeName) AnchorTypeName::_name2obj[#TypeName] = []() { return new TypeName(); }
+#define SERIALIZER_ANCHOR_FUNC(AnchorTypeName, TypeName) AnchorTypeName::_name2obj[typeid(TypeName).name()] = []() { return new TypeName(); }
 
 #endif

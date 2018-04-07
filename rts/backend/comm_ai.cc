@@ -11,13 +11,16 @@
 
 void WebCtrl::Extract(const RTSState &s, json *game) {
     PlayerId id = _raw_converter.GetPlayerId();
+    ExtractWithId(s, id, game);
+}
 
+void WebCtrl::ExtractWithId(const RTSState &s, int player_id, json *game) {
     const CmdReceiver &recv = s.receiver();
     const GameEnv &env = s.env();
 
     env.FillHeader<save2json, json>(recv, game);
-    env.FillIn<save2json, json>(id, recv, game);
-    save2json::SaveCmd(recv, id, game);
+    env.FillIn<save2json, json>(player_id, recv, game);
+    save2json::SaveCmd(recv, player_id, game);
 
     for (const int &i : _raw_converter.GetAllSelectedUnits()) {
         (*game)["selected_units"].push_back(i);
@@ -124,3 +127,51 @@ bool TCPSpectator::Act(const RTSState &s, Action *action, const std::atomic_bool
     return true;
 }
 
+bool TCPPlayerAI::Act(const State &s, RTSMCAction *action, const std::atomic_bool *) {
+    // First we send the visualization.
+    json game;
+    _ctrl.Extract(s, &game);
+    _ctrl.Send(game.dump());
+
+    if (s.env().IsFrozen()) {
+        return false;
+    }
+    vector<CmdBPtr> cmds;
+    vector<UICmd> ui_cmds;
+    _ctrl.Receive(s, &cmds, &ui_cmds);
+    // Put the cmds to action, ignore all ui cmds.
+    // [TODO]: Move this to elf::game_base.h.
+    action->Init(id(), name());
+    for (auto &&cmd : cmds) {
+        action->cmds().emplace(make_pair(cmd->id(), std::move(cmd)));
+    }
+    for (auto &&ui_cmd : ui_cmds) {
+        action->ui_cmds().emplace_back(std::move(ui_cmd));
+    }
+    return true;
+}
+
+bool TCPCoachAI::Act(const State &s, RTSMCAction *action, const std::atomic_bool *) {
+    // First we send the visualization.
+    json game;
+    _ctrl.ExtractWithId(s, _player_id, &game);
+    _ctrl.Send(game.dump());
+
+    //if (!s.env().IsFrozen()) {
+    //    return false;
+    //}
+
+    vector<CmdBPtr> cmds;
+    vector<UICmd> ui_cmds;
+    _ctrl.Receive(s, &cmds, &ui_cmds);
+    // Put the cmds to action, ignore all ui cmds.
+    // [TODO]: Move this to elf::game_base.h.
+    action->Init(id(), name());
+    for (auto &&cmd : cmds) {
+        action->cmds().emplace(make_pair(cmd->id(), std::move(cmd)));
+    }
+    for (auto &&ui_cmd : ui_cmds) {
+        action->ui_cmds().emplace_back(std::move(ui_cmd));
+    }
+    return true;
+}

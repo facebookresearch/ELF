@@ -7,8 +7,7 @@
 * of patent rights can be found in the PATENTS file in the same directory.
 */
 
-#ifndef _CMD_H_
-#define _CMD_H_
+#pragma once
 
 #include "common.h"
 #include <sstream>
@@ -40,7 +39,10 @@
 typedef int CmdType;
 
 #define INVALID_CMD -1
-#define CMD_BASE 0
+#define CMD_TOWN_HALL 0
+#define CMD_DURATIVE 1
+#define CMD_IMMEDIATE 2
+#define CMD_DURATIVE_LUA 3
 
 class CmdReceiver;
 class GameEnv;
@@ -66,13 +68,18 @@ public:
 
     Tick tick() const { return _tick; }
     Tick start_tick() const { return _start_tick; }
+    
     void set_tick_and_start_tick(Tick t) { _tick = _start_tick = t; }
     UnitId id() const { return _id; }
+    int cmd_id() const { return _cmd_id; }
+
     void set_id(UnitId id) { _id = id; }
     void set_cmd_id(int i) { _cmd_id = i; }
 
+    bool just_started() const { return _tick == _start_tick; }
+
     virtual std::unique_ptr<CmdBase> clone() const { return std::unique_ptr<CmdBase>(new CmdBase(*this)); }
-    virtual CmdType type() const { return CMD_BASE; }
+    virtual CmdType type() const { return CMD_TOWN_HALL; }
 
     virtual string PrintInfo() const {
         std::stringstream ss;
@@ -101,7 +108,7 @@ public:
 
     virtual ~CmdBase() { }
 
-    SERIALIZER_BASE(CmdBase, _tick, _start_tick, _id, _cmd_id);
+    SERIALIZER_TOWN_HALL(CmdBase, _tick, _start_tick, _id, _cmd_id);
     SERIALIZER_ANCHOR(CmdBase);
     UNIQUE_PTR_COMPARE(CmdBase);
 };
@@ -115,6 +122,9 @@ protected:
 public:
     explicit CmdDurative(UnitId id = INVALID) : CmdBase(id), _done(false) { }
     explicit CmdDurative(Tick t, UnitId id) : CmdBase(t, id), _done(false) { }
+    explicit CmdDurative(const CmdDurative &c) : CmdBase(c), _done(c._done) { }
+
+    CmdType type() const override { return CMD_DURATIVE; }
 
     // Check whether this command is done. If so, it will be removed from the current queue.
     bool IsDone() const { return _done; }
@@ -145,6 +155,8 @@ public:
     explicit CmdImmediate(UnitId id = INVALID) : CmdBase(id) { }
     explicit CmdImmediate(Tick t, UnitId id) : CmdBase(t, id) { }
     bool Run(GameEnv* env, CmdReceiver *receiver){ return run(env, receiver); }
+
+    CmdType type() const override { return CMD_IMMEDIATE; }
 
     virtual ~CmdImmediate() { }
 
@@ -193,12 +205,6 @@ public:
     }
 };
 
-class Unit;
-float micro_move(Tick tick, const Unit& u, const GameEnv &env, const PointF& target, CmdReceiver *receiver);
-
-constexpr float kDistEps = 1e-3;
-
 #include "common.h"
 #include "gamedef.h"
 
-#endif

@@ -7,14 +7,14 @@
 * of patent rights can be found in the PATENTS file in the same directory.
 */
 
-#ifndef _GAME_DEV_H_
-#define _GAME_DEV_H_
+#pragma once
 
-#include "cmd_receiver.h"
+#include "lua_env.h"
 #include "unit.h"
 #include "bullet.h"
 #include "map.h"
 #include "player.h"
+#include "cmd_receiver.h"
 #include <random>
 
 class GameEnv {
@@ -50,6 +50,10 @@ private:
     // This happens if the time tick exceeds max_tick, or there is anything wrong.
     bool _terminated;
 
+    // Froze the game in order to issue an instruction
+    bool _frozen = false;
+    bool _team_play = false;
+
 public:
     GameEnv();
 
@@ -62,7 +66,7 @@ public:
     void Reset();
 
     // Add and remove players.
-    void AddPlayer(const std::string &name, PlayerPrivilege pv);
+    void AddPlayer(const std::string &name, PlayerPrivilege pv, PlayerType pt);
     void RemovePlayer();
 
     int GetNumOfPlayers() const { return _players.size(); }
@@ -114,15 +118,19 @@ public:
 
     // Find the closest base.
     UnitId FindClosestBase(PlayerId player_id) const;
+    UnitId FindClosestBase(PlayerId player_id, const PointF& p, float* d) const;
+
+    // Find the closest enemy
+    UnitId FindClosestEnemy(PlayerId player_id, const PointF& p, float radius) const;
 
     // Find empty place near a place, used by creating units.
-    bool FindEmptyPlaceNearby(const PointF &p, int l1_radius, PointF *res_p) const;
+    bool FindEmptyPlaceNearby(const UnitTemplate& unit_def, const PointF &p, int l1_radius, PointF *res_p) const;
 
     // Find empty place near a place, used by creating buildings.
     bool FindBuildPlaceNearby(const PointF &p, int l1_radius, PointF *res_p) const;
 
     // Find closest place to a group with a certain distance, used by hit and run.
-    bool FindClosestPlaceWithDistance(const PointF &p, int l1_radius,
+    bool FindClosestPlaceWithDistance(const Unit& u, const PointF &p, int l1_radius,
             const vector<const Unit *>& units, PointF *res_p) const;
 
     const Player &GetPlayer(PlayerId player_id) const {
@@ -171,6 +179,21 @@ public:
     void SaveSnapshot(serializer::saver &saver) const;
     void LoadSnapshot(serializer::loader &loader);
 
+    void FreezeGame() {
+        if (IsTeamPlay()) {
+            _frozen = true;
+        }
+    }
+    void UnfreezeGame() {
+        if (IsTeamPlay()) {
+            _frozen = false;
+        }
+    }
+    bool IsFrozen() const { return _frozen && IsTeamPlay(); }
+
+    void SetTeamPlay(const bool team_play) { _team_play = team_play; }
+    bool IsTeamPlay() const { return _team_play; }
+
     // Compute the hash code.
     uint64_t CurrentHashCode() const;
 
@@ -179,6 +202,7 @@ public:
 
     // Some utility function to pick first from units in a group.
     static const Unit *PickFirstIdle(const vector<const Unit *> units, const CmdReceiver &receiver);
+    static const Unit *PickIdleOrGather(const vector<const Unit *> units, const CmdReceiver &receiver);
     static const Unit *PickFirst(const vector<const Unit *> units, const CmdReceiver &receiver, CmdType t) ;
 };
 
@@ -193,7 +217,7 @@ public:
     bool FilterWithFOW(const Unit &u) const {
         return _player_id == INVALID || _env.GetPlayer(_player_id).FilterWithFOW(u);
     }
-    // [TODO] This violates the behavior of Aspect. Will need to change. 
+    // [TODO] This violates the behavior of Aspect. Will need to change.
     const Units &GetAllUnits() const { return _env.GetUnits(); }
     const Player &GetPlayer() const { return _env.GetPlayer(_player_id); }
     const GameDef &GetGameDef() const { return _env.GetGameDef(); }
@@ -205,14 +229,14 @@ private:
 
 class UnitIterator {
 public:
-    enum Type { ALL = 0, BUILDING, MOVING }; 
+    enum Type { ALL = 0, BUILDING, MOVING };
 
     UnitIterator(const GameEnvAspect &aspect, Type type)
         : _aspect(aspect), _type(type) {
             _it = _aspect.GetAllUnits().begin();
             next();
         }
-    UnitIterator(const UnitIterator &i) 
+    UnitIterator(const UnitIterator &i)
         : _aspect(i._aspect), _type(i._type), _it(i._it) {
     }
 
@@ -252,8 +276,10 @@ template <typename save_class, typename T>
 void GameEnv::FillIn(PlayerId player_id, const CmdReceiver& receiver, T *game) const {
     bool is_spectator = (player_id == INVALID);
 
+    save_class::SaveGameDef(_gamedef, game);
     save_class::SetPlayerId(player_id, game);
     save_class::SetSpectator(is_spectator, game);
+    save_class::SetFrozen(_frozen, game);
 
     if (is_spectator) {
         // Show all the maps.
@@ -261,11 +287,13 @@ void GameEnv::FillIn(PlayerId player_id, const CmdReceiver& receiver, T *game) c
         for (size_t i = 0; i < _players.size(); ++i) {
             save_class::SaveStats(_players[i], game);
         }
+        save_class::SavePlayerInstructions(_players[0], game);
     } else {
         // Show only visible maps
         // cout << "Save maps and stats" << endl << flush;
         save_class::SavePlayerMap(_players[player_id], game);
         save_class::SaveStats(_players[player_id], game);
+        save_class::SavePlayerInstructions(_players[player_id], game);
     }
 
     // cout << "Save units" << endl << flush;
@@ -290,5 +318,3 @@ void GameEnv::FillIn(PlayerId player_id, const CmdReceiver& receiver, T *game) c
         save_class::Save(bullet, game);
     }
 }
-
-#endif

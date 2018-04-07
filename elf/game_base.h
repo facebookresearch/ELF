@@ -38,13 +38,15 @@ public:
     */
     GameBaseT(S *s = nullptr) : _state(s) { }
 
-    void AddBot(AI *bot, Tick frame_skip) {
+    int AddBot(AI *bot, Tick frame_skip) {
         if (bot == nullptr) {
             std::cout << "Bot at " << _bots.size() << " cannot be nullptr" << std::endl;
-            return;
+            return -1;
         }
-        bot->SetId(_bots.size());
+        const int id = _bots.size();
+        bot->SetId(id);
         _bots.emplace_back(bot, frame_skip);
+        return id;
     }
 
     void RemoveBot() {
@@ -98,14 +100,16 @@ private:
         for (const Bot &bot : _bots) {
             if (! check_frameskip || t % bot.frame_skip == 0) {
                 typename AI::Action actions;
-                bot.ai->Act(*_state, &actions, done);
-                _state->forward(actions);
+                if (bot.ai->Act(*_state, &actions, done)) {
+                    _state->forward(actions);
+                }
             }
         }
         if (_spectator != nullptr) {
             typename Spectator::Action actions;
-            _spectator->Act(*_state, &actions, done);
-            _state->forward(actions);
+            if (_spectator->Act(*_state, &actions, done)) {
+              _state->forward(actions);
+            }
         }
     }
 

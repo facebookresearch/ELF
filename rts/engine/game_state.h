@@ -86,11 +86,13 @@ public:
     // You can also directly send the command. Used for spectator.
     virtual bool forward(ReplayLoader::Action &);
 
-    void AppendPlayer(const std::string &name);
+    void AppendPlayer(const std::string &name, PlayerType player_type = PT_PLAYER);
     void RemoveLastPlayer();
 
-private:
+protected:
     GameEnv _env;
+
+private:
     CmdReceiver _cmd_receiver;
 
     bool _verbose = false;

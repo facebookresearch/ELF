@@ -23,109 +23,9 @@ std::map<int, std::string> CmdTypeLookup::_idx2name;
 std::string CmdTypeLookup::_null;
 std::mutex CmdTypeLookup::_mutex;
 
-/*
-static float trunc(float v, float b) {
-    return std::max(std::min(v, b), -b);
-}
-*/
-#define MT_OK 0
-#define MT_TARGET_INVALID 1
-#define MT_ARRIVED 2
-#define MT_CANNOT_MOVE 3
-
-static int move_toward(const RTSMap& m, float speed, const UnitId& id,
-        const PointF& curr, const PointF& target, PointF *move) {
-    // Given curr location, move towards the target.
-    PointF diff;
-
-    if (! PointF::Diff(target, curr, &diff)) return MT_TARGET_INVALID;
-    if (std::abs(diff.x) < kDistEps && std::abs(diff.y) < kDistEps) return MT_ARRIVED;
-
-    //bool movable = false;
-    while (true) {
-        diff.Trunc(speed);
-        PointF next_p(curr);
-        next_p += diff;
-
-        bool movable = m.CanPass(next_p, id);
-        // cout << "MoveToward [" << id << "]: Try straight: " << next_p << " movable: " << movable << endl;
-
-        if (! movable) {
-            next_p = curr;
-            next_p += diff.CCW90();
-            movable = m.CanPass(next_p, id);
-            // cout << "MoveToward [" << id << "]: Try CCW: " << next_p << " movable: " << movable << endl;
-        }
-        if (! movable) {
-            next_p = curr;
-            next_p += diff.CW90();
-            movable = m.CanPass(next_p, id);
-            // cout << "MoveToward [" << id << "]: Try CW: " << next_p << " movable: " << movable << endl;
-        }
-
-        // If we still cannot move, then we reduce the speed.
-        if (movable) {
-            *move = next_p;
-            return MT_OK;
-        }
-        else return MT_CANNOT_MOVE;
-
-        /*
-        speed /= 1.2;
-        // If the move speed is too slow, then we skip.
-        if (speed < 0.005) break;
-        */
-    }
-}
-
-float micro_move(Tick tick, const Unit& u, const GameEnv &env, const PointF& target, CmdReceiver *receiver) {
-    const RTSMap &m = env.GetMap();
-    const PointF &curr = u.GetPointF();
-    const Player &player = env.GetPlayer(u.GetPlayerId());
-
-    // cout << "Micro_move: Current: " << curr << " Target: " << target << endl;
-    float dist_sqr = PointF::L2Sqr(target, curr);
-    const UnitProperty &property = u.GetProperty();
-
-    static const int kMaxPlanningIteration = 1000;
-
-    // Move to a target. Ideally we should do path-finding, for now just follow L1 distance.
-    if ( property.CD(CD_MOVE).Passed(tick) ) {
-        PointF move;
-
-        float dist_sqr = PointF::L2Sqr(curr, target);
-        PointF waypoint = target;
-        bool planning_success = false;
-
-        if (dist_sqr > 1.0) {
-            // Do path planning.
-            Coord first_block;
-            float est_dist;
-            planning_success = player.PathPlanning(tick, u.GetId(), curr, target,
-                kMaxPlanningIteration, receiver->GetPathPlanningVerbose(), &first_block, &est_dist);
-            if (planning_success && first_block.x >= 0 && first_block.y >= 0) {
-                waypoint.x = first_block.x;
-                waypoint.y = first_block.y;
-            }
-        }
-        // cout << "micro_move: (" << curr << ") -> (" << waypoint << ") planning: " << planning_success << endl;
-        int ret = move_toward(m, property._speed, u.GetId(), curr, waypoint, &move);
-        if (ret == MT_OK) {
-            // Set actual move.
-            receiver->SendCmd(CmdIPtr(new CmdTacticalMove(u.GetId(), move)));
-        } else if (ret == MT_CANNOT_MOVE) {
-            // Unable to move. This is usually due to PathPlanning issues.
-            // Too many such commands will leads to early termination of game.
-            // [TODO]: Make PathPlanning better.
-            receiver->GetGameStats().RecordFailedMove(tick, 1.0);
-        }
-    }
-    return dist_sqr;
-}
-
 bool CmdDurative::Run(const GameEnv &env, CmdReceiver *receiver) {
     // If we run this command for the first time, register it in the receiver.
-    if (_start_tick == _tick) receiver->StartDurativeCmd(this);
+    if (just_started()) receiver->StartDurativeCmd(this);
 
     // Run the script.
     bool ret = run(env, receiver);
@@ -207,5 +107,14 @@ bool CmdRandomSeed::run(GameEnv *env, CmdReceiver*) {
 
 bool CmdComment::run(GameEnv*, CmdReceiver*) {
     // COMMENT command does not do anything, but leave a record.
+    return true;
+}
+
+bool CmdFreezeGame::run(GameEnv *env, CmdReceiver*) {
+    if (_freeze) {
+        env->FreezeGame();
+    } else {
+        env->UnfreezeGame();
+    }
     return true;
 }

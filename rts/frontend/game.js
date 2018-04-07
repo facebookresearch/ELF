@@ -10,18 +10,51 @@
 // Create the canvas
 var canvas = document.createElement("canvas");
 var ctx = canvas.getContext("2d");
-canvas.width = 1400;
-canvas.height = 1000;
-var left_frame_width = 1000;
-var cell_size = 50;
-var rect_size = 50;
-var unit_size = 32;
-var cell_colors = ['#404040', 'blue', 'black'];
-var player_colors = ['blue', 'red', 'yellow']
+// max sizes
+var map_x = 40;
+var map_y = 30;
+var SCALER = 1.0;
+var cell_size = 40;
+var inst_id = 0;
+var player_intf_id = "0";
+var cmd_input = null;
+var cmd_hsitory = null;
+var cmd_button = null;
+var cmd_inter = null;
+var range1 = null;
+var range2 = null;
+var start_time = null;
+var curr_inst = "";
+var button_faster = null;
+var button_slower = null;
+var button_cycle = null;
+var button_pause = null;
 
-var unit_names_minirts = ["RESOURCE", "WORKER", "MELEE_ATTACKER", "RANGE_ATTACKER", "BARRACKS", "BASE"];
-var unit_names_flag = ["FLAG_BASE", "FLAG_ATHLETE", "FLAG"];
-var unit_names_td = ["BASE", "WORKER", "RANGE_ATTACKER"];
+var unit_buttons = {};
+
+
+canvas.width = map_x * cell_size + 400;
+canvas.height = map_y * cell_size + 200;
+var left_frame_width = map_x * cell_size;
+var player_colors = ['blue', 'red', 'red']
+
+var terrains = ["GROUND", "SAND", "GRASS", "ROCK", "WATER", "FOG"];
+var unit_names_minirts = ["RESOURCE", "PEASANT", "SWORDMAN", "SPEARMAN", "CAVALRY", "ARCHER", "DRAGON", "CATAPULT", "BARRACK", "BLACKSMITH", "STABLE", "WORKSHOP", "GUARD_TOWER", "TOWN_HALL"];
+var unit_id = {
+  "RESOURCE": 0,
+  "PEASANT": 1,
+  "SWORDMAN": 2,
+  "SPEARMAN": 3,
+  "CAVALRY": 4,
+  "ARCHER": 5,
+  "DRAGON": 6,
+  "CATAPULT": 7,
+  "BARRACK": 8,
+  "BLACKSMITH": 9,
+  "STABLE": 10,
+  "WORKSHOP": 11,
+  "GUARD_TOWER": 12,
+  "TOWN_HALL": 13}; 
 var x_down = null;
 var y_down = null;
 var x_curr;
@@ -29,93 +62,159 @@ var y_curr;
 var dragging = false;
 var tick = 0;
 var dealer;
-var button_left = left_frame_width + 30;
 var speed = 0;
 var min_speed = -10;
 var max_speed = 5;
+var last_state = null;
+var melee_units = [
+  "PEASANT",
+  "SWORDMAN",
+  "CAVALRY"
+];
 
-var range2 = document.createElement("INPUT");
-range2.type = "range";
-range2.min = min_speed;
-range2.max = max_speed;
-range2.value = 0;
-range2.step = 1;
-range2.style.position = "absolute";
-range2.style.top = 600;
-range2.style.left = left_frame_width + 50;
-range2.style.zindex = 2;
-range2.style.width = "300px";
-range2.style.height = "30px";
-range2.oninput = function(){
-    var update = this.value - speed;
-    speed = this.value;
-    if (update > 0) {
-        for (var i = 0; i < update;i++){
-            send_cmd(tick + ' F');
-        }
-    }
-    if (update < 0) {
-        for (var i = 0; i < -update;i++){
-            send_cmd(tick + ' W');
-        }
-    }
+var scale = function(x) {
+  var m = x / 2;
+  return m + Math.floor((x - m) * SCALER);
 }
 
-document.body.appendChild(range2);
+var is_coach_intf = function() {
+  return player_intf_id === "1";
+}
 
-var addButton = function(text, cmd) {
-    var button = document.createElement("button");
-    button.innerHTML = text;
-    button.style.position = "absolute";
-    button.style.top = 500;
-    button.style.left = button_left;
-    button.style.zindex = 2;
-    button.style.width = "50px";
-    button.style.height = "30px";
-    button_left += 100;
-    document.body.appendChild(button);
-    button.addEventListener ("click", function() {
-        if (cmd == "F") {
-            console.log(speed);
-            if (speed >= max_speed) return;
-            else {
-                speed = speed + 1;
-                range2.value = speed;
-            }
-        }
-        if (cmd == "W") {
-            console.log(speed);
-            if (speed <= min_speed) return;
-            else {
-                speed = speed - 1;
-                range2.value = speed;
-            }
-        }
-        send_cmd(tick + ' ' + cmd);
-    });
+var is_player_intf = function() {
+  return player_intf_id === "0";
+}
+
+var is_spectator_intf = function() {
+  return !is_coach_intf() && !is_player_intf();
+}
+
+
+var is_player = function(player) {
+  return player.player_id === 0;
+}
+
+var is_coach = function(player) {
+  return player.player_id === 1;
+}
+
+
+var make_spectator_intf = function() {
+  range2 = document.createElement("INPUT");
+  range2.type = "range";
+  range2.min = min_speed;
+  range2.max = max_speed;
+  range2.value = 0;
+  range2.step = 1;
+  range2.style.position = "absolute";
+  range2.style.top = 320;
+  range2.style.left = left_frame_width + 50;
+  range2.style.zindex = 2;
+  range2.style.width = "300px";
+  range2.style.height = "30px";
+  range2.oninput = function(){
+      var update = this.value - speed;
+      speed = this.value;
+      if (update > 0) {
+          for (var i = 0; i < update;i++){
+              send_cmd(tick + ' F');
+          }
+      }
+      if (update < 0) {
+          for (var i = 0; i < -update;i++){
+              send_cmd(tick + ' W');
+          }
+      }
+  }
+
+  document.body.appendChild(range2);
+  var button_left = left_frame_width + scale(50);
+
+  var addButton = function(text, cmd) {
+      var button = document.createElement("button");
+      button.innerHTML = text;
+      button.style.position = "absolute";
+      button.style.top = 200;
+      button.style.left = button_left;
+      button.style.zindex = 2;
+      button.style.width = "50px";
+      button.style.height = "30px";
+      button_left += 100;
+      document.body.appendChild(button);
+      button.addEventListener ("click", function() {
+          if (cmd == "F") {
+              console.log(speed);
+              if (speed >= max_speed) return;
+              else {
+                  speed = speed + 1;
+                  range2.value = speed;
+              }
+          }
+          if (cmd == "W") {
+              console.log(speed);
+              if (speed <= min_speed) return;
+              else {
+                  speed = speed - 1;
+                  range2.value = speed;
+              }
+          }
+          send_cmd(tick + ' ' + cmd);
+      });
+      return button;
+  };
+
+  button_faster = addButton("Faster", "F");
+  button_slower = addButton("Slower", "W");
+  button_cycle = addButton("Cycle", "C");
+  button_pause = addButton("Pause", "P");
+
+  range1 = document.createElement("INPUT");
+  range1.type = "range";
+  range1.min = 0;
+  range1.max = 100;
+  range1.value = 0;
+  range1.step = 1;
+  range1.style.position = "absolute";
+  range1.style.top = 420;
+  range1.style.left = left_frame_width + 50;
+  range1.style.zindex = 2;
+  range1.style.width = "300px";
+  range1.style.height = "30px";
+  range1.oninput = function(){
+      send_cmd(tick + ' S ' + this.value);
+  }
+  document.body.appendChild(range1);
+
+  cmd_input = document.createElement("textarea");
+  cmd_input.type = "text";
+  cmd_input.value = "";
+  cmd_input.readOnly = "true";
+  cmd_input.style.resize = "none";
+  cmd_input.disabled = "true";
+  cmd_input.style.position = "absolute";
+  cmd_input.style.top = map_y * cell_size + 30;
+  cmd_input.style.left = 10;
+  cmd_input.style.width = map_x * cell_size - 200;
+  cmd_input.style.height = 20;
+  cmd_input.style.fontSize = "15px";
+  cmd_input.style.color = "red";
+  document.body.appendChild(cmd_input);
+
+  cmd_history = document.createElement("textarea");
+  cmd_history.type = "text";
+  cmd_history.value = "";
+  cmd_history.readOnly = "true";
+  cmd_history.style.resize = "none";
+  cmd_history.disabled = "true";
+  cmd_history.style.position = "absolute";
+  cmd_history.style.left = 10;
+  cmd_history.style.height = 150;
+  cmd_history.style.fontSize = "15px";
+  cmd_history.style.top = map_y * cell_size + 80;
+  document.body.appendChild(cmd_history);
+
+  cmd_button = document.createElement("button");
 };
-
-addButton("Faster", "F");
-addButton("Slower", "W");
-addButton("Cycle", "C");
-addButton("Pause", "P");
-
-var range1 = document.createElement("INPUT");
-range1.type = "range";
-range1.min = 0;
-range1.max = 100;
-range1.value = 0;
-range1.step = 1;
-range1.style.position = "absolute";
-range1.style.top = 700;
-range1.style.left = left_frame_width + 50;
-range1.style.zindex = 2;
-range1.style.width = "300px";
-range1.style.height = "30px";
-range1.oninput = function(){
-    send_cmd(tick + ' S ' + this.value);
-}
-document.body.appendChild(range1);
 
 document.body.appendChild(canvas);
 
@@ -123,18 +222,346 @@ var send_cmd = function(s) {
   dealer.send(s);
 };
 
+var draw_instructions = function(instructions) {
+  if (instructions === null) {
+    return;
+  }
+  var history = "";
+  for (var i in instructions) {
+    var inst = instructions[i];
+    if (inst["done"] === true) {
+      var item = i + ": " + inst["text"];
+      history = item + "\n" + history;
+    }
+  }
+  cmd_history.value = history;
+  var cur_inst = "";
+  for (var i in instructions) {
+    var inst = instructions[i];
+    if (inst["done"] === false) {
+      cur_inst = inst["text"];
+    }
+  }
+  cmd_input.value = cur_inst;
+};
+
+
+var resize = function() {
+  var min_w = 400;
+  var min_h = 400;
+  var max_w = 1200;
+  var max_h = 1200;
+  var min_cz = 20;
+  var max_cz = 40;
+  var dw = 200;
+  var dh = 200;
+  var w = Math.min(Math.max(window.innerWidth - dw, min_w), max_w);
+  var h = Math.min(Math.max(window.innerHeight - dh, min_h), max_h);
+  var pw = 1.0 * (w - min_w) / (max_w - min_w);
+  var ph = 1.0 * (h - min_h) / (max_h - min_h);
+  SCALER = Math.min(pw, ph);
+  cell_size = min_cz + Math.floor(SCALER * (max_cz - min_cz));
+
+  canvas.width = map_x * cell_size + scale(500);
+  canvas.height = map_y * cell_size + scale(200);
+  left_frame_width = map_x * cell_size;
+
+  cmd_input.style.width = map_x * cell_size - 200;
+  cmd_input.style.top = map_y * cell_size + 40;
+
+  cmd_history.style.width = map_x * cell_size - 200;
+  cmd_history.style.top = map_y * cell_size + 90;
+
+  cmd_button.style.top = map_y * cell_size + 38;
+  cmd_button.style.left = map_x * cell_size - 180;
+
+  if (cmd_inter != null) {
+    cmd_inter.style.top = map_y * cell_size + 63;
+    cmd_inter.style.left = map_x * cell_size - 180;
+  }
+
+  if (is_spectator_intf()) {
+    button_faster.style.left = left_frame_width + scale(50) + scale(0 * 100);
+    button_slower.style.left = left_frame_width + scale(50) + scale(1 * 100);
+    button_cycle.style.left = left_frame_width + scale(50) + scale(2 * 100);
+    button_pause.style.left = left_frame_width + scale(50) + scale(3 * 100);
+    range1.style.left = left_frame_width + scale(50);
+    range2.style.left = left_frame_width + scale(50);
+  }
+}
+
+window.onresize = function(e) {
+  resize();
+}
+
+window.onload = function(e) {
+  resize();
+}
+
+
+function make_cursor(color) {
+    var cursor = document.createElement('canvas');
+    var ctx = cursor.getContext('2d');
+
+    cursor.width = 16;
+    cursor.height = 16;
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(8, 8, 7, 0, 2 * Math.PI, false);
+    ctx.moveTo(0, 8);
+    ctx.lineTo(15, 8);
+    ctx.moveTo(8, 0);
+    ctx.lineTo(8, 15);
+    ctx.stroke();
+    ctx.closePath();
+    return 'url(' + cursor.toDataURL() + '), auto';
+}
+
+var attack_cursor = make_cursor('red');
+var move_cursor = make_cursor('green');
+var gather_cursor = make_cursor('cyan');
+var build_cursor = make_cursor('grey');
+
 canvas.oncontextmenu = function (e) {
     e.preventDefault();
 };
 
+
+var make_coach_intf = function() {
+  cmd_input = document.createElement("INPUT");
+  cmd_input.type = "text";
+  cmd_input.value = "";
+  cmd_input.style.position = "absolute";
+  cmd_input.style.top = map_y * cell_size + 30;
+  cmd_input.style.left = 10;
+  cmd_input.style.width = map_x * cell_size - 200;
+  cmd_input.style.height = 20;
+  cmd_input.style.fontSize = "15px";
+  cmd_input.addEventListener ("keydown", function(e) {
+      if (e.keyCode === 13 && cmd_input.value != "") {
+          send_cmd(tick + ' X ' + cmd_input.value);
+          cmd_history.value = inst_id + ": " + cmd_input.value + "\n" + cmd_history.value;
+          inst_id = inst_id + 1;
+          cmd_input.value = "";
+      }
+  });
+  document.body.appendChild(cmd_input);
+
+  cmd_history = document.createElement("textarea");
+  cmd_history.type = "text";
+  cmd_history.value = "";
+  cmd_history.readOnly = "true";
+  cmd_history.style.resize = "none";
+  cmd_history.disabled = "true";
+  cmd_history.style.position = "absolute";
+  cmd_history.style.left = 10;
+  cmd_history.style.height = 150;
+  cmd_history.style.fontSize = "15px";
+  cmd_history.style.top = map_y * cell_size + 80;
+  document.body.appendChild(cmd_history);
+
+  cmd_button = document.createElement("button");
+  cmd_button.innerHTML = "Issue Instruction";
+  cmd_button.style.position = "absolute";
+  cmd_button.style.top = map_y * cell_size + 38;
+  cmd_button.style.left = 10 + cmd_input.style.width + 5;
+  cmd_button.style.fontSize = "15px";
+  cmd_button.width = 150;
+  cmd_button.height = 20;
+  cmd_button.zindex = 2;
+  cmd_button.addEventListener("click", function() {
+      if (cmd_input.value != "") {
+          send_cmd(tick + ' X ' + cmd_input.value);
+          cmd_history.value = inst_id + ": " + cmd_input.value + "\n" + cmd_history.value;
+          inst_id = inst_id + 1;
+          curr_instr = cmd_input.value;
+          cmd_input.value = "";
+      }
+  });
+  document.body.appendChild(cmd_button);
+
+  cmd_inter = document.createElement("button");
+  cmd_inter.innerHTML = "Interrupt Instruction";
+  cmd_inter.style.position = "absolute";
+  cmd_inter.style.top = map_y * cell_size + 63;
+  cmd_inter.style.left = 10 + cmd_input.style.width + 5;
+  cmd_inter.style.fontSize = "15px";
+  cmd_inter.width = 150;
+  cmd_inter.height = 20;
+  cmd_inter.zindex = 2;
+  cmd_inter.disabled = "true";
+  cmd_inter.addEventListener("click", function() {
+      send_cmd(tick + ' I ' + curr_inst);
+  });
+  document.body.appendChild(cmd_inter);
+
+};
+
+
+var make_player_intf = function() {
+  cmd_input = document.createElement("textarea");
+  cmd_input.type = "text";
+  cmd_input.value = "";
+  cmd_input.readOnly = "true";
+  cmd_input.style.resize = "none";
+  cmd_input.disabled = "true";
+  cmd_input.style.position = "absolute";
+  cmd_input.style.top = map_y * cell_size + 30;
+  cmd_input.style.left = 10;
+  cmd_input.style.width = map_x * cell_size - 200;
+  cmd_input.style.height = 20;
+  cmd_input.style.fontSize = "15px";
+  cmd_input.style.color = "red";
+  document.body.appendChild(cmd_input);
+
+  cmd_history = document.createElement("textarea");
+  cmd_history.type = "text";
+  cmd_history.value = "";
+  cmd_history.readOnly = "true";
+  cmd_history.style.resize = "none";
+  cmd_history.disabled = "true";
+  cmd_history.style.position = "absolute";
+  cmd_history.style.left = 10;
+  cmd_history.style.height = 150;
+  cmd_history.style.fontSize = "15px";
+  cmd_history.style.top = map_y * cell_size + 80;
+  document.body.appendChild(cmd_history);
+
+  cmd_button = document.createElement("button");
+  cmd_button.innerHTML = "Finish Instruction";
+  cmd_button.style.position = "absolute";
+  cmd_button.style.top = map_y * cell_size + 38;
+  cmd_button.style.left = 10 + cmd_input.style.width + 5;
+  cmd_button.style.fontSize = "15px";
+  cmd_button.width = 50;
+  cmd_button.height = 20;
+  cmd_button.zindex = 2;
+  cmd_button.addEventListener("click", function() {
+    send_cmd(tick + ' Z ' + cmd_input.value);
+  });
+  document.body.appendChild(cmd_button);
+};
+
+
+function are_unit_types_selected(types) {
+    if (last_state === null) return false;
+    var selected = last_state.selected_units;
+    if (!selected) return false;
+    var any = false;
+    for (var i in last_state.units) {
+        var unit = last_state.units[i];
+        if (selected.indexOf(unit.id) >= 0) {
+            if (types.indexOf(unit.unit_type) >= 0) {
+                any = true;
+            } else {
+                return false;
+            }
+        }
+    }
+    return any;
+}
+
+function are_workers_selected() {
+    var worker_ty = [unit_id["PEASANT"]];
+    return are_unit_types_selected(worker_ty);
+}
+
+function are_units_selected() {
+    var unit_ty = [
+      unit_id["PEASANT"],
+      unit_id["SWORDMAN"],
+      unit_id["SPEARMAN"],
+      unit_id["CAVALRY"],
+      unit_id["ARCHER"],
+      unit_id["DRAGON"],
+      unit_id["CATAPULT"]];
+    return are_unit_types_selected(unit_ty);
+}
+
+function are_towers_selected() {
+    var tower_ty = [unit_id["GUARD_TOWER"]];
+    return are_unit_types_selected(tower_ty);
+}
+
+function get_unit_type(id) {
+    if (last_state === null) return -1;
+    for (var i in last_state.units) {
+        if (id === last_state.units[i].id) {
+            return last_state.units[i].unit_type;
+        }
+    }
+    return -1;
+}
+
+function is_build_cmd_allowed(key, types) {
+    if (last_state === null) return false;
+    var selected = last_state.selected_units;
+    if (!selected) return false;
+    if (selected.length != 1) return false;
+    var id = selected[0];
+    var ty = get_unit_type(id);
+    if (types.indexOf(ty) < 0) {
+        return false;
+    }
+    var def = last_state.gamedef.units[ty];
+    for (var i in def.build_skills) {
+        if (key == def.build_skills[i].hotkey) {
+            return true;
+        }
+    }
+    return false;
+
+}
+
+function is_worker_cmd_allowed(key) {
+    var worker_types = [unit_id["PEASANT"]];
+    return is_build_cmd_allowed(key, worker_types);
+}
+
+function is_building_cmd_allowed(key) {
+    var building_types = [
+      unit_id["BARRACK"],
+      unit_id["BLACKSMITH"],
+      unit_id["STABLE"],
+      unit_id["WORKSHOP"],
+      unit_id["TOWN_HALL"]];
+    return is_build_cmd_allowed(key, building_types);
+}
+
 document.addEventListener("keydown", function (e) {
-    send_cmd(tick + ' ' + e.key);
+    if (e.key == 'a') {
+      if (are_units_selected() || are_towers_selected()) {
+        document.body.style.cursor = attack_cursor;
+        send_cmd(tick + ' ' + e.key);
+      }
+    }
+    else if (e.key == 'g') {
+      if (are_workers_selected()) {
+        document.body.style.cursor = gather_cursor;
+        send_cmd(tick + ' ' + e.key);
+      }
+    }
+    else if (e.key == 'm') {
+      if (are_units_selected()) {
+        document.body.style.cursor = move_cursor;
+        send_cmd(tick + ' ' + e.key);
+      }
+    }
+    else if (is_worker_cmd_allowed(e.key)) {
+        document.body.style.cursor = build_cursor;
+        send_cmd(tick + ' ' + e.key);
+    }
+    else if (is_building_cmd_allowed(e.key)) {
+        send_cmd(tick + ' ' + e.key);
+    }
 }, false);
 
 canvas.addEventListener("mousedown", function (e) {
     if (e.button === 0) {
         var xy0 = convert_xy_back(e.pageX, e.pageY);
-        if (xy0[0] > 20 || xy0[1] > 20) return;
+        if (xy0[0] > map_x || xy0[1] > map_y) return;
         x_down = e.pageX;
         y_down = e.pageY;
     }
@@ -142,7 +569,7 @@ canvas.addEventListener("mousedown", function (e) {
 
 canvas.addEventListener("mouseup", function (e) {
     var xy0 = convert_xy_back(e.pageX, e.pageY);
-    if (xy0[0] > 20 || xy0[1] > 20) return;
+    if (xy0[0] > map_x || xy0[1] > map_y) return;
     if (e.button === 0) {
         var xy = convert_xy_back(x_down, y_down);
         if (dragging && x_down && y_down) {
@@ -153,6 +580,7 @@ canvas.addEventListener("mouseup", function (e) {
         x_down = null;
         y_down = null;
         dragging = false;
+        document.body.style.cursor = 'default';
     }
     if (e.button === 2) {
         send_cmd([tick, 'R', xy0[0], xy0[1]].join(" "));
@@ -173,32 +601,29 @@ canvas.addEventListener("mousemove", function (e) {
 var onMap = function(m) {
     var counter = 0;
     for (y = 0; y < m.height; y++) {
-    	for (x = 0; x < m.width; x++){
-    		var color = cell_colors[m.slots[counter]];
-            var x1 = x * cell_size;
-            var y1 = y * cell_size;
-            ctx.beginPath();
-            ctx.fillStyle = color;
-            ctx.lineWidth = 1;
-		    ctx.rect(x1, y1, rect_size, rect_size);
-		    ctx.strokeStyle = 'black';
-		    ctx.stroke();
-		    ctx.fillRect(x1, y1, rect_size, rect_size);
-		    ctx.closePath();
+    	  for (x = 0; x < m.width; x++){
+            var type = m.slots[counter];
+            var seen_before = false;
+            if (m.seen_terrain != null) {
+                seen_before = m.seen_terrain[counter];
+            }
+            var spec = terrain_sprites[terrains[type]];
+            var x1 = x * cell_size + cell_size / 2;
+            var y1 = y * cell_size + cell_size / 2;
+            draw_terrain_sprite(spec, x1, y1, seen_before);
             counter += 1;
     	}
 	}
-
 };
 
-var draw_hp = function(bbox, states, font_color, player_color){
+var draw_hp = function(bbox, states, font_color, player_color, fill_color, progress){
     var x1 = bbox[0];
     var y1 = bbox[1];
     var x2 = bbox[2];
     var y2 = bbox[3];
     var hp_ratio = states[0];
     var state_str = states[1];
-    var margin = 2;
+    var margin = scale(3);
     ctx.fillStyle = 'black';
     ctx.lineWidth = margin;
     ctx.beginPath();
@@ -207,43 +632,35 @@ var draw_hp = function(bbox, states, font_color, player_color){
     ctx.strokeStyle = player_color;
     ctx.stroke();
     ctx.closePath();
-    var color = 'green';
-    if (hp_ratio <= 0.5) color = 'yellow';
-    if (hp_ratio <= 0.2) color = 'red';
+    var color = fill_color;
+    if (progress && hp_ratio <= 0.5) color = 'yellow';
+    if (progress && hp_ratio <= 0.2) color = 'red';
     ctx.fillStyle = color;
     ctx.fillRect(x1, y1, Math.floor((x2 - x1) * hp_ratio + 0.5), y2 - y1);
-    if (state_str){
-    	ctx.beginPath();
-    	ctx.fillStyle = font_color;
-    	ctx.font = "10px Arial";
-		ctx.fillText(state_str,x2 + 10, Math.floor((y1 + y2) / 2));
-		ctx.closePath();
+    /*
+    if (state_str) {
+        ctx.beginPath();
+        ctx.fillStyle = font_color;
+        ctx.font = "10px Arial";
+        ctx.fillText(state_str, x2 + 10, y1 + cell_size * 0.3);
+        ctx.closePath();
     }
+    */
 }
 
-var onUnit = function(u, isSelected) {
+var onUnit = function(u, isSelected, isAttacking) {
     var player_color = player_colors[u.player_id];
+    var sprites = player_sprites[player_color];
     var p =  u.p;
     var last_p = u.last_p;
-    var diffx = p.x - last_p.x;
-    var diffy = p.y - last_p.y;
-    var ori = "down";
-    if (Math.abs(diffx) > Math.abs(diffy)) {
-        if (diffx >= 0) {
-            ori = "right";
-        } else {
-            ori = "left";
-        }
-    } else {
-        if (diffy >= 0) {
-            ori = "down"
-        } else {
-            ori = "up"
-        }
-    }
     var xy = convert_xy(p.x, p.y);
 
-    draw_sprites(sprites[unit_names_minirts[u.unit_type]], xy[0], xy[1], ori);
+    var spec = sprites[unit_names_minirts[u.unit_type]];
+    if (isAttacking) {
+      draw_sprites_attack(spec, xy[0], xy[1], null);
+    } else {
+      draw_sprites(spec, xy[0], xy[1], null);
+    }
 
     var hp_ratio = u.hp / u.max_hp;
     var state_str;
@@ -252,15 +669,17 @@ var onUnit = function(u, isSelected) {
             state_str = u.cmd.cmd[0] + u.cmd.state;
         }
     }
-    var x1 = xy[0] - unit_size / 2;
-    var y1 = xy[1] - 27;
-    var x2 = x1 + unit_size;
-    var y2 = y1 + 5;
-    draw_hp([x1, y1, x2, y2], [hp_ratio, state_str], 'white', player_color);
+    var sw = Math.floor(cell_size * spec["_select_scale"]);
+    var sh = Math.floor(cell_size * spec["_select_scale"]);
+    var x1 = xy[0] - Math.floor(sw * 0.4);
+    var y1 = xy[1] - sh / 2 - 10;
+    var x2 = x1 + Math.floor(sw * 0.8);
+    var y2 = y1 + scale(5);
+    draw_hp([x1, y1, x2, y2], [hp_ratio, state_str], 'white', player_color, 'green', true);
     if (isSelected) {
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.rect(x1 - 2, xy[1] - unit_size / 2 - 2, unit_size + 4, unit_size + 4);
+        ctx.rect(xy[0] - sw / 2 - scale(2), xy[1] - sh / 2 - scale(2), sw + scale(4), sh + scale(4));
         ctx.strokeStyle = player_color;
         ctx.stroke();
         ctx.closePath();
@@ -269,68 +688,147 @@ var onUnit = function(u, isSelected) {
 
 var onBullet = function(bullet) {
     var xy = convert_xy(bullet.p.x, bullet.p.y);
-    draw_sprites(bullets, xy[0], xy[1], bullet.state);
+    draw_bullet(bullets, xy[0], xy[1], bullet.state);
 }
 
-var onPlayerStats = function(player) {
-    if (player.player_id == 2) {
-        unit_names_minirts = unit_names_flag;
+var pad_zero = function(x) {
+  if (x < 10) {
+    return "0" + String(x);
+  }
+  return String(x);
+}
+
+var onPlayersStats = function(players, game) {
+    var x1 = left_frame_width;
+    var y1 = 0;
+    var label = "";
+    if (players.length === 1) {
+      if (is_coach_intf()) {
+        label = "[COACH] MINERALS: " + players[0].resource;
+      } else {
+        label = "[PLAYER] MINERALS: " + players[0].resource;
+      }
+    } else {
+      for (var i in players) {
+          var player = players[i];
+          label = label + "PLAYER " + player.player_id + ":" + player.resource + "  ";
+      }
     }
-    var x1 = left_frame_width + 10;
-    var y1 = (player.player_id + 1) * 50;
-    var label = ["PlayerId", player.player_id, "Resource", player.resource].join(" ");
     ctx.beginPath()
-	ctx.fillStyle = "Black";
-	ctx.font = "15px Arial";
-	ctx.fillText(label, x1, y1);
+    ctx.fillStyle = "Black";
+    ctx.font = "15px Arial";
+    if (is_spectator_intf()) {
+      ctx.fillText("TICK: " + game.tick, x1 + cell_size, y1 + cell_size / 2 + 5);
+    } else {
+      var diff_ms = ((new Date()) - start_time) / 1000;
+      var sec = Math.floor(diff_ms % 60);
+      var min = Math.floor((diff_ms / 60) % 60);
+
+      ctx.fillText("TIME: " + pad_zero(min) + ":" + pad_zero(sec), x1 + cell_size, y1 + cell_size / 2 + 5);
+    }
+    y1 += scale(30);
+    ctx.fillText(label, x1 + cell_size, y1 + cell_size / 2 + scale(5));
     ctx.closePath();
 }
+
 
 // Draw units that have been seen.
 var onPlayerSeenUnits = function(m) {
     if ("units" in m) {
         var oldAlpha = ctx.globalAlpha;
-        ctx.globalAlpha = 0.3;
+        ctx.globalAlpha = 0.5;
 
         for (var i in m.units) {
             onUnit(m.units[i], false);
         }
-        // console.log(m.units.length)
-
         ctx.globalAlpha = oldAlpha;
     }
 }
 
-var draw_state = function(u) {
-    var x1 = left_frame_width + 10;
-    var y1 = 150;
-    var x2 = left_frame_width + 100;
-    var y2 = 300;
-    var title = unit_names_minirts[u.unit_type] + ' ' + u.cmd.cmd + '[' + u.cmd.state + ']';
-    ctx.fillText(title, x1, y1);
-    y1 += 20;
+var draw_state = function(u, game) {
+    var player_color = player_colors[u.player_id];
+    var sprites = player_sprites[player_colors[u.player_id]];
+    var x1 = left_frame_width + scale(20);
+    var y1 = scale(60);
+    var spec = sprites[unit_names_minirts[u.unit_type]];
+    draw_sprites(spec, x1 + cell_size / 2, y1 + cell_size, null);
+
+    ctx.beginPath();
+    if (is_spectator_intf()) {
+      var title = unit_names_minirts[u.unit_type] + ': ' + u.cmd.cmd + '[' + u.cmd.state + ']';
+    } else {
+      var title = unit_names_minirts[u.unit_type];
+    }
+    ctx.fillStyle = "black";
+    ctx.font = "10px Arial";
+    ctx.fillText(title, x1 + 1.5 * cell_size + scale(5), y1 + cell_size / 2 + scale(5), scale(300));
+    ctx.closePath();
     var ratio = u.hp / u.max_hp;
     var label = "HP: " + u.hp + " / " + u.max_hp;
-    draw_hp([x1, y1, x1 + 100, y1 + 15], [ratio, label], 'black', '');
+    var x2 = x1 + 1.5 * cell_size + scale(5);
+    var y2 = y1 + cell_size / 2 + scale(20);
+    draw_hp([x2, y2, x2 + scale(100), y2 + scale(15)], [ratio, label], 'black', player_color, 'green', true);
+    if (u.player_id != game.player_id) {
+      return;
+    }
+
+    var x3 = x1;
+    var y3 = y1 + 2 * cell_size;
     for (var i in u.cds) {
         var cd = u.cds[i];
         if (cd.cd > 0) {
-            var curr = Math.min(tick - cd.last, cd.cd);
+            var curr = Math.min(game.tick - cd.last, cd.cd);
+            if (cd.last === 0) curr = cd.cd;
             ratio = curr / cd.cd;
-            var label = cd.name + ": " + curr + " / " + cd.cd;
-            y1 += 20;
-            draw_hp([x1, y1, x1 + 100, y1 + 15], [ratio, label], 'black', '');
+            var label = cd.name.split("_")[1] + ": " + curr + " / " + cd.cd;
+            draw_hp([x3, y3, x3 + scale(100), y3 + scale(15)], [ratio, label], 'black', player_color, 'magenta', false);
+            y3 += scale(20);
         }
+    }
+
+    var cmd_names = {
+      200: ["ATTACK", "a"],
+      201: ["MOVE", "m"],
+      202: ["BUILD","b"],
+      203: ["GATHER", "g"]
+    };
+    var def = game.gamedef.units[u.unit_type];
+    var title = "[HOTKEY]COMMAND:";
+    for (var i in def.allowed_cmds) {
+        var cmd = def.allowed_cmds[i];
+        var name = cmd_names[cmd.id][0];
+        if (name == "BUILD") continue;
+        var hotkey = cmd_names[cmd.id][1];
+        title = title + ' [' + hotkey + "]" + name;
+    }
+    ctx.beginPath()
+    ctx.fillStyle = "black";
+    ctx.font = "12px Arial";
+    y3 += scale(20);
+    ctx.fillText(title, x3, y3);
+    ctx.closePath();
+    y3 += scale(40);
+
+    for (var i in def.build_skills) {
+        var skill = def.build_skills[i];
+        var unit_name = unit_names_minirts[skill.unit_type];
+        var spec = sprites[unit_name];
+
+        draw_button_sprites(def.build_skills[i].hotkey, spec, x3 + cell_size / 2, y3 + cell_size / 2, 1);
+        ctx.beginPath();
+        var title = "[" + skill.hotkey + "]BUILD " + unit_name + " COST " + skill.price + " GOLD";
+        ctx.fillStyle = "black";
+        ctx.font = "12px Arial";
+        ctx.fillText(title, x3 + cell_size + scale(10), y3 + cell_size / 2 + scale(3));
+        ctx.closePath();
+        y3 += cell_size + scale(10);
     }
 }
 
 var convert_xy = function(x, y){
-    var xc = x * cell_size + Math.floor(rect_size / 2);
-    var yc = y * cell_size + Math.floor(rect_size / 2);
-
-    var x1 = xc - Math.floor(unit_size / 2);
-    var y1 = yc + Math.floor(rect_size / 2) - unit_size;
-    return [x1, y1];
+    var xc = x * cell_size + Math.floor(cell_size / 2);
+    var yc = y * cell_size + Math.floor(cell_size / 2);
+    return [xc, yc]
 };
 
 var convert_xy_back = function(x, y){
@@ -344,14 +842,116 @@ var load_sprites = function(spec) {
     var specReady = false;
     var specImage = new Image();
     specImage.onload = function () {
-		specReady = true;
-	};
-	specImage.src = spec["_file"];
+		    specReady = true;
+    };
+    specImage.src = spec["_file"];
     spec["image"] = specImage;
+
+    if (spec["_file_attack"] != null) {
+      var specAttackImage = new Image();
+      specAttackImage.onload = function () {
+          specReady = true;
+      };
+      specAttackImage.src = spec["_file_attack"];
+      spec["image_attack"] = specAttackImage;
+    } else {
+      spec["image_attack"] = null;
+    }
     return spec;
 };
 
-var draw_sprites = function(spec, px, py, ori) {
+var load_player_sprites = function(player) {
+    var sprites = {};
+    sprites["RESOURCE"] = load_sprites({
+       //"_file" : "rts/medieval/" + player + "/coin.png",
+        "_file" : "imgs/mineral1.png",
+        "_file_attack": null,
+        "_scale": 1.2,
+        "_select_scale" : 1
+    });
+    sprites["PEASANT"] = load_sprites({
+        "_file": "rts/medieval/" + player + "/peasant.png",
+        "_file_attack": "rts/medieval/" + player + "/peasant_attack.png",
+        "_scale": 1.5,
+        "_select_scale" : 1
+    });
+    sprites["SWORDMAN"] = load_sprites({
+        "_file": "rts/medieval/" + player + "/swordman.png",
+        "_file_attack": "rts/medieval/" + player + "/swordman_attack.png",
+        "_scale": 1.5,
+        "_select_scale" : 1
+    });
+    sprites["SPEARMAN"] = load_sprites({
+        "_file": "rts/medieval/" + player + "/spearman.png",
+        "_file_attack": "rts/medieval/" + player + "/spearman_attack.png",
+        "_scale": 1.5,
+        "_select_scale" : 1
+    });
+    sprites["CAVALRY"] = load_sprites({
+        "_file": "rts/medieval/" + player + "/cavalry.png",
+        "_file_attack": "rts/medieval/" + player + "/cavalry_attack.png",
+        "_scale": 1.5,
+        "_select_scale" : 1
+    });
+    sprites["ARCHER"] = load_sprites({
+        "_file": "rts/medieval/" + player + "/archer.png",
+        "_file_attack": "rts/medieval/" + player + "/archer_attack.png",
+        "_scale": 1.5,
+        "_select_scale" : 1
+    });
+    sprites["DRAGON"] = load_sprites({
+        "_file": "rts/medieval/" + player + "/dragon.png",
+        "_file_attack": "rts/medieval/" + player + "/dragon_attack.png",
+        "_scale": 2,
+        "_select_scale" : 1.5
+    });
+    sprites["CATAPULT"] = load_sprites({
+        "_file": "rts/medieval/" + player + "/catapult.png",
+        "_file_attack": "rts/medieval/" + player + "/catapult_attack.png",
+        "_scale": 2,
+        "_select_scale" : 1.5
+    });
+    sprites["BARRACK"] = load_sprites({
+        "_file": "rts/medieval/" + player + "/barrack.png",
+        "_file_attack": null,
+        "_scale": 2,
+        "_select_scale" : 1.2
+
+    });
+    sprites["BLACKSMITH"] = load_sprites({
+        "_file": "rts/medieval/" + player + "/blacksmith.png",
+        "_file_attack": null,
+        "_scale": 2,
+        "_select_scale" : 1.2
+    });
+    sprites["STABLE"] = load_sprites({
+        "_file": "rts/medieval/" + player + "/stable.png",
+        "_file_attack": null,
+        "_scale": 2,
+        "_select_scale" : 1.2
+    });
+    sprites["WORKSHOP"] = load_sprites({
+        "_file": "rts/medieval/" + player + "/workshop.png",
+        "_file_attack": null,
+        "_scale": 2,
+        "_select_scale" : 1.2
+    });
+    sprites["GUARD_TOWER"] = load_sprites({
+        "_file": "rts/medieval/" + player + "/guard_tower.png",
+        "_file_attack": null,
+        "_scale": 1.5,
+        "_select_scale" : 1
+    });
+    sprites["TOWN_HALL"] = load_sprites({
+        "_file": "rts/medieval/" + player + "/town_hall.png",
+        "_file_attack": null,
+        "_scale": 2.5,
+        "_select_scale" : 1.5
+    });
+    return sprites;
+}
+
+var draw_bullet = function(spec, px, py, ori) {
     var image = spec["image"]
     var width = image.width;
     var height = image.height;
@@ -370,61 +970,78 @@ var draw_sprites = function(spec, px, py, ori) {
     }
 };
 
-var myrange = function (j, k){
-	var n = k - j;
-	return Array.from(new Array(n), (x,i) => i + j);
+var draw_sprites = function(spec, px, py, scale) {
+    var image = spec["image"];
+    if (scale === null) {
+        scale = spec["_scale"];
+    }
+    var w = Math.floor(cell_size * scale);
+    var h = Math.floor(cell_size * scale);
+    ctx.drawImage(image, px - w / 2, py - 0.7 * h, w, h);
+}
+
+var draw_sprites_attack = function(spec, px, py, scale) {
+    var image = spec["image_attack"];
+    if (scale === null) {
+        scale = spec["_scale"];
+    }
+    var w = Math.floor(cell_size * scale);
+    var h = Math.floor(cell_size * scale);
+    ctx.drawImage(image, px - w / 2, py - 0.7 * h, w, h);
+}
+
+var draw_button_sprites = function(hotkey, spec, px, py, scale) {
+  var image = spec["image"];
+  if (scale === null) {
+      scale = spec["_scale"];
+  }
+  var w = Math.floor(cell_size * scale);
+  var h = Math.floor(cell_size * scale);
+
+  var key = String(px) + "_" + String(py) + "_" + String(scale) + "_" + spec["_file"];
+
+  if (!(key in unit_buttons)) {
+    var button = document.createElement("button");
+    button.innerHTML = "<img style='position: relative; left: -11; top: -11;' src='" + spec["_file"] + "' />";
+    button.style.position = "absolute";
+    button.style.top = py - 0.3 * h;;
+    button.style.left = px - 0.2 * w;
+    button.style.zindex = 2;
+    button.style.width = w;
+    button.style.height = h;
+    button.style.visibility = "hidden";
+    button.addEventListener ("click", function() {
+      if (is_worker_cmd_allowed(hotkey)) {
+        document.body.style.cursor = build_cursor;
+        send_cmd(tick + ' ' + hotkey);
+      } else if (is_building_cmd_allowed(hotkey)) {
+        send_cmd(tick + ' ' + hotkey);
+      }
+    });
+    document.body.appendChild(button);
+    unit_buttons[key] = button;
+  }
+  unit_buttons[key].style.visibility = "visible";
+}
+
+var draw_terrain_sprite = function(spec, px, py, seen_before) {
+    var fog_image = terrain_sprites["FOG"]["image"];
+    var image = spec["image"];
+    if (seen_before) {
+        ctx.drawImage(fog_image, px - cell_size / 2, py - cell_size / 2, cell_size, cell_size);
+        var oldAlpha = ctx.globalAlpha;
+        ctx.globalAlpha = 0.3;
+        ctx.drawImage(image, px - cell_size / 2, py - cell_size / 2, cell_size, cell_size);
+        ctx.globalAlpha = oldAlpha;
+    } else {
+        ctx.drawImage(image, px - cell_size / 2, py - cell_size / 2, cell_size, cell_size);
+    }
 };
 
-// load pics
-var sprites = {};
-
-sprites["RANGE_ATTACKER"] = load_sprites({
-    "up" : [myrange(15, 22), [0]],
-    "down": [myrange(15, 22), [1]],
-    "left": [[16], myrange(2, 9)],
-    "right": [[15], myrange(2, 9)],
-    "_file" : "imgs/tiles.png",
-    "_sizes" : [32, 32]
-});
-
-sprites["MELEE_ATTACKER"] = load_sprites({
-    "up" : [myrange(15, 22), [9]],
-    "down": [myrange(15, 22), [10]],
-    "left": [[20], myrange(2, 9)],
-    "right": [[21], myrange(2, 9)],
-    "_file" : "imgs/tiles.png",
-    "_sizes" : [32, 32]
-});
-
-sprites["RESOURCE"] = load_sprites({
-    "_file" : "imgs/mineral1.png",
-});
-
-sprites["BASE"] = load_sprites({
-    "_file" : "imgs/base.png"
-});
-
-sprites["BARRACKS"] = load_sprites({
-    "_file" : "imgs/barracks.png",
-});
-
-var targets = load_sprites({
-    "attack" : [[11], [6]],
-    "move" : [[14], [6]],
-    "_file" : "imgs/tiles.png",
-    "_sizes" : [32, 32]
-});
-
-sprites["WORKER"] = load_sprites({
-    "up" : [myrange(9, 12), [7]],
-    "down" : [myrange(9, 12), [4]],
-    "left" : [myrange(9, 12), [5]],
-    "right" : [myrange(9, 12), [6]],
-    "_file" : "imgs/People4.png",
-    "_sizes" : [32, 32]
-});
-
 var bullets = load_sprites({
+    "BULLET_CREATE" : [[7], [0]],
+    "BULLET_CREATE1" : [[7], [0]],
+    "BULLET_CREATE2" : [[7], [0]],
     "BULLET_READY" : [[7], [0]],
     "BULLET_EXPLODE1" : [[0], [0]],
     "BULLET_EXPLODE2" : [[1], [0]],
@@ -433,43 +1050,61 @@ var bullets = load_sprites({
     "_sizes" : [32, 32]
 });
 
-// capture the flag
-sprites["FLAG"] = load_sprites({
-    "_file" : "imgs/mineral1.png"
+var player_sprites = {
+  "blue" : load_player_sprites("blue"),
+  "red"  : load_player_sprites("red")
+};
+
+var terrain_sprites = {};
+
+terrain_sprites["GROUND"] = load_sprites({
+  "_file" : "rts/terrain/ground.png"
 });
 
-sprites["FLAG_ATHLETE"] = load_sprites({
-    "up" : [myrange(9, 12), [7]],
-    "down" : [myrange(9, 12), [4]],
-    "left" : [myrange(9, 12), [5]],
-    "right" : [myrange(9, 12), [6]],
-    "_file" : "imgs/People4.png",
-    "_sizes" : [32, 32]
+terrain_sprites["SAND"] = load_sprites({
+  "_file" : "rts/terrain/sand.png"
 });
 
-sprites["FLAG_BASE"] = load_sprites({
-    "_file" : "imgs/base.png",
+terrain_sprites["GRASS"] = load_sprites({
+  "_file" : "rts/terrain/grass.png"
+});
+
+terrain_sprites["ROCK"] = load_sprites({
+  "_file" : "rts/terrain/rock.png"
+});
+
+terrain_sprites["WATER"] = load_sprites({
+  "_file" : "rts/terrain/water.png"
+
+});
+
+terrain_sprites["FOG"] = load_sprites({
+  "_file" : "rts/terrain/fog.png"
 });
 
 
 var render = function (game) {
-    tick = game.tick;
-    ctx.beginPath()
-	ctx.fillStyle = "Black";
-	ctx.font = "15px Arial";
-    var label = "Tick: " + tick;
-	ctx.fillText(label, left_frame_width + 10, 20);
-    ctx.closePath();
+    map_x = game.rts_map.width;
+    map_y = game.rts_map.height;
+    resize();
     onMap(game.rts_map);
     if (! game.spectator) {
-       onPlayerSeenUnits(game.rts_map);
+      onPlayerSeenUnits(game.rts_map);
     }
 
     var all_units = {};
     var selected = {};
-    for (var i in game.players) {
-        onPlayerStats(game.players[i]);
+    onPlayersStats(game.players, game);
+
+    var attacking = {};
+    for (var i in game.bullets) {
+      var b = game.bullets[i];
+      if (b.state.indexOf("CREATE") >= 0) {
+        attacking[b.id_from] = b;
+      }
     }
+    var disabled_bullets = {};
+
     for (var i in game.units) {
         var unit = game.units[i];
         all_units[unit.id] = unit;
@@ -479,8 +1114,13 @@ var render = function (game) {
         if (isSelected) {
             selected[unit.id] = unit;
         }
+        var isAttacking = (unit.id in attacking);
 
-        onUnit(unit, isSelected);
+        onUnit(unit, isSelected, isAttacking);
+
+        if (melee_units.indexOf(unit_names_minirts[unit.unit_type]) >= 0) {
+          disabled_bullets[unit.id] = true;
+        }
     }
     if (dragging && x_down && y_down) {
         ctx.lineWidth = 2;
@@ -491,45 +1131,114 @@ var render = function (game) {
         ctx.closePath();
     }
     for (var i in game.bullets) {
-        onBullet(game.bullets[i]);
+        var b = game.bullets[i];
+        if (!(b.id_from in disabled_bullets)) {
+          onBullet(b);
+        }
     }
+
+    if (is_player_intf() || is_spectator_intf()) {
+      draw_instructions(game["instructions"]);
+    }
+
+    for (var key in unit_buttons) {
+      var b = unit_buttons[key];
+      b.style.visibility = "hidden";
+    }
+
     var len = Object.keys(selected).length;
     if (len == 1) {
         var idx = Object.keys(selected)[0];
         var unit = selected[idx];
-        draw_state(unit);
+        draw_state(unit, game);
     }
     ctx.beginPath();
-	ctx.fillStyle = "Black";
-	ctx.font = "15px Arial";
+    ctx.fillStyle = "Black";
+    ctx.font = "15px Arial";
     if (len > 1) {
         var label = len + " units";
-    	ctx.fillText(label ,left_frame_width + 50, 200);
+    	  ctx.fillText(label ,left_frame_width + scale(50), scale(200));
     }
-    var label = "Current FPS is " + Math.floor(50 * Math.pow(1.3, speed));
-    ctx.fillText(label, left_frame_width + 50, 570);
-    if (game.replay_length) {
-        range1.value = 100 * game.tick / game.replay_length;
+    if (is_spectator_intf()) {
+      var label = "Current FPS is " + Math.floor((scale(50)) * Math.pow(1.3, speed));
+      ctx.fillText(label, left_frame_width + scale(50), 300);
+
+      if (game.replay_length) {
+          range1.value = 100 * game.tick / game.replay_length;
+      }
+
+      var label = "Current progress_percent is " + range1.value;
+      ctx.fillText(label, left_frame_width + scale(50), 400);
     }
 
-    var label = "Current progress_percent is " + range1.value;
-    ctx.fillText(label, left_frame_width + 50, 670);
+    if (is_coach_intf()) {
+      var label = "Enter you instruction here:";
+    } else {
+      var label = "Current instruction to perform:";
+    }
+    ctx.fillText(label, 0, map_y * cell_size + 20);
+    var label = "Log of past instructions:";
+    ctx.fillText(label, 0, map_y * cell_size + 70);
+
+    if (game.frozen) {
+      ctx.fillStyle = "White";
+      ctx.font = "20px Arial";
+      if (is_coach_intf()) {
+        var label = "Game is frozen: please issue an instruction";
+      } else {
+        var label = "Game is frozen: please wait for an instruction";
+      }
+      ctx.fillText(label, Math.floor(0.5 *map_x * cell_size) - scale(350), Math.floor(0.5 * map_y * cell_size));
+    }
+
+    if (is_coach_intf()) {
+      cmd_button.disabled = !game.frozen;
+      cmd_input.disabled = !game.frozen;
+      cmd_inter.disabled = game.frozen;
+    } else {
+      cmd_button.disabled = game.frozen;
+    }
+
     ctx.closePath();
 };
 
 var main = function () {
-  dealer = new WebSocket('ws://localhost:8000');
+  start_time = new Date();
+  var param = new URLSearchParams(window.location.search);
+  if (param.has("type")) {
+    game_type = param.get("type");
+  } else {
+    game_type = "duel";
+  }
+  if (param.has("player_id")) {
+      var port =  param.get("player_id");
+      player_intf_id = port;
+  } else {
+      var port = "0";
+      player_intf_id = "2";
+  }
+  dealer = new WebSocket('ws://localhost:800' + port);
   dealer.onopen = function(event) {
-    console.log("WS Opened.");
+      console.log("WS Opened.");
+  }
+
+  if (is_coach_intf()) {
+    make_coach_intf();
+  } else if (is_player_intf()) {
+    make_player_intf();
+  } else {
+    make_spectator_intf();
   }
 
   dealer.onmessage = function (message) {
     var s = message.data;
     var game = JSON.parse(s);
+    last_state = game;
+    map_x = game.rts_map.width;
+    map_y = game.rts_map.height;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     render(game);
   };
 };
 
-var then = Date.now();
 main();

@@ -72,9 +72,9 @@ Click one worker, press `t` and click on the resource.
 The worker will move between base and resource with simple path-planning.
 
 4. Build
-   a. BASE: select and press `s` to produce worker.
+   a. TOWN_HALL: select and press `s` to produce worker.
    b. BARRACKS: select and press `m` for melee_attacker and `r` for range_attacker.
-   c. WORKER: select, press `b`/`c` and click an empty place to build barracks / base.
+   c. PEASANT: select, press `b`/`c` and click an empty place to build barracks / base.
 
 Units
 ------------

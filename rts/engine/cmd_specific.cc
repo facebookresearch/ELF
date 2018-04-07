@@ -16,6 +16,9 @@
 #include "cmd.gen.h"
 #include "cmd_specific.gen.h"
 
+#include "aux_func.h"
+#include "engine/lua/cpp_interface.h"
+
 static const int kMoveToRes = 0;
 static const int kGathering = 1;
 static const int kMoveToBase = 2;
@@ -45,8 +48,6 @@ CMD_DURATIVE(Gather, UnitId, base, UnitId, resource, int, state = 0);
 bool CmdMove::run(const GameEnv &env, CmdReceiver *receiver) {
     const Unit *u = env.GetUnit(_id);
     if (u == nullptr) return false;
-
-    // cout << "id: " << u.GetId() << " from " << u.GetPointF() << " to " << u.GetLastCmd().p << endl;
     if (micro_move(_tick, *u, env, _p, receiver) < kDistEps) _done = true;
     return true;
 }
@@ -70,8 +71,14 @@ bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
         return true;
     }
 
-    //const RTSMap &m = env.GetMap();
     const UnitProperty &property = u->GetProperty();
+    const float attack_mult = env.GetGameDef().unit(u->GetUnitType()).GetAttackMultiplier(target->GetUnitType());
+    const int damage = static_cast<int>(property._att * attack_mult);
+    if (damage == 0) {
+        _done = true;
+        return true;
+    }
+
     const PointF &curr = u->GetPointF();
     const PointF &target_p = target->GetPointF();
 
@@ -83,9 +90,9 @@ bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
     if (property.CD(CD_ATTACK).Passed(_tick) && in_attack_range) {
         // Melee delivers attack immediately, long-range will deliver attack via bullet.
         if (property._att_r <= 1.0) {
-            receiver->SendCmd(CmdIPtr(new CmdMeleeAttack(_id, _target, -property._att)));
+            receiver->SendCmd(CmdIPtr(new CmdMeleeAttack(_id, _target, -damage)));
         } else {
-            receiver->SendCmd(CmdIPtr(new CmdEmitBullet(_id, _target, curr, -property._att, 0.2)));
+            receiver->SendCmd(CmdIPtr(new CmdEmitBullet(_id, _target, curr, -damage, 0.2)));
         }
         receiver->SendCmd(CmdIPtr(new CmdCDStart(_id, CD_ATTACK)));
     } else if (! in_attack_range) {
@@ -146,34 +153,10 @@ bool CmdGather::run(const GameEnv &env, CmdReceiver *receiver) {
     return true;
 }
 
-// ------ Build
-// Move to nearby location at cmd.p and build at cmd.p
-// For fixed building, we just set cmd.p as its current location.
-static bool find_nearby_empty_place(const RTSMap &m, const PointF &curr, PointF *p_nearby) {
-    PointF nn;
-    nn = curr.Left(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-    nn = curr.Right(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-    nn = curr.Up(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-    nn = curr.Down(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-
-    nn = curr.LT(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-    nn = curr.LB(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-    nn = curr.RT(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-    nn = curr.RB(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-
-    nn = curr.LL(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-    nn = curr.RR(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-    nn = curr.TT(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-    nn = curr.BB(); if (m.CanPass(nn, INVALID)) { *p_nearby = nn; return true; }
-
-    return false;
-}
-
 bool CmdBuild::run(const GameEnv &env, CmdReceiver *receiver) {
     const Unit *u = env.GetUnit(_id);
     if (u == nullptr) return false;
 
-    const RTSMap &m = env.GetMap();
     const PointF& curr = u->GetPointF();
     const UnitProperty &p = u->GetProperty();
     //const Player &player = env.GetPlayer(u->GetPlayerId());
@@ -194,7 +177,7 @@ bool CmdBuild::run(const GameEnv &env, CmdReceiver *receiver) {
             } else {
                 // Move to nearby location.
                 PointF nearby_p;
-                if (find_nearby_empty_place(m, _p, &nearby_p)) {
+                if (find_nearby_empty_place(env, *u, _p, &nearby_p)) {
                     micro_move(_tick, *u, env, _p, receiver);
                 }
             }
@@ -205,9 +188,15 @@ bool CmdBuild::run(const GameEnv &env, CmdReceiver *receiver) {
                 PointF build_p;
                 if (_p.IsInvalid()) {
                     build_p.SetInvalid();
-                    find_nearby_empty_place(m, curr, &build_p);
+                    find_nearby_empty_place(env, *u, curr, &build_p);
                 } else {
                     build_p = _p;
+                }
+                if (!env.GetMap().CanPass(build_p, INVALID, true, env.GetGameDef().unit(_build_type))) {
+                    // cannot build here, money back, end
+                    receiver->SendCmd(CmdIPtr(new CmdChangePlayerResource(_id, u->GetPlayerId(), cost)));
+                    _done = true;
+                    return true;
                 }
                 if (! build_p.IsInvalid()) {
                     receiver->SendCmd(CmdIPtr(new CmdCreate(_id, _build_type, build_p, u->GetPlayerId(), cost)));
@@ -258,6 +247,27 @@ bool CmdChangePlayerResource::run(GameEnv *env, CmdReceiver *receiver) {
         receiver->FinishDurativeCmd(_id);
         return false;
     }
+    return true;
+}
+
+bool CmdIssueInstruction::run(GameEnv *env, CmdReceiver *receiver) {
+    auto& player = env->GetPlayer(_player_id);
+    player.IssueInstruction(_tick, _instruction);
+    env->UnfreezeGame();
+    return true;
+}
+
+bool CmdFinishInstruction::run(GameEnv *env, CmdReceiver *receiver) {
+    auto& player = env->GetPlayer(_player_id);
+    player.FinishInstruction(_tick);
+    env->FreezeGame();
+    return true;
+}
+
+bool CmdInterruptInstruction::run(GameEnv *env, CmdReceiver *receiver) {
+    auto& player = env->GetPlayer(_player_id);
+    player.FinishInstruction(_tick);
+    env->FreezeGame();
     return true;
 }
 

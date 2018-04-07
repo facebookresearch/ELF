@@ -29,9 +29,10 @@ bool RTSMCAction::Send(const GameEnv &env, CmdReceiver &receiver) {
             case SIMPLE:
                 rule_actor.GetActSimpleState(&state);
                 break;
-            case HIT_AND_RUN:
-                rule_actor.GetActHitAndRunState(&state);
+            case TOWER_DEFENSE:
+                rule_actor.GetActTowerDefenseState(&state);
                 break;
+
             default:
                 throw std::range_error("Invalid type: " + std::to_string(_type));
         }
@@ -41,4 +42,3 @@ bool RTSMCAction::Send(const GameEnv &env, CmdReceiver &receiver) {
 
     return RTSAction::Send(env, receiver);
 }
-
