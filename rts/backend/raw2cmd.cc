@@ -92,7 +92,7 @@ void RawToCmd::setup_hotkeys() {
     add_hotkey("a", attack_event);
     add_hotkey("~m", move_event);
     add_hotkey("g", gather_event);
-    add_hotkey("hbslwtcadp", build_event);
+    add_hotkey("hbslwtcedp", build_event);
 }
 
 RawMsgStatus RawToCmd::Process(Tick tick, const GameEnv &env, const string&s, vector<CmdBPtr> *cmds, vector<UICmd> *ui_cmds) {

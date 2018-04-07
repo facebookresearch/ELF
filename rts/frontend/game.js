@@ -30,6 +30,8 @@ var button_slower = null;
 var button_cycle = null;
 var button_pause = null;
 
+var unit_buttons = {};
+
 
 canvas.width = map_x * cell_size + 400;
 canvas.height = map_y * cell_size + 200;
@@ -64,6 +66,11 @@ var speed = 0;
 var min_speed = -10;
 var max_speed = 5;
 var last_state = null;
+var melee_units = [
+  "PEASANT",
+  "SWORDMAN",
+  "CAVALRY"
+];
 
 var scale = function(x) {
   var m = x / 2;
@@ -641,7 +648,7 @@ var draw_hp = function(bbox, states, font_color, player_color, fill_color, progr
     */
 }
 
-var onUnit = function(u, isSelected) {
+var onUnit = function(u, isSelected, isAttacking) {
     var player_color = player_colors[u.player_id];
     var sprites = player_sprites[player_color];
     var p =  u.p;
@@ -649,7 +656,11 @@ var onUnit = function(u, isSelected) {
     var xy = convert_xy(p.x, p.y);
 
     var spec = sprites[unit_names_minirts[u.unit_type]];
-    draw_sprites(spec, xy[0], xy[1], null);
+    if (isAttacking) {
+      draw_sprites_attack(spec, xy[0], xy[1], null);
+    } else {
+      draw_sprites(spec, xy[0], xy[1], null);
+    }
 
     var hp_ratio = u.hp / u.max_hp;
     var state_str;
@@ -803,7 +814,7 @@ var draw_state = function(u, game) {
         var unit_name = unit_names_minirts[skill.unit_type];
         var spec = sprites[unit_name];
 
-        draw_sprites(spec, x3 + cell_size / 2, y3 + cell_size / 2, 1);
+        draw_button_sprites(def.build_skills[i].hotkey, spec, x3 + cell_size / 2, y3 + cell_size / 2, 1);
         ctx.beginPath();
         var title = "[" + skill.hotkey + "]BUILD " + unit_name + " COST " + skill.price + " GOLD";
         ctx.fillStyle = "black";
@@ -835,6 +846,17 @@ var load_sprites = function(spec) {
     };
     specImage.src = spec["_file"];
     spec["image"] = specImage;
+
+    if (spec["_file_attack"] != null) {
+      var specAttackImage = new Image();
+      specAttackImage.onload = function () {
+          specReady = true;
+      };
+      specAttackImage.src = spec["_file_attack"];
+      spec["image_attack"] = specAttackImage;
+    } else {
+      spec["image_attack"] = null;
+    }
     return spec;
 };
 
@@ -843,72 +865,86 @@ var load_player_sprites = function(player) {
     sprites["RESOURCE"] = load_sprites({
        //"_file" : "rts/medieval/" + player + "/coin.png",
         "_file" : "imgs/mineral1.png",
+        "_file_attack": null,
         "_scale": 1.2,
         "_select_scale" : 1
     });
     sprites["PEASANT"] = load_sprites({
         "_file": "rts/medieval/" + player + "/peasant.png",
+        "_file_attack": "rts/medieval/" + player + "/peasant_attack.png",
         "_scale": 1.5,
         "_select_scale" : 1
     });
     sprites["SWORDMAN"] = load_sprites({
         "_file": "rts/medieval/" + player + "/swordman.png",
+        "_file_attack": "rts/medieval/" + player + "/swordman_attack.png",
         "_scale": 1.5,
         "_select_scale" : 1
     });
     sprites["SPEARMAN"] = load_sprites({
         "_file": "rts/medieval/" + player + "/spearman.png",
+        "_file_attack": "rts/medieval/" + player + "/spearman_attack.png",
         "_scale": 1.5,
         "_select_scale" : 1
     });
     sprites["CAVALRY"] = load_sprites({
         "_file": "rts/medieval/" + player + "/cavalry.png",
+        "_file_attack": "rts/medieval/" + player + "/cavalry_attack.png",
         "_scale": 1.5,
         "_select_scale" : 1
     });
     sprites["ARCHER"] = load_sprites({
         "_file": "rts/medieval/" + player + "/archer.png",
+        "_file_attack": "rts/medieval/" + player + "/archer_attack.png",
         "_scale": 1.5,
         "_select_scale" : 1
     });
     sprites["DRAGON"] = load_sprites({
         "_file": "rts/medieval/" + player + "/dragon.png",
+        "_file_attack": "rts/medieval/" + player + "/dragon_attack.png",
         "_scale": 2,
         "_select_scale" : 1.5
     });
     sprites["CATAPULT"] = load_sprites({
         "_file": "rts/medieval/" + player + "/catapult.png",
+        "_file_attack": "rts/medieval/" + player + "/catapult_attack.png",
         "_scale": 2,
         "_select_scale" : 1.5
     });
     sprites["BARRACK"] = load_sprites({
         "_file": "rts/medieval/" + player + "/barrack.png",
+        "_file_attack": null,
         "_scale": 2,
         "_select_scale" : 1.2
 
     });
     sprites["BLACKSMITH"] = load_sprites({
         "_file": "rts/medieval/" + player + "/blacksmith.png",
+        "_file_attack": null,
         "_scale": 2,
         "_select_scale" : 1.2
     });
     sprites["STABLE"] = load_sprites({
         "_file": "rts/medieval/" + player + "/stable.png",
+        "_file_attack": null,
         "_scale": 2,
         "_select_scale" : 1.2
     });
     sprites["WORKSHOP"] = load_sprites({
         "_file": "rts/medieval/" + player + "/workshop.png",
+        "_file_attack": null,
         "_scale": 2,
         "_select_scale" : 1.2
     });
     sprites["GUARD_TOWER"] = load_sprites({
         "_file": "rts/medieval/" + player + "/guard_tower.png",
+        "_file_attack": null,
         "_scale": 1.5,
         "_select_scale" : 1
     });
     sprites["TOWN_HALL"] = load_sprites({
         "_file": "rts/medieval/" + player + "/town_hall.png",
+        "_file_attack": null,
         "_scale": 2.5,
         "_select_scale" : 1.5
     });
@@ -942,12 +978,50 @@ var draw_sprites = function(spec, px, py, scale) {
     var w = Math.floor(cell_size * scale);
     var h = Math.floor(cell_size * scale);
     ctx.drawImage(image, px - w / 2, py - 0.7 * h, w, h);
-    // for debug
-    //ctx.beginPath();
-    //ctx.arc(px, py, 3, 0, 2 * Math.PI, false);
-    //ctx.fillStyle = 'black';
-    //ctx.fill();
-    //ctx.closePath();
+}
+
+var draw_sprites_attack = function(spec, px, py, scale) {
+    var image = spec["image_attack"];
+    if (scale === null) {
+        scale = spec["_scale"];
+    }
+    var w = Math.floor(cell_size * scale);
+    var h = Math.floor(cell_size * scale);
+    ctx.drawImage(image, px - w / 2, py - 0.7 * h, w, h);
+}
+
+var draw_button_sprites = function(hotkey, spec, px, py, scale) {
+  var image = spec["image"];
+  if (scale === null) {
+      scale = spec["_scale"];
+  }
+  var w = Math.floor(cell_size * scale);
+  var h = Math.floor(cell_size * scale);
+
+  var key = String(px) + "_" + String(py) + "_" + String(scale) + "_" + spec["_file"];
+
+  if (!(key in unit_buttons)) {
+    var button = document.createElement("button");
+    button.innerHTML = "<img style='position: relative; left: -11; top: -11;' src='" + spec["_file"] + "' />";
+    button.style.position = "absolute";
+    button.style.top = py - 0.3 * h;;
+    button.style.left = px - 0.2 * w;
+    button.style.zindex = 2;
+    button.style.width = w;
+    button.style.height = h;
+    button.style.visibility = "hidden";
+    button.addEventListener ("click", function() {
+      if (is_worker_cmd_allowed(hotkey)) {
+        document.body.style.cursor = build_cursor;
+        send_cmd(tick + ' ' + hotkey);
+      } else if (is_building_cmd_allowed(hotkey)) {
+        send_cmd(tick + ' ' + hotkey);
+      }
+    });
+    document.body.appendChild(button);
+    unit_buttons[key] = button;
+  }
+  unit_buttons[key].style.visibility = "visible";
 }
 
 var draw_terrain_sprite = function(spec, px, py, seen_before) {
@@ -965,6 +1039,9 @@ var draw_terrain_sprite = function(spec, px, py, seen_before) {
 };
 
 var bullets = load_sprites({
+    "BULLET_CREATE" : [[7], [0]],
+    "BULLET_CREATE1" : [[7], [0]],
+    "BULLET_CREATE2" : [[7], [0]],
     "BULLET_READY" : [[7], [0]],
     "BULLET_EXPLODE1" : [[0], [0]],
     "BULLET_EXPLODE2" : [[1], [0]],
@@ -1019,6 +1096,15 @@ var render = function (game) {
     var selected = {};
     onPlayersStats(game.players, game);
 
+    var attacking = {};
+    for (var i in game.bullets) {
+      var b = game.bullets[i];
+      if (b.state.indexOf("CREATE") >= 0) {
+        attacking[b.id_from] = b;
+      }
+    }
+    var disabled_bullets = {};
+
     for (var i in game.units) {
         var unit = game.units[i];
         all_units[unit.id] = unit;
@@ -1028,8 +1114,13 @@ var render = function (game) {
         if (isSelected) {
             selected[unit.id] = unit;
         }
+        var isAttacking = (unit.id in attacking);
 
-        onUnit(unit, isSelected);
+        onUnit(unit, isSelected, isAttacking);
+
+        if (melee_units.indexOf(unit_names_minirts[unit.unit_type]) >= 0) {
+          disabled_bullets[unit.id] = true;
+        }
     }
     if (dragging && x_down && y_down) {
         ctx.lineWidth = 2;
@@ -1040,13 +1131,20 @@ var render = function (game) {
         ctx.closePath();
     }
     for (var i in game.bullets) {
-        onBullet(game.bullets[i]);
+        var b = game.bullets[i];
+        if (!(b.id_from in disabled_bullets)) {
+          onBullet(b);
+        }
     }
 
     if (is_player_intf() || is_spectator_intf()) {
       draw_instructions(game["instructions"]);
     }
 
+    for (var key in unit_buttons) {
+      var b = unit_buttons[key];
+      b.style.visibility = "hidden";
+    }
 
     var len = Object.keys(selected).length;
     if (len == 1) {

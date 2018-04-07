@@ -95,7 +95,7 @@ function rts_unit_factory.init_peasant()
     --[[defense]]0,
     --[[speed]]0.05,
     --[[att]]1,
-    --[[att_r]]1,
+    --[[att_r]]2,
     --[[vis_r]]3,
     --[[cds]]{0, 40, 40, 150},
     --[[allowed_cmds]]allowed_cmds,
@@ -391,7 +391,7 @@ function rts_unit_factory.init_workshop()
   local attack_multiplier = {}
   local cant_move_over = {Terrain.ROCK, Terrain.WATER}
   local build_skills = {
-    __create_build_skill(UnitType.ARCHER, "a"),
+    __create_build_skill(UnitType.ARCHER, "e"),
     __create_build_skill(UnitType.DRAGON, "d"),
     __create_build_skill(UnitType.CATAPULT, "c"),
   }

@@ -23,7 +23,13 @@ CmdBPtr Bullet::Forward(const RTSMap&, const Units& units) {
     if (self_it == units.end()) _id_from = INVALID;
 
     // If it already exploded, the state changes until it goes to DONE.
-    if (_state == BULLET_EXPLODE1) {
+    if (_state == BULLET_CREATE) {
+        _state = BULLET_CREATE1;
+    } else if (_state == BULLET_CREATE1) {
+        _state = BULLET_CREATE2;
+    } else if (_state == BULLET_CREATE2) {
+        _state = BULLET_READY;
+    } else if (_state == BULLET_EXPLODE1) {
         _state = BULLET_EXPLODE2;
         return CmdBPtr();
     } else if (_state == BULLET_EXPLODE2) {
