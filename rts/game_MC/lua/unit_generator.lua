@@ -169,7 +169,7 @@ function generate_bases(proxy)
       x1, y1 = y1, x1
       x2, y2 = y2, x2
     end
-    if can_reach(proxy, x1, y1, x2, y2)  then
+    if can_pass(proxy, x1, y1) and can_pass(proxy, x2, y2) and can_reach(proxy, x1, y1, x2, y2) then
       found = true
       add_base_and_workers(proxy, x1, y1, 0)
       add_base_and_workers(proxy, x2, y2, 2)
