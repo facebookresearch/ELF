@@ -1,3 +1,9 @@
+# Copyright (c) 2017-present, Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
 # From https://code.activestate.com/recipes/577504/
 from __future__ import print_function
 from sys import getsizeof, stderr
