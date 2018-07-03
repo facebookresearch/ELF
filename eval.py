@@ -44,6 +44,7 @@ if __name__ == '__main__':
     GC.Start()
 
     evaluator.episode_start(0)
+    model.train(False)
 
     for n in eval_iters.iters():
         GC.Run()
