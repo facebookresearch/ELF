@@ -25,7 +25,7 @@ class Server {
       elf::GameClient* client)
       : contextOptions_(contextOptions),
         options_(options),
-        logger_(elf::logging::getIndexedLogger("Server-", "")) {
+        logger_(elf::logging::getLogger("Server-", "")) {
     auto netOptions = getNetOptions(contextOptions_, options_);
 
     trainCtrl_.reset(new TrainCtrl(

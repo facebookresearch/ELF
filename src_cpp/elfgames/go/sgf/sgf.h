@@ -260,8 +260,7 @@ class Sgf {
 
   Sgf()
       : _num_moves(0),
-        _logger(elf::logging::getIndexedLogger("elfgames::go::sgf::Sgf-", "")) {
-  }
+        _logger(elf::logging::getLogger("elfgames::go::sgf::Sgf-", "")) {}
   bool load(const std::string& filename);
   bool load(const std::string& filename, const std::string& game);
 

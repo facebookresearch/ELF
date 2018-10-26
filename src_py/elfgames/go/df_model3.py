@@ -170,6 +170,11 @@ class Model_PolicyValue(Model):
         self.board_size = params["board_size"]
         self.num_future_actions = params["num_future_actions"]
         self.num_planes = params["num_planes"]
+
+        print("my board size is " + str(self.board_size))
+        print("my num future actions is " + str(self.num_future_actions))
+        print("num_planes = " + str(self.num_planes))
+
         # print("#future_action: " + str(self.num_future_actions))
         # print("#num_planes: " + str(self.num_planes))
 
@@ -252,6 +257,7 @@ class Model_PolicyValue(Model):
             output_channel=None,
             kernel=3,
             relu=True):
+        print(str([input_channel, output_channel, kernel, relu]))
         if input_channel is None:
             input_channel = self.options.dim
         if output_channel is None:

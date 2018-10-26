@@ -40,8 +40,10 @@ def sample_with_check(probs, greedy=False):
         return actions
     while True:
         actions = probs.multinomial(1)[:, 0]
+        print("actions = " + str(actions))
+        print("action size = " + str(actions.size()) + " num_action =" + str(num_action))
         cond1 = (actions < 0).sum()
-        cond2 = (actions >= num_action).sum()
+        cond2 = (actions >= num_action).sum()    
         if cond1 == 0 and cond2 == 0:
             return actions
         print(

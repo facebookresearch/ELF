@@ -51,6 +51,7 @@ class ActorCritic(object):
                 ``terminal``: if game is terminated
             stats(`Stats`): Feed stats for later summarization.
         """
+        print("actor critic")      #FIXME
         m = mi["model"]
         value_node = self.options.value_node
 

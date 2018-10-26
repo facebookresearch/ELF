@@ -58,6 +58,8 @@ class Allocator(object):
 
     @staticmethod
     def spec2batches(ctx, batchsize, spec, gpu, use_numpy=False, num_recv=1):
+        print("TOTOTO SPEC2BATCHES")
+        print("spec2batches(ctx)= " + str(ctx))
         batch_spec = []
         name2idx = defaultdict(lambda: list())
         idx2name = dict()
@@ -89,13 +91,13 @@ class Allocator(object):
                 # Split spec.
                 spec_input = {key: spec[key] for key in v["input"]}
                 spec_reply = {key: spec[key] for key in v["reply"]}
-
+                
                 batch_spec.append(dict(input=spec_input, reply=spec_reply))
 
                 idx = smem.getSharedMemOptions().idx()
                 name2idx[name].append(idx)
                 idx2name[idx] = name
-
+        print("batch_spec=" + str(batch_spec))
         return batch_spec, name2idx, idx2name
 
 
@@ -121,9 +123,11 @@ class Batch:
         self.GC = _GC
         self.batchdim = _batchdim
         self.histdim = _histdim
+        # #print("toto batch initialized at kwargs" + str(kwargs))
         self.batch = kwargs
 
     def empty_copy(self):
+        ##print("toto empty batch")
         batch = Batch()
         batch.GC = self.GC
         batch.batchdim = self.batchdim
@@ -131,6 +135,7 @@ class Batch:
         return batch
 
     def first_k(self, batchsize):
+        ##print("toto-first_k")
         batch = self.empty_copy()
         batch.batch = {
             k: tensor_slice(
@@ -139,6 +144,7 @@ class Batch:
                 0,
                 batchsize) for k,
             v in self.batch.items()}
+        ##print("toto-first_k - end")
         return batch
 
     def __getitem__(self, key):
@@ -166,6 +172,7 @@ class Batch:
         learning algorithm, e.g., hidden state collected from the
         previous iterations.
         '''
+        ##print("toto-add" + str(key) + "=" + str(value))
         self.batch[key] = value
         return self
 
@@ -175,6 +182,7 @@ class Batch:
     def setzero(self):
         ''' Set all tensors in the batch to 0 '''
         for _, v in self.batch.items():
+            ###print("tototo setzero")
             v[:] = 0
 
     def copy_from(self, src):
@@ -183,14 +191,18 @@ class Batch:
         Args:
             src(dict or `Batch`): batch data to be copied
         '''
+        ##print("toto-copy from")
         this_src = src if isinstance(src, dict) else src.batch
         key_assigned = {k: False for k in self.batch.keys()}
 
         keys_extra = []
 
+        idx_src = 0
         for k, v in this_src.items():
+            idx_src += 1
             # Copy it down to cpu.
             if k not in self.batch:
+                print("adding keys_extra " + str(k))
                 keys_extra.append(k)
                 continue
 
@@ -205,11 +217,13 @@ class Batch:
             elif isinstance(v, (int, float)):
                 bk.fill_(v)
             else:
-                try:
+                    print("item " + str(idx_src) + " = " + str(v) + " for " +str(bk[:]))
+                #try:
                     bk[:] = v.squeeze_()
-                except BaseException:
-                    import pdb
-                    pdb.set_trace()
+                    #bk[:] = v.squeeze_()
+                #except BaseException:
+                #    import pdb
+                #    pdb.set_trace()
 
         # Check whether there is any key missing.
         keys_missing = [
@@ -227,7 +241,7 @@ class Batch:
         '''
         if self.histdim is None:
             raise ValueError("No histdim information for the batch")
-
+        #print("toto-hist")
         if key is None:
             new_batch = self.empty_copy()
             new_batch.batch = {
@@ -240,6 +254,7 @@ class Batch:
 
     def half(self):
         '''transfer batch data to fp16'''
+        #print("toto-half")
         new_batch = self.empty_copy()
         new_batch.batch = {k: v.half()
                            for k, v in self.batch.items()}
@@ -247,6 +262,7 @@ class Batch:
 
     def cpu2gpu(self, gpu, non_blocking=True):
         ''' transfer batch data to gpu '''
+        #print("toto-cpu2gpu")
         # For each time step
         new_batch = self.empty_copy()
         new_batch.batch = {k: v.cuda(gpu, non_blocking=non_blocking)
@@ -255,6 +271,7 @@ class Batch:
 
     def cpu2cpu(self, gpu, non_blocking=True):
         ''' transfer batch data to gpu '''
+        #print("toto-cpu2cpu")
         # For each time step
         new_batch = self.empty_copy()
         new_batch.batch = {k: v.clone() for k, v in self.batch.items()}
@@ -263,11 +280,13 @@ class Batch:
     def transfer_cpu2gpu(self, batch_gpu, non_blocking=True):
         ''' transfer batch data to gpu '''
         # For each time step
+        #print("toto-batch-cpu2gpu")
         for k, v in self.batch.items():
             batch_gpu[k].copy_(v, non_blocking=non_blocking)
 
     def transfer_cpu2cpu(self, batch_dst, non_blocking=True):
         ''' transfer batch data to cpu '''
+        #print("toto-transfer-cpu2cpu")
 
         # For each time step
         for k, v in self.batch.items():
@@ -275,6 +294,7 @@ class Batch:
 
     def pin_clone(self):
         ''' clone and pin memory for faster transportations to gpu '''
+        #print("toto-pin_clone")
         batch = self.empty_copy()
         batch.batch = {k: v.clone().pin_memory()
                        for k, v in self.batch.items()}
@@ -283,7 +303,7 @@ class Batch:
     def to_numpy(self):
         ''' convert batch data to numpy format '''
         return {
-            k: (v.numpy() if not isinstance(v, np.ndarray) else v)
+            k: (v.cpu().numpy() if not isinstance(v, np.ndarray) else v)
             for k, v in self.batch.items()
         }
 
@@ -315,7 +335,7 @@ class GCWrapper:
             gpu(int): gpu to use.
             params(dict): additional parameters
         '''
-
+        print("GCWrapper")
         # TODO Make a unified argument server and remove ``params``
         self.batches, self.name2idx, self.idx2name = Allocator.spec2batches(
             GC.ctx(), batchsize, spec,
@@ -359,6 +379,7 @@ class GCWrapper:
         return True
 
     def _makebatch(self, key_array):
+        ###print("tototo . _makebatch")
         return Batch(
             _GC=self.GC,
             _batchdim=self.batchdim,
@@ -369,6 +390,7 @@ class GCWrapper:
         idx = smem.getSharedMemOptions().idx()
         # print("smem idx: %d, label: %s" % (idx, self.idx2name[idx]))
         # print(self.name2idx)
+        ###print("tototo 1")
         if idx not in self._cb:
             raise ValueError("smem.idx[%d] is not in callback functions" % idx)
 
@@ -380,7 +402,7 @@ class GCWrapper:
 
         picked = self._makebatch(self.batches[idx]["input"]).first_k(batchsize)
         if self.gpu is not None:
-            picked = picked.cpu2gpu(self.gpu)
+            picked = picked.cpu2gpu(self.gpu)  # This is weird - we convert gpu from cpu 2 gpu ? FIXME
 
         # Save the infos structure, if people want to have access to state
         # directly, they can use infos.s[i], which is a state pointer.
@@ -388,33 +410,44 @@ class GCWrapper:
         picked.batchsize = batchsize
         picked.max_batchsize = smem.getSharedMemOptions().batchsize()
 
+        ##print("tototo 2")
         # Get the reply array
         if self.batches[idx]["reply"] is not None:
+            ##print("tototo 2a")
             sel_reply = self._makebatch(
                 self.batches[idx]["reply"]).first_k(batchsize)
+            ##print("tototo 2b")
         else:
+            ##print("tototo 2c")
             sel_reply = None
-
+            ##print("tototo 2d")
+        print("calling callback and get reply")
         reply = self._cb[idx](picked, *args, **kwargs)
+        ##print("tototo 3")
         # If reply is meaningful, send them back.
         if isinstance(reply, dict) and sel_reply is not None:
+            ##print("tototo ZORG1")
             if self.gpu is not None:
                 with torch.cuda.device(self.gpu):
                     keys_extra, keys_missing = sel_reply.copy_from(reply)
             else:
                 keys_extra, keys_missing = sel_reply.copy_from(reply)
 
+            ##print("tototo ZORG2")
             if len(keys_extra) > 0:
                 raise ValueError(
                     "Receive extra keys %s from reply!" %
                     str(keys_extra))
+            ##print("tototo ZORG3")
             if len(keys_missing) > 0:
                 raise ValueError(
                     "Missing keys %s absent in reply!" %
                     str(keys_missing))
+            ##print("tototo ZORG4")
 
     def _check_callbacks(self):
         # Check whether all callbacks are assigned properly.
+        ##print("tototo check callbacks")
         for key, indices in self.name2idx.items():
             for idx in indices:
                 if idx not in self._cb:
@@ -429,17 +462,23 @@ class GCWrapper:
         Samples in a returned batch are always from the same group,
         but the group key of the batch may be arbitrary.
         '''
+        ##print("tototo run1")
         # print("before wait")
         smem = self.GC.ctx().wait()
         # print("before calling")
+        ##print("tototo run2")
         self._call(smem, *args, **kwargs)
         # print("before_step")
+        ##print("tototo run3")
         self.GC.ctx().step()
 
     def start(self):
         '''Start all game environments'''
+        ##print("tototo start 1")
         self._check_callbacks()
+        ##print("tototo start 2")
         self.GC.ctx().start()
+        ##print("tototo start 3")
 
     def stop(self):
         '''Stop all game environments.

@@ -94,7 +94,12 @@ class Evaluator(object):
         # actor model.
         m = self.mi[self.actor_name]
         m.set_volatile(True)
-        state_curr = m.forward(batch)
+        #print("model")
+        #print(m)
+        print("batch")
+        print(batch)
+        #print(batch.to_numpy())  # FIXME: for some reason batch.to_numpy fails ?
+        state_curr = m.forward(batch)   # FIXME: add an assert for checking the size, this was my main bug
         m.set_volatile(False)
 
         if self.sampler is not None:

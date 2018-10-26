@@ -41,7 +41,7 @@ class GameClient {
         client_(comm->getClient()),
         n_(0),
         stop_games_(false),
-        prepareToStop_(false) {}
+        prepareToStop_(false) {assert(client_);}
 
   // For Game side.
   void start() {
@@ -80,6 +80,7 @@ class GameClient {
   comm::ReplyStatus sendBatchWait(
       const std::vector<std::string>& targets,
       const std::vector<FuncsWithState*>& funcs) {
+    assert(client_);
     return client_->sendBatchWait(funcs, targets);
   }
 
@@ -200,8 +201,7 @@ class Context {
  public:
   using GameCallback = std::function<void(int game_idx, GameClient*)>;
 
-  Context()
-      : logger_(elf::logging::getIndexedLogger("elf::base::Context-", "")) {
+  Context() : logger_(elf::logging::getLogger("elf::base::Context-", "")) {
     // Wait for the derived class to add entries to extractor_.
     server_ = comm_.getServer();
     client_.reset(new GameClient(&comm_, this));

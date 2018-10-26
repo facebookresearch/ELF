@@ -27,7 +27,7 @@
 namespace comm {
 
 ///
-///  Communcation class that handles the communications between Servers and
+///  Communication class that handles the communications between Servers and
 ///  Clients.
 ///
 ///  Workflow (Client side):
@@ -107,7 +107,7 @@ class CommInternalT {
  protected:
   class Client {
    public:
-    explicit Client(CommInternal* p) : p_(p) {}
+    explicit Client(CommInternal* p) : p_(p) { assert(p); }
 
    protected:
     // If Comm does not see this thread id before, it will create a new record
@@ -126,6 +126,7 @@ class CommInternalT {
       assert(!data.empty());
       // Find server that could accept this task.
       std::vector<ClientToServerMsg> messages;
+      assert(p_);
       ClientNode* node = p_->client(id);
       for (Id server_id : server_ids) {
         ServerNode* server = p_->server(server_id);
@@ -327,7 +328,7 @@ class CommT : public CommInternalT<
         : CommInternal::Client(pp),
           pp_(pp),
           rng_(time(NULL)),
-          logger_(elf::logging::getIndexedLogger("elf::comm::Client-", "")) {}
+          logger_(elf::logging::getLogger("elf::comm::Client-", "")) {}
 
     ReplyStatus sendWait(Data data, const std::vector<std::string>& labels) {
       return CommInternal::Client::sendWait(

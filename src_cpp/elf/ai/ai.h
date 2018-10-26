@@ -103,7 +103,6 @@ class AIClientT : public AI_T<S, A> {
       funcs_s[i].add(funcs_a[i]);
       ptr_funcs_s.push_back(&funcs_s[i]);
     }
-
     // return client_->sendWait(targets_, &funcs);
     comm::ReplyStatus status = client_->sendBatchWait(targets_, ptr_funcs_s);
     return status == comm::ReplyStatus::SUCCESS ||
