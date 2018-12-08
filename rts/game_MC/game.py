@@ -137,7 +137,7 @@ if __name__ == '__main__':
     GC.Start()
 
     import tqdm
-    for k in tqdm.trange(nIter):
+    for _ in tqdm.trange(nIter):
         b = datetime.now()
         GC.Run()
         elapsed_wait_only += (datetime.now() - b).total_seconds() * 1000

@@ -87,7 +87,7 @@ if __name__ == '__main__':
     wrapper.reg_callback("train", trainer.train)
     wrapper.reg_callback("actor", trainer.actor)
 
-    for i in tqdm.trange(1000):
+    for _ in tqdm.trange(1000):
         wrapper.Run()
 
     print("Done")

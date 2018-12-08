@@ -154,7 +154,7 @@ if __name__ == '__main__':
         GC.reg_callback("actor", forward_actor.actor)
     GC.Start()
 
-    for n in eval_iters.iters():
+    for _ in eval_iters.iters():
         GC.Run()
     GC.Stop()
 

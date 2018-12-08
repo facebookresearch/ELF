@@ -142,11 +142,9 @@ if __name__ == '__main__':
     GC.Start()
 
     import tqdm
-    for k in tqdm.trange(args.num_iter):
+    for _ in tqdm.trange(args.num_iter):
         b = datetime.now()
-        # print("Before wait")
         GC.Run()
-        # print("wake up from wait")
         elapsed_wait_only += (datetime.now() - b).total_seconds() * 1000
 
     print(len(game_records_visited))

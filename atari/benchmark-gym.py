@@ -44,7 +44,7 @@ def bench_proc():
     for p in procs:
         p.start()
 
-    for t in tqdm.trange(100000):
+    for _ in tqdm.trange(100000):
         Q.get()
 
 def bench_thread(ngame):
