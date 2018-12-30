@@ -1,4 +1,4 @@
-Python Implementation of Concurrent Game Environemnt in ELF
+Python Implementation of Concurrent Game Environment in ELF
 ============================================================
 Many games do not have C interface, which restricts the usage of ELF. Therefore we also provide a simple Python implementation to run concurrent game environments, using Python multiprocessing library. 
 

@@ -2,7 +2,7 @@ DarkForest Go Engine in ELF
 ===================
 Here is an reimplementation of DarkForest Go Engine using ELF platform.
 
-See [here](https://github.com/facebookresearch/darkforestGo) for the orignal LUA+Torch version. 
+See [here](https://github.com/facebookresearch/darkforestGo) for the original LUA+Torch version. 
 
 Training  
 ==========

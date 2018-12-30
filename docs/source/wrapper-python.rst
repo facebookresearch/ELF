@@ -58,7 +58,7 @@ Each dict entry is a key-dict pair ``key, dict(batchsize=batchsize, input=input_
 
 * ``key`` is the name of the collector.
 * ``batchsize`` is the batch size used.
-* ``input_desc`` is an *input batch* that contains all variables that have been filled by the blocked game environemnts;
+* ``input_desc`` is an *input batch* that contains all variables that have been filled by the blocked game environments;
 * ``reply_desc`` is a *reply batch* that contains all variables to be filled by the Python side. It is omitted if the description is ``None``.
 
 Both input and reply batches will be allocated shared memory separately. ELF supports using PyTorch tensor or Numpy array as the shared memory.

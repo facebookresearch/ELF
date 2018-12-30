@@ -7,13 +7,13 @@ ELF is an **E**xtensive, **L**ightweight and **F**lexible platform for game rese
 
 Besides, ELF now also provides a Python version for running concurrent game environments, by Python multiprocessing with ZeroMQ inter-process communication. See `./ex_elfpy.py` for a simple example. 
 
-For research on RTS games, ELF comes with an fast RTS engine, and three concrete environments: MiniRTS, Capture the Flag and Tower Defense. MiniRTS has all the key dynamics of a real-time strategy game, including gathering resources, building facilities and troops, scouting the unknown territories outside the perceivable regions, and defend/attack the enemy. User can access its internal representation and can freely change the game setting.
+For research on RTS games, ELF comes with a fast RTS engine, and three concrete environments: MiniRTS, Capture the Flag and Tower Defense. MiniRTS has all the key dynamics of a real-time strategy game, including gathering resources, building facilities and troops, scouting the unknown territories outside the perceivable regions, and defend/attack the enemy. User can access its internal representation and can freely change the game setting.
 
 ![Overview](./overview.png)
 
 ELF has the following characteristics:
 
-* *End-to-End*: ELF offers an end-to-end solution to game research. It provides miniature real-time strategy game environments, concurrent simulation, intuitive APIs, web-based visualzation, and also comes with a reinforcement learning backend empowered by [Pytorch](https://github.com/pytorch/pytorch) with minimal resource requirement.  
+* *End-to-End*: ELF offers an end-to-end solution to game research. It provides miniature real-time strategy game environments, concurrent simulation, intuitive APIs, web-based visualization, and also comes with a reinforcement learning backend empowered by [Pytorch](https://github.com/pytorch/pytorch) with minimal resource requirement.  
 
 * *Extensive*: Any game with C/C++ interface can be plugged into this framework by writing a simple wrapper. As an example, we already incorporate Atari games into our framework and show that the simulation speed per core is comparable with single-core version, and is thus much faster than implementation using either multiprocessing or Python multithreading. In the future, we plan to incorporate more environments, e.g., DarkForest Go engine.
 
@@ -71,7 +71,7 @@ Supported Environments
 Any game with C/C++ interface can be plugged into this framework by writing a simple wrapper. Currently we have the following environment:
 
 1. **MiniRTS and its extensions** (`./rts`)  
-A miniature real-time strategy game that captures the key dynamics of its genre, including building workers, collecting resources, exploring unseen territories, defend the enemy and attack them back. The game runs extremely fast (40K FPS per core on a laptop) to faciliate the usage of many existing on-policy reinforcement learning approaches.  
+A miniature real-time strategy game that captures the key dynamics of its genre, including building workers, collecting resources, exploring unseen territories, defend the enemy and attack them back. The game runs extremely fast (40K FPS per core on a laptop) to facilitate the usage of many existing on-policy reinforcement learning approaches.  
 
 2. **Atari games** (`./atari`)  
 We incorporate Arcade Learning Environment (ALE) into ELF so that you can load any rom and run 1000 concurrent game instances easily. 
