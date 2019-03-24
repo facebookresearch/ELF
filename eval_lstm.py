@@ -39,7 +39,7 @@ if __name__ == '__main__':
 
     trainer.episode_start(0)
 
-    for n in eval_iters.iters():
+    for _ in eval_iters.iters():
         GC.Run()
 
     GC.Stop()

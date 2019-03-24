@@ -54,7 +54,7 @@ if __name__ == '__main__':
     evaluator.episode_start(0)
     GC.Start()
 
-    for n in eval_iters.iters():
+    for _ in eval_iters.iters():
         GC.Run()
     GC.Stop()
 
