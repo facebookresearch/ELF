@@ -58,7 +58,7 @@ cd ~
 git clone https://github.com/facebookresearch/ELF
 cd ELF/rts/
 mkdir build && cd build
-cmake .. -DPYTHON_EXECUTABLE=$HOME/miniconda3/bin/python
+cmake .. -DPYTHON_EXECUTABLE=$HOME/miniconda3/envs/elf/bin/python
 make
 
 # Train the model
