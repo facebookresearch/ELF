@@ -55,7 +55,7 @@ class Model(nn.Module):
             Variable for x
         '''
         if not isinstance(x, Variable):
-            return Variable(x, volatile=self.volatile)
+            return Variable(x)
         else:
             return x
 

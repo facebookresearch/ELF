@@ -77,9 +77,9 @@ class EvalCount:
         last_r = batch["last_r"][hist_idx]
 
         for batch_idx, (id, last_terminal) in enumerate(zip(ids, last_terminals)):
-            self.feed(id, last_r[batch_idx])
-            if last_terminal:
-                self.terminal(id)
+            self.feed(id.item(), last_r[batch_idx].item())
+            if last_terminal.item() == 1:
+                self.terminal(id.item())
 
 class RewardCount(EvalCount):
     ''' Class to accumulate rewards achieved'''

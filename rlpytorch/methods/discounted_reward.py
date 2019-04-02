@@ -24,7 +24,7 @@ class DiscountedReward:
     def setR(self, R, stats):
         ''' Set rewards and feed to stats'''
         self.R = R
-        stats["init_reward"].feed(R.mean())
+        stats["init_reward"].feed(R.mean().item())
 
     def feed(self, batch, stats):
         '''
@@ -49,7 +49,7 @@ class DiscountedReward:
             if terminal:
                 self.R[i] = r[i]
 
-        stats["reward"].feed(r.mean())
-        stats["acc_reward"].feed(self.R.mean())
+        stats["reward"].feed(r.mean().item())
+        stats["acc_reward"].feed(self.R.mean().item())
 
         return self.R

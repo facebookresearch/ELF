@@ -92,7 +92,7 @@ class ModelLoader:
                     sys.exit(1)
 
         if args.gpu is not None and args.gpu >= 0:
-            model.cuda(device_id=args.gpu)
+            model.cuda(device=args.gpu)
 
         return model
 

@@ -152,7 +152,7 @@ class Batch:
                 elif isinstance(v, (int, float)):
                     bk.fill_(v)
                 else:
-                    bk[:] = v
+                    bk[:] = v.view_as(bk[:])
 
             else:
                 raise ValueError("Batch[%s]: \"%s\" in reply is missing in batch specification" % (batch_key, k))
