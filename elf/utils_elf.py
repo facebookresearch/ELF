@@ -188,7 +188,7 @@ class Batch:
         else:
             return self[key][s]
 
-    def transfer_cpu2gpu(self, batch_gpu, =True):
+    def transfer_cpu2gpu(self, batch_gpu):
         ''' transfer batch data to gpu '''
         # For each time step
         for k, v in self.batch.items():
