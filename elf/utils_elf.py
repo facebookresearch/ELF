@@ -188,13 +188,13 @@ class Batch:
         else:
             return self[key][s]
 
-    def transfer_cpu2gpu(self, batch_gpu, asynch=True):
+    def transfer_cpu2gpu(self, batch_gpu, =True):
         ''' transfer batch data to gpu '''
         # For each time step
         for k, v in self.batch.items():
-            batch_gpu[k].copy_(v, asynch=asynch)
+            batch_gpu[k].copy_(v)
 
-    def transfer_cpu2cpu(self, batch_dst, asynch=True):
+    def transfer_cpu2cpu(self, batch_dst):
         ''' transfer batch data to cpu '''
 
         # For each time step
