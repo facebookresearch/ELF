@@ -37,6 +37,6 @@ install:
 
 script:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-4.9" CC="gcc-4.9"; fi
-  - (mkdir rts/build_MC && cd rts/build_MC && cmake .. -DGAME_DIR=../game_MC && make)
-  - (mkdir rts/build_CF && cd rts/build_CF && cmake .. -DGAME_DIR=../game_CF && make)
-  - (mkdir rts/build_TD && cd rts/build_TD && cmake .. -DGAME_DIR=../game_TD && make)
+  - (mkdir rts/build_MC && cd rts/build_MC && cmake .. -DPYTHON_EXECUTABLE=/opt/pyenv/shims/python -DGAME_DIR=../game_MC && make)
+#  - (mkdir rts/build_CF && cd rts/build_CF && cmake .. -DPYTHON_EXECUTABLE=/opt/pyenv/shims/python -DGAME_DIR=../game_CF && make)
+#  - (mkdir rts/build_TD && cd rts/build_TD && cmake .. -DPYTHON_EXECUTABLE=/opt/pyenv/shims/python -DGAME_DIR=../game_TD && make)
