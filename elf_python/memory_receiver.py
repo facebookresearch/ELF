@@ -75,19 +75,19 @@ def _cpu2gpu(batch_cpu, batch_gpu, allow_incomplete_batch=False):
             if isinstance(batch_cpu_t[k], (torch.FloatTensor, torch.LongTensor)):
                 if allow_incomplete_batch:
                     if len(batch_cpu_t[k].size()) == 1:
-                        batch_gpu_t[k] = batch_cpu_t[k][:batchsize].cuda(async=True)
+                        batch_gpu_t[k] = batch_cpu_t[k][:batchsize].cuda()
                     else:
-                        batch_gpu_t[k] = batch_cpu_t[k][:batchsize, :].cuda(async=True)
+                        batch_gpu_t[k] = batch_cpu_t[k][:batchsize, :].cuda()
                 else:
                     if isinstance(batch_cpu_t[k], torch.FloatTensor):
                         if k not in batch_gpu_t:
                             batch_gpu_t[k] = torch.cuda.FloatTensor(batch_cpu_t[k].size())
-                        batch_gpu_t[k].copy_(batch_cpu_t[k], async=True)
+                        batch_gpu_t[k].copy_(batch_cpu_t[k])
 
                     elif isinstance(batch_cpu_t[k], torch.LongTensor):
                         if k not in batch_gpu_t:
                             batch_gpu_t[k] = torch.cuda.LongTensor(batch_cpu_t[k].size())
-                        batch_gpu_t[k].copy_(batch_cpu_t[k], async=True)
+                        batch_gpu_t[k].copy_(batch_cpu_t[k])
             else:
                 batch_gpu_t[k] = batch_cpu_t[k]
 
