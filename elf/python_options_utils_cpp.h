@@ -19,13 +19,13 @@
 
 struct ContextOptions {
     // How many simulation threads we are running.
-    int num_games = 1;
+    int num_games = 1;  // 1024
 
     // The maximum number of threads per game
-    int max_num_threads = 0;
+    int max_num_threads = 0;  //0
 
     // History length. How long we should keep the history.
-    int T = 1;
+    int T = 1; // 20
 
     // verbose options.
     bool verbose_comm = false;
@@ -34,7 +34,7 @@ struct ContextOptions {
     // Whether we wait for each group or we wait jointly.
     bool wait_per_group = false;
 
-    int num_collectors = 1;
+    int num_collectors = 1;  // 0
 
     mcts::TSOptions mcts_options;
 

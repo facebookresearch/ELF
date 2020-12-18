@@ -23,7 +23,7 @@ class Model_ActorCritic(Model):
         params = args.params
         assert isinstance(params["num_action"], int), "num_action has to be a number. action = " + str(params["num_action"])
         self.params = params
-        self.net = MiniRTSNet(args)
+        self.net = MiniRTSNet(args)   # 卷积神经网络处理输入数据
         last_num_channel = self.net.num_channels[-1]
 
         if self.params.get("model_no_spatial", False):

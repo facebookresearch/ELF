@@ -20,11 +20,11 @@ class Loader(CommonLoader):
 
     def _define_args(self):
         return [
-            ("use_unit_action", dict(action="store_true")),
-            ("disable_time_decay", dict(action="store_true")),
-            ("use_prev_units", dict(action="store_true")),
-            ("attach_complete_info", dict(action="store_true")),
-            ("feature_type", "ORIGINAL")
+            ("use_unit_action", dict(action="store_true")),     # false
+            ("disable_time_decay", dict(action="store_true")),  # false
+            ("use_prev_units", dict(action="store_true")),      # false 
+            ("attach_complete_info", dict(action="store_true")),# false
+            ("feature_type", "ORIGINAL")                        # "ORIGINAL"
         ]
 
     def _on_gc(self, GC):
@@ -32,11 +32,11 @@ class Loader(CommonLoader):
         opt.use_time_decay = not self.args.disable_time_decay
         opt.save_prev_seen_units = self.args.use_prev_units
         opt.attach_complete_info = self.args.attach_complete_info
-        GC.ApplyExtractorParams(opt)
+        GC.ApplyExtractorParams(opt)  # 设置 MCExtractor
 
         usage = minirts.MCExtractorUsageOptions()
         usage.Set(self.args.feature_type)
-        GC.ApplyExtractorUsage(usage)
+        GC.ApplyExtractorUsage(usage) # 设置 ExtractorUsage
 
     def _unit_action_keys(self):
         if self.args.use_unit_action:
@@ -44,12 +44,12 @@ class Loader(CommonLoader):
         else:
             return []
 
-    def _get_actor_spec(self):
+    def _get_actor_spec(self): #d=定义用于actor的batch字典
         reply_keys = ["V", "pi", "a"]
 
         return dict(
             batchsize=self.args.batchsize,
-            input=dict(T=1, keys=set(["s", "last_r", "terminal"])),
+            input=dict(T=1, keys=set(["s", "last_r", "terminal"])),  # 期待收到 s last_r terminal
             reply=dict(T=1, keys=set(reply_keys + self._unit_action_keys())),
         )
 
@@ -58,7 +58,7 @@ class Loader(CommonLoader):
         return dict(
             batchsize=self.args.batchsize,
             input=dict(T=self.args.T, keys=set(keys + self._unit_action_keys())),
-            reply=None
+            reply=None  # train 不需要回复
         )
 
     def _get_reduced_predict(self):

@@ -52,7 +52,7 @@ struct GameState {
     std::vector<int64_t> uloc, tloc;
     std::vector<int64_t> bt, ct;
 
-    // Also we need to save distributions.
+    // Also we need to save distributions.  概率？
     std::vector<float> uloc_prob, tloc_prob;
     std::vector<float> bt_prob, ct_prob;
 

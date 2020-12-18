@@ -20,12 +20,12 @@ using namespace std;
 
 struct TSOptions {
     int max_num_moves = 0;
-    int num_threads = 16;
-    int num_rollout_per_thread = 100;
-    bool verbose = false;
+    int num_threads = 16;   // 0
+    int num_rollout_per_thread = 100; // 1
+    bool verbose = false; 
     bool verbose_time = false;
 
-    string save_tree_filename;
+    string save_tree_filename;  // ""
 
     bool persistent_tree = false;
     // [TODO] Not a good design.

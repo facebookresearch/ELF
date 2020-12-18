@@ -17,17 +17,17 @@ class CommonLoader:
         self.module = module
 
         basic_define_args = [
-            ("handicap_level", 0),
+            ("handicap_level", 0),  
             ("players", dict(type=str, help=";-separated player infos. For example: type=AI_NN,fs=50,args=backup/AI_SIMPLE|decay/0.99|start/1000,fow=True;type=AI_SIMPLE,fs=50")),
             ("max_tick", dict(type=int, default=30000, help="Maximal tick")),
-            ("shuffle_player", dict(action="store_true")),
-            ("num_frames_in_state", 1),
+            ("shuffle_player", dict(action="store_true")),    # false
+            ("num_frames_in_state", 1),    
             ("max_unit_cmd", 1),
             ("seed", 0),
-            ("actor_only", dict(action="store_true")),
-            ("model_no_spatial", dict(action="store_true")), # TODO, put it to model
-            ("save_replay_prefix", dict(type=str, default=None)),
-            ("output_file", dict(type=str, default=None)),
+            ("actor_only", dict(action="store_true")),   # false
+            ("model_no_spatial", dict(action="store_true")), # TODO, put it to model false
+            ("save_replay_prefix", dict(type=str, default=None)),  
+            ("output_file", dict(type=str, default=None)),         
             ("cmd_dumper_prefix", dict(type=str, default=None)),
             ("gpu", dict(type=int, help="gpu to use", default=None)),
         ]
@@ -85,7 +85,7 @@ class CommonLoader:
     def _init_gc(self, player_names=None):
         args = self.args
 
-        co = self.module.ContextOptions()
+        co = self.module.ContextOptions()   #/elf/python_options_utils_cpp.h
         self.context_args.initialize(co)
 
         opt = self.module.PythonOptions()
@@ -96,7 +96,7 @@ class CommonLoader:
         # [TODO] Put it to TD.
         opt.handicap_level = args.handicap_level
 
-        player_infos = self._parse_players(opt, player_names)
+        player_infos = self._parse_players(opt, player_names) # 处理Players并设置为AI
 
         # opt.output_filename = b"simulators.txt"
         # opt.output_filename = b"cout"
@@ -153,7 +153,7 @@ class CommonLoader:
             # For training, we want input, action (filled by actor models), value (filled by actor models) and reward.
             desc["train"] = self._get_train_spec()
 
-        self.more_labels.add_labels(desc)
+        self.more_labels.add_labels(desc)  # ?
 
         params.update(dict(
             num_group = 1 if args.actor_only else 2,
