@@ -121,6 +121,7 @@ bool GameEnv::RemoveUnit(const UnitId &id) {
     return true;
 }
 
+// 找到最近的基地
 UnitId GameEnv::FindClosestBase(PlayerId player_id) const {
     // Find closest base. [TODO]: Not efficient here.
     for (auto it = _units.begin(); it != _units.end(); ++it) {

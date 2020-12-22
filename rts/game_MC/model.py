@@ -18,6 +18,7 @@ class Model_ActorCritic(Model):
     def __init__(self, args):
         super(Model_ActorCritic, self).__init__(args)
         self._init(args)
+        #self.isPrint = False
 
     def _init(self, args):
         params = args.params
@@ -31,9 +32,11 @@ class Model_ActorCritic(Model):
             linear_in_dim = last_num_channel
         else:
             linear_in_dim = last_num_channel * 25
+        
+        
 
-        self.linear_policy = nn.Linear(linear_in_dim, params["num_action"])
-        self.linear_value = nn.Linear(linear_in_dim, 1)
+        self.linear_policy = nn.Linear(linear_in_dim, params["num_action"])  # 策略函数
+        self.linear_value = nn.Linear(linear_in_dim, 1)   # 价值函数
 
         self.relu = nn.LeakyReLU(0.1)
 
@@ -49,13 +52,21 @@ class Model_ActorCritic(Model):
     def forward(self, x):
         if self.params.get("model_no_spatial", False):
             # Replace a complicated network with a simple retraction.
-            # Input: batchsize, channel, height, width
+            # Input: batchsize, channel, height, width  Batch Object
             xreduced = x["s"].sum(2).sum(3).squeeze()
             xreduced[:, self.num_unit:] /= 20 * 20
             output = self._var(xreduced)
         else:
             output = self.net(self._var(x["s"]))
-
+        
+        #decide = self.decision(output)
+        #if not self.isPrint:
+            #print("x: ",x.batch)
+            # print("output: ",output)
+            # print("decision: ",decide)
+            # print("net: ",self)
+            #self.isPrint = True
+        #return decide
         return self.decision(output)
 
     def decision(self, h):

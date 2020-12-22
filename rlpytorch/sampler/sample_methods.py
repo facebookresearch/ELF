@@ -33,10 +33,10 @@ def sample_with_check(probs, greedy=False):
     '''
     num_action = probs.size(1)
     if greedy:
-        _, actions = probs.max(1)
+        _, actions = probs.max(1)  # 贪婪算法，每次取概率最大的动作
         return actions
     while True:
-        actions = probs.multinomial(1)[:,0]
+        actions = probs.multinomial(1)[:,0]  # 按照概率选择一个动作
         cond1 = (actions < 0).sum()
         cond2 = (actions >= num_action).sum()
         if cond1 == 0 and cond2 == 0:
@@ -74,8 +74,9 @@ def sample_eps_with_check(probs, epsilon, greedy=False):
         rej_p = probs.new().resize_(2)
         rej_p[0] = 1 - epsilon
         rej_p[1] = epsilon
+        # rej 按照概率取 0 或 1（batchsize次），取到1时(epsilon)表示此次不选择该动作并随机取样
         rej = rej_p.multinomial(batchsize, replacement=True).byte()
-
+        # 随机取样
         uniform_p = probs.new().resize_(num_action).fill_(1.0 / num_action)
         uniform_sampling = uniform_p.multinomial(batchsize, replacement=True)
         actions[rej] = uniform_sampling[rej]
@@ -110,7 +111,7 @@ def sample_multinomial(state_curr, args, node="pi", greedy=False):
         return actions
     else:
         probs = state_curr[node].data
-        return sample_eps_with_check(probs, args.epsilon, greedy=greedy)
+        return sample_eps_with_check(probs, args.epsilon, greedy=greedy)  # probs 0 False
 
 def epsilon_greedy(state_curr, args, node="pi"):
     ''' epsilon greedy sampling

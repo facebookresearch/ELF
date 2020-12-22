@@ -35,7 +35,7 @@ bool GameDef::CheckAddUnit(RTSMap *_map, UnitType, const PointF& p) const{
 }
 
 void GameDef::GlobalInit() {
-    reg_engine();
+    reg_engine();   //
     reg_engine_specific();
     reg_minirts_specific();
 

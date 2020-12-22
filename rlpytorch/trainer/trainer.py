@@ -40,6 +40,7 @@ class Evaluator:
             on_get_args = self._on_get_args,
             child_providers = child_providers
         )
+        self.isPrint = False
 
     def _on_get_args(self, _):
         if self.stats is not None and not self.stats.is_valid():
@@ -75,6 +76,8 @@ class Evaluator:
 
         if self.sampler is not None:
             reply_msg = self.sampler.sample(state_curr)
+            # if not self.isPrint:
+            #     print("sampler reply: ",reply_msg)
         else:
             reply_msg = dict(pi=state_curr["pi"].data)
 
@@ -88,6 +91,11 @@ class Evaluator:
             reply_msg["V"] = state_curr["V"].data
 
         self.actor_count += 1
+        # if not self.isPrint:
+        #     print("batch: ",batch)
+        #     print("state_curr",state_curr)
+        #     print("reply_msg",reply_msg)
+        #     self.isPrint = True
         return reply_msg
 
     def episode_summary(self, i):

@@ -40,6 +40,7 @@ public:
     }
 
     void Start() {
+        std::cout<<"--------------GameContext Start-----------"<<std::endl;
         _context->Start(
             [this](int game_idx, const ContextOptions &context_options, const PythonOptions &options, const elf::Signal &signal, Comm *comm) {
                     auto params = this->GetParams();
@@ -88,7 +89,9 @@ public:
         else if (key == "ct_prob") return EntryInfo(key, type_name, { max_unit_cmd, CmdInput::CI_NUM_CMDS });
         else if (key == "reduced_s") return EntryInfo(key, type_name, { reduced_size });
         else if (key == "reduced_next_s") return EntryInfo(key, type_name, { reduced_size });
+        else if (key == "base_x" || key == "base_y") return EntryInfo(key, type_name);
 
+ 
         return EntryInfo();
     }
 
