@@ -69,7 +69,7 @@ void WrapperCallbacks::OnGameInit(RTSGame *game, const std::map<std::string, int
     // std::cout << "Initialize opponent" << std::endl;
     std::vector<AI *> ais;
     for (const AIOptions &ai_opt : _options.ai_options) {
-        Context::AIComm *ai_comm = new Context::AIComm(_game_idx, _comm);
+        Context::AIComm *ai_comm = new Context::AIComm(_game_idx, _comm);  //设置 AI 和 Main_Loop通信的工具
         _ai_comms.emplace_back(ai_comm);
         initialize_ai_comm(*ai_comm, more_params);
         ais.push_back(get_ai(_game_idx, _context_options.mcts_options, ai_opt, ai_comm));

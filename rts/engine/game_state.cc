@@ -25,7 +25,9 @@ void RTSState::RemoveLastPlayer() {
     _env.RemovePlayer();
 }
 
-bool RTSState::Prepare(const RTSGameOptions &options, ostream *output) {
+bool RTSState::Prepare(const RTSGameOptions &options, ostream *output,bool isPrint) {
+    if(isPrint)
+       std::cout<<"------------Prepare-------------"<<std::endl;
     _cmd_receiver.SetVerbose(options.cmd_verbose, 0);
 
     const unsigned int game_counter = _env.GetGameCounter();
@@ -74,13 +76,27 @@ bool RTSState::Prepare(const RTSGameOptions &options, ostream *output) {
         }
 
         if (options.map_filename.empty()) {
+            //CmdRandomSeed *cmd_Random = new CmdRandomSeed(INVALID, seed);
+            // if(isPrint){
+            //     std::cout<<"SendCmdWithTick(CmdBPtr(new CmdRandomSeed(INVALID, seed))  --seed "<<seed<<std::endl;
+            //     std::cout<<cmd_Random->PrintInfo()<<std::endl;
+            // }
+            
             if (output) *output << "Generate from scratch, seed = " << seed << endl << flush;
-            _cmd_receiver.SendCmdWithTick(CmdBPtr(new CmdRandomSeed(INVALID, seed)), 0);
+             _cmd_receiver.SendCmdWithTick(CmdBPtr(new CmdRandomSeed(INVALID, seed)), 0);
+            _cmd_receiver.SendCmdWithTick(CmdBPtr(cmd_Random), 0);
+            //delete cmd_Random;
         } else {
             // _cmd_receiver.SendCmdWithTick(CmdBPtr(new CmdLoadMap(INVALID, options.map_filename)));
         }
-
+         if(isPrint){
+                std::cout<<"-----cmd Info------"<<std::endl;
+            }
         for (auto&& cmd_pair : _env.GetGameDef().GetInitCmds(options)) {
+            if(isPrint){
+                std::cout<<"---send InitCmd---"<<std::endl;
+                std::cout<<cmd_pair.first->PrintInfo()<<"  "<<cmd_pair.second<<std::endl;
+            }
             _cmd_receiver.SendCmdWithTick(std::move(cmd_pair.first), cmd_pair.second);
         }
     }

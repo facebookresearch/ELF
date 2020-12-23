@@ -55,12 +55,36 @@ void GameDef::GlobalInit() {
 
 void GameDef::Init() {
     _units.assign(GetNumUnitType(), UnitTemplate());
-    _units[RESOURCE] = _C(0, 1000, 1000, 0, 0, 0, 0, vector<int>{0, 0, 0, 0}, vector<CmdType>{}, ATTR_INVULNERABLE);
+    /**
+     * int cost, int hp, int defense, float speed, int att, int att_r, int vis_r,
+        const vector<int> &cds, const vector<CmdType> &l, UnitAttr attr
+
+         _units[RESOURCE] = _C(0, 1000, 1000, 0, 0, 0, 0, vector<int>{0, 0, 0, 0}, vector<CmdType>{}, ATTR_INVULNERABLE);
     _units[WORKER] = _C(50, 50, 0, 0.1, 2, 1, 3, vector<int>{0, 10, 40, 40}, vector<CmdType>{MOVE, ATTACK, BUILD, GATHER});
     _units[MELEE_ATTACKER] = _C(100, 100, 1, 0.1, 15, 1, 3, vector<int>{0, 15, 0, 0}, vector<CmdType>{MOVE, ATTACK});
     _units[RANGE_ATTACKER] = _C(100, 50, 0, 0.2, 10, 5, 5, vector<int>{0, 10, 0, 0}, vector<CmdType>{MOVE, ATTACK});
     _units[BARRACKS] = _C(200, 200, 1, 0.0, 0, 0, 5, vector<int>{0, 0, 0, 50}, vector<CmdType>{BUILD});
     _units[BASE] = _C(500, 500, 2, 0.0, 0, 0, 5, {0, 0, 0, 50}, vector<CmdType>{BUILD});
+
+    
+ *  定义单位属性
+ *  cost   造价(不需要)
+ *  hp     血量
+ *  defence防御力 
+ *  speed  速度
+ *  att    攻击力
+ *  att_r  攻击距离
+ *  vis_r  可视距离
+ * *                     cost hp    def  sp att att_r vis_r
+     * */
+    _units[RESOURCE] = _C(0, 1000, 1000, 0, 0, 0, 0, vector<int>{0, 0, 0, 0}, vector<CmdType>{}, ATTR_INVULNERABLE);
+    _units[WORKER] = _C(50, 50, 0, 0.1, 2, 1, 1, vector<int>{0, 10, 40, 40}, vector<CmdType>{MOVE, ATTACK, BUILD, GATHER});
+    _units[MELEE_ATTACKER] = _C(50, 100, 1, 0.1, 15, 5, 0, vector<int>{0, 15, 0, 0}, vector<CmdType>{ ATTACK});
+    _units[RANGE_ATTACKER] = _C(100, 50, 0, 0.2, 10, 0, 4, vector<int>{0, 10, 0, 0}, vector<CmdType>{MOVE, ATTACK});
+    _units[BARRACKS] = _C(200, 200, 1, 0.0, 0, 0, 2, vector<int>{0, 0, 0, 50}, vector<CmdType>{BUILD});
+    _units[BASE] = _C(500, 500, 2, 0.0, 0, 0, 2, {0, 0, 0, 50}, vector<CmdType>{BUILD});
+
+
 }
 
 vector<pair<CmdBPtr, int> > GameDef::GetInitCmds(const RTSGameOptions&) const{
@@ -70,6 +94,7 @@ vector<pair<CmdBPtr, int> > GameDef::GetInitCmds(const RTSGameOptions&) const{
       return init_cmds;
 }
 
+// 通过判断最后一个拥有基地的玩家来确定胜利者
 PlayerId GameDef::CheckWinner(const GameEnv& env, bool /*exceeds_max_tick*/) const {
     return env.CheckBase(BASE);
 }

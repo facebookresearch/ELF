@@ -26,7 +26,7 @@ struct RTSGameOptions {
     // Snapshots to load from.
     vector<Tick> snapshots;
 
-    // Initial seed. If seed = 0, then we use time(NULL)
+    // Initial seed. If seed = 0, then we use time(NULL)  初始化种子
     // When seed != 0, the game should be deterministic (If not then there is a bug somewhere).
     int seed = 0;
 

@@ -69,8 +69,10 @@ CmdReturn RTSStateExtend::dispatch_cmds(const UICmd& cmd) {
     return CMD_FAILED;
 }
 
-bool RTSStateExtend::Init() {
-    if (! RTSState::Prepare(_options, _output_stream)) return false;
+bool RTSStateExtend::Init(bool isPrint = false) {
+    if(isPrint)
+      std::cout<<"------初始化游戏-------"<<std::endl;
+    if (! RTSState::Prepare(_options, _output_stream,isPrint)) return false;
 
     if (_output_stream) *_output_stream << "In the main loop " << endl << flush;
 
