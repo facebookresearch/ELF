@@ -79,18 +79,18 @@ void GameDef::Init() {
      * */
     _units[RESOURCE] = _C(0, 1000, 1000, 0, 0, 0, 0, vector<int>{0, 0, 0, 0}, vector<CmdType>{}, ATTR_INVULNERABLE);
     _units[WORKER] = _C(50, 50, 0, 0.1, 2, 1, 1, vector<int>{0, 10, 40, 40}, vector<CmdType>{MOVE, ATTACK, BUILD, GATHER});
-    _units[MELEE_ATTACKER] = _C(50, 100, 1, 0.1, 15, 5, 0, vector<int>{0, 15, 0, 0}, vector<CmdType>{ ATTACK});
-    _units[RANGE_ATTACKER] = _C(100, 50, 0, 0.2, 10, 0, 4, vector<int>{0, 10, 0, 0}, vector<CmdType>{MOVE, ATTACK});
+    _units[MELEE_ATTACKER] = _C(50, 100, 1, 0.1, 15, 3, 0, vector<int>{0, 15, 0, 0}, vector<CmdType>{MOVE,ATTACK});
+    _units[RANGE_ATTACKER] = _C(100, 50, 0, 0.2, 0, 0, 4, vector<int>{0, 0, 0, 0}, vector<CmdType>{MOVE});
     _units[BARRACKS] = _C(200, 200, 1, 0.0, 0, 0, 2, vector<int>{0, 0, 0, 50}, vector<CmdType>{BUILD});
-    _units[BASE] = _C(500, 500, 2, 0.0, 0, 0, 2, {0, 0, 0, 50}, vector<CmdType>{BUILD});
+    _units[BASE] = _C(500, 500, 2, 0.0, 0, 0, 1, {0, 0, 0, 50}, vector<CmdType>{BUILD});
 
 
 }
 
 vector<pair<CmdBPtr, int> > GameDef::GetInitCmds(const RTSGameOptions&) const{
       vector<pair<CmdBPtr, int> > init_cmds;
-      init_cmds.push_back(make_pair(CmdBPtr(new CmdGenerateMap(INVALID, 0, 200)), 1));
-      init_cmds.push_back(make_pair(CmdBPtr(new CmdGenerateUnit(INVALID)), 2));
+      init_cmds.push_back(make_pair(CmdBPtr(new CmdGenerateMap(INVALID, 0, 0)), 1));  // 障碍 资源 
+      init_cmds.push_back(make_pair(CmdBPtr(new CmdGenerateUnit(INVALID)), 2));   
       return init_cmds;
 }
 

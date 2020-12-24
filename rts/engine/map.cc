@@ -31,8 +31,12 @@ bool RTSMap::find_two_nearby_empty_slots(const std::function<uint16_t(int)>& f, 
 }
 
 bool RTSMap::GenerateImpassable(const std::function<uint16_t(int)>& f, int nImpassable) {
-    _map.assign(_m * _n * _level, MapSlot());
-    for (int i = 0; i < nImpassable; ++i) {
+    std::cout<<"-------GenerateImpassable--------"<<std::endl;
+    std::cout<<"_m "<<_m<<" _n"<<_n<<" _level"<<_level<<std::endl;
+    _map.assign(_m * _n * _level, MapSlot());   //初始化地图格子 类型为NORMAL
+
+    
+    for (int i = 0; i < nImpassable; ++i) {  //随机选一些格子，设为IMPOSSIBLE
         const int x = f(_m);
         const int y = f(_n);
         _map[GetLoc(Coord(x, y))].type = IMPASSABLE;
@@ -115,9 +119,10 @@ bool RTSMap::GenerateTDMaze(const std::function<uint16_t(int)>& f) {
 bool RTSMap::GenerateMap(const std::function<uint16_t(int)>& f, int nImpassable, int num_player, int init_resource) {
     // load a map for now simple format.
     bool success;
+    std::cout<<"GenerateMap nImpassable = "<<nImpassable<<std::endl; 
     do {
         success = true;
-        GenerateImpassable(f, nImpassable);
+        GenerateImpassable(f, nImpassable);  //初始化地图格子，并随机设置一些点为IMPOSSIBLE
         int x1 = -1, y1 = -1, x2 = -1, y2 = -1;
         _infos.clear();
         for (PlayerId i = 0; i < num_player; ++i) {
