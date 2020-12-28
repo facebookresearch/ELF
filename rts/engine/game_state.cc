@@ -19,7 +19,8 @@ RTSState::RTSState() {
 }
 
 void RTSState::AppendPlayer(const string &name) {
-    _env.AddPlayer(name, PV_KNOW_ALL);
+    //_env.AddPlayer(name, PV_KNOW_ALL);
+    _env.AddPlayer(name, PV_NORMAL);
 }
 
 void RTSState::RemoveLastPlayer() {

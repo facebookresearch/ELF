@@ -78,11 +78,11 @@ void GameDef::Init() {
  * *                     cost hp    def  sp att att_r vis_r
      * */
     _units[RESOURCE] = _C(0, 1000, 1000, 0, 0, 0, 0, vector<int>{0, 0, 0, 0}, vector<CmdType>{}, ATTR_INVULNERABLE);
-    _units[WORKER] = _C(50, 50, 0, 0.1, 2, 1, 1, vector<int>{0, 10, 40, 40}, vector<CmdType>{MOVE, ATTACK, BUILD, GATHER});
-    _units[MELEE_ATTACKER] = _C(50, 100, 1, 0.1, 15, 3, 0, vector<int>{0, 15, 0, 0}, vector<CmdType>{MOVE,ATTACK});
-    _units[RANGE_ATTACKER] = _C(100, 50, 0, 0.2, 0, 0, 4, vector<int>{0, 0, 0, 0}, vector<CmdType>{MOVE});
-    _units[BARRACKS] = _C(200, 200, 1, 0.0, 0, 0, 2, vector<int>{0, 0, 0, 50}, vector<CmdType>{BUILD});
-    _units[BASE] = _C(500, 500, 2, 0.0, 0, 0, 1, {0, 0, 0, 50}, vector<CmdType>{BUILD});
+    _units[WORKER] = _C(50, 50, 0, 0.1, 2, 1, 0, vector<int>{0, 10, 40, 40}, vector<CmdType>{MOVE, ATTACK, BUILD, GATHER});
+    _units[MELEE_ATTACKER] = _C(50, 100, 1, 0.1, 15, 10, 0, vector<int>{0, 15, 0, 0}, vector<CmdType>{MOVE,ATTACK});
+    _units[RANGE_ATTACKER] = _C(100, 50, 0, 0.2, 0, 0, 15, vector<int>{0, 0, 0, 0}, vector<CmdType>{MOVE});
+    _units[BARRACKS] = _C(200, 200, 1, 0.0, 0, 0, 0, vector<int>{0, 0, 0, 50}, vector<CmdType>{BUILD});
+    _units[BASE] = _C(500, 500, 2, 0.0, 0, 0, 0, {0, 0, 0, 50}, vector<CmdType>{BUILD});
 
 
 }

@@ -634,8 +634,4 @@ var main = function () {
 
 var then = Date.now();
 // 开始
-<<<<<<< HEAD
 main();
-=======
-main();
->>>>>>> 3f3592593dbc391c3bcbcf05680f0821032d48c0

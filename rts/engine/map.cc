@@ -162,8 +162,8 @@ void RTSMap::load_default_map() {
     // _level = 1;
     // _map.assign(_m * _n * _level, MapSlot());
 
-    _m = 30;
-    _n = 30;
+    _m = 35;
+    _n = 35;
     _level = 1;
     _map.assign(_m * _n * _level, MapSlot());
 
@@ -220,7 +220,9 @@ vector<Loc> RTSMap::GetSight(const Loc& loc, int range) const {
     const int xmax = std::min(_m - 1, c.x + range);
 
     for (int x = xmin; x <= xmax; ++x) {
-        const int yrange = range - std::abs(c.x  - x);
+        //const int yrange = range - std::abs(c.x  - x);
+        const int x_1 = std::abs(c.x - x);
+        const int yrange = std::sqrt(range*range - x_1*x_1);
         const int ymin = std::max(0, c.y - yrange);
         const int ymax = std::min(_n - 1, c.y + yrange);
         for (int y = ymin; y <= ymax; ++y) {
