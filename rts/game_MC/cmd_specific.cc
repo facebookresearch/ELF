@@ -16,6 +16,7 @@
 #include "cmd_specific.gen.h"
 
 bool CmdGenerateMap::run(GameEnv *env, CmdReceiver*) {
+    std::cout<<"CmdGenerateMap"<<std::endl;
     return env->GenerateMap(_num_obstacles, _init_resource) ? true : false;
 }
 
@@ -24,6 +25,7 @@ bool CmdGenerateMap::run(GameEnv *env, CmdReceiver*) {
 
 
 bool CmdGameStartSpecific::run(GameEnv*, CmdReceiver* receiver) {
+   // std::cout<<"CmdGameStartSpecific"<<std::endl;
     const PlayerId player_id = 0;
     const PlayerId enemy_id = 1;
     _CREATE(RESOURCE, PointF(2, 1), player_id);
@@ -46,56 +48,82 @@ bool CmdGameStartSpecific::run(GameEnv*, CmdReceiver* receiver) {
     return true;
 }
 
+//-----------------Test--------------------
 bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
-    auto f = env->GetRandomFunc();
-    int lr_seed = f(2);
-    int ud_seed = f(2);
-    bool shuffle_lr = (lr_seed == 0);
-    bool shuffle_ud = (ud_seed == 0);
-    auto shuffle_loc = [&] (PointF p, bool b1, bool b2) -> PointF {
-        int x = b1 ? 19 - p.x : p.x;
-        int y = b2 ? 19 - p.y : p.y;
-        return PointF(x, y);
-    };
+    std::cout<<"CmdGenerateTDUnit"<<std::endl;
+    const PlayerId player_id = 0;
+    const PlayerId enemy_id = 1;
+    // 保护目标
+    _CREATE(BASE, PointF(9, 9), player_id);
+    // 雷达
+    _CREATE(RANGE_ATTACKER,PointF(4,9),player_id);
+    _CREATE(RANGE_ATTACKER,PointF(15,9),player_id);
+    _CREATE(RANGE_ATTACKER,PointF(9,4),player_id);
+    _CREATE(RANGE_ATTACKER,PointF(9,15),player_id);
+    // 炮台
+    _CREATE(MELEE_ATTACKER,PointF(6,9),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(13,9),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(9,6),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(9,13),player_id);
 
-    receiver->GetGameStats().PickBase(lr_seed * 2 + ud_seed);
-    for (const auto &info : env->GetMap().GetPlayerMapInfo()) {
-        PlayerId id = info.player_id;
-        _CREATE(BASE, shuffle_loc(PointF(info.base_coord), shuffle_lr, shuffle_ud), id);
-        _CREATE(RESOURCE, shuffle_loc(PointF(info.resource_coord), shuffle_lr, shuffle_ud), id);
-        _CHANGE_RES(id, info.initial_resource);
-        //base_locs[id] = PointF(info.base_coord);
-    }
-    // for (size_t i = 0; i < base_locs.size(); ++i) {
-    //    std::cout << "[" << i << "] Baseloc: " << base_locs[i].x << ", " << base_locs[i].y << std::endl;
-    //}
-    auto gen_loc = [&] (int player_id) -> PointF {
-        // Note that we could not write
-        //    PointF( f(8) + ...,  f(8) + ...)
-        // since the result will depend on which f is evaluated first, and will yield different results on
-        // different platform/compiler (e.g., clang and gcc yields different results).
-        // The following implementation is uniquely determined.
-        int x = f(6) + player_id * 10 + 2;
-        int y = f(6) + player_id * 10 + 2;
-        return PointF(x, y);
-    };
-    for (PlayerId player_id = 0; player_id < 2; player_id++) {
-        PlayerId id = player_id;
-        // Generate workers (up to three).
-        for (int i = 0; i < 3; i++) {
-            if (f(10) >= 5) {
-                _CREATE(WORKER, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
-            }
-        }
-        if (f(10) >= 8)
-            _CREATE(BARRACKS, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
-        if (f(10) >= 5)
-            _CREATE(MELEE_ATTACKER, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
-        if (f(10) >= 5)
-            _CREATE(RANGE_ATTACKER, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
-    }
+    // enemy
+    _CREATE(BASE,PointF(1, 1),enemy_id);
     return true;
+
 }
+
+//-----------------Test--------------------
+// bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
+//     std::cout<<"CmdGenerateUnit"<<std::endl;
+//     auto f = env->GetRandomFunc();
+//     int lr_seed = f(2);
+//     int ud_seed = f(2);
+//     bool shuffle_lr = (lr_seed == 0);
+//     bool shuffle_ud = (ud_seed == 0);
+//     auto shuffle_loc = [&] (PointF p, bool b1, bool b2) -> PointF {
+//         int x = b1 ? 19 - p.x : p.x;
+//         int y = b2 ? 19 - p.y : p.y;
+//         return PointF(x, y);
+//     };
+
+//     receiver->GetGameStats().PickBase(lr_seed * 2 + ud_seed);
+//     for (const auto &info : env->GetMap().GetPlayerMapInfo()) {
+//         PlayerId id = info.player_id;
+//         _CREATE(BASE, shuffle_loc(PointF(info.base_coord), shuffle_lr, shuffle_ud), id);
+//         _CREATE(RESOURCE, shuffle_loc(PointF(info.resource_coord), shuffle_lr, shuffle_ud), id);
+//         _CHANGE_RES(id, info.initial_resource);
+//         //base_locs[id] = PointF(info.base_coord);
+//     }
+//     // for (size_t i = 0; i < base_locs.size(); ++i) {
+//     //    std::cout << "[" << i << "] Baseloc: " << base_locs[i].x << ", " << base_locs[i].y << std::endl;
+//     //}
+//     auto gen_loc = [&] (int player_id) -> PointF {
+//         // Note that we could not write
+//         //    PointF( f(8) + ...,  f(8) + ...)
+//         // since the result will depend on which f is evaluated first, and will yield different results on
+//         // different platform/compiler (e.g., clang and gcc yields different results).
+//         // The following implementation is uniquely determined.
+//         int x = f(6) + player_id * 10 + 2;
+//         int y = f(6) + player_id * 10 + 2;
+//         return PointF(x, y);
+//     };
+//     for (PlayerId player_id = 0; player_id < 2; player_id++) {
+//         PlayerId id = player_id;
+//         // Generate workers (up to three).
+//         for (int i = 0; i < 3; i++) {
+//             if (f(10) >= 5) {
+//                 _CREATE(WORKER, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
+//             }
+//         }
+//         if (f(10) >= 8)
+//             _CREATE(BARRACKS, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
+//         if (f(10) >= 5)
+//             _CREATE(MELEE_ATTACKER, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
+//         if (f(10) >= 5)
+//             _CREATE(RANGE_ATTACKER, shuffle_loc(gen_loc(player_id), shuffle_lr, shuffle_ud), id);
+//     }
+//     return true;
+// }
 
 #undef _CHANGE_RES
 #undef _CREATE

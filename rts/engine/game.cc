@@ -20,6 +20,7 @@ using namespace std::chrono;
 ////////////////////////// RTSStateExtend ////////////////////////////////////
 RTSStateExtend::RTSStateExtend(const RTSGameOptions &options)
     : _options(options), _snapshot_to_load(-1), _paused(false), _output_stream_owned(false), _output_stream(nullptr) {
+        //std::cout<<"----------RTSStateExtend Constructor------------"<<std::endl;
     if (_options.output_file.empty()) {
         _output_stream = _options.output_stream;
         _output_stream_owned = false;
@@ -69,8 +70,10 @@ CmdReturn RTSStateExtend::dispatch_cmds(const UICmd& cmd) {
     return CMD_FAILED;
 }
 
-bool RTSStateExtend::Init() {
-    if (! RTSState::Prepare(_options, _output_stream)) return false;
+bool RTSStateExtend::Init(bool isPrint = false) {
+    if(isPrint)
+      std::cout<<"------初始化游戏-------"<<std::endl;
+    if (! RTSState::Prepare(_options, _output_stream,isPrint)) return false;
 
     if (_output_stream) *_output_stream << "In the main loop " << endl << flush;
 

@@ -435,7 +435,9 @@ int main(int argc, char *argv[]) {
         p.stop(true);
         std::cout << gstats.PrintInfo() << std::endl;
     } else {
+        std::cout<<"======RTSStateExtend===="<<std::endl;
         RTSStateExtend state(options);
+        std::cout<<"=====RTSGame"<<std::endl;
         RTSGame game(&state);
         cout << "Players: " << players << endl;
         add_players(players, frame_skip, &game);
@@ -443,6 +445,7 @@ int main(int argc, char *argv[]) {
 
         chrono::duration<double> duration = chrono::system_clock::now() - time_start;
         cout << "Total time spent = " << duration.count() << "s" << endl;
+        std::cout<<"======MainLoop======="<<std::endl;
         game.MainLoop();
         /*
             // Load replay etc.

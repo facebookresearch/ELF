@@ -89,6 +89,7 @@ public:
 
     // Initialize different units for this game.
     void InitGameDef() {
+        std::cout<<"----------InitGameDef-------"<<std::endl;
         _gamedef.Init();
     }
     const GameDef &GetGameDef() const { return _gamedef; }

@@ -200,14 +200,16 @@ public:
             _signal->use_queue_per_group(_groups.size());
         }
 
+        //std::cout<<"-------CommT CollectorsReady---------------"<<std::endl;
         for (auto &p : _map) {
             p.second.InitCond(_exclusive_groups.size());
         }
-
+        // std::cout<<"pool_size 1: "<<_pool.size()<<std::endl;  // 初始为 0
         _pool.resize(_groups.size());
+        //std::cout<<"pool_size 2: "<<_pool.size()<<std::endl;  // 设为16
         for (auto &g : _groups) {
           CollectorGroup *p = g.get();
-          _pool.push([p, this](int) { p->MainLoop(); });
+          _pool.push([p, this](int) { p->MainLoop(); });  // 16 个 Batch Collector
         }
     }
 
@@ -343,13 +345,15 @@ public:
     const Options &options() const { return _options; }
 
     void Start(GameStartFunc game_start_func) {
-        _comm.CollectorsReady();
-
+        std::cout<<"--------ContextT Start---------------"<<std::endl;
+        _comm.CollectorsReady();  //设置 BatchCollector
+        
+        std::cout<<"_pool.size"<<_pool.size()<<std::endl;  // 1024 - num_games
         // Now we start all jobs.
         for (int i = 0; i < _pool.size(); ++i) {
             _pool.push([i, this, &game_start_func](int){
                 elf::Signal signal(_done.flag(), _prepare_stop);
-                game_start_func(i, _context_options, _options, signal, &_comm);
+                game_start_func(i, _context_options, _options, signal, &_comm);  //每个线程调用一次GameStartFunc
                 // std::cout << "G[" << i << "] is ending" << std::endl;
                 _done.notify();
             });

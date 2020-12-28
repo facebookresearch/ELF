@@ -78,8 +78,10 @@ public:
         return res;
     }
 
-    void MainLoop(const std::atomic_bool *done = nullptr) {
-        _state->Init();
+    void MainLoop(const std::atomic_bool *done = nullptr,bool isPrint = false) {
+        if(isPrint)
+         std::cout<<"-------MainLoop----------"<<std::endl;
+        _state->Init(isPrint);  // 初始化游戏
         while (true) {
             if (Step(done) != GAME_NORMAL) break;
             if (done != nullptr && done->load()) break;

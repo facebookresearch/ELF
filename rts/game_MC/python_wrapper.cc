@@ -33,7 +33,7 @@ public:
         GameDef::GlobalInit();
         _context.reset(new GC{context_options, options});
 
-        _num_frames_in_state = 1;
+        _num_frames_in_state = 1;   
         for (const AIOptions& opt : options.ai_options) {
             _num_frames_in_state = max(_num_frames_in_state, opt.num_frames_in_state);
         }
@@ -44,14 +44,17 @@ public:
         _context->Start(
             [this](int game_idx, const ContextOptions &context_options, const PythonOptions &options, const elf::Signal &signal, Comm *comm) {
                     auto params = this->GetParams();
+                    if(game_idx == 1){
+                      std::cout<<"game_"<<game_idx<<" run GameStartFunc"<<std::endl;
+                    }
                     this->_wrapper.thread_main(game_idx, context_options, options, signal, &params, comm);
             });
     }
 
     std::map<std::string, int> GetParams() const {
         return std::map<std::string, int>{
-            { "num_action", GameDef::GetNumAction() },    
-            { "num_unit_type", GameDef::GetNumUnitType() },   
+            { "num_action", GameDef::GetNumAction() },       // 9
+            { "num_unit_type", GameDef::GetNumUnitType() },   // 6  
             { "num_planes_per_time_stamp", MCExtractor::Size() },  // 22  每一个时间戳中的 planes数？
             { "num_planes", MCExtractor::Size() * _num_frames_in_state },  //  22 每一个状态包含一帧的数据
             { "resource_dim", 2 * NUM_RES_SLOT }, // 10

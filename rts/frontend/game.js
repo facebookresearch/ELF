@@ -1,7 +1,6 @@
 /**
 * Copyright (c) 2017-present, Facebook, Inc.
 * All rights reserved.
-
 * This source code is licensed under the BSD-style license found in the
 * LICENSE file in the root directory of this source tree.
 */
@@ -635,4 +634,8 @@ var main = function () {
 
 var then = Date.now();
 // 开始
+<<<<<<< HEAD
 main();
+=======
+main();
+>>>>>>> 3f3592593dbc391c3bcbcf05680f0821032d48c0

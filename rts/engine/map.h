@@ -16,6 +16,7 @@
 
 struct MapSlot {
   // three layers, terrian, ground and air.
+  // 只有两层 ground air
   Terrain type;
   int height;
 
