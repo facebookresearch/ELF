@@ -11,11 +11,14 @@
 
 // Constructor
 RTSMap::RTSMap() {
+    //std::cout<<"RTSMAP"<<std::endl;
     load_default_map();
     reset_intermediates();
 }
 
 bool RTSMap::find_two_nearby_empty_slots(const std::function<uint16_t(int)>& f, int *x1, int *y1, int *x2, int *y2, int i) const {
+   // std::cout<<"find_two_nearby_empty_slots"<<std::endl;
+    
     const int kDist = 4;
     int kMaxTrial = 100;
     for (int j = 0; j < kMaxTrial; ++j) {
@@ -119,7 +122,7 @@ bool RTSMap::GenerateTDMaze(const std::function<uint16_t(int)>& f) {
 bool RTSMap::GenerateMap(const std::function<uint16_t(int)>& f, int nImpassable, int num_player, int init_resource) {
     // load a map for now simple format.
     bool success;
-    std::cout<<"GenerateMap nImpassable = "<<nImpassable<<std::endl; 
+    std::cout<<"-------GenerateMap nImpassable = "<<nImpassable<<std::endl; 
     do {
         success = true;
         GenerateImpassable(f, nImpassable);  //初始化地图格子，并随机设置一些点为IMPOSSIBLE
@@ -154,10 +157,17 @@ void RTSMap::reset_intermediates() {
 }
 
 void RTSMap::load_default_map() {
-    _m = 20;
-    _n = 20;
+    // _m = 20;
+    // _n = 20;
+    // _level = 1;
+    // _map.assign(_m * _n * _level, MapSlot());
+
+    _m = 30;
+    _n = 30;
     _level = 1;
     _map.assign(_m * _n * _level, MapSlot());
+
+
 }
 
 void RTSMap::precompute_all_pair_distances() {

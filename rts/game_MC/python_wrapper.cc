@@ -43,9 +43,10 @@ public:
         std::cout<<"--------------GameContext Start-----------"<<std::endl;
         _context->Start(
             [this](int game_idx, const ContextOptions &context_options, const PythonOptions &options, const elf::Signal &signal, Comm *comm) {
-                    if(game_idx == 1)
-                      std::cout<<"game_"<<game_idx<<" run GameStartFunc"<<std::endl;
                     auto params = this->GetParams();
+                    if(game_idx == 1){
+                      std::cout<<"game_"<<game_idx<<" run GameStartFunc"<<std::endl;
+                    }
                     this->_wrapper.thread_main(game_idx, context_options, options, signal, &params, comm);
             });
     }

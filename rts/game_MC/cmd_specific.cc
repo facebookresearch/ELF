@@ -54,17 +54,17 @@ bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
     const PlayerId player_id = 0;
     const PlayerId enemy_id = 1;
     // 保护目标
-    _CREATE(BASE, PointF(9.5, 9.5), player_id);
+    _CREATE(BASE, PointF(9, 9), player_id);
     // 雷达
-    _CREATE(RANGE_ATTACKER,PointF(4,9.5),player_id);
-    _CREATE(RANGE_ATTACKER,PointF(15,9.5),player_id);
-    _CREATE(RANGE_ATTACKER,PointF(9.5,4),player_id);
-    _CREATE(RANGE_ATTACKER,PointF(9.5,15),player_id);
+    _CREATE(RANGE_ATTACKER,PointF(4,9),player_id);
+    _CREATE(RANGE_ATTACKER,PointF(15,9),player_id);
+    _CREATE(RANGE_ATTACKER,PointF(9,4),player_id);
+    _CREATE(RANGE_ATTACKER,PointF(9,15),player_id);
     // 炮台
-    _CREATE(MELEE_ATTACKER,PointF(6,9.5),player_id);
-    _CREATE(MELEE_ATTACKER,PointF(13,9.5),player_id);
-    _CREATE(MELEE_ATTACKER,PointF(9.5,6),player_id);
-    _CREATE(MELEE_ATTACKER,PointF(9.5,13),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(6,9),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(13,9),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(9,6),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(9,13),player_id);
 
     // enemy
     _CREATE(BASE,PointF(1, 1),enemy_id);

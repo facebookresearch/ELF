@@ -21,7 +21,7 @@ struct Fog {
     int _fog = 100;
     vector<Unit> _prev_seen_units;
 
-    void MakeInvisible() {  _fog = 100; }
+    void MakeInvisible() {  _fog = 100; }  // 让该点不可见
     void SetClear() { _fog = 0; _prev_seen_units.clear(); }
     bool CanSeeTerrain() const { return _fog < 50; }
     bool CanSeeUnit() const { return _fog < 30; }

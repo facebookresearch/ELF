@@ -11,7 +11,9 @@
 
 GameEnv::GameEnv() {
     // Load the map.
+    std::cout<<"-------GameEnv-----------"<<std::endl;
     _map = unique_ptr<RTSMap>(new RTSMap());
+     std::cout<<"-------GameEnv-----------"<<std::endl;
     _game_counter = -1;
     Reset();
 }
@@ -35,6 +37,7 @@ void GameEnv::ClearAllPlayers() {
 }
 
 void GameEnv::Reset() {
+    //std::cout<<"-------Reset-----------"<<std::endl;
     _map->ClearMap();
     _next_unit_id = 0;
     _winner_id = INVALID;

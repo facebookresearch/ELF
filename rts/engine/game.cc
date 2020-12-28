@@ -20,6 +20,7 @@ using namespace std::chrono;
 ////////////////////////// RTSStateExtend ////////////////////////////////////
 RTSStateExtend::RTSStateExtend(const RTSGameOptions &options)
     : _options(options), _snapshot_to_load(-1), _paused(false), _output_stream_owned(false), _output_stream(nullptr) {
+        //std::cout<<"----------RTSStateExtend Constructor------------"<<std::endl;
     if (_options.output_file.empty()) {
         _output_stream = _options.output_stream;
         _output_stream_owned = false;

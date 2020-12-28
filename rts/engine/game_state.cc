@@ -12,6 +12,7 @@ using namespace std;
 using namespace std::chrono;
 
 RTSState::RTSState() {
+    std::cout<<"-----------RTSState Constructor --------"<<std::endl;
     _env.InitGameDef();
     // TODO Need to add players accordingly.
     _env.ClearAllPlayers();
@@ -84,8 +85,7 @@ bool RTSState::Prepare(const RTSGameOptions &options, ostream *output,bool isPri
             
             if (output) *output << "Generate from scratch, seed = " << seed << endl << flush;
              _cmd_receiver.SendCmdWithTick(CmdBPtr(new CmdRandomSeed(INVALID, seed)), 0);
-            _cmd_receiver.SendCmdWithTick(CmdBPtr(cmd_Random), 0);
-            //delete cmd_Random;
+           
         } else {
             // _cmd_receiver.SendCmdWithTick(CmdBPtr(new CmdLoadMap(INVALID, options.map_filename)));
         }
