@@ -9,8 +9,8 @@
 var canvas = document.createElement("canvas");
 // 获得绘图环境，在该函数下绘图
 var ctx = canvas.getContext("2d");
-canvas.width = 10700;           // 1400
-canvas.height = 10500;       //1000
+canvas.width = 1200;           // 1400
+canvas.height = 1200;       //1000
 var left_frame_width = 1000;
 var cell_size = 30;         // 50
 var rect_size = 30;       // 50
@@ -146,7 +146,7 @@ canvas.addEventListener("mousedown", function (e) {
     if (e.button === 0) {
         var xy0 = convert_xy_back(e.pageX, e.pageY);
         // console.log(xy0);
-        if (xy0[0] >350 || xy0[1] > 350) return;
+        if (xy0[0] >35 || xy0[1] > 35) return;
         x_down = e.pageX;
         y_down = e.pageY;
     }
@@ -155,7 +155,7 @@ canvas.addEventListener("mousedown", function (e) {
 // 鼠标松开
 canvas.addEventListener("mouseup", function (e) {
     var xy0 = convert_xy_back(e.pageX, e.pageY);
-    if (xy0[0] > 350 || xy0[1] > 350) return;     
+    if (xy0[0] > 35 || xy0[1] > 35) return;     
     if (e.button === 0) {
         var xy = convert_xy_back(x_down, y_down);
         if (dragging && x_down && y_down) {
@@ -305,19 +305,19 @@ var onBullet = function(bullet) {
 }
 
 // 显示 玩家资源的 文本信息
-var onPlayerStats = function(player) {
-    if (player.player_id == 2) {
-        unit_names_minirts = unit_names_flag;
-    }
-    var x1 = left_frame_width + 10;
-    var y1 = (player.player_id + 1) * 50;
-    var label = ["PlayerId", player.player_id, "Resource", player.resource].join(" ");
-    ctx.beginPath()
-	ctx.fillStyle = "Black";
-	ctx.font = "15px Arial";
-	ctx.fillText(label, x1, y1);
-    ctx.closePath();
-}
+// var onPlayerStats = function(player) {
+//     if (player.player_id == 2) {
+//         unit_names_minirts = unit_names_flag;
+//     }
+//     var x1 = left_frame_width + 10;
+//     var y1 = (player.player_id + 1) * 50;
+//     var label = ["PlayerId", player.player_id, "Resource", player.resource].join(" ");
+//     ctx.beginPath()
+// 	ctx.fillStyle = "Black";
+// 	ctx.font = "15px Arial";
+// 	ctx.fillText(label, x1, y1);
+//     ctx.closePath();
+// }
 
 // 玩家视角
 // 该函数并未真正执行，进入该函数是为了从下一帧画面开始，接受某个玩家传来的信息
@@ -550,9 +550,9 @@ var render = function (game) {
 
     var all_units = {};
     var selected = {};
-    for (var i in game.players) {       // 两个字典，{player_id: 0; resource: 0}
-        onPlayerStats(game.players[i]);         // {player_id: 1; resource: 0}    {player_id: 0; resource: 0}
-    }
+    // for (var i in game.players) {       // 两个字典，{player_id: 0; resource: 0}
+    //     onPlayerStats(game.players[i]);         // {player_id: 1; resource: 0}    {player_id: 0; resource: 0}
+    // }
     for (var i in game.units) {             // 基地，坦克，兵，资源 的信息
         var unit = game.units[i];
         all_units[unit.id] = unit;
