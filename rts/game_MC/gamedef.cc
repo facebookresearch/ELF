@@ -57,16 +57,16 @@ void GameDef::Init() {
     _units.assign(GetNumUnitType(), UnitTemplate());
     /**
      * int cost, int hp, int defense, float speed, int att, int att_r, int vis_r,
-        const vector<int> &cds, const vector<CmdType> &l, UnitAttr attr
+        const vector<int> &cds, const vector<CmdType> &l, UnitAttr attr**/
 
-         _units[RESOURCE] = _C(0, 1000, 1000, 0, 0, 0, 0, vector<int>{0, 0, 0, 0}, vector<CmdType>{}, ATTR_INVULNERABLE);
-    _units[WORKER] = _C(50, 50, 0, 0.1, 2, 1, 3, vector<int>{0, 10, 40, 40}, vector<CmdType>{MOVE, ATTACK, BUILD, GATHER});
-    _units[MELEE_ATTACKER] = _C(100, 100, 1, 0.1, 15, 1, 3, vector<int>{0, 15, 0, 0}, vector<CmdType>{MOVE, ATTACK});
-    _units[RANGE_ATTACKER] = _C(100, 50, 0, 0.2, 10, 5, 5, vector<int>{0, 10, 0, 0}, vector<CmdType>{MOVE, ATTACK});
-    _units[BARRACKS] = _C(200, 200, 1, 0.0, 0, 0, 5, vector<int>{0, 0, 0, 50}, vector<CmdType>{BUILD});
-    _units[BASE] = _C(500, 500, 2, 0.0, 0, 0, 5, {0, 0, 0, 50}, vector<CmdType>{BUILD});
+    // _units[RESOURCE] = _C(0, 1000, 1000, 0, 0, 0, 0, vector<int>{0, 0, 0, 0}, vector<CmdType>{}, ATTR_INVULNERABLE);
+    // _units[WORKER] = _C(50, 50, 0, 0.1, 2, 1, 3, vector<int>{0, 10, 40, 40}, vector<CmdType>{MOVE, ATTACK, BUILD, GATHER});
+    // _units[MELEE_ATTACKER] = _C(100, 100, 1, 0.1, 15, 1, 3, vector<int>{0, 15, 0, 0}, vector<CmdType>{MOVE, ATTACK});
+    // _units[RANGE_ATTACKER] = _C(100, 50, 0, 0.2, 10, 5, 5, vector<int>{0, 10, 0, 0}, vector<CmdType>{MOVE, ATTACK});
+    // _units[BARRACKS] = _C(200, 200, 1, 0.0, 0, 0, 5, vector<int>{0, 0, 0, 50}, vector<CmdType>{BUILD});
+    // _units[BASE] = _C(500, 500, 2, 0.0, 0, 0, 5, {0, 0, 0, 50}, vector<CmdType>{BUILD});
 
-    
+ /**   
  *  定义单位属性
  *  cost   造价(不需要)
  *  hp     血量
@@ -76,7 +76,8 @@ void GameDef::Init() {
  *  att_r  攻击距离
  *  vis_r  可视距离
  * *                     cost hp    def  sp att att_r vis_r
-     * */
+ * */
+     
     _units[RESOURCE] = _C(0, 1000, 1000, 0, 0, 0, 0, vector<int>{0, 0, 0, 0}, vector<CmdType>{}, ATTR_INVULNERABLE);
     _units[WORKER] = _C(50, 50, 0, 0.1, 2, 1, 0, vector<int>{0, 10, 40, 40}, vector<CmdType>{MOVE, ATTACK, BUILD, GATHER});
     _units[MELEE_ATTACKER] = _C(50, 100, 1, 0.1, 15, 10, 0, vector<int>{0, 15, 0, 0}, vector<CmdType>{MOVE,ATTACK});
@@ -89,7 +90,7 @@ void GameDef::Init() {
 
 vector<pair<CmdBPtr, int> > GameDef::GetInitCmds(const RTSGameOptions&) const{
       vector<pair<CmdBPtr, int> > init_cmds;
-      init_cmds.push_back(make_pair(CmdBPtr(new CmdGenerateMap(INVALID, 0, 0)), 1));  // 障碍 资源 
+      init_cmds.push_back(make_pair(CmdBPtr(new CmdGenerateMap(INVALID, 0, 200)), 1));  // 障碍 资源 
       init_cmds.push_back(make_pair(CmdBPtr(new CmdGenerateUnit(INVALID)), 2));   
       return init_cmds;
 }

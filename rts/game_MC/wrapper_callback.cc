@@ -85,11 +85,16 @@ void WrapperCallbacks::OnGameInit(RTSGame *game, const std::map<std::string, int
         std::shuffle(orders.begin(), orders.end(), g);
         // cout << "[" << _game_idx << "] Shuffle is done: " << orders[0] << " " << orders[1] << endl;
     }
-
+    
     for (size_t i = 0; i < ais.size(); ++i) {
         int idx = orders[i];
         game->AddBot(ais[idx], _options.ai_options[idx].fs);
         game->GetState().AppendPlayer("player " + std::to_string(idx));
+    }
+    // 输出玩家信息
+    if(isPrint){
+        std::cout<<"ais size = "<<ais.size()<<std::endl;
+        std::cout<<game->GetState().env().PrintPlayerInfo()<<std::endl;
     }
 }
 

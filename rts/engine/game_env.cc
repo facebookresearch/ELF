@@ -11,9 +11,9 @@
 
 GameEnv::GameEnv() {
     // Load the map.
-    std::cout<<"-------GameEnv-----------"<<std::endl;
+   // std::cout<<"-------GameEnv-----------"<<std::endl;
     _map = unique_ptr<RTSMap>(new RTSMap());
-     std::cout<<"-------GameEnv-----------"<<std::endl;
+    // std::cout<<"-------GameEnv-----------"<<std::endl;
     _game_counter = -1;
     Reset();
 }
@@ -322,6 +322,18 @@ string GameEnv::PrintDebugInfo() const {
     for (const auto& player : _players) {
         ss << "Player " << player.GetId() << endl;
         ss << player.PrintHeuristicsCache() << endl;
+    }
+
+    ss << _map->Draw() << endl;
+    ss << _map->PrintDebugInfo() << endl;
+    return ss.str();
+}
+
+string GameEnv::PrintPlayerInfo() const {
+    stringstream ss;
+    for (const auto& player : _players) {
+        ss << "Player " << player.GetId() << endl;
+        ss << player.PrintInfo()<< endl;
     }
 
     ss << _map->Draw() << endl;

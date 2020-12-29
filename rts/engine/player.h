@@ -19,7 +19,7 @@ class Unit;
 struct Fog {
     // Fog level: 0 no fog, 100 completely invisible.
     int _fog = 100;
-    vector<Unit> _prev_seen_units;
+    vector<Unit> _prev_seen_units;  // 该点可见单位
 
     void MakeInvisible() {  _fog = 100; }  // 让该点不可见
     void SetClear() { _fog = 0; _prev_seen_units.clear(); }

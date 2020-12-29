@@ -82,6 +82,10 @@ public:
         if(isPrint)
          std::cout<<"-------MainLoop----------"<<std::endl;
         _state->Init(isPrint);  // 初始化游戏
+        // if(isPrint){
+        //     std::cout<<"--------Start PleyerInfo"<<std::endl;
+        //     std::cout<<_state->env().PrintPlayerInfo()<<std::endl;
+        // }
         while (true) {
             if (Step(done) != GAME_NORMAL) break;
             if (done != nullptr && done->load()) break;
@@ -89,6 +93,10 @@ public:
         // Send message to AIs.
         _act(false, done);
         _game_end();
+        // if(isPrint){
+        //     std::cout<<"--------End PleyerInfo"<<std::endl;
+        //     std::cout<<_state->env().PrintPlayerInfo()<<std::endl;
+        // }
         _state->Finalize();
     }
 
@@ -124,6 +132,7 @@ private:
             bot.ai->GameEnd();
         }
         if (_spectator != nullptr) {
+            std::cout<<"_spectator"<<std::endl;
             _spectator->GameEnd();
         }
     }

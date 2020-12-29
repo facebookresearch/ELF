@@ -34,8 +34,6 @@ bool RTSMap::find_two_nearby_empty_slots(const std::function<uint16_t(int)>& f, 
 }
 
 bool RTSMap::GenerateImpassable(const std::function<uint16_t(int)>& f, int nImpassable) {
-    std::cout<<"-------GenerateImpassable--------"<<std::endl;
-    std::cout<<"_m "<<_m<<" _n"<<_n<<" _level"<<_level<<std::endl;
     _map.assign(_m * _n * _level, MapSlot());   //初始化地图格子 类型为NORMAL
 
     
@@ -122,7 +120,7 @@ bool RTSMap::GenerateTDMaze(const std::function<uint16_t(int)>& f) {
 bool RTSMap::GenerateMap(const std::function<uint16_t(int)>& f, int nImpassable, int num_player, int init_resource) {
     // load a map for now simple format.
     bool success;
-    std::cout<<"-------GenerateMap nImpassable = "<<nImpassable<<std::endl; 
+  // std::cout<<"-------GenerateMap nImpassable = "<<nImpassable<<std::endl; 
     do {
         success = true;
         GenerateImpassable(f, nImpassable);  //初始化地图格子，并随机设置一些点为IMPOSSIBLE

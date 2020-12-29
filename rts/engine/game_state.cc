@@ -12,15 +12,15 @@ using namespace std;
 using namespace std::chrono;
 
 RTSState::RTSState() {
-    std::cout<<"-----------RTSState Constructor --------"<<std::endl;
+   //std::cout<<"-----------RTSState Constructor --------"<<std::endl;
     _env.InitGameDef();
     // TODO Need to add players accordingly.
     _env.ClearAllPlayers();
 }
 
 void RTSState::AppendPlayer(const string &name) {
-    //_env.AddPlayer(name, PV_KNOW_ALL);
-    _env.AddPlayer(name, PV_NORMAL);
+    _env.AddPlayer(name, PV_KNOW_ALL);
+    //_env.AddPlayer(name, PV_NORMAL);
 }
 
 void RTSState::RemoveLastPlayer() {

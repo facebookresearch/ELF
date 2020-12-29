@@ -58,6 +58,7 @@ void Player::ComputeFOW(const Units &units) {
     // or loop on the units.
     // [TODO]: We could do better with LocalitySearch.
     // Clear fogs.
+    //std::cout<<"------ComputFOW--------"<<std::endl;
     for (Fog &f : _fogs) {
         f.MakeInvisible();
     }
@@ -84,9 +85,9 @@ void Player::ComputeFOW(const Units &units) {
     for (auto it = units.begin(); it != units.end(); ++it) {
         const Unit *u = it->second.get();
         if (ExtractPlayerId(u->GetId()) != _player_id) {
-            Loc l = _filter_with_fow(*u);
+            Loc l = _filter_with_fow(*u);  //判断该点的位置是否在视野范围内
             // Add the unit info to the loc.
-            if (l != -1) _fogs[l].SaveUnit(*u);
+            if (l != -1) _fogs[l].SaveUnit(*u);  //在迷雾格中存储该单位
         }
     }
 }
@@ -106,7 +107,9 @@ string Player::PrintInfo() const {
     stringstream ss;
     ss << "Map ptr = " << _map << endl;
     ss << "Player id = " << _player_id << endl;
+    ss << "Player name = "<< _name << endl;
     ss << "Resource = " << _resource << endl;
+    ss << "PlayerPrivilege = "<<_privilege<<endl;
     ss << "Fog[" << _fogs.size() << "] = ";
     for (size_t i = 0; i < _fogs.size(); ++i) ss << _fogs[i]._fog << " ";
     ss << endl;

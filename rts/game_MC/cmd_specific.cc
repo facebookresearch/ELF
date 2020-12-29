@@ -16,7 +16,7 @@
 #include "cmd_specific.gen.h"
 
 bool CmdGenerateMap::run(GameEnv *env, CmdReceiver*) {
-    std::cout<<"CmdGenerateMap"<<std::endl;
+   // std::cout<<"CmdGenerateMap"<<std::endl;
     return env->GenerateMap(_num_obstacles, _init_resource) ? true : false;
 }
 
@@ -50,7 +50,7 @@ bool CmdGameStartSpecific::run(GameEnv*, CmdReceiver* receiver) {
 
 //-----------------Test--------------------
 bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
-    std::cout<<"CmdGenerateTDUnit"<<std::endl;
+    //std::cout<<"CmdGenerateTDUnit"<<std::endl;
     const PlayerId player_id = 0;
     const PlayerId enemy_id = 1;
     // 保护目标
@@ -74,7 +74,7 @@ bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
 
 //-----------------Test--------------------
 // bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
-//     std::cout<<"CmdGenerateUnit"<<std::endl;
+//    // std::cout<<"CmdGenerateUnit"<<std::endl;
 //     auto f = env->GetRandomFunc();
 //     int lr_seed = f(2);
 //     int ud_seed = f(2);
