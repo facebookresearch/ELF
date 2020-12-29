@@ -54,26 +54,29 @@ bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
     const PlayerId player_id = 0;
     const PlayerId enemy_id = 1;
     // 保护目标
-    _CREATE(BASE, PointF(17, 17), player_id);
+    _CREATE(BASE, PointF(34, 34), player_id);
     // 雷达
-    //_CREATE(RANGE_ATTACKER,PointF(4,17),player_id);
-    //_CREATE(RANGE_ATTACKER,PointF(15,17),player_id);
-    //_CREATE(RANGE_ATTACKER,PointF(17,4),player_id);
-    _CREATE(RANGE_ATTACKER,PointF(15,17),player_id);
+    _CREATE(RANGE_ATTACKER,PointF(45,25),player_id);
+    _CREATE(RANGE_ATTACKER,PointF(25,25),player_id);
+    _CREATE(RANGE_ATTACKER,PointF(34,45),player_id);
     // 炮台
-    //_CREATE(MELEE_ATTACKER,PointF(6,9),player_id);
-   // _CREATE(MELEE_ATTACKER,PointF(13,9),player_id);
-  //  _CREATE(MELEE_ATTACKER,PointF(9,6),player_id);
-     _CREATE(MELEE_ATTACKER,PointF(19,17),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(40,40),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(40,30),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(30,40),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(30,30),player_id);
 
     // enemy
     _CREATE(BASE,PointF(1, 1),enemy_id);
+    // 敌方飞机
+    _CREATE(RANGE_ATTACKER,PointF(34,20),enemy_id);
+    _CREATE(RANGE_ATTACKER,PointF(28,36),enemy_id);
+    _CREATE(RANGE_ATTACKER,PointF(29,35),enemy_id);
     return true;
 
 }
 
 //-----------------Test--------------------
-// bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
+// bool CmdGenerateUnit::r  un(GameEnv *env, CmdReceiver *receiver) {
 //    // std::cout<<"CmdGenerateUnit"<<std::endl;
 //     auto f = env->GetRandomFunc();
 //     int lr_seed = f(2);

@@ -160,8 +160,8 @@ void RTSMap::load_default_map() {
     // _level = 1;
     // _map.assign(_m * _n * _level, MapSlot());
 
-    _m = 35;
-    _n = 35;
+    _m = 70;
+    _n = 70;
     _level = 1;
     _map.assign(_m * _n * _level, MapSlot());
 
