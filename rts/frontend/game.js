@@ -9,18 +9,18 @@
 var canvas = document.createElement("canvas");
 // 获得绘图环境，在该函数下绘图
 var ctx = canvas.getContext("2d");
-canvas.width = 1200;           // 1400
-canvas.height = 1200;       //1000
+canvas.width = 2000;           // 1400
+canvas.height = 1750;       //1000
 var left_frame_width = 1000;
-var cell_size = 30;         // 50
-var rect_size = 30;       // 50
+var cell_size = 25;         // 50
+var rect_size = 25;       // 50
 var unit_size = 32;     // 32
 var cell_colors = ['#404040', 'blue', 'black'];
 var player_colors = ['blue', 'red', 'yellow'];
 
 // 不同游戏的单位名称
-// var unit_names_minirts = ["RESOURCE", "WORKER", "MELEE_ATTACKER", "RANGE_ATTACKER", "BARRACKS", "BASE"];
-var unit_names_minirts = [["RESOURCE", "WORKER", "MELEE_ATTACKER1", "RANGE_ATTACKER1", "BARRACKS", "BASE"],["RESOURCE", "WORKER", "MELEE_ATTACKER2", "RANGE_ATTACKER2", "BARRACKS", "BASE"]];
+// var unit_names_minirts = ["RESOURCE", "WORKER", "MELEE_ATTACKER", "RANGE_ATTACKER", "BARRACKS", "BASE"];     RANGE  雷达 范围大
+var unit_names_minirts = [["RESOURCE", "WORKER", "MELEE_ATTACKER2", "RANGE_ATTACKER2", "BARRACKS", "BASE"],["RESOURCE", "WORKER", "MELEE_ATTACKER1", "RANGE_ATTACKER1", "BARRACKS", "BASE"]];
 var unit_names_flag = ["FLAG_BASE", "FLAG_ATHLETE", "FLAG"];
 var unit_names_td = ["BASE", "WORKER", "RANGE_ATTACKER"];
 var x_down = null;
@@ -144,7 +144,7 @@ canvas.addEventListener("mousedown", function (e) {
     if (e.button === 0) {
         var xy0 = convert_xy_back(e.pageX, e.pageY);
         // console.log(xy0);
-        if (xy0[0] >35 || xy0[1] > 35) return;
+        if (xy0[0] >70 || xy0[1] > 70) return;
         x_down = e.pageX;
         y_down = e.pageY;
     }
@@ -153,7 +153,7 @@ canvas.addEventListener("mousedown", function (e) {
 
 canvas.addEventListener("mouseup", function (e) {
     var xy0 = convert_xy_back(e.pageX, e.pageY);
-    if (xy0[0] > 35 || xy0[1] > 35) return;     
+    if (xy0[0] > 70 || xy0[1] > 70) return;     
     if (e.button === 0) {
         var xy = convert_xy_back(x_down, y_down);
         if (dragging && x_down && y_down) {
