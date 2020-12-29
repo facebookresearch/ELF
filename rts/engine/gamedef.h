@@ -21,8 +21,8 @@ struct UnitProperty {
     int _att_r;
     float _speed;
 
-    // Visualization range.
-    int _vis_r;
+    // Visualization range. 可视距离
+    int _vis_r;  
 
     int _changed_hp;
     UnitId _damage_from;

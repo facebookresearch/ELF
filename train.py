@@ -16,8 +16,26 @@ from rlpytorch import *
 if __name__ == '__main__':
     trainer = Trainer()
     runner = SingleProcessRun()
-    env, all_args = load_env(os.environ, trainer=trainer, runner=runner)
+    '''
+        设置环境参数
+            env : dice [
+                game = game game.py
+                sampler = sampler
+                model_loaders =  存ModelLoader类的字典，每一个ModelLoader中有一个model
+                mi=mi
+            ]
 
+            all_args: 所有定义的参数
+    '''
+    env, all_args = load_env(os.environ, trainer=trainer, runner=runner)  
+    
+    '''
+       GC = GCWrapper(GC, co, desc, gpu=args.gpu, use_numpy=False, params=params)
+          GC      /gameMC/python_wrapper.cc GameContext
+          co      /elf/python_options_utils_cpp.h ContextOption
+          desc    actor 和 critic 的 Batch定义  
+          {'actor': {'batchsize': 64, 'input': {'T': 1, 'keys': {'s', 'terminal', 'last_r'}}, 'reply': {'T': 1, 'keys': {'a', 'pi', 'V'}}}}
+    '''
     GC = env["game"].initialize()
 
     model = env["model_loaders"][0].load_model(GC.params)
@@ -27,7 +45,15 @@ if __name__ == '__main__':
     trainer.setup(sampler=env["sampler"], mi=env["mi"], rl_method=env["method"])
 
     GC.reg_callback("train", trainer.train)
+    # def train(batch):
+    #   print(batch)
+    #   import pdb
+    #   pdb.set_trace()
+    #   return trainer.train(batch)
+
+    # GC.reg_callback("train", train)
     GC.reg_callback("actor", trainer.actor)
+
     runner.setup(GC, episode_summary=trainer.episode_summary,
                 episode_start=trainer.episode_start)
 

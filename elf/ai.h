@@ -17,7 +17,7 @@ namespace elf {
 
 using namespace std;
 
-template <typename S, typename A>
+template <typename S, typename A>  // RTSState RTSMCAction
 class AI_T {
 public:
     using Action = A;
@@ -43,6 +43,8 @@ public:
 
     virtual ~AI_T() { }
 
+    void Print(){std::cout<<"AIName: _name: "<<_name<<" id: "<<_id<<std::endl;}
+
 private:
     const std::string _name;
     int _id;
@@ -51,7 +53,7 @@ protected:
     virtual void on_set_id() { }
 };
 
-template <typename S, typename A, typename AIComm>
+template <typename S, typename A, typename AIComm>   //带有AICommT的AI
 class AIWithCommT : public AI_T<S, A> {
 public:
     using AI = AI_T<S, A>;

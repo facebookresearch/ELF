@@ -28,6 +28,14 @@ void MCExtractor::SaveInfo(const RTSState &s, PlayerId player_id, GameState *gs)
     gs->terminal = s.env().GetTermination() ? 1 : 0;
 
     gs->last_r = 0.0;
+
+    // 测试获取基地位置
+    // UnitId baseId = s.env().FindClosestBase(player_id);
+    //const Unit* base = s.env().GetUnit(s.env().FindClosestBase(player_id));
+    //gs->base_x = s.env().GetUnit(s.env().FindClosestBase(player_id))->GetPointF().x;
+    //gs->base_y = s.env().GetUnit(s.env().FindClosestBase(player_id))->GetPointF().y;
+    // 测试获取基地位置
+
     int winner = s.env().GetWinnerId();
     if (winner != INVALID) {
       if (winner == player_id) gs->last_r = 1.0;

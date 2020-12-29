@@ -36,8 +36,8 @@ typedef int VerboseChoice;
 #define CR_NODERIVED 8
 #define CR_ALL ( CR_DURATIVE | CR_IMMEDIATE | CR_DERIVED | CR_NODERIVED )
 
-// receive command and record them in the history.
-// The cmds are ordered so that the lowest level is executed first.
+// receive command and record them in the history.  接收命令
+// The cmds are ordered so that the lowest level is executed first. 
 class CmdReceiver {
 private:
     Tick _tick;

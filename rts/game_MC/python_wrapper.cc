@@ -33,32 +33,36 @@ public:
         GameDef::GlobalInit();
         _context.reset(new GC{context_options, options});
 
-        _num_frames_in_state = 1;
+        _num_frames_in_state = 1;   
         for (const AIOptions& opt : options.ai_options) {
             _num_frames_in_state = max(_num_frames_in_state, opt.num_frames_in_state);
         }
     }
 
     void Start() {
+        std::cout<<"--------------GameContext Start-----------"<<std::endl;
         _context->Start(
             [this](int game_idx, const ContextOptions &context_options, const PythonOptions &options, const elf::Signal &signal, Comm *comm) {
                     auto params = this->GetParams();
+                    if(game_idx == 1){
+                      std::cout<<"game_"<<game_idx<<" run GameStartFunc"<<std::endl;
+                    }
                     this->_wrapper.thread_main(game_idx, context_options, options, signal, &params, comm);
             });
     }
 
     std::map<std::string, int> GetParams() const {
         return std::map<std::string, int>{
-            { "num_action", GameDef::GetNumAction() },
-            { "num_unit_type", GameDef::GetNumUnitType() },
-            { "num_planes_per_time_stamp", MCExtractor::Size() },
-            { "num_planes", MCExtractor::Size() * _num_frames_in_state },
-            { "resource_dim", 2 * NUM_RES_SLOT },
-            { "max_unit_cmd", _context->options().max_unit_cmd },
-            { "map_x", _context->options().map_size_x },
-            { "map_y", _context->options().map_size_y },
-            { "num_cmd_type", CmdInput::CI_NUM_CMDS },
-            { "reduced_dim", MCExtractor::Size() * 5 * 5 }
+            { "num_action", GameDef::GetNumAction() },       // 9
+            { "num_unit_type", GameDef::GetNumUnitType() },   // 6  
+            { "num_planes_per_time_stamp", MCExtractor::Size() },  // 22  每一个时间戳中的 planes数？
+            { "num_planes", MCExtractor::Size() * _num_frames_in_state },  //  22 每一个状态包含一帧的数据
+            { "resource_dim", 2 * NUM_RES_SLOT }, // 10
+            { "max_unit_cmd", _context->options().max_unit_cmd }, // 1
+            { "map_x", _context->options().map_size_x }, // 20
+            { "map_y", _context->options().map_size_y }, // 20  
+            { "num_cmd_type", CmdInput::CI_NUM_CMDS },   // 4
+            { "reduced_dim", MCExtractor::Size() * 5 * 5 }// 22*5*5
         };
     }
 
@@ -88,7 +92,9 @@ public:
         else if (key == "ct_prob") return EntryInfo(key, type_name, { max_unit_cmd, CmdInput::CI_NUM_CMDS });
         else if (key == "reduced_s") return EntryInfo(key, type_name, { reduced_size });
         else if (key == "reduced_next_s") return EntryInfo(key, type_name, { reduced_size });
+        else if (key == "base_x" || key == "base_y") return EntryInfo(key, type_name);
 
+ 
         return EntryInfo();
     }
 

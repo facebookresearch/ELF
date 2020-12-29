@@ -65,11 +65,11 @@ void WrapperCallbacks::OnGameOptions(RTSGameOptions *rts_options) {
     rts_options->handicap_level = _options.handicap_level;
 }
 
-void WrapperCallbacks::OnGameInit(RTSGame *game, const std::map<std::string, int> *more_params) {
+void WrapperCallbacks::OnGameInit(RTSGame *game, const std::map<std::string, int> *more_params,bool isPrint) {
     // std::cout << "Initialize opponent" << std::endl;
     std::vector<AI *> ais;
     for (const AIOptions &ai_opt : _options.ai_options) {
-        Context::AIComm *ai_comm = new Context::AIComm(_game_idx, _comm);
+        Context::AIComm *ai_comm = new Context::AIComm(_game_idx, _comm);  //设置 AI 和 Main_Loop通信的工具
         _ai_comms.emplace_back(ai_comm);
         initialize_ai_comm(*ai_comm, more_params);
         ais.push_back(get_ai(_game_idx, _context_options.mcts_options, ai_opt, ai_comm));
@@ -85,11 +85,16 @@ void WrapperCallbacks::OnGameInit(RTSGame *game, const std::map<std::string, int
         std::shuffle(orders.begin(), orders.end(), g);
         // cout << "[" << _game_idx << "] Shuffle is done: " << orders[0] << " " << orders[1] << endl;
     }
-
+    
     for (size_t i = 0; i < ais.size(); ++i) {
         int idx = orders[i];
         game->AddBot(ais[idx], _options.ai_options[idx].fs);
         game->GetState().AppendPlayer("player " + std::to_string(idx));
+    }
+    // 输出玩家信息
+    if(isPrint){
+        std::cout<<"ais size = "<<ais.size()<<std::endl;
+        std::cout<<game->GetState().env().PrintPlayerInfo()<<std::endl;
     }
 }
 
