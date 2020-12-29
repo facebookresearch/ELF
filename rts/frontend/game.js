@@ -104,7 +104,7 @@ var addButton = function(text, cmd) {
 // addButton("Cycle", "C");
 // addButton("Pause", "P");
 
-// 第二个进度条
+
 var range1 = document.createElement("INPUT");
 range1.type = "range";
 range1.min = 0;
@@ -124,24 +124,22 @@ range1.oninput = function(){
 
 document.body.appendChild(canvas);
 
-// 所有的 send_cmd 都通过此方法将数据发送到服务器
+
 var send_cmd = function(s) {
-    //console.log("send_cmd----------------------");
-     // 向后台发送命令
   dealer.send(s);
 };
 
-// 单击右键执行 f
+
 canvas.oncontextmenu = function (e) {
     e.preventDefault();
 };
 
-// 键盘按下
+
 document.addEventListener("keydown", function (e) {
     send_cmd(tick + ' ' + e.key);
 }, false);
 
-// 鼠标按下
+
 canvas.addEventListener("mousedown", function (e) {
     if (e.button === 0) {
         var xy0 = convert_xy_back(e.pageX, e.pageY);
@@ -152,7 +150,7 @@ canvas.addEventListener("mousedown", function (e) {
     }
 }, false);
 
-// 鼠标松开
+
 canvas.addEventListener("mouseup", function (e) {
     var xy0 = convert_xy_back(e.pageX, e.pageY);
     if (xy0[0] > 35 || xy0[1] > 35) return;     
@@ -172,7 +170,7 @@ canvas.addEventListener("mouseup", function (e) {
     }
 }, false);
 
-// 鼠标移动
+
 canvas.addEventListener("mousemove", function (e) {
     if (x_down && y_down) {
         x_curr = e.pageX;
@@ -185,21 +183,19 @@ canvas.addEventListener("mousemove", function (e) {
 
 // game.rts_map
 var onMap = function(m) {
-    // 一帧是400，counter 最多是 400
     var counter = 0;
     for (y = 0; y < m.height; y++) {
     	for (x = 0; x < m.width; x++){
-            // 战争迷雾     m.slots 是一个 400个数字的矩阵，每个数字对应不同的颜色，用来显示战争迷雾
             var color = cell_colors[m.slots[counter]];                    // counter = 0   m.slots = #404040
             var x1 = x * cell_size;                                                           // 一个格子的长是 50
             var y1 = y * cell_size;                                                             // 宽  50
             ctx.beginPath();
             ctx.fillStyle = color;
             ctx.lineWidth = 1;                                              // 格子之间的线宽  1
-		    ctx.rect(x1, y1, rect_size, rect_size);     // 在位置 x1，y2 处 创建 长 宽 为 rect_size 的矩形
+		    ctx.rect(x1, y1, rect_size, rect_size);     
 		    ctx.strokeStyle = 'black';                                                // 矩形 用 black 填充 
-		    ctx.stroke();                                                           // 将上述定义绘制出来
-		    ctx.fillRect(x1, y1, rect_size, rect_size);             // 绘制已填色的矩形
+		    ctx.stroke();                                                           
+		    ctx.fillRect(x1, y1, rect_size, rect_size);             
 		    ctx.closePath();
             counter += 1;
     	}
@@ -222,12 +218,9 @@ var draw_hp = function(bbox, states, font_color, player_color){
         // 绘制一个矩阵
     ctx.rect(x1, y1, x2 - x1, y2 - y1);
     ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
-        // 血条边框颜色
     ctx.strokeStyle = player_color;
-        // 前面的都是设置，绘图在此处
     ctx.stroke();
     ctx.closePath();
-    // 控制血条颜色
     var color = 'green';
     if (hp_ratio <= 0.5) color = 'yellow';
     if (hp_ratio <= 0.2) color = 'red';
@@ -244,17 +237,15 @@ var draw_hp = function(bbox, states, font_color, player_color){
     }
 }
 
-// 单位的绘制实现        isSelected 是否被选中    u 是 unit
+// 单位的绘制实现      
 var onUnit = function(u, isSelected) {
-        // 玩家血条边框颜色
     var player_color = player_colors[u.player_id];          // unit 内部的 player_id，用于区分单位是哪一方的
     var p =  u.p;                                                                            //  单位此刻的位置                                  
     var last_p = u.last_p;                                                              // 上一刻的位置
-    var diffx = p.x - last_p.x;                                                          // 用于判断使用哪种图片
+    var diffx = p.x - last_p.x;                                                        
     var diffy = p.y - last_p.y;
-    var ori = "down";                                                                       // 默认 向下
-    // 绘制方向
-    if (Math.abs(diffx) > Math.abs(diffy)) {                                // x 的改变 比 y 的大，优先向左或者向右
+    var ori = "down";                                                                       
+    if (Math.abs(diffx) > Math.abs(diffy)) {                                
         if (diffx >= 0) {
             ori = "right";
         } else {
@@ -268,13 +259,11 @@ var onUnit = function(u, isSelected) {
         }
     }
     var xy = convert_xy(p.x, p.y);
-    // 绘制各种单位的图片
-    // u.player_id 判断绘制哪种图片
-    draw_sprites(sprites[unit_names_minirts[u.player_id][u.unit_type]], xy[0], xy[1], ori);      // u.unit_type 给数据，unit_names_minirts选择图片类型，sprites 选择对应地址，draw_sprites 加载图片
+
+    draw_sprites(sprites[unit_names_minirts[u.player_id][u.unit_type]], xy[0], xy[1], ori);     
 
     var hp_ratio = u.hp / u.max_hp;         // 掉血的比例
     var state_str;
-    // 都执行
     if ("cmd" in u) {
         if (u.cmd.cmd[0] != 'I') {
             // 农民的名字   G1  G0 
@@ -319,8 +308,7 @@ var onBullet = function(bullet) {
 //     ctx.closePath();
 // }
 
-// 玩家视角
-// 该函数并未真正执行，进入该函数是为了从下一帧画面开始，接受某个玩家传来的信息
+
 var onPlayerSeenUnits = function(m) {
     if ("units" in m) {
         // 未执行
@@ -391,18 +379,18 @@ var draw_sprites = function(spec, px, py, ori) {    // 图片 、
     var image = spec["image"]
     var width = image.width;
     var height = image.height;
-    if (!("_sizes" in spec)) {          // 判断是否需要对图片进行切割
+    if (!("_sizes" in spec)) {          
         ctx.drawImage(image, px - width / 2, py - height / 2);      // 图片，在画布上放的位置的x，y坐标
     } else {
-        // 需要对图像进行切割
-        var sw = spec["_sizes"][0];                                                     // 原图像的宽度
-        var sh = spec["_sizes"][1];                                                     // 原图像的高度
+
+        var sw = spec["_sizes"][0];                                                     
+        var sh = spec["_sizes"][1];                                                     
         var nw = Math.floor(width / sw);
         var nh = Math.floor(height/ sh);
         var xidx = spec[ori][0];
         var yidx = spec[ori][1];                                                                // 
-        var cx = xidx[Math.floor(tick / 3) % xidx.length] * sw;     // 开始剪切的x坐标
-        var cy = yidx[Math.floor(tick / 3) % yidx.length] * sh;       // 开始剪切的y坐标
+        var cx = xidx[Math.floor(tick / 3) % xidx.length] * sw;     
+        var cy = yidx[Math.floor(tick / 3) % yidx.length] * sh;      
         //  px - sw / 2, py - sh / 2        代表图像在画布上的 x   y 坐标
         ctx.drawImage(image, cx, cy, sw, sh, px - sw / 2, py - sh / 2, sw, sh);     // 剪切图像，并在画布上定位被剪切的部分
     }
@@ -413,7 +401,7 @@ var myrange = function (j, k){
 	return Array.from(new Array(n), (x,i) => i + j);
 };
 
-// 加载图片
+
 var sprites = {};
 
 // sprites["RANGE_ATTACKER"] = load_sprites({
@@ -527,8 +515,7 @@ sprites["FLAG_BASE"] = load_sprites({
 });
 
 
-// 渲染
-// 每一次数据都渲染一次
+
 var render = function (game) {
     tick = game.tick;
     // Tick
@@ -553,7 +540,7 @@ var render = function (game) {
     // for (var i in game.players) {       // 两个字典，{player_id: 0; resource: 0}
     //     onPlayerStats(game.players[i]);         // {player_id: 1; resource: 0}    {player_id: 0; resource: 0}
     // }
-    for (var i in game.units) {             // 基地，坦克，兵，资源 的信息
+    for (var i in game.units) {             
         var unit = game.units[i];
         all_units[unit.id] = unit;
 
@@ -563,10 +550,10 @@ var render = function (game) {
             selected[unit.id] = unit;
         }
         
-        // 绘制 game.units 信息
+
         onUnit(unit, isSelected);
     }
-    // 用鼠标圈单位的时候执行
+
     if (dragging && x_down && y_down) {
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -618,15 +605,13 @@ var main = function () {
     console.log("WS Opened.");
   }
 
-    // 当收到来自服务器的消息时，被调用
+
   dealer.onmessage = function (message) {
-      // message 是 HTTP所有的信息 
-      // s 是游戏中的所有信息
+
     var s = message.data;   
     // 将 s 转换为 json  存储在 game 中
     var game = JSON.parse(s);
     //console.log(game);
-        // 在画布内清空一个矩阵，用于渲染游戏
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     render(game);
   };
@@ -634,8 +619,4 @@ var main = function () {
 
 var then = Date.now();
 // 开始
-<<<<<<< HEAD
 main();
-=======
-main();
->>>>>>> 3f3592593dbc391c3bcbcf05680f0821032d48c0
