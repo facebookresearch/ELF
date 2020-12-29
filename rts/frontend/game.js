@@ -9,8 +9,8 @@
 var canvas = document.createElement("canvas");
 // 获得绘图环境，在该函数下绘图
 var ctx = canvas.getContext("2d");
-canvas.width = 1400;           
-canvas.height = 1400;       
+canvas.width = 30000;           
+canvas.height = 28000;       
 var left_frame_width = 1000;
 var cell_size = 40;         // 50
 var rect_size = 40;       // 50
@@ -144,7 +144,7 @@ canvas.addEventListener("mousedown", function (e) {
     if (e.button === 0) {
         var xy0 = convert_xy_back(e.pageX, e.pageY);
         // console.log(xy0);
-        if (xy0[0] >35 || xy0[1] > 35) return;
+        if (xy0[0] >700 || xy0[1] > 700) return;
         x_down = e.pageX;
         y_down = e.pageY;
     }
@@ -153,7 +153,7 @@ canvas.addEventListener("mousedown", function (e) {
 
 canvas.addEventListener("mouseup", function (e) {
     var xy0 = convert_xy_back(e.pageX, e.pageY);
-    if (xy0[0] > 35 || xy0[1] > 35) return;     
+    if (xy0[0] > 700 || xy0[1] > 700) return;     
     if (e.button === 0) {
         var xy = convert_xy_back(x_down, y_down);
         if (dragging && x_down && y_down) {
