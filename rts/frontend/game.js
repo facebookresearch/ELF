@@ -9,11 +9,11 @@
 var canvas = document.createElement("canvas");
 // 获得绘图环境，在该函数下绘图
 var ctx = canvas.getContext("2d");
-canvas.width = 1250;           // 1400
-canvas.height = 1050;       //1000
+canvas.width = 1400;           
+canvas.height = 1400;       
 var left_frame_width = 1000;
-var cell_size = 30;         // 50
-var rect_size = 30;       // 50
+var cell_size = 40;         // 50
+var rect_size = 40;       // 50
 var unit_size = 32;     // 32
 var cell_colors = ['#404040', 'blue', 'black'];
 var player_colors = ['blue', 'red', 'yellow'];
