@@ -79,13 +79,15 @@ void GameDef::Init() {
  * */
      
     _units[RESOURCE] = _C(0, 1000, 1000, 0, 0, 0, 0, vector<int>{0, 0, 0, 0}, vector<CmdType>{}, ATTR_INVULNERABLE);
+    // 飞机 移动 攻击
     _units[WORKER] = _C(50, 50, 0, 0.1, 2, 1, 0, vector<int>{0, 10, 40, 40}, vector<CmdType>{MOVE, ATTACK, BUILD, GATHER});
-    // 炮塔
-    _units[MELEE_ATTACKER] = _C(50, 100, 1, 0.1, 10, 20, 0, vector<int>{0, 60, 0, 0}, vector<CmdType>{ATTACK});
-    // 雷达 飞机
-    _units[RANGE_ATTACKER] = _C(100, 200, 1, 0.2, 0, 0, 30, vector<int>{0, 0, 0, 0}, vector<CmdType>{});
-    _units[BARRACKS] = _C(200, 200, 1, 0.0, 0, 0, 0, vector<int>{0, 0, 0, 50}, vector<CmdType>{BUILD});
-    _units[BASE] = _C(500, 500, 2, 0.0, 0, 0, 0, {0, 0, 0, 50}, vector<CmdType>{});
+    // 炮塔 攻击
+    _units[MELEE_ATTACKER] = _C(50, 100, 1, 0.1, 10, 20, 0, vector<int>{0, 60, 0, 0}, vector<CmdType>{MOVE, ATTACK});
+    // 雷达 索敌
+    _units[RANGE_ATTACKER] = _C(100, 200, 0, 0.2, 0, 0, 30, vector<int>{0, 0, 0, 0}, vector<CmdType>{});
+    // 导弹 移动 攻击(攻击范围很小)
+    _units[BARRACKS] = _C(200, 200, 1, 0.0, 0, 0, 0, vector<int>{0, 0, 0, 50}, vector<CmdType>{MOVE,ATTACK});
+    _units[BASE] = _C(500, 500, 0, 0.0, 0, 0, 0, {0, 0, 0, 50}, vector<CmdType>{});
 
 
 }

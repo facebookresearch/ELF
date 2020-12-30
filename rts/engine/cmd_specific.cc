@@ -42,6 +42,7 @@ CMD_DURATIVE(Gather, UnitId, base, UnitId, resource, int, state = 0);
 
 //////////// Durative Action ///////////////////////
 bool CmdMove::run(const GameEnv &env, CmdReceiver *receiver) {
+    std::cout<<this->PrintInfo()<<std::endl;
     const Unit *u = env.GetUnit(_id);
     if (u == nullptr) return false;
 
@@ -52,43 +53,46 @@ bool CmdMove::run(const GameEnv &env, CmdReceiver *receiver) {
 
 // ----- Attack
 // Attack cmd.target_id
+// 持续攻击应该改成单发攻击？
 bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
-    const Unit *u = env.GetUnit(_id);
+   // std::cout<<this->PrintInfo()<<std::endl;
+    const Unit *u = env.GetUnit(_id); // 执行命令的单位
     if (u == nullptr) return false;
 
-    const Unit *target = env.GetUnit(_target);
-    const Player &player = env.GetPlayer(u->GetPlayerId());
+    const Unit *target = env.GetUnit(_target);  // 攻击目标单位
+    const Player &player = env.GetPlayer(u->GetPlayerId()); // 执行命令单位的玩家
 
     if (target == nullptr || (player.GetPrivilege() == PV_NORMAL && ! player.FilterWithFOW(*target)))  {
         // The goal is destroyed or is out of FOW, back to idle.
         // FilterWithFOW is checked if the agent is not a KNOW_ALL agent.
-        // For example, for AI, they could cheat and attack wherever they want.
-        // For normal player you cannot attack a Unit outside the FOW.
-        //
+        // For example, for AI, they could cheat and attack wherever they want. AI无视FOW
+        // For normal player you cannot attack a Unit outside the FOW.  玩家无法攻击FOW外的敌方单位
+        // 
         _done = true;
         return true;
     }
 
     //const RTSMap &m = env.GetMap();
-    const UnitProperty &property = u->GetProperty();
-    const PointF &curr = u->GetPointF();
-    const PointF &target_p = target->GetPointF();
+    const UnitProperty &property = u->GetProperty();  
+    const PointF &curr = u->GetPointF();  // 执行单位位置
+    const PointF &target_p = target->GetPointF(); // 目标单位位置
 
-    int dist_sqr_to_enemy = PointF::L2Sqr(curr, target_p);
-    bool in_attack_range = (dist_sqr_to_enemy <= property._att_r * property._att_r);
+    int dist_sqr_to_enemy = PointF::L2Sqr(curr, target_p);  // 距离
+    bool in_attack_range = (dist_sqr_to_enemy <= property._att_r * property._att_r);  // 判断是否在攻击范围内
     // cout << "[" << _id << "] dist_sqr_to_enemy[" << _last_cmd.target_id << "] = " << dist_sqr_to_enemy << endl;
 
     // Otherwise attack.
-    if (property.CD(CD_ATTACK).Passed(_tick) && in_attack_range) {
+    if (property.CD(CD_ATTACK).Passed(_tick) && in_attack_range) {   // 如果目标在攻击范围内且攻击就绪
         // Melee delivers attack immediately, long-range will deliver attack via bullet.
         if (property._att_r <= 1.0) {
             receiver->SendCmd(CmdIPtr(new CmdMeleeAttack(_id, _target, -property._att)));
         } else {
-            receiver->SendCmd(CmdIPtr(new CmdEmitBullet(_id, _target, curr, -property._att, 0.2)));
+            receiver->SendCmd(CmdIPtr(new CmdEmitBullet(_id, _target, curr, -property._att, 0.1)));
         }
-        receiver->SendCmd(CmdIPtr(new CmdCDStart(_id, CD_ATTACK)));
-    } else if (! in_attack_range) {
-        micro_move(_tick, *u, env, target_p, receiver);
+        receiver->SendCmd(CmdIPtr(new CmdCDStart(_id, CD_ATTACK)));  // 重置攻击CD
+    } else if (! in_attack_range) {  // 不在攻击范围内时移动单位接近攻击目标 （不需要）
+       //micro_move(_tick, *u, env, target_p, receiver);
+       _done = true;  
     }
 
     // In both case, continue this action.
@@ -222,27 +226,28 @@ bool CmdMeleeAttack::run(GameEnv *env, CmdReceiver *receiver) {
     Unit *target = env->GetUnit(_target);
     if (target == nullptr) return true;
 
-    UnitProperty &p_target = target->GetProperty();
-    if (p_target.IsDead()) return true;
+    UnitProperty &p_target = target->GetProperty();  // 获取目标属性
+    if (p_target.IsDead()) return true;  // 目标已经被销毁，取消攻击命令
 
-    const auto &target_tp = env->GetGameDef().unit(target->GetUnitType());
+    const auto &target_tp = env->GetGameDef().unit(target->GetUnitType());  // 获得target 单位UnitTemplate
 
     int changed_hp = _att;
     if (changed_hp < 0) {
-        changed_hp += p_target._def;
-        if (changed_hp > 0) changed_hp = 0;
+        changed_hp += p_target._def;  // 考虑目标单位的防御力
+        if (changed_hp > 0) changed_hp = 0;  // 目标收到的伤害值最小不得低于0
     }
 
-    p_target._hp += changed_hp;
+    p_target._hp += changed_hp;  // 修改目标hp
     if (p_target.IsDead()) {
-        receiver->SendCmd(CmdIPtr(new CmdOnDeadUnit(_id, _target)));
+        receiver->SendCmd(CmdIPtr(new CmdOnDeadUnit(_id, _target)));  // 目标死亡，执行环境命令处理目标尸体
     } else if (changed_hp < 0) {
+        // 记录目标收到的伤害
         p_target._changed_hp = changed_hp;
         p_target._damage_from = _id;
-        if (receiver->GetUnitDurativeCmd(_target) == nullptr && target_tp.CmdAllowed(ATTACK)) {
-            // Counter attack.
-            receiver->SendCmd(CmdDPtr(new CmdAttack(_target, _id)));
-        }
+        // if (receiver->GetUnitDurativeCmd(_target) == nullptr && target_tp.CmdAllowed(ATTACK)) {
+        //     // Counter attack.
+        //     receiver->SendCmd(CmdDPtr(new CmdAttack(_target, _id))); // 目标反击（不需要）
+        // }
     }
     return true;
 }
