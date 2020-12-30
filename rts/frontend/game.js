@@ -259,7 +259,7 @@ var onUnit = function(u, isSelected) {
         }
     }
     var xy = convert_xy(p.x, p.y);
-
+    
     draw_sprites(sprites[unit_names_minirts[u.player_id][u.unit_type]], xy[0], xy[1], ori);     
 
     var hp_ratio = u.hp / u.max_hp;         // 掉血的比例
@@ -466,7 +466,12 @@ sprites["BASE"] = load_sprites({
 });
 // 兵营
 sprites["BARRACKS"] = load_sprites({
-    "_file" : "imgs/barracks.png",
+    //"up" : [myrange(15, 22), [9]],
+    "down": [[9], [0]],
+    //"left": [[20], myrange(2, 9)],
+    //"right": [[21], myrange(2, 9)],
+    "_file" : "imgs/tiles.png",
+    "_sizes" : [32, 32]
 });
 
 // 未执行
