@@ -65,6 +65,15 @@ bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
     _CREATE(MELEE_ATTACKER,PointF(30,40),player_id);
     _CREATE(MELEE_ATTACKER,PointF(30,30),player_id);
 
+    //
+     _CREATE(WORKER,PointF(50,50),player_id);
+     _CREATE(BARRACKS,PointF(55,55),player_id);
+      _CHANGE_RES(player_id, 200000000);
+
+
+
+   
+
     // enemy
     _CREATE(BASE,PointF(1, 1),enemy_id);
     // 敌方飞机

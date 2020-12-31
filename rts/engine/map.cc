@@ -177,7 +177,7 @@ void RTSMap::precompute_all_pair_distances() {
 
 // 增加单位 
 bool RTSMap::AddUnit(const UnitId &id, const PointF& new_p) {
-    if (_locality.Exists(id)) return false;  // 位置已有单位，不可添加
+    if (_locality.Exists(id)) return false;  // 已有该单位，不可添加
     if (! _locality.IsEmpty(new_p, kUnitRadius, INVALID)) return false;
 
     _locality.Add(id, new_p, kUnitRadius);

@@ -82,7 +82,7 @@ float micro_move(Tick tick, const Unit& u, const GameEnv &env, const PointF& tar
     const PointF &curr = u.GetPointF();  // 当前位置
     const Player &player = env.GetPlayer(u.GetPlayerId());
 
-    cout << "Micro_move: Current: " << curr << " Target: " << target << endl;
+    //cout << "Micro_move: Current: " << curr << " Target: " << target << endl;
     float dist_sqr = PointF::L2Sqr(target, curr); // 距离 （平方）
     const UnitProperty &property = u.GetProperty();
 
@@ -107,7 +107,7 @@ float micro_move(Tick tick, const Unit& u, const GameEnv &env, const PointF& tar
                 waypoint.y = first_block.y;
             }
         }
-        cout << "micro_move: (" << curr << ") -> (" << waypoint << ") planning: " << planning_success << endl;
+        //cout << "micro_move: (" << curr << ") -> (" << waypoint << ") planning: " << planning_success << endl;
         int ret = move_toward(m, property._speed, u.GetId(), curr, waypoint, &move);
         if (ret == MT_OK) {
             // Set actual move.
@@ -172,8 +172,10 @@ bool CmdEmitBullet::run(GameEnv *env, CmdReceiver*) {
 
 bool CmdCreate::run(GameEnv *env, CmdReceiver*) {
     // Create a unit at a location
+    std::cout<<"CmdCreate: "<<PrintInfo()<<std::endl;
     if (! env->AddUnit(_tick, _build_type, _p, _player_id)) {
         // If failed, money back!
+        //std::cout<<"failed"<<std::endl;
         env->GetPlayer(_player_id).ChangeResource(_resource_used);
         return false;
     }

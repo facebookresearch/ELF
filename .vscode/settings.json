@@ -85,7 +85,10 @@
         "variant": "cpp",
         "vector": "cpp",
         "__functional_03": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "*.tcc": "cpp",
+        "memory_resource": "cpp",
+        "cinttypes": "cpp"
     },
     "python.pythonPath": "/usr/local/Caskroom/miniconda/base/envs/moRL/bin/python"
 }
