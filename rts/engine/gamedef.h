@@ -15,23 +15,23 @@
 // [TODO]: Make it more modular.
 // Define unit property.
 struct UnitProperty {
-    int _hp, _max_hp;
+    int _hp, _max_hp;  // 当前hp 最大hp
 
-    int _att, _def;
-    int _att_r;
-    float _speed;
+    int _att, _def;    // 攻击力 防御力(不需要)
+    int _att_r;        // 射程
+    float _speed;      // 速度
 
-    // Visualization range.
-    int _vis_r;
+    // Visualization range. 视野
+    int _vis_r;  
 
     int _changed_hp;
     UnitId _damage_from;
 
     // Attributes
-    UnitAttr _attr;
+    UnitAttr _attr;   // 单位类型 （普通/不可攻击）
 
     // All CDs.
-    vector<Cooldown> _cds;
+    vector<Cooldown> _cds;  // CD  MOVE ATTACK GATHER BUILD
 
     // Used for capturing the flag game.
     int _has_flag = 0;

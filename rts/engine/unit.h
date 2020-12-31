@@ -29,10 +29,12 @@ protected:
 
 public:
   Unit() : Unit(INVALID, INVALID, WORKER, PointF(), UnitProperty()) {
+   // std::cout<<"Unit Constructor without args"<<std::endl;
   }
 
   Unit(Tick tick, UnitId id, UnitType t, const PointF &p, const UnitProperty& property)
       : _id(id), _type(t), _p(p), _last_p(p), _built_since(tick), _property(property) {
+      //  std::cout<<"Unit Constructor with args"<<std::endl;
   }
 
   UnitId GetId() const { return _id; }

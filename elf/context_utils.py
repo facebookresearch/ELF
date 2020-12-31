@@ -15,22 +15,22 @@ class ContextArgs:
             call_from = self,
             define_args = [
                 ("num_games", 1024),
-                ("batchsize", 128),
-                ("game_multi", dict(type=int, default=None)),
-                ("T", 6),
-                ("eval", dict(action="store_true")),
-                ("wait_per_group", dict(action="store_true")),
-                ("num_collectors", 0),
-                ("verbose_comm", dict(action="store_true")),
-                ("verbose_collector", dict(action="store_true")),
-                ("mcts_threads", 0),
+                ("batchsize", 128),  # 64
+                ("game_multi", dict(type=int, default=None)),  
+                ("T", 6),  # 20
+                ("eval", dict(action="store_true")),  # False
+                ("wait_per_group", dict(action="store_true")), # False
+                ("num_collectors", 0), 
+                ("verbose_comm", dict(action="store_true")), # False
+                ("verbose_collector", dict(action="store_true")), # False
+                ("mcts_threads", 0),  
                 ("mcts_rollout_per_thread", 1),
-                ("mcts_verbose", dict(action="store_true")),
-                ("mcts_save_tree_filename", ""),
-                ("mcts_verbose_time", dict(action="store_true")),
+                ("mcts_verbose", dict(action="store_true")), # False
+                ("mcts_save_tree_filename", ""), 
+                ("mcts_verbose_time", dict(action="store_true")), # False
 
-                ("mcts_use_prior", dict(action="store_true")),
-                ("mcts_pseudo_games", 0),
+                ("mcts_use_prior", dict(action="store_true")), # False
+                ("mcts_pseudo_games", 0), 
                 ("mcts_pick_method", "most_visited"),
             ],
             on_get_args = self._on_get_args

@@ -121,6 +121,9 @@ struct PointF {
             y *= mag / l;
         }
         return *this;
+        // x = 0.1f;
+        // y = 0.1f;
+        // return *this;
     }
 
     PointF &operator+=(const PointF &p) {

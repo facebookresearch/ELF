@@ -11,7 +11,9 @@
 
 GameEnv::GameEnv() {
     // Load the map.
+   // std::cout<<"-------GameEnv-----------"<<std::endl;
     _map = unique_ptr<RTSMap>(new RTSMap());
+    // std::cout<<"-------GameEnv-----------"<<std::endl;
     _game_counter = -1;
     Reset();
 }
@@ -35,6 +37,7 @@ void GameEnv::ClearAllPlayers() {
 }
 
 void GameEnv::Reset() {
+    //std::cout<<"-------Reset-----------"<<std::endl;
     _map->ClearMap();
     _next_unit_id = 0;
     _winner_id = INVALID;
@@ -121,6 +124,7 @@ bool GameEnv::RemoveUnit(const UnitId &id) {
     return true;
 }
 
+// 找到最近的基地
 UnitId GameEnv::FindClosestBase(PlayerId player_id) const {
     // Find closest base. [TODO]: Not efficient here.
     for (auto it = _units.begin(); it != _units.end(); ++it) {
@@ -318,6 +322,18 @@ string GameEnv::PrintDebugInfo() const {
     for (const auto& player : _players) {
         ss << "Player " << player.GetId() << endl;
         ss << player.PrintHeuristicsCache() << endl;
+    }
+
+    ss << _map->Draw() << endl;
+    ss << _map->PrintDebugInfo() << endl;
+    return ss.str();
+}
+
+string GameEnv::PrintPlayerInfo() const {
+    stringstream ss;
+    for (const auto& player : _players) {
+        ss << "Player " << player.GetId() << endl;
+        ss << player.PrintInfo()<< endl;
     }
 
     ss << _map->Draw() << endl;

@@ -223,12 +223,14 @@ class GCWrapper:
             gpu(int): gpu to use.
             params(dict): additional parameters
         '''
-
+ 
+        #self.isPrint = False
         self._init_collectors(GC, co, descriptions, use_gpu=gpu is not None, use_numpy=use_numpy)
         self.gpu = gpu
         self.inputs_gpu = [ self.inputs[gids[0]].cpu2gpu(gpu=gpu) for gids in self.gpu2gid ] if gpu is not None else None
         self.params = params
         self._cb = { }
+        
 
     def _init_collectors(self, GC, co, descriptions, use_gpu=True, use_numpy=False):
         num_games = co.num_games
@@ -236,7 +238,7 @@ class GCWrapper:
         total_batchsize = 0
         for key, v in descriptions.items():
             total_batchsize += v["batchsize"]
-
+        
         if co.num_collectors > 0:
             num_recv_thread = co.num_collectors
         else:
@@ -269,11 +271,11 @@ class GCWrapper:
             for i in range(num_recv_thread):
                 group_id = GC.AddCollectors(batchsize, len(gpu2gid) - 1, timeout_usec, gstat)
 
-                input_batch = Batch.load(GC, "input", input, group_id, use_gpu=use_gpu, use_numpy=use_numpy)
+                input_batch = Batch.load(GC, "input", input, group_id, use_gpu=use_gpu, use_numpy=use_numpy) # 加载输入Batch
                 input_batch.batchsize = batchsize
                 inputs.append(input_batch)
                 if reply is not None:
-                    reply_batch = Batch.load(GC, "reply", reply, group_id, use_gpu=use_gpu, use_numpy=use_numpy)
+                    reply_batch = Batch.load(GC, "reply", reply, group_id, use_gpu=use_gpu, use_numpy=use_numpy) # 加载回复Batch
                     reply_batch.batchsize= batchsize
                     replies.append(reply_batch)
                 else:
@@ -298,6 +300,14 @@ class GCWrapper:
         self.name2idx = name2idx
         self.gid2gpu = gid2gpu
         self.gpu2gid = gpu2gid
+        # if not self.isPrint:
+            # print("idx2name",self.idx2name)
+            # print("name2idx",self.name2idx)
+            # print("gid2gpu",self.gid2gpu)
+            # print("gpu2gid",self.gpu2gid)
+            # print("num_collectors: ",co.num_collectors)
+            # self.isPrint = True
+
 
     def reg_has_callback(self, key):
         return key in self.name2idx
@@ -311,6 +321,7 @@ class GCWrapper:
 
     def reg_callback(self, key, cb):
         '''Set callback function for key
+        注册回调函数，有符合要求和数量的Batch到来时，调用对应的函数
 
         Parameters:
             key(str): the key used to register the callback function.
@@ -332,7 +343,7 @@ class GCWrapper:
             raise ValueError("info.gid[%d] is not in callback functions" % infos.gid)
 
         if self._cb[infos.gid] is None:
-            return;
+            return
 
         batchsize = len(infos.s)
 

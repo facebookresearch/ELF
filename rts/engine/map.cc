@@ -11,11 +11,14 @@
 
 // Constructor
 RTSMap::RTSMap() {
+    //std::cout<<"RTSMAP"<<std::endl;
     load_default_map();
     reset_intermediates();
 }
 
 bool RTSMap::find_two_nearby_empty_slots(const std::function<uint16_t(int)>& f, int *x1, int *y1, int *x2, int *y2, int i) const {
+   // std::cout<<"find_two_nearby_empty_slots"<<std::endl;
+    
     const int kDist = 4;
     int kMaxTrial = 100;
     for (int j = 0; j < kMaxTrial; ++j) {
@@ -31,8 +34,10 @@ bool RTSMap::find_two_nearby_empty_slots(const std::function<uint16_t(int)>& f, 
 }
 
 bool RTSMap::GenerateImpassable(const std::function<uint16_t(int)>& f, int nImpassable) {
-    _map.assign(_m * _n * _level, MapSlot());
-    for (int i = 0; i < nImpassable; ++i) {
+    _map.assign(_m * _n * _level, MapSlot());   //初始化地图格子 类型为NORMAL
+
+    
+    for (int i = 0; i < nImpassable; ++i) {  //随机选一些格子，设为IMPOSSIBLE
         const int x = f(_m);
         const int y = f(_n);
         _map[GetLoc(Coord(x, y))].type = IMPASSABLE;
@@ -115,9 +120,10 @@ bool RTSMap::GenerateTDMaze(const std::function<uint16_t(int)>& f) {
 bool RTSMap::GenerateMap(const std::function<uint16_t(int)>& f, int nImpassable, int num_player, int init_resource) {
     // load a map for now simple format.
     bool success;
+  // std::cout<<"-------GenerateMap nImpassable = "<<nImpassable<<std::endl; 
     do {
         success = true;
-        GenerateImpassable(f, nImpassable);
+        GenerateImpassable(f, nImpassable);  //初始化地图格子，并随机设置一些点为IMPOSSIBLE
         int x1 = -1, y1 = -1, x2 = -1, y2 = -1;
         _infos.clear();
         for (PlayerId i = 0; i < num_player; ++i) {
@@ -149,10 +155,17 @@ void RTSMap::reset_intermediates() {
 }
 
 void RTSMap::load_default_map() {
-    _m = 20;
-    _n = 20;
+    // _m = 20;
+    // _n = 20;
+    // _level = 1;
+    // _map.assign(_m * _n * _level, MapSlot());
+
+    _m = 70;
+    _n = 70;
     _level = 1;
     _map.assign(_m * _n * _level, MapSlot());
+
+
 }
 
 void RTSMap::precompute_all_pair_distances() {
@@ -162,8 +175,9 @@ void RTSMap::precompute_all_pair_distances() {
     // once for each map, we could just use it.
 }
 
+// 增加单位 
 bool RTSMap::AddUnit(const UnitId &id, const PointF& new_p) {
-    if (_locality.Exists(id)) return false;
+    if (_locality.Exists(id)) return false;  // 已有该单位，不可添加
     if (! _locality.IsEmpty(new_p, kUnitRadius, INVALID)) return false;
 
     _locality.Add(id, new_p, kUnitRadius);
@@ -204,7 +218,9 @@ vector<Loc> RTSMap::GetSight(const Loc& loc, int range) const {
     const int xmax = std::min(_m - 1, c.x + range);
 
     for (int x = xmin; x <= xmax; ++x) {
-        const int yrange = range - std::abs(c.x  - x);
+        //const int yrange = range - std::abs(c.x  - x);
+        const int x_1 = std::abs(c.x - x);
+        const int yrange = std::sqrt(range*range - x_1*x_1);
         const int ymin = std::max(0, c.y - yrange);
         const int ymax = std::min(_n - 1, c.y + yrange);
         for (int y = ymin; y <= ymax; ++y) {

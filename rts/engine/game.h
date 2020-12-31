@@ -28,7 +28,7 @@ public:
     ~RTSStateExtend();
 
     // Function used in GameLoop
-    bool Init() override;
+    bool Init(bool isPrint) override;
     void PreAct() override;
     void IncTick() override;
 

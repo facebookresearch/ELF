@@ -51,7 +51,7 @@ protected:
     Tick _tick, _start_tick;
 
     // Main id.
-    UnitId _id;
+    UnitId _id;  //执行命令的单位ID
 
 public:
     explicit CmdBase(UnitId iid = INVALID) {
@@ -108,8 +108,8 @@ public:
 // Durative commands. They do not directly change the game state, but issue other immediate commands.
 class CmdDurative : public CmdBase {
 protected:
-    bool _done;
-    virtual bool run(const GameEnv&, CmdReceiver *) { return true; }
+    bool _done;   // 是否完成
+    virtual bool run(const GameEnv&, CmdReceiver *) { return true; }  //命令的执行方法
 
 public:
     explicit CmdDurative(UnitId id = INVALID) : CmdBase(id), _done(false) { }

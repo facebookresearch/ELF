@@ -89,6 +89,7 @@ public:
 
     // Initialize different units for this game.
     void InitGameDef() {
+        //std::cout<<"----------InitGameDef-------"<<std::endl;
         _gamedef.Init();
     }
     const GameDef &GetGameDef() const { return _gamedef; }
@@ -174,6 +175,8 @@ public:
     uint64_t CurrentHashCode() const;
 
     string PrintDebugInfo() const;
+
+    string PrintPlayerInfo() const;
     ~GameEnv() { }
 
     // Some utility function to pick first from units in a group.

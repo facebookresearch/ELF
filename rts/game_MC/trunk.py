@@ -16,6 +16,7 @@ class MiniRTSNet(Model):
         super(MiniRTSNet, self).__init__(args)
         self._init(args)
         self.output1d = output1d
+        #self.isPrint = False
 
     def _init(self, args):
         self.m = args.params.get("num_planes_per_time_stamp", 13)
@@ -64,7 +65,13 @@ class MiniRTSNet(Model):
     def forward(self, input):
         # BN and LeakyReLU are from Wendy's code.
         x = input.view(input.size(0), self.input_channel, self.mapy, self.mapx)
-
+        # if not self.isPrint:
+        #     print("input size: ",input.size())
+        #     print("input: ",input)
+        #     print("x size:",x.size())
+        #     print("x: ",x)
+        #     print("Net",self)
+        #     self.isPrint = True
         counts = Counter()
         for i in range(len(self.arch)):
             if self.arch[i] == "c":
@@ -78,5 +85,10 @@ class MiniRTSNet(Model):
 
         if self.output1d:
             x = x.view(x.size(0), -1)
-
-        return x
+        
+        # if not self.isPrint:
+        #     print("x",x)
+        #     print("x.size ",x.size())
+        #     self.isPrint = True
+        
+        return x     # 64 x 550

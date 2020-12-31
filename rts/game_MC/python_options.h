@@ -22,6 +22,12 @@ struct GameState {
     using State = GameState;
     using Data = GameState;
 
+    /**
+     * 测试获取基地位置信息
+     * */
+     //float base_x, base_y;
+
+
     int32_t id;
     int32_t seq;
     int32_t game_counter;
@@ -52,7 +58,7 @@ struct GameState {
     std::vector<int64_t> uloc, tloc;
     std::vector<int64_t> bt, ct;
 
-    // Also we need to save distributions.
+    // Also we need to save distributions.  概率？
     std::vector<float> uloc_prob, tloc_prob;
     std::vector<float> bt_prob, ct_prob;
 
@@ -133,6 +139,7 @@ struct GameState {
 
     // These fields are used to exchange with Python side using tensor interface.
     DECLARE_FIELD(GameState, id, a, V, pi, last_r, s, rv, terminal, seq, game_counter, last_terminal, uloc, tloc, bt, ct, uloc_prob, tloc_prob, bt_prob, ct_prob, reduced_s, reduced_next_s);
+    //DECLARE_FIELD(GameState, id, a, V, pi, last_r, s, rv, terminal, seq, game_counter, last_terminal, uloc, tloc, bt, ct, uloc_prob, tloc_prob, bt_prob, ct_prob, reduced_s, reduced_next_s,base_x,base_y);
     REGISTER_PYBIND_FIELDS(id);
 };
 

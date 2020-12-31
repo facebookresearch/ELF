@@ -71,21 +71,21 @@ struct PythonOptions {
     int map_size_x, map_size_y;
 
     // Maximum unit command you could send per action.
-    int max_unit_cmd;
+    int max_unit_cmd;  // 1
 
     // Max tick.
-    int max_tick;
+    int max_tick;  // 30000
 
     // Random seed to use. seed = 0 mean uses time(NULL).
     // If seed != 0, then each simulation thread will use a seed which is a deterministic function
     // of PythonOption.seed and the thread id.
-    int seed;
+    int seed;  // 0
 
-    bool shuffle_player;
+    bool shuffle_player;  // false 
 
     int game_name;
     // [TODO] put handicap to TD.
-    int handicap_level;
+    int handicap_level;  // 0
 
     PythonOptions()
       : simulation_type(ST_NORMAL), map_size_x(20), map_size_y(20), max_unit_cmd(10), max_tick(30000), seed(0), shuffle_player(false), game_name(0), handicap_level(0) {

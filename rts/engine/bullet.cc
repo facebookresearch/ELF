@@ -9,7 +9,8 @@
 #include "bullet.h"
 #include "cmd_specific.gen.h"
 
-static constexpr float kDistBullet = 0.3;
+//static constexpr float kDistBullet = 0.3;  // 子弹的体积？
+static constexpr float kDistBullet = 0.003;  // 子弹的体积？
 
 string Bullet::Draw() const {
     return make_string("u", _p, _state);
@@ -17,6 +18,7 @@ string Bullet::Draw() const {
 
 // Unlike Unit, we don't do Act then PerformAct since collision check is not needed.
 CmdBPtr Bullet::Forward(const RTSMap&, const Units& units) {
+    
     // First check whether the attacker is dead, if so, remove _id_from to avoid issues.
     auto self_it = units.find(_id_from);
     if (self_it == units.end()) _id_from = INVALID;
@@ -40,7 +42,7 @@ CmdBPtr Bullet::Forward(const RTSMap&, const Units& units) {
     if (_target_id != INVALID) {
         auto it = units.find(_target_id);
         if (it == units.end()) {
-            // The target is destroyed, destroy itself.
+            // The target is destroyed, destroy itself. 目标已经被摧毁，销毁子弹
             _state = BULLET_DONE;
             return CmdBPtr();
         }
@@ -55,25 +57,26 @@ CmdBPtr Bullet::Forward(const RTSMap&, const Units& units) {
 
     float dist_sqr = PointF::L2Sqr(_p, target);
 
-    if (dist_sqr < kDistBullet * kDistBullet) {
+    if (dist_sqr < kDistBullet * kDistBullet) {  // 如果子弹击中目标
         // Hit the target.
         _state = BULLET_EXPLODE1;
         if (_target_id != INVALID) {
-            return CmdBPtr(new CmdMeleeAttack(_id_from, _target_id, _att));
+            return CmdBPtr(new CmdMeleeAttack(_id_from, _target_id, _att)); // 造成一次攻击
         }
-    } else {
+    } else {  // 子弹飞向目标
         // Fly
         // [TODO]: Randomize the flying procedure (e.g., curvy tracking).
-        PointF diff;
+        PointF diff;  // 从 _p 指向 target 的方向
 
         // Here it has to be true, otherwise there is something wrong.
         if (! PointF::Diff(target, _p, &diff)) {
             cout << "Bullet::Forward, target or _p is invalid! Target: " << target << " _p:" << _p << endl;
             return CmdBPtr();
         }
-
-        diff.Trunc(_speed);
-        _p += diff;
+        
+        diff.Trunc(_speed); // 移动的距离
+        //std::cout<<"dist: "<<diff.x*diff.x + diff.y*diff.y<<std::endl;
+        _p += diff;  // 更新子弹位置
     }
     return CmdBPtr();
 }

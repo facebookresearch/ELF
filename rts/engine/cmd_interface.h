@@ -58,7 +58,7 @@ struct CmdInput {
 
     void ApplyEnv(const GameEnv &env) {
         // Check unit id.
-        id = env.GetMap().GetClosestUnitId(unit_loc, 1.0);
+        id = env.GetMap().GetClosestUnitId(unit_loc, 1.0);  
         target = env.GetMap().GetClosestUnitId(p, 1.0);
         base = INVALID;
         if (type == CI_GATHER && id != INVALID) base = env.FindClosestBase(Player::ExtractPlayerId(id));
