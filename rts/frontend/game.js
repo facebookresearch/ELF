@@ -483,10 +483,10 @@ var targets = load_sprites({
 });
 
 sprites["WORKER"] = load_sprites({
-    "up" : [myrange(9, 12), [7]],
-    "down" : [myrange(9, 12), [4]],
-    "left" : [myrange(9, 12), [5]],
-    "right" : [myrange(9, 12), [6]],
+    "up" : [[9], [4]],
+    "down" : [[9], [7]],
+    "left" : [[9], [5]],
+    "right" : [[9], [6]],
     "_file" : "imgs/People4.png",
     "_sizes" : [32, 32]
 });
