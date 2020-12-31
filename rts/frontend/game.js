@@ -466,10 +466,10 @@ sprites["BASE"] = load_sprites({
 });
 // 兵营
 sprites["BARRACKS"] = load_sprites({
-    //"up" : [myrange(15, 22), [9]],
+    "up" : [[9], [0]],
     "down": [[9], [0]],
-    //"left": [[20], myrange(2, 9)],
-    //"right": [[21], myrange(2, 9)],
+    "left": [[9], [0]],
+    "right": [[9], [0]],
     "_file" : "imgs/tiles.png",
     "_sizes" : [32, 32]
 });
