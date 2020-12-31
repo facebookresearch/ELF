@@ -28,6 +28,7 @@ static constexpr float kBuildDist = 1;
 static constexpr float kGatherDistSqr = kGatherDist * kGatherDist;
 static constexpr float kBuildDistSqr = kBuildDist * kBuildDist;
 
+static bool find_nearby_empty_place(const RTSMap &m, const PointF &curr, PointF *p_nearby);
 /*
 CMD_DURATIVE(Attack, UnitId, target);
     Durative attack. Will first move to target until in attack range. Then it issues melee attack if melee, and emits a bullet if ranged.
@@ -42,6 +43,7 @@ CMD_DURATIVE(Gather, UnitId, base, UnitId, resource, int, state = 0);
 
 //////////// Durative Action ///////////////////////
 bool CmdMove::run(const GameEnv &env, CmdReceiver *receiver) {
+    //std::cout<<this->PrintInfo()<<std::endl;
     const Unit *u = env.GetUnit(_id);
     if (u == nullptr) return false;
 
@@ -52,43 +54,80 @@ bool CmdMove::run(const GameEnv &env, CmdReceiver *receiver) {
 
 // ----- Attack
 // Attack cmd.target_id
+// 持续攻击应该改成单发攻击？
 bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
-    const Unit *u = env.GetUnit(_id);
+   // std::cout<<this->PrintInfo()<<std::endl;
+    const Unit *u = env.GetUnit(_id); // 执行命令的单位
     if (u == nullptr) return false;
 
-    const Unit *target = env.GetUnit(_target);
-    const Player &player = env.GetPlayer(u->GetPlayerId());
+    const Unit *target = env.GetUnit(_target);  // 攻击目标单位
+    const Player &player = env.GetPlayer(u->GetPlayerId()); // 执行命令单位的玩家
 
     if (target == nullptr || (player.GetPrivilege() == PV_NORMAL && ! player.FilterWithFOW(*target)))  {
         // The goal is destroyed or is out of FOW, back to idle.
         // FilterWithFOW is checked if the agent is not a KNOW_ALL agent.
-        // For example, for AI, they could cheat and attack wherever they want.
-        // For normal player you cannot attack a Unit outside the FOW.
-        //
+        // For example, for AI, they could cheat and attack wherever they want. AI无视FOW
+        // For normal player you cannot attack a Unit outside the FOW.  玩家无法攻击FOW外的敌方单位
+        // 
+        if(u->GetUnitType() == BARRACKS){
+            // 如果是导弹，目标失活后直接销毁？
+            receiver->SendCmd(CmdIPtr(new CmdOnDeadUnit(_id, _id)));  
+        }
         _done = true;
         return true;
     }
 
     //const RTSMap &m = env.GetMap();
-    const UnitProperty &property = u->GetProperty();
-    const PointF &curr = u->GetPointF();
-    const PointF &target_p = target->GetPointF();
+    const UnitProperty &property = u->GetProperty();  
+    const PointF &curr = u->GetPointF();  // 执行单位位置
+    const PointF &target_p = target->GetPointF(); // 目标单位位置
 
-    int dist_sqr_to_enemy = PointF::L2Sqr(curr, target_p);
-    bool in_attack_range = (dist_sqr_to_enemy <= property._att_r * property._att_r);
+    int dist_sqr_to_enemy = PointF::L2Sqr(curr, target_p);  // 距离
+    bool in_attack_range = (dist_sqr_to_enemy <= property._att_r * property._att_r);  // 判断是否在攻击范围内
     // cout << "[" << _id << "] dist_sqr_to_enemy[" << _last_cmd.target_id << "] = " << dist_sqr_to_enemy << endl;
-
-    // Otherwise attack.
-    if (property.CD(CD_ATTACK).Passed(_tick) && in_attack_range) {
+    
+    // Otherwise attack.  
+    if (property.CD(CD_ATTACK).Passed(_tick) && in_attack_range) {   // 如果目标在攻击范围内且攻击就绪
         // Melee delivers attack immediately, long-range will deliver attack via bullet.
+        // if (property._att_r <= 1.0) {
+        //     receiver->SendCmd(CmdIPtr(new CmdMeleeAttack(_id, _target, -property._att)));
+        // } else {
+        //     receiver->SendCmd(CmdIPtr(new CmdEmitBullet(_id, _target, curr, -property._att, 0.1)));
+        // }
+        // receiver->SendCmd(CmdIPtr(new CmdCDStart(_id, CD_ATTACK)));  // 重置攻击CD
+        /**
+         *  飞机攻击
+         *  锁定目标
+         *  发射导弹
+         * */
+        if(u->GetUnitType() == WORKER){  // 如果是飞机
+              // 制造一个导弹
+              PointF build_p;  //创造导弹的地点
+              const RTSMap &m = env.GetMap();
+              build_p.SetInvalid();
+              find_nearby_empty_place(m, curr, &build_p);
+              if (! build_p.IsInvalid()) {
+                    receiver->SendCmd(CmdIPtr(new CmdCreate(_id, BARRACKS, build_p, u->GetPlayerId(), 0)));
+                    _done = true;
+                }
+                return true;
+        }
+
         if (property._att_r <= 1.0) {
             receiver->SendCmd(CmdIPtr(new CmdMeleeAttack(_id, _target, -property._att)));
         } else {
-            receiver->SendCmd(CmdIPtr(new CmdEmitBullet(_id, _target, curr, -property._att, 0.2)));
+            receiver->SendCmd(CmdIPtr(new CmdEmitBullet(_id, _target, curr, -property._att, 0.1)));
         }
-        receiver->SendCmd(CmdIPtr(new CmdCDStart(_id, CD_ATTACK)));
-    } else if (! in_attack_range) {
-        micro_move(_tick, *u, env, target_p, receiver);
+        receiver->SendCmd(CmdIPtr(new CmdCDStart(_id, CD_ATTACK)));  // 重置攻击CD
+        if(u->GetUnitType() == BARRACKS){ // 导弹执行攻击后销毁
+            receiver->SendCmd(CmdIPtr(new CmdOnDeadUnit(_id, _id)));  
+        }
+    } else if (! in_attack_range) {  
+       if(u->GetUnitType() == BARRACKS){
+           micro_move(_tick, *u, env, target_p, receiver);   // 如果是导弹不在攻击范围内时移动单位接近攻击目标
+       }else{
+           _done = true;
+       }
     }
 
     // In both case, continue this action.
@@ -169,6 +208,7 @@ static bool find_nearby_empty_place(const RTSMap &m, const PointF &curr, PointF 
 }
 
 bool CmdBuild::run(const GameEnv &env, CmdReceiver *receiver) {
+    //cout << "CmdBuild cmd = " << PrintInfo() << endl;
     const Unit *u = env.GetUnit(_id);
     if (u == nullptr) return false;
 
@@ -182,8 +222,8 @@ bool CmdBuild::run(const GameEnv &env, CmdReceiver *receiver) {
     // Otherwise move to nearby location of cmd.p and build at cmd.p
     // cout << "Build cd: " << property.CD(CD_BUILD).PrintInfo(tick) << endl;
     switch(_state) {
-        case kMoveToDest:
-            // cout << "build_act stage 0 cmd = " << PrintInfo() << endl;
+        case kMoveToDest:  
+             //cout << "build_act stage 0 cmd = " << PrintInfo() << endl;
             if (_p.IsInvalid() || PointF::L2Sqr(curr, _p) < kBuildDistSqr) {
                 // Note that when we are out of money, the command CmdChangePlayerResource will terminate this command.
                 // cout << "Build cost = " << cost << endl;
@@ -222,27 +262,28 @@ bool CmdMeleeAttack::run(GameEnv *env, CmdReceiver *receiver) {
     Unit *target = env->GetUnit(_target);
     if (target == nullptr) return true;
 
-    UnitProperty &p_target = target->GetProperty();
-    if (p_target.IsDead()) return true;
+    UnitProperty &p_target = target->GetProperty();  // 获取目标属性
+    if (p_target.IsDead()) return true;  // 目标已经被销毁，取消攻击命令
 
-    const auto &target_tp = env->GetGameDef().unit(target->GetUnitType());
+    const auto &target_tp = env->GetGameDef().unit(target->GetUnitType());  // 获得target 单位UnitTemplate
 
     int changed_hp = _att;
     if (changed_hp < 0) {
-        changed_hp += p_target._def;
-        if (changed_hp > 0) changed_hp = 0;
+        changed_hp += p_target._def;  // 考虑目标单位的防御力
+        if (changed_hp > 0) changed_hp = 0;  // 目标收到的伤害值最小不得低于0
     }
 
-    p_target._hp += changed_hp;
+    p_target._hp += changed_hp;  // 修改目标hp
     if (p_target.IsDead()) {
-        receiver->SendCmd(CmdIPtr(new CmdOnDeadUnit(_id, _target)));
+        receiver->SendCmd(CmdIPtr(new CmdOnDeadUnit(_id, _target)));  // 目标死亡，执行环境命令处理目标尸体
     } else if (changed_hp < 0) {
+        // 记录目标收到的伤害
         p_target._changed_hp = changed_hp;
         p_target._damage_from = _id;
-        if (receiver->GetUnitDurativeCmd(_target) == nullptr && target_tp.CmdAllowed(ATTACK)) {
-            // Counter attack.
-            receiver->SendCmd(CmdDPtr(new CmdAttack(_target, _id)));
-        }
+        // if (receiver->GetUnitDurativeCmd(_target) == nullptr && target_tp.CmdAllowed(ATTACK)) {
+        //     // Counter attack.
+        //     receiver->SendCmd(CmdDPtr(new CmdAttack(_target, _id))); // 目标反击（不需要）
+        // }
     }
     return true;
 }

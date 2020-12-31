@@ -76,21 +76,27 @@ void GameDef::Init() {
  *  att_r  攻击距离
  *  vis_r  可视距离
  * *                     cost hp    def  sp att att_r vis_r
+ * *                 cd   move attack gather build
  * */
      
     _units[RESOURCE] = _C(0, 1000, 1000, 0, 0, 0, 0, vector<int>{0, 0, 0, 0}, vector<CmdType>{}, ATTR_INVULNERABLE);
-    _units[WORKER] = _C(50, 50, 0, 0.1, 2, 1, 0, vector<int>{0, 10, 40, 40}, vector<CmdType>{MOVE, ATTACK, BUILD, GATHER});
-    _units[MELEE_ATTACKER] = _C(50, 100, 1, 0.1, 15, 10, 0, vector<int>{0, 15, 0, 0}, vector<CmdType>{MOVE,ATTACK});
-    _units[RANGE_ATTACKER] = _C(100, 50, 0, 0.2, 0, 0, 15, vector<int>{0, 0, 0, 0}, vector<CmdType>{});
-    _units[BARRACKS] = _C(200, 200, 1, 0.0, 0, 0, 0, vector<int>{0, 0, 0, 50}, vector<CmdType>{BUILD});
-    _units[BASE] = _C(500, 500, 2, 0.0, 0, 0, 0, {0, 0, 0, 50}, vector<CmdType>{BUILD});
+    // 飞机 移动 发射导弹
+    _units[WORKER] = _C(1, 100, 0, 0.03, 2, 10, 0, vector<int>{0, 40, 0, 0}, vector<CmdType>{MOVE, ATTACK, BUILD});
+    // 炮塔 攻击
+    _units[MELEE_ATTACKER] = _C(50, 100, 0, 0.1, 10, 20, 0, vector<int>{0, 40, 0, 0}, vector<CmdType>{ATTACK});
+    // 雷达 索敌
+    _units[RANGE_ATTACKER] = _C(100, 100, 0, 0.2, 0, 0, 30, vector<int>{0, 0, 0, 0}, vector<CmdType>{});
+    // 导弹 移动 攻击(攻击范围很小)
+    _units[BARRACKS] = _C(200, 10, 0, 0.03, 10, 0.01, 0, vector<int>{0, 40, 0, 50}, vector<CmdType>{ATTACK});
+    // 保护目标
+    _units[BASE] = _C(500, 500, 0, 0.0, 0, 0, 0, {0, 0, 0, 50}, vector<CmdType>{BUILD});
 
 
 }
 
 vector<pair<CmdBPtr, int> > GameDef::GetInitCmds(const RTSGameOptions&) const{
       vector<pair<CmdBPtr, int> > init_cmds;
-      init_cmds.push_back(make_pair(CmdBPtr(new CmdGenerateMap(INVALID, 0, 200)), 1));  // 障碍 资源 
+      init_cmds.push_back(make_pair(CmdBPtr(new CmdGenerateMap(INVALID, 0, 0)), 1));  // 障碍 资源 
       init_cmds.push_back(make_pair(CmdBPtr(new CmdGenerateUnit(INVALID)), 2));   
       return init_cmds;
 }

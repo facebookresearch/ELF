@@ -79,11 +79,11 @@ static int move_toward(const RTSMap& m, float speed, const UnitId& id,
 
 float micro_move(Tick tick, const Unit& u, const GameEnv &env, const PointF& target, CmdReceiver *receiver) {
     const RTSMap &m = env.GetMap();
-    const PointF &curr = u.GetPointF();
+    const PointF &curr = u.GetPointF();  // 当前位置
     const Player &player = env.GetPlayer(u.GetPlayerId());
 
-    // cout << "Micro_move: Current: " << curr << " Target: " << target << endl;
-    float dist_sqr = PointF::L2Sqr(target, curr);
+    //cout << "Micro_move: Current: " << curr << " Target: " << target << endl;
+    float dist_sqr = PointF::L2Sqr(target, curr); // 距离 （平方）
     const UnitProperty &property = u.GetProperty();
 
     static const int kMaxPlanningIteration = 1000;
@@ -93,9 +93,9 @@ float micro_move(Tick tick, const Unit& u, const GameEnv &env, const PointF& tar
         PointF move;
 
         float dist_sqr = PointF::L2Sqr(curr, target);
-        PointF waypoint = target;
+        PointF waypoint = target; // 找到下一步的格子 waypoint
         bool planning_success = false;
-
+       
         if (dist_sqr > 1.0) {
             // Do path planning.
             Coord first_block;
@@ -107,7 +107,7 @@ float micro_move(Tick tick, const Unit& u, const GameEnv &env, const PointF& tar
                 waypoint.y = first_block.y;
             }
         }
-        // cout << "micro_move: (" << curr << ") -> (" << waypoint << ") planning: " << planning_success << endl;
+        //cout << "micro_move: (" << curr << ") -> (" << waypoint << ") planning: " << planning_success << endl;
         int ret = move_toward(m, property._speed, u.GetId(), curr, waypoint, &move);
         if (ret == MT_OK) {
             // Set actual move.
@@ -119,6 +119,7 @@ float micro_move(Tick tick, const Unit& u, const GameEnv &env, const PointF& tar
             receiver->GetGameStats().RecordFailedMove(tick, 1.0);
         }
     }
+    
     return dist_sqr;
 }
 
@@ -136,6 +137,7 @@ bool CmdDurative::Run(const GameEnv &env, CmdReceiver *receiver) {
 // ============= Commands ==============
 // ----- Move
 bool CmdTacticalMove::run(GameEnv *env, CmdReceiver*) {
+    //std::cout<<"===========CmdTacticalMove========="<<std::endl;
     Unit *u = env->GetUnit(_id);
     if (u == nullptr) return false;
     RTSMap &m = env->GetMap();
@@ -162,16 +164,18 @@ bool CmdEmitBullet::run(GameEnv *env, CmdReceiver*) {
     if (u == nullptr) return false;
 
     // cout << "Bullet: " << micro_cmd.PrintInfo() << endl;
-    Bullet b(_p, _id, _att, _speed);
-    b.SetTargetUnitId(_target);
-    env->AddBullet(b);
+    Bullet b(_p, _id, _att, _speed); // 生成一颗子弹
+    b.SetTargetUnitId(_target);   // 设置子弹的目标
+    env->AddBullet(b);  // 环境中添加这颗子弹
     return true;
 }
 
 bool CmdCreate::run(GameEnv *env, CmdReceiver*) {
     // Create a unit at a location
+    std::cout<<"CmdCreate: "<<PrintInfo()<<std::endl;
     if (! env->AddUnit(_tick, _build_type, _p, _player_id)) {
         // If failed, money back!
+        //std::cout<<"failed"<<std::endl;
         env->GetPlayer(_player_id).ChangeResource(_resource_used);
         return false;
     }

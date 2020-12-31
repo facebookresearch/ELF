@@ -21,21 +21,21 @@ private:
     // Location of the bullet.
     PointF _p;
 
-    // The unit that creates this unit. Bullet does not have its own ids.
-    UnitId _id_from;
+    // The unit that creates this unit. Bullet does not have its own ids.  发出子弹的单位ID
+    UnitId _id_from;  
 
     // Internal state. E.g., some bullets might explode when hitting the target. Different stage of explosion
     // is carried on by _state, which can be used in rendering.
     BulletState _state;
 
-    // The attack it carries.
+    // The attack it carries. 攻击力
     int _att;
 
     // The target id. If INVALID, check target_p
     UnitId _target_id;
     PointF _target_p;
 
-    // The speed it flies.
+    // The speed it flies. 速度
     float _speed;
 
 public:
@@ -56,7 +56,7 @@ public:
     // Get the visualization command.
     string Draw() const;
 
-    // Unlike Unit, we don't do Act then PerformAct since collision check is not needed.
+    // Unlike Unit, we don't do Act then PerformAct since collision check is not needed. 不需要碰撞检测
     // The bullet will deliver microcommand (to inflict damage and other special effects, e.g., slow-down/healing).
     CmdBPtr Forward(const RTSMap &m, const Units& units);
 
