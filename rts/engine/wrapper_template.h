@@ -72,9 +72,6 @@ public:
         wrapper.OnGameInit(&game, more_params,isPrint); //根据PythonOption初始化AI和玩家并添加到游戏中
 
         s.SetGlobalStats(&_gstats);  // 设置游戏状态
-        // if(isPrint){
-        //     std::cout<<"GlobalStats: "<<_gstats.PrintInfo()<<endl;
-        // }
 
         unsigned long int seed = (op.seed == 0 ? time(NULL) : op.seed);
         std::mt19937 rng;

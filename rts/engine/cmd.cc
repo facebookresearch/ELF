@@ -39,16 +39,15 @@ static int move_toward(const RTSMap& m, float speed, const UnitId& id,
 
     if (! PointF::Diff(target, curr, &diff)) return MT_TARGET_INVALID;
     if (std::abs(diff.x) < kDistEps && std::abs(diff.y) < kDistEps) return MT_ARRIVED;
-
     //bool movable = false;
     while (true) {
+        
         diff.Trunc(speed);
         PointF next_p(curr);
         next_p += diff;
 
         bool movable = m.CanPass(next_p, id);
         // cout << "MoveToward [" << id << "]: Try straight: " << next_p << " movable: " << movable << endl;
-
         if (! movable) {
             next_p = curr;
             next_p += diff.CCW90();
@@ -61,6 +60,7 @@ static int move_toward(const RTSMap& m, float speed, const UnitId& id,
             movable = m.CanPass(next_p, id);
             // cout << "MoveToward [" << id << "]: Try CW: " << next_p << " movable: " << movable << endl;
         }
+        
 
         // If we still cannot move, then we reduce the speed.
         if (movable) {
@@ -172,7 +172,7 @@ bool CmdEmitBullet::run(GameEnv *env, CmdReceiver*) {
 
 bool CmdCreate::run(GameEnv *env, CmdReceiver*) {
     // Create a unit at a location
-    std::cout<<"CmdCreate: "<<PrintInfo()<<std::endl;
+    //std::cout<<"CmdCreate: "<<PrintInfo()<<std::endl;
     UnitId u_id ;
     if (! env->AddUnit(_tick, _build_type, _p, _player_id,u_id)) {
         // If failed, money back!
@@ -181,7 +181,7 @@ bool CmdCreate::run(GameEnv *env, CmdReceiver*) {
         return false;
     }
     std::cout<<"CmdCreate u_id: "<< u_id<<std::endl;
-    return true;
+    return u_id;
 }
 
 bool CmdRemove::run(GameEnv *env, CmdReceiver* receiver) {

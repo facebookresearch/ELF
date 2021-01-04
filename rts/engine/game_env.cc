@@ -110,10 +110,9 @@ bool GameEnv::AddUnit(Tick tick, UnitType type, const PointF &p, PlayerId player
     Unit *new_unit = new Unit(tick, new_id, type, p, _gamedef.unit(type)._property);
     _units.insert(make_pair(new_id, unique_ptr<Unit>(new_unit)));
     _map->AddUnit(new_id, p);
-    if(u_id){
-        u_id = new_id;
-        cout<<"AddUnit u_id: "<<u_id<<endl;
-    } 
+    
+    u_id = new_id;
+    //cout<<"AddUnit u_id: "<<u_id<<endl;
 
     _next_unit_id ++;
     return true;
@@ -340,7 +339,7 @@ string GameEnv::PrintPlayerInfo() const {
         ss << player.PrintInfo()<< endl;
     }
 
-    ss << _map->Draw() << endl;
-    ss << _map->PrintDebugInfo() << endl;
+    //ss << _map->Draw() << endl;
+    //ss << _map->PrintDebugInfo() << endl;
     return ss.str();
 }

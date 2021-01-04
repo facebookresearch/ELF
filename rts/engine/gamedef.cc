@@ -17,7 +17,7 @@
  *  att_r  攻击距离
  *  vis_r  可视距离
  * */
-UnitTemplate _C(int cost, int hp, int defense, float speed, int att, int att_r, int vis_r,
+UnitTemplate _C(int cost, int hp, int defense, float speed, int att, float att_r, int vis_r,
         const vector<int> &cds, const vector<CmdType> &l, UnitAttr attr) {
 
     UnitTemplate res;

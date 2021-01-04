@@ -82,7 +82,7 @@ bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
     const PointF &curr = u->GetPointF();  // 执行单位位置
     const PointF &target_p = target->GetPointF(); // 目标单位位置
 
-    int dist_sqr_to_enemy = PointF::L2Sqr(curr, target_p);  // 距离
+    float dist_sqr_to_enemy = PointF::L2Sqr(curr, target_p);  // 距离
     bool in_attack_range = (dist_sqr_to_enemy <= property._att_r * property._att_r);  // 判断是否在攻击范围内
     // cout << "[" << _id << "] dist_sqr_to_enemy[" << _last_cmd.target_id << "] = " << dist_sqr_to_enemy << endl;
     
@@ -100,6 +100,10 @@ bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
          *  锁定目标
          *  发射导弹
          * */
+        // std::cout<<"dist: "<<dist_sqr_to_enemy<<"  real "<<PointF::L2Sqr(curr, target_p)<<std::endl;
+        // std::cout<<"curr: "<<curr<<std::endl;
+        // std::cout<<"target: "<<target_p<<std::endl;
+        // std::cout<<"attack_range: "<<property._att_r<<std::endl;
         if(u->GetUnitType() == WORKER){  // 如果是飞机
               // 制造一个导弹
               PointF build_p;  //创造导弹的地点
@@ -107,9 +111,16 @@ bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
               build_p.SetInvalid();
               find_nearby_empty_place(m, curr, &build_p);
               if (! build_p.IsInvalid()) {
-                    UnitId bullet_id;
-                    
-                    receiver->SendCmd(CmdIPtr(new CmdCreate(_id, BARRACKS, build_p, u->GetPlayerId(), 0)));
+                   // 创造导弹 toDO 载弹量
+                   UnitId rocket_id;
+                   GameEnv& env_temp = const_cast<GameEnv&>(env); // 需要用到GameEnv的方法
+                   if (! env_temp.AddUnit(_tick, BARRACKS, build_p, u->GetPlayerId(),rocket_id)) {
+                        std::cout<<"emit rocket failed"<<std::endl;
+                        return false;
+                    }
+                    //std::cout<<"Rocket ID: "<<rocket_id<<std::endl;
+                    // 发射导弹(让导弹去攻击目标)
+                    receiver->SendCmd(CmdBPtr(new CmdAttack(rocket_id, _target)));
                     _done = true;
                 }
             

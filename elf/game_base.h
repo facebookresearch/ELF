@@ -80,11 +80,11 @@ public:
 
     void MainLoop(const std::atomic_bool *done = nullptr,bool isPrint = false) {
         if(isPrint)
-         std::cout<<"-------MainLoop----------"<<std::endl;
-        _state->Init(isPrint);  // 初始化游戏
+         cout<<"-------MainLoop----------"<<endl;
+        _state->Init(false);  // 初始化游戏
         // if(isPrint){
-        //     std::cout<<"--------Start PleyerInfo"<<std::endl;
-        //     std::cout<<_state->env().PrintPlayerInfo()<<std::endl;
+        //     cout<<"--------Start PleyerInfo"<<endl;
+        //     cout<<_state->env().PrintPlayerInfo()<<endl;
         // }
         while (true) {
             if (Step(done) != GAME_NORMAL) break;
@@ -93,10 +93,7 @@ public:
         // Send message to AIs.
         _act(false, done);
         _game_end();
-        // if(isPrint){
-        //     std::cout<<"--------End PleyerInfo"<<std::endl;
-        //     std::cout<<_state->env().PrintPlayerInfo()<<std::endl;
-        // }
+        
         _state->Finalize();
     }
 

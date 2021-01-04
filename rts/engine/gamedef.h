@@ -18,7 +18,8 @@ struct UnitProperty {
     int _hp, _max_hp;  // 当前hp 最大hp
 
     int _att, _def;    // 攻击力 防御力(不需要)
-    int _att_r;        // 射程
+    //int _att_r;        // 射程
+    float _att_r;        // 射程
     float _speed;      // 速度
 
     // Visualization range. 视野
@@ -73,7 +74,7 @@ struct UnitTemplate {
     }
 };
 
-UnitTemplate _C(int cost, int hp, int defense, float speed, int att, int att_r, int vis_r,
+UnitTemplate _C(int cost, int hp, int defense, float speed, int att, float att_r, int vis_r,
         const vector<int> &cds, const vector<CmdType> &l, UnitAttr attr = ATTR_NORMAL);
 
 class GameEnv;

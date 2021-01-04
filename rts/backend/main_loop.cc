@@ -446,7 +446,7 @@ int main(int argc, char *argv[]) {
         chrono::duration<double> duration = chrono::system_clock::now() - time_start;
         cout << "Total time spent = " << duration.count() << "s" << endl;
         std::cout<<"======MainLoop======="<<std::endl;
-        game.MainLoop();
+        game.MainLoop(nullptr,true);
         /*
             // Load replay etc.
             for (size_t i = 0; i < options.load_replay_filenames.size(); ++i) {
