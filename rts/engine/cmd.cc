@@ -173,12 +173,14 @@ bool CmdEmitBullet::run(GameEnv *env, CmdReceiver*) {
 bool CmdCreate::run(GameEnv *env, CmdReceiver*) {
     // Create a unit at a location
     std::cout<<"CmdCreate: "<<PrintInfo()<<std::endl;
-    if (! env->AddUnit(_tick, _build_type, _p, _player_id)) {
+    UnitId u_id ;
+    if (! env->AddUnit(_tick, _build_type, _p, _player_id,u_id)) {
         // If failed, money back!
         //std::cout<<"failed"<<std::endl;
         env->GetPlayer(_player_id).ChangeResource(_resource_used);
         return false;
     }
+    std::cout<<"CmdCreate u_id: "<< u_id<<std::endl;
     return true;
 }
 

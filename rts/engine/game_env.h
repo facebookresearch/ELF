@@ -135,7 +135,7 @@ public:
     }
 
     // Add and remove units.
-    bool AddUnit(Tick tick, UnitType type, const PointF &p, PlayerId player_id);
+    bool AddUnit(Tick tick, UnitType type, const PointF &p, PlayerId player_id,UnitId &u_id );
     bool RemoveUnit(const UnitId &id);
 
     void AddBullet(const Bullet &b) { _bullets.push_back(b); }

@@ -107,9 +107,12 @@ bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
               build_p.SetInvalid();
               find_nearby_empty_place(m, curr, &build_p);
               if (! build_p.IsInvalid()) {
+                    UnitId bullet_id;
+                    
                     receiver->SendCmd(CmdIPtr(new CmdCreate(_id, BARRACKS, build_p, u->GetPlayerId(), 0)));
                     _done = true;
                 }
+            
                 return true;
         }
 
