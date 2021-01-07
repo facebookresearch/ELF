@@ -44,6 +44,9 @@ struct Fog {
 // KnowAll Player knows everything and can attack objects outside its FOW.
 custom_enum(PlayerPrivilege, PV_NORMAL = 0, PV_KNOW_ALL);
 
+
+typedef  map<UnitId,vector<UnitId> > Targets;
+
 class Player {
 private:
     const RTSMap *_map;
@@ -70,6 +73,11 @@ private:
     // Cache for path planning. If the cache is too old, it will recompute.
     // Loc == INVALID: cannot pass / passable by a straight line (In this case, we return first_block = -1.
     mutable map< pair<Loc, Loc>, pair<Tick, Loc> > _cache;
+   
+    //=====Test=======
+    // 跟踪目标
+    Targets _targets;
+    //vector<UnitId> _targets;
 
 private:
     struct Item {
@@ -129,7 +137,7 @@ public:
 
     string Draw() const;
     void ComputeFOW(const map<UnitId, unique_ptr<Unit> > &units);
-    bool FilterWithFOW(const Unit& u) const;
+    bool FilterWithFOW(const Unit& u) const;  // true--单位在视野内  false--单位在视野外
 
     float GetDistanceSquared(const PointF &p, const Coord &c) const {
         float dx = p.x - c.x;
@@ -160,6 +168,9 @@ public:
         for (auto &fog : _fogs) {
             fog.ResetFog();
         }
+        
+        // Test
+        _targets.clear();
     }
 
     const Fog &GetFog(Loc loc) const { return _fogs[loc]; }
@@ -174,6 +185,16 @@ public:
 
     SERIALIZER(Player, _player_id, _name, _privilege, _resource, _fogs, _heuristics, _cache);
     HASH(Player, _player_id, _privilege, _resource);
+    
+    //跟踪目标的方法
+    map<UnitId,vector<UnitId> >& GetTargets(){return _targets;}  // 返回玩家锁定目标
+    void AddRadar(UnitId radar_id);     // 增加一个雷达 （锁定目标）
+    void RemoveRadar(UnitId radar_id);  // 去除一个雷达  (锁定目标)
+    void AddUnit(UnitId radar_id,UnitId target_id); //锁定
+    bool RemoveUnit(UnitId target_id);  // 解除锁定
+    bool isUnitLocked(UnitId target_id) const;  //查看一个单位是否已经被锁定
+    string PrintTargetInfo(UnitId radar_id = -1) ;
+
 };
 
 STD_HASH(Player);

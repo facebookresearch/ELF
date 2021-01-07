@@ -182,6 +182,14 @@ public:
     // Some utility function to pick first from units in a group.
     static const Unit *PickFirstIdle(const vector<const Unit *> units, const CmdReceiver &receiver);
     static const Unit *PickFirst(const vector<const Unit *> units, const CmdReceiver &receiver, CmdType t) ;
+
+    //用于锁定目标的方法
+    string PrintUnitInfo() const;
+    string PrintTargetsInfo(PlayerId player_id,UnitId radar_id = -1);
+    void UpdateTargets(PlayerId player_id);  // 更新锁定名单
+    bool Lock(PlayerId player_id,UnitId radar_id,UnitId target_id); //指定雷达锁定目标
+    bool UnLock(PlayerId player_id,UnitId target_id);   //解锁一个目标
+    bool CheckUnit(UnitId u_id,UnitType type);  // 检查一个目标是否存在且符合给定类型
 };
 
 class UnitIterator;

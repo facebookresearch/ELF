@@ -343,3 +343,100 @@ string GameEnv::PrintPlayerInfo() const {
     //ss << _map->PrintDebugInfo() << endl;
     return ss.str();
 }
+
+
+// =============追踪目标的方法==============
+string GameEnv::PrintUnitInfo() const {
+    stringstream ss;
+    ss<<"UnitInfo: "<<endl;
+    for(auto& i : _units){
+        ss<<"UnitId: "<<i.first<<" UnitType: "<<i.second->GetUnitType()<<" Pointf: "<<"Player_id: "<<i.second->GetPlayerId()<<endl;
+    }
+    return ss.str();
+}
+
+string GameEnv::PrintTargetsInfo(PlayerId player_id,UnitId radar_id) {
+    // ToDO  查询前要先更新
+    UpdateTargets(player_id);
+    stringstream ss;
+    if(radar_id != -1){
+        //_units.find(radar_id) == _units.end() || _units[radar_id]->GetUnitType() != RANGE_ATTACKER
+      if( !CheckUnit(radar_id,RANGE_ATTACKER) || _units[radar_id]->GetPlayerId() != player_id){   
+            ss<<"---------Failed Invalid RadarId "<<radar_id<<"------------------";
+            return ss.str();
+        }
+    }
+    for( auto& player : _players){
+        if(player.GetId() == player_id ){
+            ss<<player.PrintTargetInfo(radar_id);
+            break;
+        }
+    }
+    return ss.str();
+}
+
+
+void GameEnv::UpdateTargets(PlayerId player_id){
+    for(auto& player : _players){
+        if(player.GetId() == player_id){
+            Targets _targets = player.GetTargets();
+            for(auto r : _targets){
+                if(_units.find(r.first) == _units.end()){  // 雷达失活
+                    player.RemoveRadar(r.first);
+                    continue;
+                }
+                for(auto u : r.second){  // 遍历雷达的所有单位
+                   // 移除所有失活或者离开FOW的单位
+                   if(_units.find(u) == _units.end()){
+                       player.RemoveUnit(u);
+                       continue;
+                   }
+                   // 判断单位是否离开玩家FOW
+                   const Unit * target = GetUnit(u);
+                   if(!player.FilterWithFOW(*target))
+                      player.RemoveUnit(u);
+                }
+            }
+            break;
+        }
+    }
+}
+
+bool GameEnv::CheckUnit(UnitId u_id,UnitType type){
+    return (_units.find(u_id) != _units.end() && _units[u_id]->GetUnitType() == type);  // 单位存在且类型相符
+}
+bool GameEnv::Lock(PlayerId player_id,UnitId radar_id,UnitId target_id){
+    UpdateTargets(player_id);
+    // 判断目标是否合法
+    if(!CheckUnit(target_id,WORKER) && !CheckUnit(target_id,BARRACKS) && !CheckUnit(target_id,BASE)){ //如果目标不存在或不是导弹、飞机
+        cout<<"--------Invalid Target------------"<<endl;
+        return false;
+    }
+    // 判断雷达是否合法
+    if(!CheckUnit(radar_id,RANGE_ATTACKER) || _units[radar_id]->GetPlayerId()!= player_id){
+        cout<<"-----------Invalid Radar--------------"<<endl;
+        return false;
+    }
+    for(auto& player : _players){
+        if(player.GetId() == player_id){
+            player.AddUnit(radar_id,target_id); //锁定目标
+            return true;
+        }
+    }
+    return false;
+}
+
+bool GameEnv::UnLock(PlayerId player_id,UnitId target_id){
+    cout<<"Unlock---UnitId:"<<target_id<<endl;
+    UpdateTargets(player_id);
+    for(auto & player: _players){
+        if(player.GetId() == player_id){
+            return player.RemoveUnit(target_id);
+            
+        }
+    }
+    return false;
+}
+
+
+

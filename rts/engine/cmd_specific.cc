@@ -29,6 +29,12 @@ static constexpr float kGatherDistSqr = kGatherDist * kGatherDist;
 static constexpr float kBuildDistSqr = kBuildDist * kBuildDist;
 
 static bool find_nearby_empty_place(const RTSMap &m, const PointF &curr, PointF *p_nearby);
+
+// 按照一定的规则确定这次攻击是否生效
+bool isHit(float distance,float att_r){
+   return distance < att_r * att_r;  //射程内判定击中
+}
+
 /*
 CMD_DURATIVE(Attack, UnitId, target);
     Durative attack. Will first move to target until in attack range. Then it issues melee attack if melee, and emits a bullet if ranged.
@@ -57,8 +63,17 @@ bool CmdMove::run(const GameEnv &env, CmdReceiver *receiver) {
 // 持续攻击应该改成单发攻击？
 bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
    // std::cout<<this->PrintInfo()<<std::endl;
+    GameEnv& env_temp = const_cast<GameEnv&>(env); // 需要用到GameEnv的方法
     const Unit *u = env.GetUnit(_id); // 执行命令的单位
     if (u == nullptr) return false;
+    // 判断弹药量
+    if(!(u->GetProperty().round == -1 || u->GetProperty().round >0)){
+        std::cout<<"Out of ammunition"<<std::endl;  
+        _done = true;  // 弹药耗尽，无法继续攻击
+        return true;
+    }
+    //clock_t startTime,endTime;
+    
 
     const Unit *target = env.GetUnit(_target);  // 攻击目标单位
     const Player &player = env.GetPlayer(u->GetPlayerId()); // 执行命令单位的玩家
@@ -88,6 +103,7 @@ bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
     
     // Otherwise attack.  
     if (property.CD(CD_ATTACK).Passed(_tick) && in_attack_range) {   // 如果目标在攻击范围内且攻击就绪
+       
         // Melee delivers attack immediately, long-range will deliver attack via bullet.
         // if (property._att_r <= 1.0) {
         //     receiver->SendCmd(CmdIPtr(new CmdMeleeAttack(_id, _target, -property._att)));
@@ -95,15 +111,15 @@ bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
         //     receiver->SendCmd(CmdIPtr(new CmdEmitBullet(_id, _target, curr, -property._att, 0.1)));
         // }
         // receiver->SendCmd(CmdIPtr(new CmdCDStart(_id, CD_ATTACK)));  // 重置攻击CD
+       
+
         /**
          *  飞机攻击
          *  锁定目标
          *  发射导弹
          * */
-        // std::cout<<"dist: "<<dist_sqr_to_enemy<<"  real "<<PointF::L2Sqr(curr, target_p)<<std::endl;
-        // std::cout<<"curr: "<<curr<<std::endl;
-        // std::cout<<"target: "<<target_p<<std::endl;
-        // std::cout<<"attack_range: "<<property._att_r<<std::endl;
+        
+        
         if(u->GetUnitType() == WORKER){  // 如果是飞机
               // 制造一个导弹
               PointF build_p;  //创造导弹的地点
@@ -111,27 +127,60 @@ bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
               build_p.SetInvalid();
               find_nearby_empty_place(m, curr, &build_p);
               if (! build_p.IsInvalid()) {
-                   // 创造导弹 toDO 载弹量
+                   // 创造导弹 
                    UnitId rocket_id;
-                   GameEnv& env_temp = const_cast<GameEnv&>(env); // 需要用到GameEnv的方法
+                   
                    if (! env_temp.AddUnit(_tick, BARRACKS, build_p, u->GetPlayerId(),rocket_id)) {
                         std::cout<<"emit rocket failed"<<std::endl;
                         return false;
                     }
-                    //std::cout<<"Rocket ID: "<<rocket_id<<std::endl;
+                    //载弹量 -1
+                    --env_temp.GetUnit(_id)->GetProperty().round;
                     // 发射导弹(让导弹去攻击目标)
                     receiver->SendCmd(CmdBPtr(new CmdAttack(rocket_id, _target)));
                     _done = true;
                 }
             
                 return true;
-        }
+        }else if(u->GetUnitType() == RANGE_ATTACKER){  // 如果是雷达
+            // 攻击命令改为锁定目标
+            env_temp.UpdateTargets(player.GetId());   // 先更新锁定目标列表
+            
+            if(!player.isUnitLocked(_target)){
+                //锁定目标
+                env_temp.Lock(u->GetPlayerId(),u->GetId(),_target);
+            }
+             std::cout<<env_temp.PrintTargetsInfo(u->GetPlayerId())<<std::endl;
+            _done = true;
+            return true;
+        } else if(u->GetUnitType() == MELEE_ATTACKER){  // 炮塔
+            // 测试CD
+            
+            //std::cout<<"Start_Tick "<<_start_tick<<" curr_tick "<< _tick<<" Durative: "<<_tick - _start_tick<<endl;
+            
 
-        if (property._att_r <= 1.0) {
-            receiver->SendCmd(CmdIPtr(new CmdMeleeAttack(_id, _target, -property._att)));
-        } else {
+            // 先判断目标是不是锁定目标
+            env_temp.UpdateTargets(player.GetId());
+            if(!player.isUnitLocked(_target)){
+                //std::cout<<"Target not Lock"<<std::endl;
+                _done = true;
+                return true;
+            }
+            //载弹量 -1 
+            --env_temp.GetUnit(_id)->GetProperty().round;
             receiver->SendCmd(CmdIPtr(new CmdEmitBullet(_id, _target, curr, -property._att, 0.1)));
+            
+            receiver->SendCmd(CmdIPtr(new CmdCDStart(_id, CD_ATTACK)));  // 重置攻击CD
+            _done = true;
+            return true;
         }
+        receiver->SendCmd(CmdIPtr(new CmdMeleeAttack(_id, _target, -property._att)));  // 实际地减少目标的生命值
+        
+        // if (property._att_r <= 1.0) {
+        //     receiver->SendCmd(CmdIPtr(new CmdMeleeAttack(_id, _target, -property._att)));
+        // } else {
+        //     receiver->SendCmd(CmdIPtr(new CmdEmitBullet(_id, _target, curr, -property._att, 0.1)));
+        // }
         receiver->SendCmd(CmdIPtr(new CmdCDStart(_id, CD_ATTACK)));  // 重置攻击CD
         if(u->GetUnitType() == BARRACKS){ // 导弹执行攻击后销毁
             receiver->SendCmd(CmdIPtr(new CmdOnDeadUnit(_id, _id)));  
@@ -143,6 +192,7 @@ bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
            _done = true;
        }
     }
+    
 
     // In both case, continue this action.
     return true;
@@ -274,20 +324,36 @@ bool CmdBuild::run(const GameEnv &env, CmdReceiver *receiver) {
 
 bool CmdMeleeAttack::run(GameEnv *env, CmdReceiver *receiver) {
     Unit *target = env->GetUnit(_target);
+    Unit *u = env->GetUnit(_id);
+
     if (target == nullptr) return true;
 
     UnitProperty &p_target = target->GetProperty();  // 获取目标属性
     if (p_target.IsDead()) return true;  // 目标已经被销毁，取消攻击命令
 
     const auto &target_tp = env->GetGameDef().unit(target->GetUnitType());  // 获得target 单位UnitTemplate
-
+    //计算伤害
     int changed_hp = _att;
-    if (changed_hp < 0) {
-        changed_hp += p_target._def;  // 考虑目标单位的防御力
-        if (changed_hp > 0) changed_hp = 0;  // 目标收到的伤害值最小不得低于0
+    // if (changed_hp < 0) {  //单位不设防御力
+    //     changed_hp += p_target._def;  // 考虑目标单位的防御力
+    //     if (changed_hp > 0) changed_hp = 0;  // 目标收到的伤害值最小不得低于0
+    // }
+    float dist_tower_to_enemy = PointF::L2Sqr(u->GetPointF(), target->GetPointF());  // 距离
+    //std::cout<<"distance: "<< dist_tower_to_enemy<<std::endl;
+    if(!isHit(dist_tower_to_enemy,u->GetProperty()._att_r)){  //判定是否击中目标
+       // changed_hp = 0; 
+       // std::cout<<"======攻击无效========="<<std::endl;
+        return true;  //判定这次攻击无效
     }
 
-    p_target._hp += changed_hp;  // 修改目标hp
+    p_target._hp += changed_hp;  // 修改目标hp 击中目标
+    //解除目标的锁定
+    // Player& player = env->GetPlayer(u->GetPlayerId());
+    // env->UpdateTargets(player.GetId());
+    // if(player.isUnitLocked(_target)){
+    //     env->UnLock(player.GetId(),_target);
+    // }
+    
     if (p_target.IsDead()) {
         receiver->SendCmd(CmdIPtr(new CmdOnDeadUnit(_id, _target)));  // 目标死亡，执行环境命令处理目标尸体
     } else if (changed_hp < 0) {
@@ -332,3 +398,4 @@ bool CmdHarvest::run(GameEnv *env, CmdReceiver *receiver) {
     if (p_target.IsDead()) receiver->SendCmd(CmdIPtr(new CmdRemove(_target)));
     return true;
 }
+

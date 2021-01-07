@@ -180,7 +180,7 @@ bool CmdCreate::run(GameEnv *env, CmdReceiver*) {
         env->GetPlayer(_player_id).ChangeResource(_resource_used);
         return false;
     }
-    std::cout<<"CmdCreate u_id: "<< u_id<<std::endl;
+   //std::cout<<"CmdCreate u_id: "<< u_id<<std::endl;
     return u_id;
 }
 

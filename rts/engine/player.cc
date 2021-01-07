@@ -372,3 +372,93 @@ string Player::PrintHeuristicsCache() const {
     }
     return ss.str();
 }
+
+
+
+// 打印锁定目标信息
+string Player::PrintTargetInfo(UnitId radar_id) {
+    stringstream ss;
+    ss << "=========TargetInfo========="<<endl;
+    if(radar_id == -1){   // 输出所有雷达的锁定目标数组
+        for(auto r : _targets){
+            ss<<"-------Radar "<<r.first<<"---------"<<endl;
+            for(auto u : r.second)
+              ss<<u<<"  ";
+            ss<<endl;
+        }
+    }else{
+        if(_targets.find(radar_id) == _targets.end()){
+            ss<<"-------Radar Not Record--------"<<endl;
+            return ss.str();
+        }
+        ss<<"-------Radar "<<radar_id<<"---------"<<endl;
+        for(auto u : _targets[radar_id])
+          ss<<u<<" ";
+        ss<<endl;
+
+    }
+    return ss.str();
+}
+
+void Player::AddRadar(UnitId radar_id){
+   if(_targets.find(radar_id) != _targets.end()){
+       std::cout<<"Radar Already Exist!"<<std::endl;
+       return;
+   }
+   _targets[radar_id] = vector<UnitId>();
+}
+
+void Player::RemoveRadar(UnitId radar_id){
+    if(_targets.find(radar_id) == _targets.end()){
+       std::cout<<"Radar Not Exist!"<<std::endl;
+       return;
+    }
+    vector<UnitId>().swap(_targets[radar_id]);
+    _targets.erase(radar_id);
+    return;
+}
+
+bool Player::isUnitLocked(UnitId target_id) const {
+    for(auto r : _targets){
+        for(auto u : r.second){
+            if(u == target_id)
+              return true;
+        }
+    }
+    return false;
+}
+
+void Player::AddUnit(UnitId radar_id,UnitId target_id){
+    if(isUnitLocked(target_id)){
+        cout<<"Target "<<target_id<<" Already Locked"<<endl;
+        return;
+    }
+    if(_targets.find(radar_id) == _targets.end()){ 
+        AddRadar(radar_id);
+    }
+    if(_targets[radar_id].size()<8){
+        _targets[radar_id].push_back(target_id);
+        return;
+    }else{
+         _targets[radar_id].pop_back();   // 移除最晚锁定的单位，是否有更好的方法？
+         _targets[radar_id].push_back(target_id);
+         return;
+    } 
+}
+
+bool Player::RemoveUnit(UnitId target_id){
+    //cout<<"RemoveUnit UnitId "<<target_id<<endl;
+    for(auto &r : _targets){
+        for(auto it = r.second.begin(); it!=r.second.end();++it){
+            if(*it == target_id){
+               // cout<<"erase radarid:"<<r.first<<" id:"<<*it<<endl;
+                r.second.erase(it);
+               // cout<<"After erase"<<PrintTargetInfo()<<endl;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+

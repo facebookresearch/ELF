@@ -70,10 +70,21 @@ public:
     void SetState(S *s) { _state = s; }
 
     GameResult Step(const std::atomic_bool *done = nullptr) {
+        //clock_t startTime,endTime;
+       // startTime = clock();
+        
+        //Tick start_tick = _state->receiver().GetTick();
+       // std::cout<<"Tick: "<<start_tick<<std::endl;
+
+        
+        
         _state->PreAct();
         _act(true, done);
         GameResult res = _state->PostAct();
         _state->IncTick();
+
+        //endTime = clock();
+        //std::cout << "The run time between "<<start_tick<<" and "<< _state->receiver().GetTick()<<" is: " <<(double)(endTime - startTime) / CLOCKS_PER_SEC << "s" << std::endl;
 
         return res;
     }
