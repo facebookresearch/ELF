@@ -72,15 +72,13 @@ public:
     GameResult Step(const std::atomic_bool *done = nullptr) {
         //clock_t startTime,endTime;
        // startTime = clock();
-        
-        //Tick start_tick = _state->receiver().GetTick();
-       // std::cout<<"Tick: "<<start_tick<<std::endl;
-
-        
-        
+        //cout<<"Before PreAct() Tick: "<< _state->receiver().GetTick()<<endl;   
         _state->PreAct();
+        //cout<<"After PreAct() Tick: "<< _state->receiver().GetTick()<<endl;  
         _act(true, done);
+        //cout<<"After _act() Tick: "<< _state->receiver().GetTick()<<endl; 
         GameResult res = _state->PostAct();
+        //cout<<"After PostAct() Tick: "<< _state->receiver().GetTick()<<endl; 
         _state->IncTick();
 
         //endTime = clock();
@@ -93,14 +91,12 @@ public:
         if(isPrint)
          cout<<"-------MainLoop----------"<<endl;
         _state->Init(false);  // 初始化游戏
-        // if(isPrint){
-        //     cout<<"--------Start PleyerInfo"<<endl;
-        //     cout<<_state->env().PrintPlayerInfo()<<endl;
-        // }
+        
+        // 游戏循环
         while (true) {
-            if (Step(done) != GAME_NORMAL) break;
-            if (done != nullptr && done->load()) break;
-        }
+            if (Step(done) != GAME_NORMAL) break;   // 如果游戏异常，结束循环
+            if (done != nullptr && done->load()) break; 
+        } 
         // Send message to AIs.
         _act(false, done);
         _game_end();

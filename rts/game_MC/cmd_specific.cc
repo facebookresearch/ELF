@@ -54,21 +54,42 @@ bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
     const PlayerId player_id = 0;
     const PlayerId enemy_id = 1;
     // 保护目标
-    _CREATE(BASE, PointF(34, 34), player_id);
+    _CREATE(BASE, PointF(35, 35), player_id);
     // 雷达
-    _CREATE(RANGE_ATTACKER,PointF(45,25),player_id);
-    _CREATE(RANGE_ATTACKER,PointF(25,25),player_id);
-    _CREATE(RANGE_ATTACKER,PointF(34,45),player_id);
+    _CREATE(RANGE_ATTACKER,PointF(36,34.8),player_id);
+    _CREATE(RANGE_ATTACKER,PointF(34,34.8),player_id);
+    
+    
     // 炮台
-    _CREATE(MELEE_ATTACKER,PointF(40,40),player_id);
-    _CREATE(MELEE_ATTACKER,PointF(40,30),player_id);
-    _CREATE(MELEE_ATTACKER,PointF(30,40),player_id);
-    _CREATE(MELEE_ATTACKER,PointF(30,30),player_id);
+    // B1
+    _CREATE(MELEE_ATTACKER,PointF(29.0122,34.4522),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(29.30155,33.0899),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(29.9549,31.86105),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(30.9217,30.85995),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(32.12695,30.1641),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(33.47735,29.8274),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(34.86825,29.87595),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(36.19185,30.30605),player_id);
+    // B2
+    _CREATE(MELEE_ATTACKER,PointF(40.9878,34.4522),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(40.69845,33.0899),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(40.0451,31.86105),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(39.0783,30.85995),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(37.87305,30.1641),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(36.52265,29.8274),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(35.13175,29.87595),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(33.80815,30.30605),player_id);
+    
 
-    //
-     //_CREATE(WORKER,PointF(50,50),player_id);
-     //_CREATE(BARRACKS,PointF(55,55),player_id);
-      _CHANGE_RES(player_id, 200000000);
+    // _CREATE(MELEE_ATTACKER,PointF(40,40),player_id);
+    // _CREATE(MELEE_ATTACKER,PointF(40,30),player_id);
+    // _CREATE(MELEE_ATTACKER,PointF(30,40),player_id);
+    // _CREATE(MELEE_ATTACKER,PointF(30,30),player_id);
+
+    // //
+    //  //_CREATE(WORKER,PointF(50,50),player_id);
+    //  //_CREATE(BARRACKS,PointF(55,55),player_id);
+    //   _CHANGE_RES(player_id, 200000000);
 
 
 
@@ -77,9 +98,9 @@ bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
     // enemy
     _CREATE(BASE,PointF(1, 1),enemy_id);
     // 敌方飞机
-    _CREATE(WORKER,PointF(34,20),enemy_id);
-    _CREATE(WORKER,PointF(20,36),enemy_id);
-    _CREATE(WORKER,PointF(24,35),enemy_id);
+    // _CREATE(WORKER,PointF(34,20),enemy_id);
+    // _CREATE(WORKER,PointF(20,36),enemy_id);
+    // _CREATE(WORKER,PointF(24,35),enemy_id);
     
     return true;
 

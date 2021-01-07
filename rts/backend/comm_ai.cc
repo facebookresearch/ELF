@@ -33,6 +33,7 @@ void WebCtrl::Receive(const RTSState &s, vector<CmdBPtr> *cmds, vector<UICmd> *u
 ///////////////////////////// Web TCP AI ////////////////////////////////
 bool TCPAI::Act(const State &s, RTSMCAction *action, const std::atomic_bool *) {
     // First we send the visualization.
+    //std::cout<<"=======TCPAI Act======="<<std::endl;
     json game;
     _ctrl.Extract(s, &game);
     _ctrl.Send(game.dump());

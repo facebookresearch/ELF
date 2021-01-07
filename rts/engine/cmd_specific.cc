@@ -52,7 +52,7 @@ bool CmdMove::run(const GameEnv &env, CmdReceiver *receiver) {
     //std::cout<<this->PrintInfo()<<std::endl;
     const Unit *u = env.GetUnit(_id);
     if (u == nullptr) return false;
-
+    
     // cout << "id: " << u.GetId() << " from " << u.GetPointF() << " to " << u.GetLastCmd().p << endl;
     if (micro_move(_tick, *u, env, _p, receiver) < kDistEps) _done = true;
     return true;
@@ -348,11 +348,11 @@ bool CmdMeleeAttack::run(GameEnv *env, CmdReceiver *receiver) {
 
     p_target._hp += changed_hp;  // 修改目标hp 击中目标
     //解除目标的锁定
-    // Player& player = env->GetPlayer(u->GetPlayerId());
-    // env->UpdateTargets(player.GetId());
-    // if(player.isUnitLocked(_target)){
-    //     env->UnLock(player.GetId(),_target);
-    // }
+    Player& player = env->GetPlayer(u->GetPlayerId());
+    env->UpdateTargets(player.GetId());
+    if(player.isUnitLocked(_target)){
+        env->UnLock(player.GetId(),_target);
+    }
     
     if (p_target.IsDead()) {
         receiver->SendCmd(CmdIPtr(new CmdOnDeadUnit(_id, _target)));  // 目标死亡，执行环境命令处理目标尸体
@@ -399,3 +399,14 @@ bool CmdHarvest::run(GameEnv *env, CmdReceiver *receiver) {
     return true;
 }
 
+
+// 敌方目标移动指令
+bool CmdEnemyMove::run(const GameEnv &env, CmdReceiver *receiver) {
+    //std::cout<<this->PrintInfo()<<std::endl;
+    // const Unit *u = env.GetUnit(_id);
+    // if (u == nullptr) return false;
+
+    // // cout << "id: " << u.GetId() << " from " << u.GetPointF() << " to " << u.GetLastCmd().p << endl;
+    // if (micro_move(_tick, *u, env, _p, receiver) < kDistEps) _done = true;
+    return true;
+}

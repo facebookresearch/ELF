@@ -91,6 +91,7 @@ bool RTSStateExtend::Init(bool isPrint = false) {
 }
 
 void RTSStateExtend::PreAct() {
+   // cout<<"RTSStateExtend::PreAct"<<endl;
     _time_loop_start = chrono::system_clock::now();
     _clock.SetStartPoint();
 
@@ -119,6 +120,7 @@ void RTSStateExtend::PreAct() {
     // Check bots input.
     // Check if we want to peek a specific tick, if so, we print them out.
     if (_tick_prompt) {
+        cout<<"_tick_prompt"<<endl;
         RTSState::env().Visualize();
         if (_output_stream) {
             *_output_stream << RTSState::env().PrintDebugInfo() << flush;

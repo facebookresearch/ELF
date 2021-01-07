@@ -19,7 +19,7 @@ typedef function<CmdInput (const Unit&, char hotkey, const PointF& p, const Unit
 class RawToCmd {
 private:
     // Internal status.
-    PlayerId _player_id;
+    PlayerId _player_id;  
     set<UnitId> _sel_unit_ids;
     char _last_key;
 

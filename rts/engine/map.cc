@@ -207,7 +207,14 @@ UnitId RTSMap::GetClosestUnitId(const PointF& p, float max_r) const {
 }
 
 set<UnitId> RTSMap::GetUnitIdInRegion(const PointF &left_top, const PointF &right_bottom) const {
-    return _locality.KeysInRegion(left_top, right_bottom);
+    set<UnitId> units = _locality.KeysInRegion(left_top, right_bottom);
+    std::cout<<"Units Selecte: ";
+    for(auto it = units.begin();it!=units.end();++it){
+        std::cout<<*it<<" ";
+    }
+    std::cout<<std::endl;
+    return units;
+    //return _locality.KeysInRegion(left_top, right_bottom);
 }
 
 vector<Loc> RTSMap::GetSight(const Loc& loc, int range) const {

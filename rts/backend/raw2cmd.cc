@@ -22,9 +22,11 @@ CmdInput move_event(const Unit &u, char /*hotkey*/, const PointF& p, const UnitI
 
 CmdInput attack_event(const Unit &u, char /*hotkey*/, const PointF& p, const UnitId &target_id, const GameEnv&) {
     // Don't need to check hotkey since there is only one type of action.
-    // cout << "In attack command [" << hotkey << "] @" << p << " target: " << target_id << endl;
+    //cout << "In attack command ["  << "] @" << p << " target: " << target_id << endl;
     return CmdInput(CmdInput::CI_ATTACK, u.GetId(), p, target_id);
 }
+
+
 
 CmdInput gather_event(const Unit &u, char /*hotkey*/, const PointF& p, const UnitId &target_id, const GameEnv& env) {
     // Don't need to check hotkey since there is only one type of action.
@@ -156,21 +158,21 @@ RawMsgStatus RawToCmd::Process(Tick tick, const GameEnv &env, const string&s, ve
 
     if (! is_mouse_motion(c)) _last_key = c;
 
-    // cout << "#Hotkey " << _hotkey_maps.size() << "  player_id = " << _player_id << " _last_key = " << _last_key
-    //     << " #selected = " << selected.size() << " #prev-selected: " << _sel_unit_ids.size() << endl;
+     //cout << "#Hotkey " << _hotkey_maps.size() << "  player_id = " << _player_id << " _last_key = " << _last_key
+     //    << " #selected = " << selected.size() << " #prev-selected: " << _sel_unit_ids.size() << endl;
 
     // Rules:
     //   1. we cannot control other player's units.
     //   2. we cannot have friendly fire (enforced in the callback function)
     bool cmd_success = false;
-
-    if (! _sel_unit_ids.empty() && selected.size() <= 1) {
+    //if(! _sel_unit_ids.empty() && selected.size() >1 && _last_key == 'a')
+    if (! _sel_unit_ids.empty() && selected.size() <= 1) {  
         UnitId id = (selected.empty() ? INVALID : *selected.begin());
         auto it_key = _hotkey_maps.find(_last_key);
         if (it_key != _hotkey_maps.end()) {
             EventResp f = it_key->second;
             for (auto it = _sel_unit_ids.begin(); it != _sel_unit_ids.end(); ++it) {
-                // cout << "Deal with unit" << *it << endl << flush;
+                 cout << "Deal with unit" << *it << endl << flush;
                 if (Player::ExtractPlayerId(*it) != _player_id) continue;
 
                 // Only command our unit.
@@ -188,7 +190,9 @@ RawMsgStatus RawToCmd::Process(Tick tick, const GameEnv &env, const string&s, ve
                 cmd_success = true;
             }
         }
-    }
+     }
+
+    
 
     // Command not issued. if it is a mouse event, simply reselect the unit (or deselect)
     if (! cmd_success && is_mouse_motion(c)) select_new_units(selected);
