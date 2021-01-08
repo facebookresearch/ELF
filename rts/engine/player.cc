@@ -70,9 +70,18 @@ void Player::ComputeFOW(const Units &units) {
         if (ExtractPlayerId(u->GetId()) == _player_id) {
             const int vis_r = u->GetProperty()._vis_r;
             Loc l = _map->GetLoc(u->GetPointF());
-            for (const Loc &loc : _map->GetSight(l, vis_r)) {
-                clear_regions.insert(loc);
+            if( !u->GetProperty().towards.IsInvalid() ){  //计算扇形FOW
+               for(const Loc &loc : _map->GetSight(l, vis_r,u->GetProperty().towards ) ) {
+                   clear_regions.insert(loc);
+               }
+            } else{
+               for(const Loc &loc : _map->GetSight(l, vis_r) ) {
+                   clear_regions.insert(loc);
+               }
             }
+            // for (const Loc &loc : _map->GetSight(l, vis_r)) {
+            //     clear_regions.insert(loc);
+            // }
         }
     }
 

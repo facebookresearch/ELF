@@ -78,6 +78,7 @@ public:
         _act(true, done);
         //cout<<"After _act() Tick: "<< _state->receiver().GetTick()<<endl; 
         GameResult res = _state->PostAct();
+        //cout<<"res: "<<res<<endl;
         //cout<<"After PostAct() Tick: "<< _state->receiver().GetTick()<<endl; 
         _state->IncTick();
 

@@ -52,7 +52,9 @@ bool CmdMove::run(const GameEnv &env, CmdReceiver *receiver) {
     //std::cout<<this->PrintInfo()<<std::endl;
     const Unit *u = env.GetUnit(_id);
     if (u == nullptr) return false;
-    
+    if(u->GetUnitType() == WORKER){
+        
+    }
     // cout << "id: " << u.GetId() << " from " << u.GetPointF() << " to " << u.GetLastCmd().p << endl;
     if (micro_move(_tick, *u, env, _p, receiver) < kDistEps) _done = true;
     return true;

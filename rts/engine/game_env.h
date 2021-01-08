@@ -142,6 +142,11 @@ public:
 
     // Check if one player's base has been destroyed.
     PlayerId CheckBase(UnitType base_type) const;
+     // 修改判断胜负的方法
+    // 判断谁赢并返回玩家ID
+    PlayerId CheckWinner(UnitType base_type) const;
+
+
 
     // Getter and setter for winner_id, termination.
     void SetWinnerId(PlayerId winner_id) { _winner_id = winner_id; }
@@ -190,6 +195,8 @@ public:
     bool Lock(PlayerId player_id,UnitId radar_id,UnitId target_id); //指定雷达锁定目标
     bool UnLock(PlayerId player_id,UnitId target_id);   //解锁一个目标
     bool CheckUnit(UnitId u_id,UnitType type);  // 检查一个目标是否存在且符合给定类型
+
+   
 };
 
 class UnitIterator;

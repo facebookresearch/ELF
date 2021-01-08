@@ -172,7 +172,7 @@ RawMsgStatus RawToCmd::Process(Tick tick, const GameEnv &env, const string&s, ve
         if (it_key != _hotkey_maps.end()) {
             EventResp f = it_key->second;
             for (auto it = _sel_unit_ids.begin(); it != _sel_unit_ids.end(); ++it) {
-                 cout << "Deal with unit" << *it << endl << flush;
+                // cout << "Deal with unit" << *it << endl << flush;
                 if (Player::ExtractPlayerId(*it) != _player_id) continue;
 
                 // Only command our unit.

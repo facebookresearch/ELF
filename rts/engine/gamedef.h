@@ -38,6 +38,7 @@ struct UnitProperty {
     int _has_flag = 0;
 
     int round; //载弹量
+    PointF towards = PointF(); //朝向，用于计算FOW 和(0,0)组成一组向量
 
     inline bool IsDead() const { return _hp <= 0; }
     inline Cooldown &CD(CDType t) { return _cds[t]; }
@@ -58,7 +59,7 @@ struct UnitProperty {
 
     UnitProperty()
         : _hp(0), _max_hp(0), _att(0), _def(0), _att_r(0),
-        _speed(0.0), _vis_r(0), _changed_hp(0), _damage_from(INVALID), _attr(ATTR_NORMAL),  _cds(NUM_COOLDOWN),round(0) { }
+        _speed(0.0), _vis_r(0), _changed_hp(0), _damage_from(INVALID), _attr(ATTR_NORMAL),  _cds(NUM_COOLDOWN),round(0),towards(PointF()) { }
 
     SERIALIZER(UnitProperty, _hp, _max_hp, _att, _def, _att_r, _speed, _vis_r, _changed_hp, _damage_from, _attr, _cds);
     HASH(UnitProperty, _hp, _max_hp, _att, _def, _att_r, _speed, _vis_r, _changed_hp, _damage_from, _attr, _cds);

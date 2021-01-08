@@ -155,6 +155,35 @@ PlayerId GameEnv::CheckBase(UnitType base_type) const{
     }
     return last_player_has_base;
 }
+ PlayerId GameEnv::CheckWinner(UnitType base_type) const {
+     PlayerId player_id  = 0;
+     PlayerId enemy_id = 1;
+     PlayerId base_player_id = INVALID;
+     bool hasEnemyUnit = false;
+     if(_units.size()== 0){
+        return INVALID;
+     }
+     //std::cout<<"_units.size() : "<<_units.size()<<std::endl;
+     for (auto it = _units.begin(); it != _units.end(); ++it){
+          const Unit *u = it->second.get();
+           if (u->GetUnitType() == base_type){
+               base_player_id = u->GetPlayerId();
+           }
+           if(!hasEnemyUnit){  //如果还没有检测到敌方单位，持续判断
+               if(((u->GetUnitType() == WORKER || u->GetUnitType() == BARRACKS) && u->GetPlayerId() == enemy_id))
+                    hasEnemyUnit = true;
+           }        
+     }
+     if(base_player_id == INVALID){  //只有玩家有基地，基地被摧毁则认为玩家失败，游戏结束
+        return enemy_id;  
+     }else if(!hasEnemyUnit){  //玩家基地存在，不存在敌方单位，玩家胜利
+        return player_id;   
+     } 
+     return INVALID;    // 游戏还未结束
+ }
+
+
+
 
 bool GameEnv::FindEmptyPlaceNearby(const PointF &p, int l1_radius, PointF *res_p) const {
     // Find an empty place by simple local grid search.

@@ -123,6 +123,8 @@ float micro_move(Tick tick, const Unit& u, const GameEnv &env, const PointF& tar
     return dist_sqr;
 }
 
+
+
 bool CmdDurative::Run(const GameEnv &env, CmdReceiver *receiver) {
     // If we run this command for the first time, register it in the receiver.
     if (_start_tick == _tick) receiver->StartDurativeCmd(this);
