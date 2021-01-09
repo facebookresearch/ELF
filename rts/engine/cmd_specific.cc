@@ -15,8 +15,10 @@
 #include "cmd.gen.h"
 #include "cmd_specific.gen.h"
 
+#define PI  3.14159
 
-#define PI 3.14159
+
+
 static const int kMoveToRes = 0;
 static const int kGathering = 1;
 static const int kMoveToBase = 2;
@@ -51,6 +53,9 @@ CMD_DURATIVE(Gather, UnitId, base, UnitId, resource, int, state = 0);
 
 //map<UnitId,pair<float ,PointF>> Points;  //每个飞机进入圆周运动后，存储围绕的圆心和当前角度 <角度、圆心位置>
 
+//////////// Durative Action ///////////////////////
+// 飞机移动
+
 //map<UnitId,pair<float,PointF>> Points; 
 // 根据 单位位置、 圆心位置 、 以及夹角余弦，求向量与 y = target.y 的 夹角
 float Count_Radians(const PointF& u,const PointF target,float cosTheta){
@@ -64,66 +69,170 @@ float Count_Radians(const PointF& u,const PointF target,float cosTheta){
 }
 
 
-   // 计算飞机圆周运动的位置
-     float Circular_X(float x, float r, float radians)
-    {
-        return (x + r * cosf(radians));
-    }
-     float Circular_Y(float y, float r, float radians)
-    {
-        return (y - r * sinf(radians));
-    }
 
-//////////// Durative Action ///////////////////////
+// 计算飞机圆周运动的位置
+float Circular_X(float x, float r, float radians){return (x + r * cosf(radians));}
+float Circular_Y(float y, float r, float radians){return (y - r * sinf(radians));}
+
+// 给定单位，目标和半径，计算圆心
+PointF CountPoint(const Unit& u,const PointF& target,float r){
+   PointF point = PointF();
+   PointF u_t = PointF(target.x - u.GetPointF().x, target.y - u.GetPointF().y);
+   float distance_to_target = sqrt(PointF::L2Sqr(u.GetPointF(),target));
+   float u_t_dot_x = u_t.x * 1.0f ;
+   float cosTheta = u_t_dot_x / r;
+   float theta = Count_Radians(target,u.GetPointF(),u_t_dot_x / distance_to_target); //计算u的角度
+   
+   float rate = r/distance_to_target; //半径和距离的比值
+   point.x = u.GetPointF().x + rate * (target.x - u.GetPointF().x);
+   point.y = u.GetPointF().y + rate * (target.y - u.GetPointF().y); 
+  
+//    cout<<"u_t 角度为 "<<theta/PI * 180.0f<<endl; 
+   //PointF u_t_circle = PointF();
+//    cout<<" point: "<<point<<" 与u的距离"<<sqrt(PointF::L2Sqr(u.GetPointF(),point))<<endl;
+//    PointF u_p = PointF(point.x - u.GetPointF().x, point.y - u.GetPointF().y);
+//    u_p /= r;
+//    u_t /= distance_to_target;
+//    cout<<"向量  u_p: "<<u_p<<"    u_t: "<<u_t<<endl;
+   // 计算圆心位置
+   theta += PI/2; //旋转90度
+   if(theta >= 2*PI){
+               // 控制radians的范围
+               theta = theta - 2*PI;
+    }
+    point.x = Circular_X(u.GetPointF().x,r,theta);
+    point.y = Circular_Y(u.GetPointF().y,r,theta);
+    // PointF u_p = PointF(point.x - u.GetPointF().x, point.y - u.GetPointF().y);
+    // float u_p_dot_u_t = u_p.x * u_t.x + u_p.y * u_t.y;
+    // cout<<"dot: "<<u_p_dot_u_t<<"  distance: "<<sqrt(PointF::L2Sqr(u.GetPointF(),point))<<endl;
+    return point;
+}
+
+
+
+PointF circle_move(Tick tick, const Unit& u, const GameEnv &env,  PointF& target, CmdReceiver *receiver) {
+     GameEnv& env_temp = const_cast<GameEnv&>(env); // 需要用到GameEnv的方法
+    //cout << "circle_move: Current: " << curr << " Target: " << target << endl;
+    map<UnitId,pair<float,pair<PointF,PointF>> >& Points = env_temp.GetTrace();
+      //float r = sqrt(PointF::L2Sqr(u.GetPointF(),target));
+        //    if(Points.find(u.GetId()) != Points.end()){
+        //        cout<<"trace target: "<<Points[u.GetId()].second<<" trace radians: "<<Points[u.GetId()].first<<endl;
+        //    }
+        const float r = 0.1835f; //飞机圆周运动半径
+           
+           if(Points.find(u.GetId()) == Points.end() || Points[u.GetId()].second.first != target ){ //开始绕新的圆心进行半圆周运动
+             //计算初始角度 进入角度为180度 360度出
+             
+             PointF point = CountPoint(u,target,r);
+
+             //float theta = PI; 
+            //  cout<<"Points[u->GetId()].second: "<<Points[u.GetId()].second<<" _p: "<<target<<endl;
+             PointF p_u = PointF(u.GetPointF().x-point.x, u.GetPointF().y-point.y);  // p指向U的向量
+             float p_u_dot_x = p_u.x * 1.0f ;
+             
+             float cosTheta = p_u_dot_x / r;
+             float theta = Count_Radians(u.GetPointF(),point,p_u_dot_x / r); //计算u的角度
+             cout<<"现在开始绕 "<<point<<" 做圆周运动"<<" 进入角度为 "<<theta/PI * 180.0f<<endl;
+             
+             Points[u.GetId()] = make_pair(theta,make_pair(target,point) );
+             
+           }
+           
+           float radians = Points[u.GetId()].first; //当前角度
+           //cout<<"current theta: "<<radians/PI * 180.0f<<" "<<radians<<endl;
+           radians += u.GetProperty()._speed / r;  // 飞机移动角度
+           //cout<<"new theta: "<<radians/PI * 180.0f<<" " <<radians<<endl;
+           if(radians >= 2*PI){
+               // 控制radians的范围
+               radians = radians - 2*PI;
+          }
+         // cout<<"New theta: "<< radians/PI * 180.0f<<endl;
+          //cout<<"Move: "<<Circular_X(target)
+         // cout<<"圆心: "<<Points[u.GetId()].second.second<<endl;
+         // cout<<"move.x"<<Circular_X(Points[u.GetId()].second.second.x,r,radians)<<"  move.y: "<<Circular_Y(Points[u.GetId()].second.second.y,r,radians)<<endl;
+          //cout<<"Points[u.GetId()].second.second: "<<Points[u.GetId()].second.second<<" r: "<<r<<" radians: "<<radians<<endl;
+          PointF towards = PointF(u.GetPointF().x,u.GetPointF().y);
+          PointF move = PointF(Circular_X(Points[u.GetId()].second.second.x,r,radians),Circular_Y(Points[u.GetId()].second.second.y,r,radians)); //计算更新的位置
+          towards.x = move.x - towards.x;
+          towards.y = move.y - towards.y;
+         // cout<<"move to: "<<move<<" 角度"<<radians/PI * 180.0f<<" 弧度： "<<radians<<endl;
+           receiver->SendCmd(CmdIPtr(new CmdTacticalMove(u.GetId(), move))); //移动飞机
+           Points[u.GetId()].first = radians; //更新角度
+         
+          // return u.GetProperty()._speed / r;  //返回移动的弧度
+          return towards;
+}
+
+
+bool Return(Tick tick, const Unit& u, const GameEnv &env,  PointF& towards, CmdReceiver *receiver){
+   //GameEnv& env_temp = const_cast<GameEnv&>(env); // 需要用到GameEnv的方法
+   //找到下一步的位置
+   
+   PointF move = PointF();
+   move.x = u.GetPointF().x;
+   move.y = u.GetPointF().y;
+   move.x += towards.x;
+   move.y += towards.y;
+   int x = env.GetMap().GetXSize();
+   int y = env.GetMap().GetYSize();
+   if(move.x < 0 || move.x > x || move.y <0 || move.y > y){
+       return false;  //超出边界
+   }else{
+       receiver->SendCmd(CmdIPtr(new CmdTacticalMove(u.GetId(), move))); //移动飞机
+       return true;
+   }
+   
+}
+
+//
+
 bool CmdMove::run(const GameEnv &env, CmdReceiver *receiver) {
     //std::cout<<this->PrintInfo()<<std::endl;
     const Unit *u = env.GetUnit(_id);
    //const float r = 0.1835; // 半径
     if (u == nullptr) return false;
     if(u->GetUnitType() == WORKER){
-        GameEnv& env_temp = const_cast<GameEnv&>(env); // 需要用到GameEnv的方法
+
        float distance_to_target = PointF::L2Sqr(u->GetPointF(),_p);
        float r = sqrt(distance_to_target);
-       cout<<"distance_to_target: "<<distance_to_target<<endl;
+       //cout<<"distance_to_target: "<<distance_to_target<<endl;
        //PointF towards = PointF();
-    //    if(distance_to_target > 0.2){ //如果与目标的距离大于2km，直线向目标飞行
-    //        micro_move(_tick, *u, env, _p, receiver); 
-    //    }else{
-           // Test 绕目标做圆周运动
-           map<UnitId,pair<float,PointF> >& Points = env_temp.GetTrace();
-           if(Points.find(u->GetId()) != Points.end()){
-               cout<<"trace target: "<<Points[u->GetId()].second<<" trace radians: "<<Points[u->GetId()].first<<endl;
-           }
+       if(isReturn){
+        if(!Return(_tick, *u, env, towards, receiver)){
+            receiver->SendCmd(CmdIPtr(new CmdOnDeadUnit(_id, _id))); //销毁飞机
+        }    
+       }else{
 
-           if(Points.find(u->GetId()) == Points.end() || Points[u->GetId()].second != _p ){ //开始绕新的圆心进行半圆周运动
-             //计算初始角度 进入角度为180度 360度出
-             cout<<"Points[u->GetId()].second: "<<Points[u->GetId()].second<<" _p: "<<_p<<endl;
-             PointF t_u = PointF(u->GetPointF().x-_p.x, u->GetPointF().y-_p.y);  // t指向U的向量
-             float t_u_dot_x = t_u.x * 1.0f ;
-             
-             float cosTheta = t_u_dot_x / r;
-             float theta = Count_Radians(u->GetPointF(),_p,t_u_dot_x / r); //计算u的角度
-             cout<<"现在开始绕 "<<_p<<" 做圆周运动"<<" 进入角度为 "<<theta/PI * 180.0f<<endl;
-             Points[u->GetId()] = make_pair(theta,_p);
-           }
-           
-           float radians = Points[u->GetId()].first; //当前角度
-           cout<<"current theta: "<<radians/PI * 180.0f<<endl;
-           radians += u->GetProperty()._speed / r;  // 飞机移动角度
-           
-           if(radians >= 2*PI){
-               // 控制radians的范围
-               radians = radians - 2*PI;
-          }
-          cout<<"New theta: "<< radians/PI * 180.0f<<endl;
-          //cout<<"Move: "<<Circular_X(target)
-          PointF move = PointF(Circular_X(_p.x,r,radians),Circular_Y(_p.y,r,radians)); //计算更新的位置
-         //  cout<<"current radians: "<<radians<<" target: "<<_p<<" move: "<<move<<endl;
-           //PointF move = PointF(_p.x + 1,_p.y+1); //计算更新的位置
-           receiver->SendCmd(CmdIPtr(new CmdTacticalMove(u->GetId(), move))); //移动飞机
-           Points[u->GetId()].first = radians; //更新角度
+        if(distance_to_target > 0.2 && !isInCircle){ //如果与目标的距离大于2km，直线向目标飞行
+           //cout<<"micro_move"<<endl;
+           micro_move(_tick, *u, env, _p, receiver); 
+          }else{
+           // Test 绕目标做圆周运动
+           if(!isInCircle){
+              circle_move(_tick, *u, env, _p, receiver);
+              radians = 0.0f;
+              isInCircle = true;
+               }else{
+               towards = circle_move(_tick, *u, env, _p, receiver);
+               radians += u->GetProperty()._speed / 0.1835f;
+              // cout<<"curr radians: "<<radians<<endl;
+               //cout<<fabs(radians - PI);
+               if(radians > PI){
+                  cout<<"finish towards: "<<towards<<endl;
+                 // cout<<"radians: "<<radians<<endl;
+                 // cout<<"length: "<< sqrt(towards.x * towards.x + towards.y * towards.y)<<endl;
+                  //设置新的Target
+                  isReturn = true;
+                  
+                  // _done = true;
+                   
+                 }
+              }
         // _done = true;
            
+         }
+
+      }
     }else{
        if (micro_move(_tick, *u, env, _p, receiver) < kDistEps) _done = true;
     }

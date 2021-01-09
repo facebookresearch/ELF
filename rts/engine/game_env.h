@@ -50,7 +50,7 @@ private:
     bool _terminated;
 
     //每个飞机进入圆周运动后，存储围绕的圆心和当前角度 <弧度、圆心位置>
-    map<UnitId,pair<float,PointF>> _trace;  
+    map<UnitId,pair<float,pair<PointF,PointF > >> _trace;  
 
 public:
     GameEnv();
@@ -90,7 +90,7 @@ public:
     const Units& GetUnits() const { return _units; }
     Units& GetUnits() { return _units; }
     
-    map<UnitId,pair<float,PointF>> & GetTrace(){return _trace;} // 轨迹
+    map<UnitId,pair<float,pair<PointF,PointF> > > & GetTrace(){return _trace;} // 轨迹
 
     // Initialize different units for this game.
     void InitGameDef() {
