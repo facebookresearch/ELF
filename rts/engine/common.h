@@ -150,6 +150,10 @@ struct PointF {
         return *this;
     }
 
+    bool operator != (PointF &p){
+        return fabs(x - p.x) >  1e-7 || fabs(y - p.y )> 1e-7;
+    }
+
     friend PointF operator-(const PointF &p1, const PointF &p2) {
         return PointF(p1.x - p2.x, p1.y - p2.y);
     }

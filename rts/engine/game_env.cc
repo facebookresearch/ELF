@@ -45,6 +45,8 @@ void GameEnv::Reset() {
     _game_counter ++;
     _units.clear();
     _bullets.clear();
+    _trace.clear();
+    
     for (auto& player : _players) {
         player.ClearCache();
     }

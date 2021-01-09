@@ -15,6 +15,8 @@
 #include "cmd.gen.h"
 #include "cmd_specific.gen.h"
 
+
+#define PI 3.14159
 static const int kMoveToRes = 0;
 static const int kGathering = 1;
 static const int kMoveToBase = 2;
@@ -47,16 +49,85 @@ CMD_DURATIVE(Gather, UnitId, base, UnitId, resource, int, state = 0);
     Move between base and resources to gather resources.
 */
 
+//map<UnitId,pair<float ,PointF>> Points;  //每个飞机进入圆周运动后，存储围绕的圆心和当前角度 <角度、圆心位置>
+
+//map<UnitId,pair<float,PointF>> Points; 
+// 根据 单位位置、 圆心位置 、 以及夹角余弦，求向量与 y = target.y 的 夹角
+float Count_Radians(const PointF& u,const PointF target,float cosTheta){
+    // 首先判断单位在圆心的上半区[0 - 180] 还是 下半区 (180 , 360)
+    float theta = acos(cosTheta);  // 计算 夹角（弧度 0 - PI）
+    if(u.y >=  target.y){  //下半区
+       theta = 2* PI - theta;  // 计算下半区的theta
+    }
+   // return theta/PI * 180.0f; // 返回角度
+   return theta; // 返回弧度
+}
+
+
+   // 计算飞机圆周运动的位置
+     float Circular_X(float x, float r, float radians)
+    {
+        return (x + r * cosf(radians));
+    }
+     float Circular_Y(float y, float r, float radians)
+    {
+        return (y - r * sinf(radians));
+    }
+
 //////////// Durative Action ///////////////////////
 bool CmdMove::run(const GameEnv &env, CmdReceiver *receiver) {
     //std::cout<<this->PrintInfo()<<std::endl;
     const Unit *u = env.GetUnit(_id);
+   //const float r = 0.1835; // 半径
     if (u == nullptr) return false;
     if(u->GetUnitType() == WORKER){
-        
+        GameEnv& env_temp = const_cast<GameEnv&>(env); // 需要用到GameEnv的方法
+       float distance_to_target = PointF::L2Sqr(u->GetPointF(),_p);
+       float r = sqrt(distance_to_target);
+       cout<<"distance_to_target: "<<distance_to_target<<endl;
+       //PointF towards = PointF();
+    //    if(distance_to_target > 0.2){ //如果与目标的距离大于2km，直线向目标飞行
+    //        micro_move(_tick, *u, env, _p, receiver); 
+    //    }else{
+           // Test 绕目标做圆周运动
+           map<UnitId,pair<float,PointF> >& Points = env_temp.GetTrace();
+           if(Points.find(u->GetId()) != Points.end()){
+               cout<<"trace target: "<<Points[u->GetId()].second<<" trace radians: "<<Points[u->GetId()].first<<endl;
+           }
+
+           if(Points.find(u->GetId()) == Points.end() || Points[u->GetId()].second != _p ){ //开始绕新的圆心进行半圆周运动
+             //计算初始角度 进入角度为180度 360度出
+             cout<<"Points[u->GetId()].second: "<<Points[u->GetId()].second<<" _p: "<<_p<<endl;
+             PointF t_u = PointF(u->GetPointF().x-_p.x, u->GetPointF().y-_p.y);  // t指向U的向量
+             float t_u_dot_x = t_u.x * 1.0f ;
+             
+             float cosTheta = t_u_dot_x / r;
+             float theta = Count_Radians(u->GetPointF(),_p,t_u_dot_x / r); //计算u的角度
+             cout<<"现在开始绕 "<<_p<<" 做圆周运动"<<" 进入角度为 "<<theta/PI * 180.0f<<endl;
+             Points[u->GetId()] = make_pair(theta,_p);
+           }
+           
+           float radians = Points[u->GetId()].first; //当前角度
+           cout<<"current theta: "<<radians/PI * 180.0f<<endl;
+           radians += u->GetProperty()._speed / r;  // 飞机移动角度
+           
+           if(radians >= 2*PI){
+               // 控制radians的范围
+               radians = radians - 2*PI;
+          }
+          cout<<"New theta: "<< radians/PI * 180.0f<<endl;
+          //cout<<"Move: "<<Circular_X(target)
+          PointF move = PointF(Circular_X(_p.x,r,radians),Circular_Y(_p.y,r,radians)); //计算更新的位置
+         //  cout<<"current radians: "<<radians<<" target: "<<_p<<" move: "<<move<<endl;
+           //PointF move = PointF(_p.x + 1,_p.y+1); //计算更新的位置
+           receiver->SendCmd(CmdIPtr(new CmdTacticalMove(u->GetId(), move))); //移动飞机
+           Points[u->GetId()].first = radians; //更新角度
+        // _done = true;
+           
+    }else{
+       if (micro_move(_tick, *u, env, _p, receiver) < kDistEps) _done = true;
     }
     // cout << "id: " << u.GetId() << " from " << u.GetPointF() << " to " << u.GetLastCmd().p << endl;
-    if (micro_move(_tick, *u, env, _p, receiver) < kDistEps) _done = true;
     return true;
 }
 
@@ -403,12 +474,12 @@ bool CmdHarvest::run(GameEnv *env, CmdReceiver *receiver) {
 
 
 // 敌方目标移动指令
-bool CmdEnemyMove::run(const GameEnv &env, CmdReceiver *receiver) {
-    //std::cout<<this->PrintInfo()<<std::endl;
-    // const Unit *u = env.GetUnit(_id);
-    // if (u == nullptr) return false;
+// bool CmdEnemyMove::run(const GameEnv &env, CmdReceiver *receiver) {
+//     //std::cout<<this->PrintInfo()<<std::endl;
+//     // const Unit *u = env.GetUnit(_id);
+//     // if (u == nullptr) return false;
 
-    // // cout << "id: " << u.GetId() << " from " << u.GetPointF() << " to " << u.GetLastCmd().p << endl;
-    // if (micro_move(_tick, *u, env, _p, receiver) < kDistEps) _done = true;
-    return true;
-}
+//     // // cout << "id: " << u.GetId() << " from " << u.GetPointF() << " to " << u.GetLastCmd().p << endl;
+//     // if (micro_move(_tick, *u, env, _p, receiver) < kDistEps) _done = true;
+//     return true;
+// }

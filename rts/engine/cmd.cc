@@ -123,6 +123,54 @@ float micro_move(Tick tick, const Unit& u, const GameEnv &env, const PointF& tar
     return dist_sqr;
 }
 
+float circle_move(Tick tick, const Unit& u, const GameEnv &env, const PointF& target, CmdReceiver *receiver,float angle) {
+    const RTSMap &m = env.GetMap();
+    const PointF &curr = u.GetPointF();  // 当前位置
+    const Player &player = env.GetPlayer(u.GetPlayerId());
+    
+    //cout << "Micro_move: Current: " << curr << " Target: " << target << endl;
+    float dist_sqr = PointF::L2Sqr(target, curr); // 距离 （平方）
+    const UnitProperty &property = u.GetProperty();
+
+    static const int kMaxPlanningIteration = 1000;
+
+    // Move to a target. Ideally we should do path-finding, for now just follow L1 distance.
+    if ( property.CD(CD_MOVE).Passed(tick) ) {
+        PointF move;
+
+        float dist_sqr = PointF::L2Sqr(curr, target);
+        PointF waypoint = target; // 找到下一步的格子 waypoint
+        bool planning_success = false;
+       
+        if (dist_sqr > 1.0) {
+            // Do path planning.
+            Coord first_block;
+            float est_dist;
+            planning_success = player.PathPlanning(tick, u.GetId(), curr, target,
+                kMaxPlanningIteration, receiver->GetPathPlanningVerbose(), &first_block, &est_dist);
+            if (planning_success && first_block.x >= 0 && first_block.y >= 0) {
+                waypoint.x = first_block.x;
+                waypoint.y = first_block.y;
+            }
+        }
+        //cout << "micro_move: (" << curr << ") -> (" << waypoint << ") planning: " << planning_success << endl;
+        int ret = move_toward(m, property._speed, u.GetId(), curr, waypoint, &move);
+        if (ret == MT_OK) {
+            // Set actual move.
+            receiver->SendCmd(CmdIPtr(new CmdTacticalMove(u.GetId(), move)));
+        } else if (ret == MT_CANNOT_MOVE) {
+            // Unable to move. This is usually due to PathPlanning issues.
+            // Too many such commands will leads to early termination of game.
+            // [TODO]: Make PathPlanning better.
+            receiver->GetGameStats().RecordFailedMove(tick, 1.0);
+        }
+    }
+    
+    return dist_sqr;
+}
+
+
+
 
 
 bool CmdDurative::Run(const GameEnv &env, CmdReceiver *receiver) {
