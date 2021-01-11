@@ -250,7 +250,7 @@ bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
     if (u == nullptr) return false;
     // 判断弹药量
     if(!(u->GetProperty().round == -1 || u->GetProperty().round >0)){
-        std::cout<<"Out of ammunition"<<std::endl;  
+        //std::cout<<"Out of ammunition"<<std::endl;  
         _done = true;  // 弹药耗尽，无法继续攻击
         return true;
     }
@@ -304,14 +304,16 @@ bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
         
         if(u->GetUnitType() == WORKER){  // 如果是飞机
               // 制造一个导弹
+              //cout<<u->GetUnitType()<<" 正在攻击 "<<target->GetUnitType()<<endl;
               PointF build_p;  //创造导弹的地点
               const RTSMap &m = env.GetMap();
               build_p.SetInvalid();
               find_nearby_empty_place(m, curr, &build_p);
               if (! build_p.IsInvalid()) {
                    // 创造导弹 
+                   //cout<<"创造导弹"<<endl;
                    UnitId rocket_id;
-                   
+                    
                    if (! env_temp.AddUnit(_tick, BARRACKS, build_p, u->GetPlayerId(),rocket_id)) {
                         std::cout<<"emit rocket failed"<<std::endl;
                         return false;

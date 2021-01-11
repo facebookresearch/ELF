@@ -130,7 +130,7 @@ bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
     // //
     //  //_CREATE(WORKER,PointF(50,50),player_id);
     //  //_CREATE(BARRACKS,PointF(55,55),player_id);
-     _CHANGE_RES(player_id, 200000000);
+     _CHANGE_RES(player_id, 100);
 
 
 
@@ -142,9 +142,13 @@ bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
     _CREATE(WORKER,PointF(34,1),enemy_id);
     _CREATE(WORKER,PointF(36,1),enemy_id);
     _CREATE(WORKER,PointF(68,1),enemy_id);
+    // _CREATE(WORKER,PointF(35,26),enemy_id);
+    // _CREATE(BARRACKS,PointF(35,27),enemy_id);
 
-    _CREATE(BASE,PointF(35,10),enemy_id);
-    _CREATE(MELEE_ATTACKER,PointF(30,10),enemy_id);
+    //_CREATE(BASE,PointF(35,10),enemy_id);
+    //_CREATE(MELEE_ATTACKER,PointF(30,10),enemy_id);
+
+    // _CHANGE_RES(enemy_id, 200000000);
 
     
     //_CREATE(WORKER,PointF(50,50),enemy_id);

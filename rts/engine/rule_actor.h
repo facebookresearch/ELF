@@ -51,13 +51,97 @@ struct RegionHist {
 };
 
 // Class to preload information from game environment for future use.
+// class Preload {
+// public:
+//     enum Result { NOT_READY = -1, OK = 0, NO_BASE, NO_RESOURCE };
+
+// private:
+//     vector<vector<const Unit*> > _my_troops;
+//     vector<vector<const Unit*> > _enemy_troops;
+//     vector<const Unit*> _enemy_troops_in_range;
+//     vector<const Unit*> _all_my_troops;
+//     vector<const Unit*> _enemy_attacking_economy;
+//     vector<const Unit*> _economy_being_attacked;
+//     vector<int> _cnt_under_construction;
+
+//     vector<int> _prices;
+//     int _resource;
+//     UnitId _base_id, _resource_id, _opponent_base_id;
+//     PointF _base_loc, _resource_loc;
+
+//     const Unit *_base = nullptr;
+//     PlayerId _player_id = INVALID;
+//     int _num_unit_type = 0;
+//     Result _result = NOT_READY;
+//     const Unit *_enemy_at_resource = nullptr;
+//     const Unit *_enemy_at_base = nullptr;
+
+//     static bool InCmd(const CmdReceiver &receiver, const Unit &u, CmdType cmd) {
+//         const CmdDurative *c = receiver.GetUnitDurativeCmd(u.GetId());
+//         return (c != nullptr && c->type() == cmd);
+//     }
+
+//     static void make_unique(vector<const Unit *> *us) {
+//         set<const Unit *> tmp;
+//         vector<const Unit *> res;
+//         for (const Unit *u : *us) {
+//             if (tmp.find(u) == tmp.end()) {
+//                 tmp.insert(u);
+//                 res.push_back(u);
+//             }
+//         }
+//         *us = res;
+//     }
+
+//     void collect_stats(const GameEnv &env, int player_id, const CmdReceiver &receiver);
+
+// public:
+//     Preload() { }
+
+//     void GatherInfo(const GameEnv &env, int player_id, const CmdReceiver &receiver);
+//     Result GetResult() const { return _result; }
+
+//     bool BuildIfAffordable(UnitType ut) {
+//         if (_resource >= _prices[ut]) {
+//             _resource -= _prices[ut];
+//             return true;
+//         } else return false;
+//     }
+//     bool Affordable(UnitType ut) const { return _resource >= _prices[ut]; }
+//     void Build(UnitType ut) { _resource -= _prices[ut]; }
+
+//     CmdBPtr GetGatherCmd() const { return _G(_base_id, _resource_id); }
+//     CmdBPtr GetAttackEnemyBaseCmd() const { return _A(_opponent_base_id); }
+//     CmdBPtr GetBuildBarracksCmd(const GameEnv &env) const {
+//         PointF p;
+//         if (env.FindEmptyPlaceNearby(_base_loc, 3, &p) && ! p.IsInvalid()) return _B(BARRACKS, p);
+//         else return CmdBPtr();
+//     }
+
+//     const PointF &ResourceLoc() const { return _resource_loc; }
+//     const PointF &BaseLoc() const { return _base_loc; }
+//     const Unit *Base() const { return _base; }
+//     int Price(UnitType ut) const { return _prices[ut]; }
+//     int Resource() const { return _resource; }
+
+//     const Unit *EnemyAtResource();
+//     const Unit *EnemyAtBase();
+
+//     const vector<vector<const Unit*> > &MyTroops() const { return _my_troops; }
+//     const vector<vector<const Unit*> > &EnemyTroops() const { return _enemy_troops; }
+//     const vector<const Unit*> &EnemyTroopsInRange() const { return _enemy_troops_in_range; }
+//     const vector<const Unit*> &EnemyAttackingEconomy() const { return _enemy_attacking_economy; }
+//     const vector<const Unit*> &AllMyTroops() const { return _all_my_troops; }
+//     const vector<int> &CntUnderConstruction() const { return _cnt_under_construction; }
+// };
+
 class Preload {
 public:
     enum Result { NOT_READY = -1, OK = 0, NO_BASE, NO_RESOURCE };
 
 private:
-    vector<vector<const Unit*> > _my_troops;
-    vector<vector<const Unit*> > _enemy_troops;
+    vector<vector<const Unit*> > _my_troops;  //我方单位
+    vector<vector<const Unit*> > _enemy_troops; // 敌方单位
     vector<const Unit*> _enemy_troops_in_range;
     vector<const Unit*> _all_my_troops;
     vector<const Unit*> _enemy_attacking_economy;
@@ -67,7 +151,7 @@ private:
     vector<int> _prices;
     int _resource;
     UnitId _base_id, _resource_id, _opponent_base_id;
-    PointF _base_loc, _resource_loc;
+    PointF _base_loc, _resource_loc,_enemy_base_loc;
 
     const Unit *_base = nullptr;
     PlayerId _player_id = INVALID;
@@ -117,6 +201,7 @@ public:
         if (env.FindEmptyPlaceNearby(_base_loc, 3, &p) && ! p.IsInvalid()) return _B(BARRACKS, p);
         else return CmdBPtr();
     }
+    CmdBPtr GetMOVECmd() const {return _M(_enemy_base_loc);}
 
     const PointF &ResourceLoc() const { return _resource_loc; }
     const PointF &BaseLoc() const { return _base_loc; }
@@ -127,13 +212,23 @@ public:
     const Unit *EnemyAtResource();
     const Unit *EnemyAtBase();
 
+
     const vector<vector<const Unit*> > &MyTroops() const { return _my_troops; }
     const vector<vector<const Unit*> > &EnemyTroops() const { return _enemy_troops; }
     const vector<const Unit*> &EnemyTroopsInRange() const { return _enemy_troops_in_range; }
     const vector<const Unit*> &EnemyAttackingEconomy() const { return _enemy_attacking_economy; }
     const vector<const Unit*> &AllMyTroops() const { return _all_my_troops; }
     const vector<int> &CntUnderConstruction() const { return _cnt_under_construction; }
+    
+    // 判断是否有飞机
+    // float GetEnemyBaseLoc(){return _enemy_base_loc;}
+    bool HavePlane(){
+        return _my_troops[WORKER].size() > 0;
+    }
+    PointF GetEnemyBaseLoc(){return _enemy_base_loc;}
+
 };
+
 
 // Information of the game used for AI decision.
 class RuleActor {
@@ -145,7 +240,7 @@ protected:
     bool store_cmd(const Unit *, CmdBPtr &&cmd, AssignedCmds *m) const;
     bool store_cmd_if_different(const Unit *, CmdBPtr &&cmd, AssignedCmds *m) const;
     void batch_store_cmds(const vector<const Unit *> &subset, const CmdBPtr& cmd, bool preemptive, AssignedCmds *m) const;
-
+  
     bool act_per_unit(const GameEnv &env, const Unit *u, const int *state, RegionHist *region_hist, string *state_string, AssignedCmds *assigned_cmds);
 
 public:

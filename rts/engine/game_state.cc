@@ -18,8 +18,9 @@ RTSState::RTSState() {
     _env.ClearAllPlayers();
 }
 
-void RTSState::AppendPlayer(const string &name) {
-    _env.AddPlayer(name, PV_KNOW_ALL);
+void RTSState::AppendPlayer(const string &name,PlayerPrivilege pv) {
+   // std::cout<<"AddPlayer: "<<name<<" "<<pv<<std::endl;
+    _env.AddPlayer(name, pv);
     //_env.AddPlayer(name, PV_NORMAL);
 }
 

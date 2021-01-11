@@ -10,7 +10,7 @@
 #include "cmd_specific.gen.h"
 
 //static constexpr float kDistBullet = 0.3;  // 子弹的体积？
-static constexpr float kDistBullet = 0.003;  // 子弹的体积？
+static constexpr float kDistBullet = 0.03;  // 子弹的体积？
 
 string Bullet::Draw() const {
     return make_string("u", _p, _state);

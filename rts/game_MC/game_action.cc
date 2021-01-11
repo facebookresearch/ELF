@@ -10,6 +10,7 @@
 
 bool RTSMCAction::Send(const GameEnv &env, CmdReceiver &receiver) {
     // Apply command.
+    //cout<<"Player "<<_player_id<<" Send Action"<<endl;
     MCRuleActor rule_actor;
     rule_actor.SetPlayerId(_player_id);
     rule_actor.SetReceiver(&receiver);
@@ -17,12 +18,13 @@ bool RTSMCAction::Send(const GameEnv &env, CmdReceiver &receiver) {
     vector<int> state(NUM_AISTATE);
     std::fill(state.begin(), state.end(), 0);
     std::string comment;
-
+   // cout<<"_type: "<<_type<<endl;
     if (_type == CMD_INPUT) {
         rule_actor.ActByCmd(env, _unit_cmds, &comment, &_cmds);
     } else {
         bool gather_ok = rule_actor.GatherInfo(env, &comment, &_cmds);
         if (! gather_ok) {
+            cout<<"gather fail"<<endl;
             return RTSAction::Send(env, receiver);
         }
 
@@ -35,6 +37,7 @@ bool RTSMCAction::Send(const GameEnv &env, CmdReceiver &receiver) {
                 state[_action] = 1;
                 break;
             case SIMPLE:
+                //cout<<"GetActSimpleState"<<endl;
                 rule_actor.GetActSimpleState(&state);
                 break;
             case HIT_AND_RUN:

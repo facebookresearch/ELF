@@ -51,7 +51,11 @@ public:
             std::cout << "Bot at " << _bots.size() << " cannot be nullptr" << std::endl;
             return;
         }
+        
+        
         bot->SetId(_bots.size());
+        // std::cout<<"====Bot Info ==="<<std::endl;
+        // bot->Print();
         _bots.emplace_back(bot, frame_skip);
     }
 
@@ -120,6 +124,9 @@ private:
         auto t = _state->GetTick();
         for (const Bot &bot : _bots) {
             if (! check_frameskip || t % bot.frame_skip == 0) {
+                //std::cout<<"Bot Act info"<<std::endl;
+              //  bot.ai->Print();
+                
                 typename AI::Action actions;
                 bot.ai->Act(*_state, &actions, done);
                 _state->forward(actions);

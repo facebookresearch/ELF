@@ -65,17 +65,17 @@ void Preload::collect_stats(const GameEnv &env, int player_id, const CmdReceiver
             _all_my_troops.push_back(u);
 
             // Check damage from
-            UnitType unit_type = u->GetUnitType();
-            if (unit_type == WORKER || unit_type == BASE) {
-                UnitId damage_from = u->GetProperty().GetLastDamageFrom();
-                if (damage_from != INVALID) {
-                    const Unit *source = env.GetUnit(damage_from);
-                    if (source != nullptr) {
-                        _enemy_attacking_economy.push_back(source);
-                        _economy_being_attacked.push_back(u);
-                    }
-                }
-            }
+            // UnitType unit_type = u->GetUnitType();
+            // if (unit_type == WORKER || unit_type == BASE) {
+            //     UnitId damage_from = u->GetProperty().GetLastDamageFrom();
+            //     if (damage_from != INVALID) {
+            //         const Unit *source = env.GetUnit(damage_from);
+            //         if (source != nullptr) {
+            //             _enemy_attacking_economy.push_back(source);
+            //             _economy_being_attacked.push_back(u);
+            //         }
+            //     }
+            // }
         } else {
             if (player.FilterWithFOW(*u)) {
                 // Attack if we have troops.
@@ -85,30 +85,32 @@ void Preload::collect_stats(const GameEnv &env, int player_id, const CmdReceiver
             }
         }
     }
-    make_unique(&_enemy_attacking_economy);
-    make_unique(&_economy_being_attacked);
+    // make_unique(&_enemy_attacking_economy);
+    // make_unique(&_economy_being_attacked);
 }
 
 void Preload::GatherInfo(const GameEnv& env, int player_id, const CmdReceiver &receiver) {
-    // cout << "GatherInfo(): player_id: " << player_id << endl;
+     //cout << "GatherInfo(): player_id: " << player_id << endl;
     assert(player_id >= 0 && player_id < env.GetNumOfPlayers());
     collect_stats(env, player_id, receiver);
     const Player& player = env.GetPlayer(_player_id);
-    _resource = player.GetResource();
+   // _resource = player.GetResource();
 
     if (!env.GetGameDef().HasBase()) return;
 
-    if (_my_troops[BASE].empty() || _enemy_troops[BASE].empty()) {
+    if ( _enemy_troops[BASE].empty()) {
+        cout<<"No_BASE"<<endl;
         _result = NO_BASE;
         // cout << "_result = NO_BASE" << endl;
         return;
     }
 
     // cout << "Base not empty" << endl << flush;
-    _base = _my_troops[BASE][0];
-    _base_id = _base->GetId();
-    _base_loc = _my_troops[BASE][0]->GetPointF();
+    //_base = _my_troops[BASE][0];
+   // _base_id = _base->GetId();
+   // _base_loc = _my_troops[BASE][0]->GetPointF();
     _opponent_base_id = _enemy_troops[BASE][0]->GetId();
+    _enemy_base_loc = _enemy_troops[BASE][0]->GetPointF(); //敌方目标位置
 
     for (int i = 0; i < _num_unit_type; ++i) {
         _prices[i] = env.GetGameDef().unit((UnitType)i).GetUnitCost();
@@ -121,15 +123,15 @@ void Preload::GatherInfo(const GameEnv& env, int player_id, const CmdReceiver &r
 
     // If there is no resource, just attack opponent's base.
     // Everyone, including workers.
-    if (_my_troops[RESOURCE].empty()) {
-        _result = NO_RESOURCE;
-        // cout << "_result = NO_RESOURCE" << endl;
-        return;
-    }
+    // if (_my_troops[RESOURCE].empty()) {
+    //     _result = NO_RESOURCE;
+    //     // cout << "_result = NO_RESOURCE" << endl;
+    //     return;
+    // }
 
     // cout << "Resource info.." << endl << flush;
-    _resource_id = _my_troops[RESOURCE][0]->GetId();
-    _resource_loc = _my_troops[RESOURCE][0]->GetPointF();
+   // _resource_id = _my_troops[RESOURCE][0]->GetId();
+    //_resource_loc = _my_troops[RESOURCE][0]->GetPointF();
     _result = OK;
 }
 
@@ -207,19 +209,127 @@ bool RuleActor::hit_and_run(const GameEnv &env, const Unit *u, const vector<cons
 
 bool RuleActor::GatherInfo(const GameEnv &env, string *state_string, AssignedCmds *assigned_cmds) {
     _preload.GatherInfo(env, _player_id, *_receiver);
-
+     
     auto res = _preload.GetResult();
     if (res == Preload::NO_BASE) return false;
-    if (res == Preload::NO_RESOURCE) {
-        // cout << "Check whether resource is empty .." << endl << flush;
-        // If there is no resource, just attack opponent's base.
-        // Everyone, including workers.
-        *state_string = "Resource depleted. All-in attack.";
-        batch_store_cmds(_preload.AllMyTroops(), _preload.GetAttackEnemyBaseCmd(), true, assigned_cmds);
-        return false;
-    }
+    // if (res == Preload::NO_RESOURCE) {
+    //     // cout << "Check whether resource is empty .." << endl << flush;
+    //     // If there is no resource, just attack opponent's base.
+    //     // Everyone, including workers.
+    //     *state_string = "Resource depleted. All-in attack.";
+    //     batch_store_cmds(_preload.AllMyTroops(), _preload.GetAttackEnemyBaseCmd(), true, assigned_cmds);
+    //     return false;
+    // }
     return true;
 }
+
+// bool RuleActor::act_per_unit(const GameEnv &env, const Unit *u, const int *state, RegionHist *region_hist, string *state_string, AssignedCmds *assigned_cmds) {
+//     UnitType ut = u->GetUnitType();
+//     const CmdDurative *curr_cmd = _receiver->GetUnitDurativeCmd(u->GetId());
+//     bool idle = (curr_cmd == nullptr);
+//     CmdType cmdtype = idle ? INVALID_CMD : curr_cmd->type();
+
+//     if (ut == BASE && state[STATE_BUILD_WORKER] && idle) {
+//         if (_preload.BuildIfAffordable(WORKER)) {
+//             *state_string = "Build worker..Success";
+//             store_cmd(u, _B(WORKER), assigned_cmds);
+//         }
+//     }
+
+//     // Ask workers to gather.
+//     if (ut == WORKER) {
+//         // Gather!
+//         if (idle) store_cmd(u, _preload.GetGatherCmd(), assigned_cmds);
+
+//         // If resource permit, build barracks.
+//         if (cmdtype == GATHER && state[STATE_BUILD_BARRACK] && ! region_hist->has_built_barracks) {
+//             if (_preload.Affordable(BARRACKS)) {
+//                 *state_string = "Build barracks..Success";
+//                 CmdBPtr cmd = _preload.GetBuildBarracksCmd(env);
+//                 if (cmd != nullptr) {
+//                     store_cmd(u, std::move(cmd), assigned_cmds);
+//                     region_hist->has_built_barracks = true;
+//                     _preload.Build(BARRACKS);
+//                 }
+//             }
+//         }
+//     }
+
+//     if (ut == BARRACKS && idle) {
+//         if (state[STATE_BUILD_MELEE_TROOP] && ! region_hist->has_built_melee) {
+//             if (_preload.BuildIfAffordable(MELEE_ATTACKER)) {
+//                 *state_string = "Build Melee Troop..Success";
+//                 store_cmd(u, _B(MELEE_ATTACKER), assigned_cmds);
+//                 region_hist->has_built_melee = true;
+//             }
+//         }
+
+//         if (state[STATE_BUILD_RANGE_TROOP] && ! region_hist->has_built_range) {
+//             if (_preload.BuildIfAffordable(RANGE_ATTACKER)) {
+//                 *state_string = "Build Range Troop..Success";
+//                 store_cmd(u, _B(RANGE_ATTACKER), assigned_cmds);
+//                 region_hist->has_built_range = true;
+//             }
+//         }
+//     }
+
+//     if (state[STATE_ATTACK] && (ut == MELEE_ATTACKER || ut == RANGE_ATTACKER)) {
+//         if (idle) store_cmd(u, _preload.GetAttackEnemyBaseCmd(), assigned_cmds);
+//     }
+
+//     if (state[STATE_HIT_AND_RUN]) {
+//         // cout << "Enter hit and run procedure" << endl << flush;
+//         auto enemy_troops = _preload.EnemyTroops();
+//         *state_string = "Hit and run";
+//         if (ut == RANGE_ATTACKER) {
+//             // cout << "Enemy only have worker" << endl << flush;
+//             if (enemy_troops[MELEE_ATTACKER].empty() && enemy_troops[RANGE_ATTACKER].empty() && ! enemy_troops[WORKER].empty()) {
+//                 hit_and_run(env, u, enemy_troops[WORKER], assigned_cmds);
+//             }
+
+//             if (! enemy_troops[MELEE_ATTACKER].empty()) {
+//                 hit_and_run(env, u, enemy_troops[MELEE_ATTACKER], assigned_cmds);
+//             }
+//         }
+//         if (ut == RANGE_ATTACKER || ut == MELEE_ATTACKER) {
+//             if (! enemy_troops[RANGE_ATTACKER].empty() && idle) {
+//                 store_cmd(u, _A(enemy_troops[RANGE_ATTACKER][0]->GetId()), assigned_cmds);
+//             }
+//         }
+//     }
+
+//     const auto& enemy_troops_in_range = _preload.EnemyTroopsInRange();
+//     const auto& enemy_attacking_economy = _preload.EnemyAttackingEconomy();
+
+//     if ((ut == RANGE_ATTACKER || ut == MELEE_ATTACKER)
+//             && idle && state[STATE_ATTACK_IN_RANGE] && ! enemy_troops_in_range.empty()) {
+//         *state_string = "Attack enemy in range..Success";
+//         auto cmd = _A(enemy_troops_in_range[0]->GetId());
+//         store_cmd(u, std::move(cmd), assigned_cmds);
+//     }
+
+//     if (state[STATE_DEFEND]) {
+//       // Group Retaliation. All troops attack.
+//       *state_string = "Defend enemy attack..NOOP";
+//       const Unit *enemy_at_resource = _preload.EnemyAtResource();
+//       if (enemy_at_resource != nullptr) {
+//           *state_string = "Defend enemy attack..Success";
+//           store_cmd(u, _A(enemy_at_resource->GetId()), assigned_cmds);
+//       }
+
+//       const Unit *enemy_at_base = _preload.EnemyAtBase();
+//       if (enemy_at_base != nullptr) {
+//           *state_string = "Defend enemy attack..Success";
+//           store_cmd(u, _A(enemy_at_base->GetId()), assigned_cmds);
+//       }
+//       if (! enemy_attacking_economy.empty()) {
+//           *state_string = "Defend enemy attack..Success";
+//           auto it = enemy_attacking_economy.begin();
+//           store_cmd(u, _A((*it)->GetId()), assigned_cmds);
+//       }
+//     }
+//     return true;
+// }
 
 bool RuleActor::act_per_unit(const GameEnv &env, const Unit *u, const int *state, RegionHist *region_hist, string *state_string, AssignedCmds *assigned_cmds) {
     UnitType ut = u->GetUnitType();
