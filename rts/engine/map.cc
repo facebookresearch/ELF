@@ -207,9 +207,17 @@ UnitId RTSMap::GetClosestUnitId(const PointF& p, float max_r) const {
 }
 
 set<UnitId> RTSMap::GetUnitIdInRegion(const PointF &left_top, const PointF &right_bottom) const {
-    return _locality.KeysInRegion(left_top, right_bottom);
+    set<UnitId> units = _locality.KeysInRegion(left_top, right_bottom);
+    std::cout<<"Units Selecte: ";
+    for(auto it = units.begin();it!=units.end();++it){
+        std::cout<<*it<<" ";
+    }
+    std::cout<<std::endl;
+    return units;
+    //return _locality.KeysInRegion(left_top, right_bottom);
 }
 
+// 圆形FOW
 vector<Loc> RTSMap::GetSight(const Loc& loc, int range) const {
     Coord c = GetCoord(loc);
     vector<Loc> res;
@@ -225,6 +233,75 @@ vector<Loc> RTSMap::GetSight(const Loc& loc, int range) const {
         const int ymax = std::min(_n - 1, c.y + yrange);
         for (int y = ymin; y <= ymax; ++y) {
             res.push_back(GetLoc(x, y));
+        }
+    }
+    return res;
+}
+
+// 判断一个点是否在扇形区域呢
+// c 圆心位置
+// u 朝向
+// squaredR 半径平方
+// cosTheta 夹角余弦  120  --> cos60 = 0.5
+// p   点的位置
+ bool IsPointInCircularSector(
+    int cx, int cy, float ux, float uy, float squaredR, float cosTheta,
+    int px, int py){
+        
+        // D = P - C 圆心到点的向量
+        float dx = px - cx;
+        float dy = py - cy;
+        
+        // 首先判断距离
+        // |D|^2 = (dx^2 + dy^2)
+        float squaredDLength = dx * dx + dy * dy;
+        // |U|^2
+        float squaredULength = ux*ux + uy*uy;
+
+        //|D|^2 > r^2
+        if (squaredDLength > squaredR)
+         return false;
+
+        //float dLength = sqrt(squaredDLength);
+        //float uLength = sqrt(squaredULength);
+        
+        // return dx * ux + dy * uy > dLength * uLength * cosTheta;    
+       float  DdotU = dx * ux + dy * uy;
+        if  (DdotU >= 0 && cosTheta >= 0)
+         return  DdotU * DdotU > squaredDLength * squaredULength* cosTheta * cosTheta;
+     else  if  (DdotU < 0 && cosTheta < 0)
+         return  DdotU * DdotU < squaredDLength * squaredULength * cosTheta * cosTheta;
+     else
+         return  DdotU >= 0;
+    }
+// 扇形FOW
+vector<Loc> RTSMap::GetSight(const Loc& loc, int range,PointF towards) const {
+    //std::cout<<"Compute Radar Fow towards "<<towards<<std::endl;
+    Coord c = GetCoord(loc);  // 当前格子
+    vector<Loc> res;
+    res.push_back(GetLoc(c.x,c.y));
+    // 角度 60度 应该设为参数
+    float cosTheta = 0.5f;
+    //IsPointInCircularSector(c.x,c.y,towards.x,towards.y,range*range,cosTheta,px,py);
+    
+    // x的取值范围
+    const int xmin = std::max(0, c.x - range);
+    const int xmax = std::min(_m - 1, c.x + range);
+
+    for (int x = xmin; x <= xmax; ++x) {
+        //const int yrange = range - std::abs(c.x  - x);
+        const int x_1 = std::abs(c.x - x);
+        const int yrange = std::sqrt(range*range - x_1*x_1);
+        //y的范围
+        const int ymin = std::max(0, c.y - yrange);
+        const int ymax = std::min(_n - 1, c.y + yrange);
+        
+        for (int y = ymin; y <= ymax; ++y) {
+            //查询每个圆内的点是否在扇形区域内，应该优化
+            if(IsPointInCircularSector(c.x,c.y,towards.x,towards.y,range*range,cosTheta,x,y)){
+                 res.push_back(GetLoc(x, y));
+            }
+           
         }
     }
     return res;

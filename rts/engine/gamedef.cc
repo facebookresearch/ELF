@@ -9,15 +9,16 @@
 #include "gamedef.h"
 /**
  *  定义单位属性
- *  cost   造价(不需要)
+ *  cost   造价
  *  hp     血量
  *  defence防御力 
  *  speed  速度
  *  att    攻击力
  *  att_r  攻击距离
  *  vis_r  可视距离
+ *  towards 朝向（用于计算FOW）
  * */
-UnitTemplate _C(int cost, int hp, int defense, float speed, int att, int att_r, int vis_r,
+UnitTemplate _C(int cost, int hp, int defense, float speed, int att, float att_r, int vis_r,int round,
         const vector<int> &cds, const vector<CmdType> &l, UnitAttr attr) {
 
     UnitTemplate res;
@@ -30,6 +31,8 @@ UnitTemplate _C(int cost, int hp, int defense, float speed, int att, int att_r, 
     p._attr = attr;
     p._att_r = att_r;
     p._vis_r = vis_r;
+    p.round = round;
+
     for (int i = 0; i < NUM_COOLDOWN; ++i) {   //设置CD
         p._cds[i].Set(cds[i]);
     }

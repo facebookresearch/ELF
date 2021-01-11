@@ -94,7 +94,7 @@ public:
     // You can also directly send the command. Used for spectator.
     virtual bool forward(ReplayLoader::Action &);
 
-    void AppendPlayer(const std::string &name);
+    void AppendPlayer(const std::string &name,PlayerPrivilege pv = PV_KNOW_ALL);
     void RemoveLastPlayer();
 
 private:

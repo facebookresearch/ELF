@@ -145,6 +145,7 @@ public:
 
   // Get sight from the current location.
   vector<Loc> GetSight(const Loc& loc, int range) const;
+  vector<Loc> GetSight(const Loc& loc, int range,PointF towards) const;
 
   bool IsIn(Loc loc) const { return loc >= 0 && loc < _m * _n * _level; }
   bool IsIn(int x, int y) const { return x >= 0 && x < _m && y >= 0 && y < _n; }

@@ -77,7 +77,7 @@ STD_HASH(Coord);
 
 // Seems that this should be larger than \sqrt{2}/2/2 = 0.35355339059
 // const float kUnitRadius = 0.36;
-const float kUnitRadius = 0.25;
+const float kUnitRadius = 0.01;
 
 struct PointF {
     float x, y;
@@ -148,6 +148,10 @@ struct PointF {
         x /= s;
         y /= s;
         return *this;
+    }
+
+    bool operator != (PointF &p){
+        return fabs(x - p.x) >  1e-7 || fabs(y - p.y )> 1e-7;
     }
 
     friend PointF operator-(const PointF &p1, const PointF &p2) {

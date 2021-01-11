@@ -49,6 +49,9 @@ private:
     // This happens if the time tick exceeds max_tick, or there is anything wrong.
     bool _terminated;
 
+    //每个飞机进入圆周运动后，存储围绕的圆心和当前角度 <弧度、圆心位置>
+    map<UnitId,pair<float,pair<PointF,PointF > >> _trace;  
+
 public:
     GameEnv();
 
@@ -86,6 +89,8 @@ public:
 
     const Units& GetUnits() const { return _units; }
     Units& GetUnits() { return _units; }
+    
+    map<UnitId,pair<float,pair<PointF,PointF> > > & GetTrace(){return _trace;} // 轨迹
 
     // Initialize different units for this game.
     void InitGameDef() {
@@ -142,6 +147,11 @@ public:
 
     // Check if one player's base has been destroyed.
     PlayerId CheckBase(UnitType base_type) const;
+     // 修改判断胜负的方法
+    // 判断谁赢并返回玩家ID
+    PlayerId CheckWinner(UnitType base_type) const;
+
+
 
     // Getter and setter for winner_id, termination.
     void SetWinnerId(PlayerId winner_id) { _winner_id = winner_id; }
@@ -182,6 +192,16 @@ public:
     // Some utility function to pick first from units in a group.
     static const Unit *PickFirstIdle(const vector<const Unit *> units, const CmdReceiver &receiver);
     static const Unit *PickFirst(const vector<const Unit *> units, const CmdReceiver &receiver, CmdType t) ;
+
+    //用于锁定目标的方法
+    string PrintUnitInfo() const;
+    string PrintTargetsInfo(PlayerId player_id,UnitId radar_id = -1);
+    void UpdateTargets(PlayerId player_id);  // 更新锁定名单
+    bool Lock(PlayerId player_id,UnitId radar_id,UnitId target_id); //指定雷达锁定目标
+    bool UnLock(PlayerId player_id,UnitId target_id);   //解锁一个目标
+    bool CheckUnit(UnitId u_id,UnitType type);  // 检查一个目标是否存在且符合给定类型
+
+   
 };
 
 class UnitIterator;

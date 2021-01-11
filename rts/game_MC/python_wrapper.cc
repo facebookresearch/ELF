@@ -40,7 +40,7 @@ public:
     }
 
     void Start() {
-        std::cout<<"--------------GameContext Start-----------"<<std::endl;
+        //std::cout<<"--------------GameContext Start-----------"<<std::endl;
         _context->Start(
             [this](int game_idx, const ContextOptions &context_options, const PythonOptions &options, const elf::Signal &signal, Comm *comm) {
                     auto params = this->GetParams();

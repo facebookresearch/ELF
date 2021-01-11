@@ -120,7 +120,7 @@ public:
     }
 
     inline bool Record(const string & item) {
-        // cout << "Record: " << item << endl;
+        //cout << "Record: " << item << endl;
         auto it = _durations.find(item);
         if (it == _durations.end()) {
             it = _durations.insert(make_pair(item, make_pair(chrono::duration<double>(0), 0))).first;

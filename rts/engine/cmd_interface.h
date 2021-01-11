@@ -15,6 +15,7 @@
 
 #include <vector>
 #include <string>
+#include <set>
 
 // Cmd interface. From vector<string> to executable command.
 // For example:
@@ -31,6 +32,7 @@ struct CmdInput {
 
     CmdInputType type;
     UnitId id, target, base;
+    set<UnitId> targets;
     PointF p;
     UnitType build_type;
 
@@ -40,10 +42,10 @@ struct CmdInput {
     PointF unit_loc;
 
     // By default this is ready.
-    CmdInput(CmdInputType t, UnitId id, const PointF &p, UnitId target = INVALID, UnitId base = INVALID, UnitType build_type = INVALID_UNITTYPE)
-        : type(t), id(id), target(target), base(base), p(p), build_type(build_type), ready(true) {
+    CmdInput(CmdInputType t, UnitId id, const PointF &p, UnitId target = INVALID, UnitId base = INVALID, UnitType build_type = INVALID_UNITTYPE,set<UnitId> targets = set<UnitId>())
+        : type(t), id(id), target(target), base(base), p(p), build_type(build_type), ready(true),targets(targets) {
     }
-    CmdInput() : type(CI_INVALID), id(INVALID), target(INVALID), base(INVALID), ready(false) { }
+    CmdInput() : type(CI_INVALID), id(INVALID), target(INVALID), base(INVALID), ready(false){ }
 
     // Not ready and need to call ApplyEnv().
     CmdInput(float unit_loc_x, float unit_loc_y, float target_loc_x, float target_loc_y, int cmd_type, int build_tp)

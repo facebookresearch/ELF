@@ -51,7 +51,11 @@ public:
             std::cout << "Bot at " << _bots.size() << " cannot be nullptr" << std::endl;
             return;
         }
+        
+        
         bot->SetId(_bots.size());
+        // std::cout<<"====Bot Info ==="<<std::endl;
+        // bot->Print();
         _bots.emplace_back(bot, frame_skip);
     }
 
@@ -70,33 +74,38 @@ public:
     void SetState(S *s) { _state = s; }
 
     GameResult Step(const std::atomic_bool *done = nullptr) {
+        //clock_t startTime,endTime;
+       // startTime = clock();
+        //cout<<"Before PreAct() Tick: "<< _state->receiver().GetTick()<<endl;   
         _state->PreAct();
+        //cout<<"After PreAct() Tick: "<< _state->receiver().GetTick()<<endl;  
         _act(true, done);
+        //cout<<"After _act() Tick: "<< _state->receiver().GetTick()<<endl; 
         GameResult res = _state->PostAct();
+        //cout<<"res: "<<res<<endl;
+        //cout<<"After PostAct() Tick: "<< _state->receiver().GetTick()<<endl; 
         _state->IncTick();
+
+        //endTime = clock();
+        //std::cout << "The run time between "<<start_tick<<" and "<< _state->receiver().GetTick()<<" is: " <<(double)(endTime - startTime) / CLOCKS_PER_SEC << "s" << std::endl;
 
         return res;
     }
 
     void MainLoop(const std::atomic_bool *done = nullptr,bool isPrint = false) {
         if(isPrint)
-         std::cout<<"-------MainLoop----------"<<std::endl;
-        _state->Init(isPrint);  // 初始化游戏
-        // if(isPrint){
-        //     std::cout<<"--------Start PleyerInfo"<<std::endl;
-        //     std::cout<<_state->env().PrintPlayerInfo()<<std::endl;
-        // }
+         cout<<"-------MainLoop----------"<<endl;
+        _state->Init(false);  // 初始化游戏
+        
+        // 游戏循环
         while (true) {
-            if (Step(done) != GAME_NORMAL) break;
-            if (done != nullptr && done->load()) break;
-        }
+            if (Step(done) != GAME_NORMAL) break;   // 如果游戏异常，结束循环
+            if (done != nullptr && done->load()) break; 
+        } 
         // Send message to AIs.
         _act(false, done);
         _game_end();
-        // if(isPrint){
-        //     std::cout<<"--------End PleyerInfo"<<std::endl;
-        //     std::cout<<_state->env().PrintPlayerInfo()<<std::endl;
-        // }
+        
         _state->Finalize();
     }
 
@@ -115,6 +124,9 @@ private:
         auto t = _state->GetTick();
         for (const Bot &bot : _bots) {
             if (! check_frameskip || t % bot.frame_skip == 0) {
+                //std::cout<<"Bot Act info"<<std::endl;
+              //  bot.ai->Print();
+                
                 typename AI::Action actions;
                 bot.ai->Act(*_state, &actions, done);
                 _state->forward(actions);

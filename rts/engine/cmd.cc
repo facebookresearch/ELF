@@ -32,6 +32,7 @@ static float trunc(float v, float b) {
 #define MT_ARRIVED 2
 #define MT_CANNOT_MOVE 3
 
+
 static int move_toward(const RTSMap& m, float speed, const UnitId& id,
         const PointF& curr, const PointF& target, PointF *move) {
     // Given curr location, move towards the target.
@@ -39,16 +40,15 @@ static int move_toward(const RTSMap& m, float speed, const UnitId& id,
 
     if (! PointF::Diff(target, curr, &diff)) return MT_TARGET_INVALID;
     if (std::abs(diff.x) < kDistEps && std::abs(diff.y) < kDistEps) return MT_ARRIVED;
-
     //bool movable = false;
     while (true) {
+        
         diff.Trunc(speed);
         PointF next_p(curr);
         next_p += diff;
 
         bool movable = m.CanPass(next_p, id);
         // cout << "MoveToward [" << id << "]: Try straight: " << next_p << " movable: " << movable << endl;
-
         if (! movable) {
             next_p = curr;
             next_p += diff.CCW90();
@@ -61,6 +61,7 @@ static int move_toward(const RTSMap& m, float speed, const UnitId& id,
             movable = m.CanPass(next_p, id);
             // cout << "MoveToward [" << id << "]: Try CW: " << next_p << " movable: " << movable << endl;
         }
+        
 
         // If we still cannot move, then we reduce the speed.
         if (movable) {
@@ -81,7 +82,7 @@ float micro_move(Tick tick, const Unit& u, const GameEnv &env, const PointF& tar
     const RTSMap &m = env.GetMap();
     const PointF &curr = u.GetPointF();  // 当前位置
     const Player &player = env.GetPlayer(u.GetPlayerId());
-
+   
     //cout << "Micro_move: Current: " << curr << " Target: " << target << endl;
     float dist_sqr = PointF::L2Sqr(target, curr); // 距离 （平方）
     const UnitProperty &property = u.GetProperty();
@@ -122,6 +123,12 @@ float micro_move(Tick tick, const Unit& u, const GameEnv &env, const PointF& tar
     
     return dist_sqr;
 }
+
+
+
+
+
+
 
 bool CmdDurative::Run(const GameEnv &env, CmdReceiver *receiver) {
     // If we run this command for the first time, register it in the receiver.
@@ -172,7 +179,7 @@ bool CmdEmitBullet::run(GameEnv *env, CmdReceiver*) {
 
 bool CmdCreate::run(GameEnv *env, CmdReceiver*) {
     // Create a unit at a location
-    std::cout<<"CmdCreate: "<<PrintInfo()<<std::endl;
+    //std::cout<<"CmdCreate: "<<PrintInfo()<<std::endl;
     UnitId u_id ;
     if (! env->AddUnit(_tick, _build_type, _p, _player_id,u_id)) {
         // If failed, money back!
@@ -180,8 +187,8 @@ bool CmdCreate::run(GameEnv *env, CmdReceiver*) {
         env->GetPlayer(_player_id).ChangeResource(_resource_used);
         return false;
     }
-    std::cout<<"CmdCreate u_id: "<< u_id<<std::endl;
-    return true;
+   //std::cout<<"CmdCreate u_id: "<< u_id<<std::endl;
+    return u_id;
 }
 
 bool CmdRemove::run(GameEnv *env, CmdReceiver* receiver) {

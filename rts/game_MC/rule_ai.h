@@ -19,6 +19,7 @@ public:
 
 private:
     bool Act(const RTSState &, RTSMCAction *action, const atomic_bool *) override {
+        //cout<<"SimpleAI Acting"<<endl;
         action->Init(id(), name());
         action->SetSimpleAI();
         return true;

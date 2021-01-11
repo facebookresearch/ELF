@@ -10,7 +10,7 @@
 #include "cmd_specific.gen.h"
 
 //static constexpr float kDistBullet = 0.3;  // 子弹的体积？
-static constexpr float kDistBullet = 0.003;  // 子弹的体积？
+static constexpr float kDistBullet = 0.03;  // 子弹的体积？
 
 string Bullet::Draw() const {
     return make_string("u", _p, _state);
@@ -59,10 +59,14 @@ CmdBPtr Bullet::Forward(const RTSMap&, const Units& units) {
 
     if (dist_sqr < kDistBullet * kDistBullet) {  // 如果子弹击中目标
         // Hit the target.
+        // cout<<"dist_sqr: "<<dist_sqr<<" 碰撞距离: "<<kDistBullet * kDistBullet<<endl;
+        // cout<<"bullet_p: "<<_p<<"  目标位置: "<<target<<endl;
+        
         _state = BULLET_EXPLODE1;
         if (_target_id != INVALID) {
             return CmdBPtr(new CmdMeleeAttack(_id_from, _target_id, _att)); // 造成一次攻击
         }
+
     } else {  // 子弹飞向目标
         // Fly
         // [TODO]: Randomize the flying procedure (e.g., curvy tracking).

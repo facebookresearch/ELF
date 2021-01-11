@@ -44,7 +44,7 @@ bool add_players(const string &args, int frame_skip, RTSGame *game) {
             vector<string> params = split(player, '=');
             // int tick_start = (params.size() == 1 ? 0 : std::stoi(params[1]));
             game->AddBot(new TCPAI("tcpai", 8000), 1);
-            game->GetState().AppendPlayer("tcpai");
+            game->GetState().AppendPlayer("tcpai",PV_NORMAL);
         } else if (player.find("mcts") == 0) {
             vector<string> params = split(player, '=');
 
@@ -81,8 +81,10 @@ bool add_players(const string &args, int frame_skip, RTSGame *game) {
         //else if (player == "td_simple") bots.push_back(new TDSimpleAI(INVALID, frame_skip, nullptr));
         //else if (player == "td_built_in") bots.push_back(new TDBuiltInAI(INVALID, frame_skip, nullptr));
         else {
+            // cout<<"simple ai"<<endl;
             AI *ai = AIFactory<AI>::CreateAI(player, "");
             if (ai != nullptr) {
+                // cout<<"add simple ai"<<endl;
                 game->AddBot(ai, frame_skip);
                 game->GetState().AppendPlayer(player);
             } else {
@@ -435,9 +437,9 @@ int main(int argc, char *argv[]) {
         p.stop(true);
         std::cout << gstats.PrintInfo() << std::endl;
     } else {
-        std::cout<<"======RTSStateExtend===="<<std::endl;
+        //std::cout<<"======RTSStateExtend===="<<std::endl;
         RTSStateExtend state(options);
-        std::cout<<"=====RTSGame"<<std::endl;
+        //std::cout<<"=====RTSGame"<<std::endl;
         RTSGame game(&state);
         cout << "Players: " << players << endl;
         add_players(players, frame_skip, &game);
@@ -446,7 +448,7 @@ int main(int argc, char *argv[]) {
         chrono::duration<double> duration = chrono::system_clock::now() - time_start;
         cout << "Total time spent = " << duration.count() << "s" << endl;
         std::cout<<"======MainLoop======="<<std::endl;
-        game.MainLoop();
+        game.MainLoop(nullptr,true);
         /*
             // Load replay etc.
             for (size_t i = 0; i < options.load_replay_filenames.size(); ++i) {

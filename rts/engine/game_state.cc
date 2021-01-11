@@ -18,8 +18,9 @@ RTSState::RTSState() {
     _env.ClearAllPlayers();
 }
 
-void RTSState::AppendPlayer(const string &name) {
-    _env.AddPlayer(name, PV_KNOW_ALL);
+void RTSState::AppendPlayer(const string &name,PlayerPrivilege pv) {
+   // std::cout<<"AddPlayer: "<<name<<" "<<pv<<std::endl;
+    _env.AddPlayer(name, pv);
     //_env.AddPlayer(name, PV_NORMAL);
 }
 
@@ -164,11 +165,11 @@ elf::GameResult RTSState::PostAct() {
 
     // Check winner.
     PlayerId winner_id = _env.GetGameDef().CheckWinner(_env, _cmd_receiver.GetTick() >= _max_tick);
+    //std::cout<<"winner_id: "<<winner_id<<std::endl;
     _env.SetWinnerId(winner_id);
 
     Tick t = _cmd_receiver.GetTick();
     bool run_normal = _cmd_receiver.GetGameStats().CheckGameSmooth(t);
-
     // Check winning condition
     if (winner_id != INVALID || t >= _max_tick || ! run_normal) {
         _env.SetTermination();

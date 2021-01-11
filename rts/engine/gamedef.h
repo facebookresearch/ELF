@@ -18,7 +18,8 @@ struct UnitProperty {
     int _hp, _max_hp;  // 当前hp 最大hp
 
     int _att, _def;    // 攻击力 防御力(不需要)
-    int _att_r;        // 射程
+    //int _att_r;        // 射程
+    float _att_r;        // 射程
     float _speed;      // 速度
 
     // Visualization range. 视野
@@ -35,6 +36,9 @@ struct UnitProperty {
 
     // Used for capturing the flag game.
     int _has_flag = 0;
+
+    int round; //载弹量
+    PointF towards = PointF(); //朝向，用于计算FOW 和(0,0)组成一组向量
 
     inline bool IsDead() const { return _hp <= 0; }
     inline Cooldown &CD(CDType t) { return _cds[t]; }
@@ -55,7 +59,7 @@ struct UnitProperty {
 
     UnitProperty()
         : _hp(0), _max_hp(0), _att(0), _def(0), _att_r(0),
-        _speed(0.0), _vis_r(0), _changed_hp(0), _damage_from(INVALID), _attr(ATTR_NORMAL),  _cds(NUM_COOLDOWN) { }
+        _speed(0.0), _vis_r(0), _changed_hp(0), _damage_from(INVALID), _attr(ATTR_NORMAL),  _cds(NUM_COOLDOWN),round(0),towards(PointF()) { }
 
     SERIALIZER(UnitProperty, _hp, _max_hp, _att, _def, _att_r, _speed, _vis_r, _changed_hp, _damage_from, _attr, _cds);
     HASH(UnitProperty, _hp, _max_hp, _att, _def, _att_r, _speed, _vis_r, _changed_hp, _damage_from, _attr, _cds);
@@ -73,7 +77,7 @@ struct UnitTemplate {
     }
 };
 
-UnitTemplate _C(int cost, int hp, int defense, float speed, int att, int att_r, int vis_r,
+UnitTemplate _C(int cost, int hp, int defense, float speed, int att, float att_r, int vis_r,int round,
         const vector<int> &cds, const vector<CmdType> &l, UnitAttr attr = ATTR_NORMAL);
 
 class GameEnv;

@@ -49,37 +49,113 @@ bool CmdGameStartSpecific::run(GameEnv*, CmdReceiver* receiver) {
 }
 
 //-----------------Test--------------------
+//创建雷达并设置朝向
+bool CreateRadar(Tick _tick,GameEnv* env,PlayerId player_id,PointF radar_p,PointF towards){
+   UnitId radar_id;
+   if(! env->AddUnit(_tick, RANGE_ATTACKER, radar_p, player_id,radar_id)){
+        std::cout<<"create radar failed at "<<radar_p<<std::endl;
+        return false;
+    }
+   Unit* radar = env->GetUnit(radar_id);
+   if(radar == nullptr) return false; //雷达创建失败
+   //设置雷达朝向
+   radar->GetProperty().towards.x = towards.x;
+   radar->GetProperty().towards.y = towards.y;
+   //std::cout<<"Create Radar at "<<radar->GetPointF()<<" towards "<<radar->GetProperty().towards<<std::endl;
+   return true;
+
+}
 bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
     //std::cout<<"CmdGenerateTDUnit"<<std::endl;
     const PlayerId player_id = 0;
     const PlayerId enemy_id = 1;
     // 保护目标
-    _CREATE(BASE, PointF(34, 34), player_id);
+    _CREATE(BASE, PointF(35, 35), player_id);
+    /**
+     *   if (! build_p.IsInvalid()) {
+                   // 创造导弹 
+                   UnitId rocket_id;
+                   
+                   if (! env_temp.AddUnit(_tick, BARRACKS, build_p, u->GetPlayerId(),rocket_id)) {
+                        std::cout<<"emit rocket failed"<<std::endl;
+                        return false;
+                    }
+                    //载弹量 -1
+                    --env_temp.GetUnit(_id)->GetProperty().round;
+                    // 发射导弹(让导弹去攻击目标)
+                    receiver->SendCmd(CmdBPtr(new CmdAttack(rocket_id, _target)));
+                    _done = true;
+                }
+     * **/
     // 雷达
-    _CREATE(RANGE_ATTACKER,PointF(45,25),player_id);
-    _CREATE(RANGE_ATTACKER,PointF(25,25),player_id);
-    _CREATE(RANGE_ATTACKER,PointF(34,45),player_id);
+    PointF radar_1_p = PointF(36,34.8); //雷达1位置
+    PointF radar_2_p = PointF(34,34.8); //雷达2位置
+    if(!CreateRadar(_tick,env,player_id,radar_1_p,PointF(1,-1.732))) return false;
+   
+    if(!CreateRadar(_tick,env,player_id,radar_2_p,PointF(-1,-1.732))) return false;
+    
+    //if(!CreateRadar(_tick,env,player_id,radar_1_p,PointF(-1,1.732))) return false;
+   //if(!CreateRadar(_tick,env,player_id,radar_2_p,PointF(1,1.732))) return false;
+    //_CREATE(RANGE_ATTACKER,PointF(36,34.8),player_id);
+    //_CREATE(RANGE_ATTACKER,PointF(34,34.8),player_id);
+    
+    
     // 炮台
-    _CREATE(MELEE_ATTACKER,PointF(40,40),player_id);
-    _CREATE(MELEE_ATTACKER,PointF(40,30),player_id);
-    _CREATE(MELEE_ATTACKER,PointF(30,40),player_id);
-    _CREATE(MELEE_ATTACKER,PointF(30,30),player_id);
+    // B1
+    _CREATE(MELEE_ATTACKER,PointF(29.0122,34.4522),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(29.30155,33.0899),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(29.9549,31.86105),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(30.9217,30.85995),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(32.12695,30.1641),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(33.47735,29.8274),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(34.86825,29.87595),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(36.19185,30.30605),player_id);
 
-    //
-     _CREATE(WORKER,PointF(50,50),player_id);
-     _CREATE(BARRACKS,PointF(55,55),player_id);
-      _CHANGE_RES(player_id, 200000000);
+    // B2
+    _CREATE(MELEE_ATTACKER,PointF(40.9878,34.4522),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(40.69845,33.0899),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(40.0451,31.86105),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(39.0783,30.85995),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(37.87305,30.1641),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(36.52265,29.8274),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(35.13175,29.87595),player_id);
+    _CREATE(MELEE_ATTACKER,PointF(33.80815,30.30605),player_id);
+    
+
+    // _CREATE(MELEE_ATTACKER,PointF(40,40),player_id);
+    // _CREATE(MELEE_ATTACKER,PointF(40,30),player_id);
+    // _CREATE(MELEE_ATTACKER,PointF(30,40),player_id);
+    // _CREATE(MELEE_ATTACKER,PointF(30,30),player_id);
+
+    // //
+    //  //_CREATE(WORKER,PointF(50,50),player_id);
+    //  //_CREATE(BARRACKS,PointF(55,55),player_id);
+     _CHANGE_RES(player_id, 100);
 
 
 
    
 
     // enemy
-    _CREATE(BASE,PointF(1, 1),enemy_id);
+    //_CREATE(BASE,PointF(1, 1),enemy_id);
+    _CREATE(WORKER,PointF(1,1),enemy_id);
+    _CREATE(WORKER,PointF(34,1),enemy_id);
+    _CREATE(WORKER,PointF(36,1),enemy_id);
+    _CREATE(WORKER,PointF(68,1),enemy_id);
+    // _CREATE(WORKER,PointF(35,26),enemy_id);
+    // _CREATE(BARRACKS,PointF(35,27),enemy_id);
+
+    //_CREATE(BASE,PointF(35,10),enemy_id);
+    //_CREATE(MELEE_ATTACKER,PointF(30,10),enemy_id);
+
+    // _CHANGE_RES(enemy_id, 200000000);
+
+    
+    //_CREATE(WORKER,PointF(50,50),enemy_id);
     // 敌方飞机
-    _CREATE(WORKER,PointF(34,20),enemy_id);
-    _CREATE(WORKER,PointF(20,36),enemy_id);
-    _CREATE(WORKER,PointF(24,35),enemy_id);
+    // _CREATE(WORKER,PointF(34,20),enemy_id);
+    // _CREATE(WORKER,PointF(20,36),enemy_id);
+    // _CREATE(WORKER,PointF(24,35),enemy_id);
     
     return true;
 
