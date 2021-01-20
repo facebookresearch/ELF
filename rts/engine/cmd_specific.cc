@@ -27,7 +27,7 @@ static const int kMoveToDest = 0;
 static const int kBuilding = 1;
 
 static constexpr float kGatherDist = 1;
-static constexpr float kBuildDist = 1;
+static constexpr float kBuildDist = 0.05;
 
 static constexpr float kGatherDistSqr = kGatherDist * kGatherDist;
 static constexpr float kBuildDistSqr = kBuildDist * kBuildDist;
@@ -87,13 +87,6 @@ PointF CountPoint(const Unit& u,const PointF& target,float r){
    point.x = u.GetPointF().x + rate * (target.x - u.GetPointF().x);
    point.y = u.GetPointF().y + rate * (target.y - u.GetPointF().y); 
   
-//    cout<<"u_t 角度为 "<<theta/PI * 180.0f<<endl; 
-   //PointF u_t_circle = PointF();
-//    cout<<" point: "<<point<<" 与u的距离"<<sqrt(PointF::L2Sqr(u.GetPointF(),point))<<endl;
-//    PointF u_p = PointF(point.x - u.GetPointF().x, point.y - u.GetPointF().y);
-//    u_p /= r;
-//    u_t /= distance_to_target;
-//    cout<<"向量  u_p: "<<u_p<<"    u_t: "<<u_t<<endl;
    // 计算圆心位置
    theta += PI/2; //旋转90度
    if(theta >= 2*PI){
@@ -102,9 +95,6 @@ PointF CountPoint(const Unit& u,const PointF& target,float r){
     }
     point.x = Circular_X(u.GetPointF().x,r,theta);
     point.y = Circular_Y(u.GetPointF().y,r,theta);
-    // PointF u_p = PointF(point.x - u.GetPointF().x, point.y - u.GetPointF().y);
-    // float u_p_dot_u_t = u_p.x * u_t.x + u_p.y * u_t.y;
-    // cout<<"dot: "<<u_p_dot_u_t<<"  distance: "<<sqrt(PointF::L2Sqr(u.GetPointF(),point))<<endl;
     return point;
 }
 
@@ -244,7 +234,7 @@ bool CmdMove::run(const GameEnv &env, CmdReceiver *receiver) {
 // Attack cmd.target_id
 // 持续攻击应该改成单发攻击？
 bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
-   // std::cout<<this->PrintInfo()<<std::endl;
+    
     GameEnv& env_temp = const_cast<GameEnv&>(env); // 需要用到GameEnv的方法
     const Unit *u = env.GetUnit(_id); // 执行命令的单位
     if (u == nullptr) return false;
@@ -284,7 +274,10 @@ bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
     // cout << "[" << _id << "] dist_sqr_to_enemy[" << _last_cmd.target_id << "] = " << dist_sqr_to_enemy << endl;
     
     // Otherwise attack.  
-    if (property.CD(CD_ATTACK).Passed(_tick) && in_attack_range) {   // 如果目标在攻击范围内且攻击就绪
+    // if(!property.CD(CD_ATTACK).Passed(_tick) ){
+    //     std::cout<<"CD not ready  "<<this->PrintInfo()<<std::endl;
+    // }
+    if ((property.CD(CD_ATTACK).Passed(_tick)|| _tick == property.CD(CD_ATTACK)._last)&& in_attack_range) {   // 如果目标在攻击范围内且攻击就绪
        
         // Melee delivers attack immediately, long-range will deliver attack via bullet.
         // if (property._att_r <= 1.0) {

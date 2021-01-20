@@ -155,7 +155,8 @@ public:
 typedef unique_ptr<CmdBase> CmdBPtr;
 typedef unique_ptr<CmdDurative> CmdDPtr;
 typedef unique_ptr<CmdImmediate> CmdIPtr;
-typedef map<UnitId, CmdBPtr> AssignedCmds;
+// typedef map<UnitId, CmdBPtr> AssignedCmds;
+typedef multimap<UnitId, CmdBPtr> AssignedCmds;
 
 class CmdTypeLookup {
 private:

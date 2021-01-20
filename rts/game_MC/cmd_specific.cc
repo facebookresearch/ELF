@@ -90,14 +90,11 @@ bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
     // 雷达
     PointF radar_1_p = PointF(36,34.8); //雷达1位置
     PointF radar_2_p = PointF(34,34.8); //雷达2位置
-    if(!CreateRadar(_tick,env,player_id,radar_1_p,PointF(1,-1.732))) return false;
+    if(!CreateRadar(_tick,env,player_id,radar_1_p,PointF(1,-1.732))) return false;   // 生成雷达并设置朝相
    
-    if(!CreateRadar(_tick,env,player_id,radar_2_p,PointF(-1,-1.732))) return false;
+    if(!CreateRadar(_tick,env,player_id,radar_2_p,PointF(-1,-1.732))) return false;  // 生成雷达并设置朝向
     
-    //if(!CreateRadar(_tick,env,player_id,radar_1_p,PointF(-1,1.732))) return false;
-   //if(!CreateRadar(_tick,env,player_id,radar_2_p,PointF(1,1.732))) return false;
-    //_CREATE(RANGE_ATTACKER,PointF(36,34.8),player_id);
-    //_CREATE(RANGE_ATTACKER,PointF(34,34.8),player_id);
+    
     
     
     // 炮台
@@ -122,14 +119,8 @@ bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
     _CREATE(MELEE_ATTACKER,PointF(33.80815,30.30605),player_id);
     
 
-    // _CREATE(MELEE_ATTACKER,PointF(40,40),player_id);
-    // _CREATE(MELEE_ATTACKER,PointF(40,30),player_id);
-    // _CREATE(MELEE_ATTACKER,PointF(30,40),player_id);
-    // _CREATE(MELEE_ATTACKER,PointF(30,30),player_id);
+   
 
-    // //
-    //  //_CREATE(WORKER,PointF(50,50),player_id);
-    //  //_CREATE(BARRACKS,PointF(55,55),player_id);
      _CHANGE_RES(player_id, 100);
 
 
@@ -137,25 +128,12 @@ bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
    
 
     // enemy
-    //_CREATE(BASE,PointF(1, 1),enemy_id);
+    // 后续设计应该让敌方按时在指定地点生成飞机（飞机飞离战场或者被击毁后，扣除敌方一定资源）
     _CREATE(WORKER,PointF(1,1),enemy_id);
     _CREATE(WORKER,PointF(34,1),enemy_id);
     _CREATE(WORKER,PointF(36,1),enemy_id);
     _CREATE(WORKER,PointF(68,1),enemy_id);
-    // _CREATE(WORKER,PointF(35,26),enemy_id);
-    // _CREATE(BARRACKS,PointF(35,27),enemy_id);
-
-    //_CREATE(BASE,PointF(35,10),enemy_id);
-    //_CREATE(MELEE_ATTACKER,PointF(30,10),enemy_id);
-
-    // _CHANGE_RES(enemy_id, 200000000);
-
     
-    //_CREATE(WORKER,PointF(50,50),enemy_id);
-    // 敌方飞机
-    // _CREATE(WORKER,PointF(34,20),enemy_id);
-    // _CREATE(WORKER,PointF(20,36),enemy_id);
-    // _CREATE(WORKER,PointF(24,35),enemy_id);
     
     return true;
 

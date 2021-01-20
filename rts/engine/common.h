@@ -77,7 +77,7 @@ STD_HASH(Coord);
 
 // Seems that this should be larger than \sqrt{2}/2/2 = 0.35355339059
 // const float kUnitRadius = 0.36;
-const float kUnitRadius = 0.01;
+const float kUnitRadius = 0.01; // 100 m单位半径
 
 struct PointF {
     float x, y;

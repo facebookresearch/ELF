@@ -25,7 +25,7 @@ public:
         _cmds.clear();
     }
 
-    map<UnitId, CmdBPtr> &cmds() { return _cmds; }
+    multimap<UnitId, CmdBPtr> &cmds() { return _cmds; }
 
     void AddComment(const std::string &comment) {
         if (! comment.empty()) _comments.push_back(comment);
@@ -64,5 +64,6 @@ protected:
     string _name;
     vector<string> _comments;
 
-    map<UnitId, CmdBPtr> _cmds;
+    // map<UnitId, CmdBPtr> _cmds;
+    multimap<UnitId, CmdBPtr> _cmds;
 };

@@ -99,7 +99,7 @@ void Preload::GatherInfo(const GameEnv& env, int player_id, const CmdReceiver &r
     if (!env.GetGameDef().HasBase()) return;
 
     if ( _enemy_troops[BASE].empty()) {
-        cout<<"No_BASE"<<endl;
+        //cout<<"No_BASE"<<endl;
         _result = NO_BASE;
         // cout << "_result = NO_BASE" << endl;
         return;
@@ -167,7 +167,9 @@ bool RuleActor::store_cmd(const Unit *u, CmdBPtr&& cmd, AssignedCmds *m) const {
         }
     }
 
-    (*m)[u->GetId()] = std::move(cmd);
+    // (*m)[u->GetId()] = std::move(cmd);
+    //  action->cmds().emplace(make_pair(cmd->id(), std::move(cmd)));
+    m->emplace(make_pair(u->GetId(), std::move(cmd)));
     return true;
 }
 

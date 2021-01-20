@@ -40,12 +40,15 @@ bool TCPAI::Act(const State &s, RTSMCAction *action, const std::atomic_bool *) {
 
     vector<CmdBPtr> cmds;
     vector<UICmd> ui_cmds;
-
+    //std::cout<<"TCPAI Act()"<<std::endl;
     _ctrl.Receive(s, &cmds, &ui_cmds);
+    //std::cout<<"After Receive cmd.size(): "<<cmds.size()<<endl;
+    
     // Put the cmds to action, ignore all ui cmds.
     // [TODO]: Move this to elf::game_base.h. 
     action->Init(id(), name()); 
     for (auto &&cmd : cmds) {
+        std::cout<<"cmd->id: "<<cmd->id()<<endl;
         action->cmds().emplace(make_pair(cmd->id(), std::move(cmd)));
     }
     return true;

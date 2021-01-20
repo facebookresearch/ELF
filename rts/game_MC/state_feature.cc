@@ -18,7 +18,7 @@ static inline void accu_value(int idx, float val, std::map<int, std::pair<int, f
     }
 }
 
-MCExtractorInfo MCExtractor::info_;
+MCExtractorInfo MCExtractor::info_;   // leak?
 MCExtractorUsageOptions MCExtractor::usage_;
 bool MCExtractor::attach_complete_info_ = false;
 
@@ -62,15 +62,15 @@ void MCExtractor::Extract(const RTSState &s, PlayerId player_id, bool respect_fo
 
 void MCExtractor::extract(const RTSState &s, PlayerId player_id, bool respect_fow, float *state) {
     assert(player_id != INVALID);
-
+   
     const GameEnv &env = s.env();
-
+   
     const Extractor *ext_ut = info_.get("UnitType");
     const Extractor *ext_feature = info_.get("Feature");
     const Extractor *ext_resource = info_.get("Resource");
 
     // The following features are optional and might be nullptr.
-    const Extractor *ext_hist_bin = info_.get("HistBin");
+    const Extractor *ext_hist_bin = info_.get("HistBin"); // leak?
     const Extractor *ext_ut_prev_seen = info_.get("UnitTypePrevSeen");
     const Extractor *ext_hist_bin_prev_seen = info_.get("HistBinPrevSeen");
 

@@ -24,7 +24,7 @@ bool RTSMCAction::Send(const GameEnv &env, CmdReceiver &receiver) {
     } else {
         bool gather_ok = rule_actor.GatherInfo(env, &comment, &_cmds);
         if (! gather_ok) {
-            cout<<"gather fail"<<endl;
+            //cout<<"gather fail"<<endl;
             return RTSAction::Send(env, receiver);
         }
 

@@ -88,7 +88,7 @@ protected:
 
 class ExtractorSeq : public Extractor {
 public:
-    ExtractorSeq(int base_addr, std::initializer_list<int> seqs)
+    ExtractorSeq(int base_addr, std::initializer_list<int> seqs) // leak?
         : Extractor(base_addr), seqs_(seqs) {
     }
 
@@ -117,10 +117,11 @@ public:
     };
 
     MCExtractorInfo() {
-        Reset(MCExtractorOptions());
+        Reset(MCExtractorOptions());  // leak?
     }
 
     void Reset(const MCExtractorOptions &opt) {
+        //std::cout<<"============Reset==============="<<std::endl;
         extractors_.clear();
 
         int num_unit_type = GameDef::GetNumUnitType();  
@@ -131,7 +132,10 @@ public:
         std::initializer_list<int> ticks = { 200, 500, 1000, 2000, 5000, 10000 };
 
         if (opt.use_time_decay) {
-            total_dim_ += _add_extractor("HistBin", new ExtractorSeq(total_dim_, ticks));   // 6+1
+            // std::cout<<"===opt.use_time_decay==="<<std::endl;
+            // std::cout<<"total dim = "<<total_dim_<<std::endl;
+            total_dim_ += _add_extractor("HistBin", new ExtractorSeq(total_dim_, ticks));   // 6+1 leak?
+            // std::cout<<"after add total dim = "<<total_dim_<<std::endl;
         }
 
         if (opt.save_prev_seen_units) {

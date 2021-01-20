@@ -107,6 +107,7 @@ RawMsgStatus RawToCmd::Process(Tick tick, const GameEnv &env, const string&s, ve
     float percent;
     PointF p, p2;
     set<UnitId> selected;
+    set<UnitId> selected_target; //所有选中的敌方ID
 
     cout << "Cmd: " << s << endl;
 
@@ -155,8 +156,28 @@ RawMsgStatus RawToCmd::Process(Tick tick, const GameEnv &env, const string&s, ve
         default:
             break;
     }
-
+    
+    //在所有选中的敌方ID
+    if(!selected.empty()){
+        for(auto it = selected.begin();it!=selected.end();++it){
+            if (Player::ExtractPlayerId(*it) != _player_id){
+                selected_target.insert(*it);
+            }
+        }
+    }
+    // if(!selected_target.empty()){
+    //     cout<<"======selected target========"<<endl;
+    //     for(auto it = selected_target.begin();it!=selected_target.end();++it){
+    //         cout<<*it<<" ";
+    //     }
+    //     cout<<endl;
+    // }
+    
     if (! is_mouse_motion(c)) _last_key = c;
+    
+
+
+   
 
      //cout << "#Hotkey " << _hotkey_maps.size() << "  player_id = " << _player_id << " _last_key = " << _last_key
      //    << " #selected = " << selected.size() << " #prev-selected: " << _sel_unit_ids.size() << endl;
@@ -165,8 +186,41 @@ RawMsgStatus RawToCmd::Process(Tick tick, const GameEnv &env, const string&s, ve
     //   1. we cannot control other player's units.
     //   2. we cannot have friendly fire (enforced in the callback function)
     bool cmd_success = false;
-    //if(! _sel_unit_ids.empty() && selected.size() >1 && _last_key == 'a')
-    if (! _sel_unit_ids.empty() && selected.size() <= 1) {  
+    
+    // 是攻击命令，且选中目标大于1
+    if(! _sel_unit_ids.empty() && selected_target.size() >1 && _last_key == 'a'){
+        //cout<<"群体攻击,选中目标： "<<selected_target.size()<<endl;
+        auto it_key = _hotkey_maps.find(_last_key);
+        if (it_key != _hotkey_maps.end()) {
+            EventResp f = it_key->second;
+            for (auto it = _sel_unit_ids.begin(); it != _sel_unit_ids.end(); ++it) {
+                // cout << "Deal with unit" << *it << endl << flush;
+                if (Player::ExtractPlayerId(*it) != _player_id) continue;
+
+                // Only command our unit.
+                const Unit *u = env.GetUnit(*it);
+
+                // u has been deleted (e.g., killed)
+                // We won't delete it in our selection, since the selection will naturally update.
+                if (u == nullptr) continue;
+                //遍历所有选中的敌方单位
+                for(auto it_t = selected_target.begin();it_t != selected_target.end();++it_t){
+                    //cout<<*it<<" 准备发动攻击命令，目标为 "<<*it_t<<endl;
+                    //为每个单位执行一次攻击命令
+                    CmdBPtr cmd = f(*u, _last_key, p, *it_t, env).GetCmd();
+                    if (! cmd.get() || ! env.GetGameDef().unit(u->GetUnitType()).CmdAllowed(cmd->type())) continue;
+                    // Command successful.
+                    //cout<<*it<<" 成攻发动攻击命令，目标为 "<<*it_t<<endl;
+                    cmds->emplace_back(std::move(cmd));
+                }
+                
+                cmd_success = true;
+            }
+        }
+    }else{
+    // cout<<"单体攻击"<<endl;
+      //其他命令或者只有一个攻击目标时执行此命令
+     if (! _sel_unit_ids.empty() && selected.size() <= 1) {  
         UnitId id = (selected.empty() ? INVALID : *selected.begin());
         auto it_key = _hotkey_maps.find(_last_key);
         if (it_key != _hotkey_maps.end()) {
@@ -191,6 +245,11 @@ RawMsgStatus RawToCmd::Process(Tick tick, const GameEnv &env, const string&s, ve
             }
         }
      }
+    }
+    //cout<<"cmds 接受命令数量： "<<cmds->size()<<endl;
+    
+    
+   
 
     
 

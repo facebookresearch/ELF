@@ -10,7 +10,7 @@
 #include "cmd_specific.gen.h"
 
 //static constexpr float kDistBullet = 0.3;  // 子弹的体积？
-static constexpr float kDistBullet = 0.03;  // 子弹的体积？
+static constexpr float kDistBullet = 0.03;  // 子弹的体积
 
 string Bullet::Draw() const {
     return make_string("u", _p, _state);
@@ -57,9 +57,9 @@ CmdBPtr Bullet::Forward(const RTSMap&, const Units& units) {
 
     float dist_sqr = PointF::L2Sqr(_p, target);
 
-    if (dist_sqr < kDistBullet * kDistBullet) {  // 如果子弹击中目标
+    if (fabs(dist_sqr- kDistBullet * kDistBullet)< 1e-5 ) {  // 如果子弹击中目标
         // Hit the target.
-        // cout<<"dist_sqr: "<<dist_sqr<<" 碰撞距离: "<<kDistBullet * kDistBullet<<endl;
+        cout<<"dist_sqr: "<<dist_sqr<<" 碰撞距离: "<<kDistBullet * kDistBullet<<" 两者差值： "<<fabs(dist_sqr- kDistBullet * kDistBullet)<<endl;
         // cout<<"bullet_p: "<<_p<<"  目标位置: "<<target<<endl;
         
         _state = BULLET_EXPLODE1;
@@ -79,7 +79,9 @@ CmdBPtr Bullet::Forward(const RTSMap&, const Units& units) {
         }
         
         diff.Trunc(_speed); // 移动的距离
-        //std::cout<<"dist: "<<diff.x*diff.x + diff.y*diff.y<<std::endl;
+        // std::cout<<"dist: "<<diff.x*diff.x + diff.y*diff.y<<std::endl;
+        //cout<<"dist_sqr: "<<dist_sqr<<" 碰撞距离: "<<kDistBullet * kDistBullet<<" 两者差值： "<<dist_sqr - kDistBullet * kDistBullet<<" 飞行距离: "<<diff.x*diff.x + diff.y*diff.y<<endl;
+        
         _p += diff;  // 更新子弹位置
     }
     return CmdBPtr();
