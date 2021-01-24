@@ -11,9 +11,11 @@
 
 // Constructor
 RTSMap::RTSMap() {
-    //std::cout<<"RTSMAP"<<std::endl;
+   // std::cout<<"Before load_default_map"<<std::endl;
     load_default_map();
+    //std::cout<<"Before reset_intermediates"<<std::endl;
     reset_intermediates();
+    //std::cout<<"RTSMAP Finish"<<std::endl;
 }
 
 bool RTSMap::find_two_nearby_empty_slots(const std::function<uint16_t(int)>& f, int *x1, int *y1, int *x2, int *y2, int i) const {

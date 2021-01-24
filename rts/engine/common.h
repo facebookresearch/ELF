@@ -30,6 +30,8 @@ const int MAX_GAME_LENGTH_EXCEEDED = -2;
 custom_enum(UnitType, INVALID_UNITTYPE = -1,
     /* Minirts unit types*/
     RESOURCE = 0, WORKER, MELEE_ATTACKER, RANGE_ATTACKER, BARRACKS, BASE, NUM_MINIRTS_UNITTYPE,
+    //WORKER= 0, MELEE_ATTACKER, RANGE_ATTACKER, BARRACKS, BASE, NUM_MINIRTS_UNITTYPE,
+    
     /* Capture the flag unit type */
     FLAG_BASE = 0, FLAG_ATHLETE, FLAG, NUM_FLAG_UNITTYPE,
     /* Tower defense unit type */
@@ -77,7 +79,7 @@ STD_HASH(Coord);
 
 // Seems that this should be larger than \sqrt{2}/2/2 = 0.35355339059
 // const float kUnitRadius = 0.36;
-const float kUnitRadius = 0.01; // 100 m单位半径
+const float kUnitRadius = 0.04; // 100 m单位半径
 
 struct PointF {
     float x, y;

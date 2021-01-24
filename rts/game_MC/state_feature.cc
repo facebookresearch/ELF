@@ -35,7 +35,8 @@ void MCExtractor::SaveInfo(const RTSState &s, PlayerId player_id, GameState *gs)
     //gs->base_x = s.env().GetUnit(s.env().FindClosestBase(player_id))->GetPointF().x;
     //gs->base_y = s.env().GetUnit(s.env().FindClosestBase(player_id))->GetPointF().y;
     // 测试获取基地位置
-
+    
+    // 设置奖励
     int winner = s.env().GetWinnerId();
     if (winner != INVALID) {
       if (winner == player_id) gs->last_r = 1.0;
@@ -163,13 +164,13 @@ void MCExtractor::extract(const RTSState &s, PlayerId player_id, bool respect_fo
     mybarrack = min(mybarrack, 1);
 
     // Add resource layer for the current player.
-    const int c_idx = ext_resource->Get(player.GetResource());
-    const int c = _OFFSET(c_idx, 0, 0, m);
-    std::fill(state + c, state + c + m.GetXSize() * m.GetYSize(), 1.0);
+    // const int c_idx = ext_resource->Get(player.GetResource());
+    // const int c = _OFFSET(c_idx, 0, 0, m);
+    // std::fill(state + c, state + c + m.GetXSize() * m.GetYSize(), 1.0);
 
-    if (usage_.type >= BUILD_HISTORY) {
-        const int kChBaseHpRatio = ext_feature->Get(MCExtractorInfo::BASE_HP_RATIO);
-        const int c = _OFFSET(kChBaseHpRatio, 0, 0, m);
-        std::fill(state + c, state + c + m.GetXSize() * m.GetYSize(), base_hp_level);
-    }
+    // if (usage_.type >= BUILD_HISTORY) {
+    //     const int kChBaseHpRatio = ext_feature->Get(MCExtractorInfo::BASE_HP_RATIO);
+    //     const int c = _OFFSET(kChBaseHpRatio, 0, 0, m);
+    //     std::fill(state + c, state + c + m.GetXSize() * m.GetYSize(), base_hp_level);
+    // }
 }

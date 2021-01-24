@@ -48,7 +48,7 @@ bool TCPAI::Act(const State &s, RTSMCAction *action, const std::atomic_bool *) {
     // [TODO]: Move this to elf::game_base.h. 
     action->Init(id(), name()); 
     for (auto &&cmd : cmds) {
-        std::cout<<"cmd->id: "<<cmd->id()<<endl;
+        //std::cout<<"cmd->id: "<<cmd->id()<<endl;
         action->cmds().emplace(make_pair(cmd->id(), std::move(cmd)));
     }
     return true;

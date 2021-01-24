@@ -14,6 +14,8 @@ import os
 from rlpytorch import *
 
 if __name__ == '__main__':
+    # import pdb
+    # pdb.set_trace()
     trainer = Trainer()
     runner = SingleProcessRun()
     '''

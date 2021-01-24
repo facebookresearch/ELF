@@ -19,7 +19,7 @@ class RTSState {
 public:
     RTSState();
 
-    bool Prepare(const RTSGameOptions &options, ostream *output = nullptr, bool isPrint = false);
+    bool Prepare(const RTSGameOptions &options, ostream *output = nullptr);
 
     void Save(string *s) const {
         serializer::saver saver(true);
@@ -79,7 +79,7 @@ public:
     void SetReplayPrefix(const std::string &prefix) { _save_replay_prefix = prefix; }
 
     // Function used in GameLoop
-    virtual bool Init(bool isPrint = false) { return true; }
+    virtual bool Init() { return true; }
     virtual void PreAct() { }
     virtual void IncTick() { _cmd_receiver.IncTick(); }
 

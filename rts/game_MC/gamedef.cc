@@ -25,7 +25,8 @@ int GameDef::GetNumAction() {
 }
 
 bool GameDef::IsUnitTypeBuilding(UnitType t) const{
-    return (t == BASE) || (t == RESOURCE) || (t == BARRACKS);
+    // return (t == BASE) || (t == RESOURCE) || (t == BARRACKS);
+    return (t == BASE) || (t == BARRACKS);
 }
 
 bool GameDef::HasBase() const{ return true; }
@@ -89,7 +90,7 @@ void GameDef::Init() {
     // 雷达 索敌
     _units[RANGE_ATTACKER] = _C(100, 100, 0, 0.2, 0, 30.0f, 30, -1,vector<int>{0, 0, 0, 0}, vector<CmdType>{ATTACK});
     // 导弹 移动 攻击(攻击范围很小)
-    _units[BARRACKS] = _C(0, 10, 0, 0.03, 100, 0.03, 0, -1,vector<int>{0, 40, 0, 50}, vector<CmdType>{ATTACK});
+    _units[BARRACKS] = _C(0, 10, 0, 0.03, 100, 0.1, 0, -1,vector<int>{0, 40, 0, 50}, vector<CmdType>{ATTACK});
     // 保护目标
     _units[BASE] = _C(500, 500, 0, 0.0, 0, 0, 0, -1,{0, 0, 0, 50}, vector<CmdType>{BUILD});
 }

@@ -122,7 +122,7 @@ PointF circle_move(Tick tick, const Unit& u, const GameEnv &env,  PointF& target
              
              float cosTheta = p_u_dot_x / r;
              float theta = Count_Radians(u.GetPointF(),point,p_u_dot_x / r); //计算u的角度
-             cout<<"现在开始绕 "<<point<<" 做圆周运动"<<" 进入角度为 "<<theta/PI * 180.0f<<endl;
+             //cout<<"现在开始绕 "<<point<<" 做圆周运动"<<" 进入角度为 "<<theta/PI * 180.0f<<endl;
              
              Points[u.GetId()] = make_pair(theta,make_pair(target,point) );
              
@@ -208,7 +208,7 @@ bool CmdMove::run(const GameEnv &env, CmdReceiver *receiver) {
               // cout<<"curr radians: "<<radians<<endl;
                //cout<<fabs(radians - PI);
                if(radians > PI){
-                  cout<<"finish towards: "<<towards<<endl;
+                  //cout<<"finish towards: "<<towards<<endl;
                  // cout<<"radians: "<<radians<<endl;
                  // cout<<"length: "<< sqrt(towards.x * towards.x + towards.y * towards.y)<<endl;
                   //设置新的Target
@@ -272,7 +272,9 @@ bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
     float dist_sqr_to_enemy = PointF::L2Sqr(curr, target_p);  // 距离
     bool in_attack_range = (dist_sqr_to_enemy <= property._att_r * property._att_r);  // 判断是否在攻击范围内
     // cout << "[" << _id << "] dist_sqr_to_enemy[" << _last_cmd.target_id << "] = " << dist_sqr_to_enemy << endl;
-    
+    if(!in_attack_range){
+         cout << "[" << _id << "] dist_sqr_to_enemy[" << dist_sqr_to_enemy  << "att_r : "<<property._att_r * property._att_r<<endl;
+    }
     // Otherwise attack.  
     // if(!property.CD(CD_ATTACK).Passed(_tick) ){
     //     std::cout<<"CD not ready  "<<this->PrintInfo()<<std::endl;

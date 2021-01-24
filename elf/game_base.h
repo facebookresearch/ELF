@@ -92,10 +92,10 @@ public:
         return res;
     }
 
-    void MainLoop(const std::atomic_bool *done = nullptr,bool isPrint = false) {
-        if(isPrint)
-         cout<<"-------MainLoop----------"<<endl;
-        _state->Init(false);  // 初始化游戏
+    void MainLoop(const std::atomic_bool *done = nullptr) {
+        // if(isPrint)
+        //  cout<<"-------MainLoop----------"<<endl;
+        _state->Init();  // 初始化游戏
         
         // 游戏循环
         while (true) {

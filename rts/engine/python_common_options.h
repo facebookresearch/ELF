@@ -88,7 +88,7 @@ struct PythonOptions {
     int handicap_level;  // 0
 
     PythonOptions()
-      : simulation_type(ST_NORMAL), map_size_x(20), map_size_y(20), max_unit_cmd(10), max_tick(30000), seed(0), shuffle_player(false), game_name(0), handicap_level(0) {
+      : simulation_type(ST_NORMAL), map_size_x(70), map_size_y(70), max_unit_cmd(10), max_tick(30000), seed(0), shuffle_player(false), game_name(0), handicap_level(0) {
     }
 
     void AddAIOptions(const AIOptions &ai) {

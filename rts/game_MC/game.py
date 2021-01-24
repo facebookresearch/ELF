@@ -42,10 +42,10 @@ class Loader(CommonLoader):
         if self.args.use_unit_action:
             return ["uloc", "tloc", "bt", "ct", "uloc_prob", "tloc_prob", "bt_prob", "ct_prob"]
         else:
-            return []
+            return ["pi","a"]
 
     def _get_actor_spec(self): #d=定义用于actor的batch字典
-        reply_keys = ["V", "pi", "a"]
+        reply_keys = ["V","action_type"]  # unit_cmd 的回复
 
         return dict(
             batchsize=self.args.batchsize,

@@ -12,9 +12,11 @@ using namespace std;
 using namespace std::chrono;
 
 RTSState::RTSState() {
-   //std::cout<<"-----------RTSState Constructor --------"<<std::endl;
+    //std::cout<<"-----------RTSState Constructor --------"<<std::endl;
+   
     _env.InitGameDef();
     // TODO Need to add players accordingly.
+   
     _env.ClearAllPlayers();
 }
 
@@ -28,9 +30,9 @@ void RTSState::RemoveLastPlayer() {
     _env.RemovePlayer();
 }
 
-bool RTSState::Prepare(const RTSGameOptions &options, ostream *output,bool isPrint) {
-    if(isPrint)
-       std::cout<<"------------Prepare-------------"<<std::endl;
+bool RTSState::Prepare(const RTSGameOptions &options, ostream *output) {
+    // if(isPrint)
+    //    std::cout<<"------------Prepare-------------"<<std::endl;
     _cmd_receiver.SetVerbose(options.cmd_verbose, 0);
 
     const unsigned int game_counter = _env.GetGameCounter();
@@ -91,14 +93,14 @@ bool RTSState::Prepare(const RTSGameOptions &options, ostream *output,bool isPri
         } else {
             // _cmd_receiver.SendCmdWithTick(CmdBPtr(new CmdLoadMap(INVALID, options.map_filename)));
         }
-         if(isPrint){
-                std::cout<<"-----cmd Info------"<<std::endl;
-            }
+        //  if(isPrint){
+        //         std::cout<<"-----cmd Info------"<<std::endl;
+        //     }
         for (auto&& cmd_pair : _env.GetGameDef().GetInitCmds(options)) {
-            if(isPrint){
-                std::cout<<"---send InitCmd---"<<std::endl;
-                std::cout<<cmd_pair.first->PrintInfo()<<"  "<<cmd_pair.second<<std::endl;
-            }
+            // if(isPrint){
+            //     std::cout<<"---send InitCmd---"<<std::endl;
+            //     std::cout<<cmd_pair.first->PrintInfo()<<"  "<<cmd_pair.second<<std::endl;
+            // }
             _cmd_receiver.SendCmdWithTick(std::move(cmd_pair.first), cmd_pair.second);
         }
     }

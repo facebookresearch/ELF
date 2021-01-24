@@ -20,16 +20,26 @@ using namespace std::chrono;
 ////////////////////////// RTSStateExtend ////////////////////////////////////
 RTSStateExtend::RTSStateExtend(const RTSGameOptions &options)
     : _options(options), _snapshot_to_load(-1), _paused(false), _output_stream_owned(false), _output_stream(nullptr) {
-        //std::cout<<"----------RTSStateExtend Constructor------------"<<std::endl;
+        // if(isPrint){
+        //     std::cout<<"----------RTSStateExtend Constructor------------"<<std::endl;
+        // }
+        
     if (_options.output_file.empty()) {
+        // if(isPrint){
+        //      cout << "output_file empty" << endl;
+        // }
         _output_stream = _options.output_stream;
         _output_stream_owned = false;
     } else if (_options.output_file == "cout") {
-       // cout << "RTSStateExtend: open cout for stdout" << endl;
+        //  if(isPrint){
+        //      cout << "RTSStateExtend: open cout for stdout" << endl;
+        // }
        _output_stream = &cout;
        _output_stream_owned = false;
     } else {
-       // cout << "RTSStateExtend: open " << _options.output_file << " for stdout." << endl;
+    //    if(isPrint){
+    //          cout << "RTSStateExtend: open " << _options.output_file << " for stdout." << endl;
+    //     }
        _output_stream = new ofstream(_options.output_file);
        _output_stream_owned = true;
     }
@@ -70,10 +80,10 @@ CmdReturn RTSStateExtend::dispatch_cmds(const UICmd& cmd) {
     return CMD_FAILED;
 }
 
-bool RTSStateExtend::Init(bool isPrint = false) {
-    if(isPrint)
-      std::cout<<"------初始化游戏-------"<<std::endl;
-    if (! RTSState::Prepare(_options, _output_stream,isPrint)) return false;
+bool RTSStateExtend::Init() {
+    // if(isPrint)
+    //   std::cout<<"------初始化游戏-------"<<std::endl;
+    if (! RTSState::Prepare(_options, _output_stream)) return false;
 
     if (_output_stream) *_output_stream << "In the main loop " << endl << flush;
 

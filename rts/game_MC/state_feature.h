@@ -134,7 +134,7 @@ public:
         if (opt.use_time_decay) {
             // std::cout<<"===opt.use_time_decay==="<<std::endl;
             // std::cout<<"total dim = "<<total_dim_<<std::endl;
-            total_dim_ += _add_extractor("HistBin", new ExtractorSeq(total_dim_, ticks));   // 6+1 leak?
+            //total_dim_ += _add_extractor("HistBin", new ExtractorSeq(total_dim_, ticks));   // 6+1 leak?
             // std::cout<<"after add total dim = "<<total_dim_<<std::endl;
         }
 
@@ -143,7 +143,7 @@ public:
             total_dim_ += _add_extractor("HistBinPrevSeen", new ExtractorSeq(total_dim_, ticks));
         }
 
-        total_dim_ += _add_extractor("Resource", new ExtractorSpan(total_dim_, NUM_RES_SLOT, 50));  // 5
+       // total_dim_ += _add_extractor("Resource", new ExtractorSpan(total_dim_, NUM_RES_SLOT, 50));  // 5
     }
 
     int size() const { return total_dim_; }

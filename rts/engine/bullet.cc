@@ -59,7 +59,7 @@ CmdBPtr Bullet::Forward(const RTSMap&, const Units& units) {
 
     if (fabs(dist_sqr- kDistBullet * kDistBullet)< 1e-5 ) {  // 如果子弹击中目标
         // Hit the target.
-        cout<<"dist_sqr: "<<dist_sqr<<" 碰撞距离: "<<kDistBullet * kDistBullet<<" 两者差值： "<<fabs(dist_sqr- kDistBullet * kDistBullet)<<endl;
+        //cout<<"dist_sqr: "<<dist_sqr<<" 碰撞距离: "<<kDistBullet * kDistBullet<<" 两者差值： "<<fabs(dist_sqr- kDistBullet * kDistBullet)<<endl;
         // cout<<"bullet_p: "<<_p<<"  目标位置: "<<target<<endl;
         
         _state = BULLET_EXPLODE1;

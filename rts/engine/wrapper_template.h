@@ -30,12 +30,12 @@ public:
             const PythonOptions &options, const elf::Signal &signal,
             const std::map<std::string, int> *more_params, Comm *comm) {
         const string& replay_prefix = options.save_replay_prefix;
-        
-        bool isPrint = false; 
-        if (game_idx==1)
-            isPrint = true;
-        
+
         // Create a game.
+        // bool isPrint = false;
+        // if(game_idx == 1){
+        //     isPrint = true;
+        // }
         RTSGameOptions op;
         op.seed = (options.seed == 0 ? 0 : options.seed + game_idx);
         op.main_loop_quota = 0;
@@ -44,45 +44,56 @@ public:
         op.snapshot_prefix = "";
         op.output_file = options.output_filename;
         op.cmd_dumper_prefix = options.cmd_dumper_prefix;
-
-        if(isPrint){
-            string ss = op.PrintInfo();
-            std::cout<<"----------RTSGameOptions----"<<std::endl;
-            std::cout<<ss<<std::endl;
-        }
-
-        //std::cout << "before running wrapper" << std::endl;
+        
+        
+        // if(isPrint){
+        //     std::cout << "before running wrapper" << std::endl;
+        // }
 
         WrapperCB wrapper(game_idx, context_options, options, comm);
-        wrapper.OnGameOptions(&op);  //设置了handicap_level用于gameTD?
-  
-        //std::cout << "before initializing the game" << std::endl;
+        wrapper.OnGameOptions(&op);
 
-        // Note that all the bots created here will be owned by game. 
-        // Note that AddBot() will set its receiver. So there is no need to specify it here. 
-        RTSStateExtend s(op);    // 初始化 RTSStateExtend 
-        RTSGame game(&s);   // 初始化 RTSGame, s = RTSStateExtend
+        // if(isPrint){
+        //    std::cout << "RTSStateExtend" << std::endl;
+        // }
+        
+        // if(isPrint){
+        //      std::cout<<"RTSGameOptions"<<std::endl;
+        //      std::cout<<op.PrintInfo()<<std::endl;
+        // }
 
-        if(isPrint){
-            std::cout<<"----------python options-------"<<endl;
-            options.Print();
-            
-        }        
-        //wrapper.OnGameInit(&game, more_params);
-        wrapper.OnGameInit(&game, more_params,isPrint); //根据PythonOption初始化AI和玩家并添加到游戏中
+        
 
-        s.SetGlobalStats(&_gstats);  // 设置游戏状态
+        // Note that all the bots created here will be owned by game.
+        // Note that AddBot() will set its receiver. So there is no need to specify it here.
+        RTSStateExtend s(op);
+
+        // if(isPrint){
+        //    std::cout << "RTSGame" << std::endl;
+        // }
+
+        RTSGame game(&s);
+        
+        wrapper.OnGameInit(&game, more_params);
+        // if(isPrint){
+        //    std::cout << "before SetGlobalStats " << std::endl;
+        // }
+
+        s.SetGlobalStats(&_gstats);
 
         unsigned long int seed = (op.seed == 0 ? time(NULL) : op.seed);
         std::mt19937 rng;
         rng.seed(seed);
 
         int iter = 0;
-        if(isPrint)
-          std::cout << "Start the main loop" << std::endl;
+
+        // if(isPrint){
+        //    std::cout << "Start the main loop" << std::endl;
+        // }
+        
         while (! signal.IsDone()) {
-            wrapper.OnEpisodeStart(iter, &rng, &game);   //将这三个参数转为void类型
-            game.MainLoop(&signal.done(),isPrint);
+            wrapper.OnEpisodeStart(iter, &rng, &game);
+            game.MainLoop(&signal.done());
             game.Reset();
             ++ iter;
         }

@@ -52,8 +52,10 @@ class Model_ActorCritic(Model):
         return MiniRTSNet.get_define_args()
 
     def forward(self, x):
-        s, res = x["s"], x["res"]
-        output = self.net(self._var(x["s"]), self._var(x["res"]))
+        #s, res = x["s"], x["res"]
+        # output = self.net(self._var(x["s"]), self._var(x["res"]))
+        s = x["s"]
+        output = self.net(self._var(x["s"]))
 
         unit_locs = self.softmax(flattern(self.unit_locs(output)))
         target_locs = self.softmax(flattern(self.target_locs(output)))

@@ -69,6 +69,8 @@ class Evaluator:
         if self.verbose: print("In Evaluator[%s]::actor" % self.name)
 
         # actor model.
+        # import pdb
+        # pdb.set_trace()
         m = self.mi[self.actor_name]
         m.set_volatile(True)
         state_curr = m.forward(batch.hist(0))
@@ -90,12 +92,16 @@ class Evaluator:
         if "V" in self.keys_in_reply:
             reply_msg["V"] = state_curr["V"].data
 
+        if "action_type" in state_curr:
+            reply_msg["action_type"] = state_curr["action_type"]
+
         self.actor_count += 1
         # if not self.isPrint:
         #     print("batch: ",batch)
         #     print("state_curr",state_curr)
         #     print("reply_msg",reply_msg)
         #     self.isPrint = True
+        #pdb.set_trace()
         return reply_msg
 
     def episode_summary(self, i):
@@ -158,7 +164,10 @@ class Trainer:
         Returns:
             reply_msg(dict): ``pi``: policy, ``a``: action, ``V``: value, `rv`: reply version, signatured by step
         '''
+        
         self.counter.inc("actor")
+        # import pdb
+        # pdb.set_trace()
         return self.evaluator.actor(batch)
 
     def train(self, batch):

@@ -172,16 +172,25 @@ private:
     }
 
 public:
-    LocalitySearch() {};
-
+    LocalitySearch() {}; 
+//_locality = LocalitySearch<UnitId>(PointF(-0.5, -0.5), PointF(_m + 0.5, _n + 0.5));
+// max_radius: 0.25_margin: 0.5
+//_n: 143 _m: 143
     LocalitySearch(
         const PointF& pmin,
         const PointF& pmax,
         const float max_radius = kUnitRadius)
             : _pmin(pmin), _pmax(pmax), _margin(2 * max_radius) {
+        //std::cout<<"LocalitySearch constructor"<<std::endl;
+        //std::cout<<"max_radius: "<<max_radius<<"_margin: "<<_margin<<std::endl;
+        
         _n = static_cast<int>((_pmax.x - _pmin.x + _margin) / _margin);
         _m = static_cast<int>((_pmax.y - _pmin.y + _margin) / _margin);
+
+        
+       // std::cout<<"_n: "<<_n<<" _m: "<<_m<<std::endl;  //_n: 3551 _m: 3551
         _grid.resize(_n, std::vector<KeysToLocs>(_m));
+       // std::cout<<"LocalitySearch constructor finish"<<std::endl;
     }
 
     // Add location and key

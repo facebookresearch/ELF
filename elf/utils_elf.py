@@ -137,7 +137,8 @@ class Batch:
         '''
         this_src = src if isinstance(src, dict) else src.batch
         key_assigned = { k : False for k in self.batch.keys() }
-
+        # import pdb
+        # pdb.set_trace()
         for k, v in this_src.items():
             # Copy it down to cpu.
             if k in self.batch:
