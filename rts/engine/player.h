@@ -77,6 +77,10 @@ private:
     //=====Test=======
     // 跟踪目标
     Targets _targets;
+
+    // 奖励
+    float reward;  // 现在的分数
+    float last_reward; // 上一轮的分数
     //vector<UnitId> _targets;
 
 private:
@@ -122,10 +126,10 @@ private:
     float get_path_dist_heuristic(const Loc &p1, const Loc &p2) const;
 
 public:
-    Player() : _map(nullptr), _player_id(INVALID), _privilege(PV_NORMAL), _resource(0) {
+    Player() : _map(nullptr), _player_id(INVALID), _privilege(PV_NORMAL), _resource(0) ,reward(0),last_reward(0){
     }
     Player(const RTSMap& m, const std::string &name, int player_id)
-        : _map(&m), _player_id(player_id), _name(name), _privilege(PV_NORMAL), _resource(0) {
+        : _map(&m), _player_id(player_id), _name(name), _privilege(PV_NORMAL), _resource(0),reward(0),last_reward(0) {
         _fogs.assign(_map->GetPlaneSize(), Fog());
     }
 
@@ -134,6 +138,7 @@ public:
     PlayerId GetId() const { return _player_id; }
     const std::string &GetName() const { return _name; }
     int GetResource() const { return _resource; }
+    
 
     string Draw() const;
     void ComputeFOW(const map<UnitId, unique_ptr<Unit> > &units);
@@ -144,6 +149,13 @@ public:
         float dy = p.y - c.y;
         return dx * dx + dy * dy;
     }
+
+    // 计算奖励
+    float GetPlayerReward(){return reward - last_reward;}; //计算奖励
+    void UpdateLastReward(){last_reward = reward;}; // 更新上一轮的奖励
+    void ChangeReward(float change){reward += change;}; //改变奖励
+    float GetLastReward(){return last_reward;};
+    float GetReward(){return reward;};
 
     // It will change _heuristics internally.
     bool PathPlanning(Tick tick, UnitId id, const PointF &curr, const PointF &target, int max_iteration, bool verbose, Coord *first_block, float *est_dist) const;
@@ -165,6 +177,8 @@ public:
         _heuristics.clear(); 
         _cache.clear(); 
         _resource = 0; 
+        last_reward =0;
+        reward = 0;
         for (auto &fog : _fogs) {
             fog.ResetFog();
         }

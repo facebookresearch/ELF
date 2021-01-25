@@ -237,7 +237,10 @@ bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
     
     GameEnv& env_temp = const_cast<GameEnv&>(env); // 需要用到GameEnv的方法
     const Unit *u = env.GetUnit(_id); // 执行命令的单位
-    if (u == nullptr) return false;
+    if (u == nullptr) {
+        _done = true;
+        return false;
+     }
     // 判断弹药量
     if(!(u->GetProperty().round == -1 || u->GetProperty().round >0)){
         //std::cout<<"Out of ammunition"<<std::endl;  
@@ -272,9 +275,9 @@ bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
     float dist_sqr_to_enemy = PointF::L2Sqr(curr, target_p);  // 距离
     bool in_attack_range = (dist_sqr_to_enemy <= property._att_r * property._att_r);  // 判断是否在攻击范围内
     // cout << "[" << _id << "] dist_sqr_to_enemy[" << _last_cmd.target_id << "] = " << dist_sqr_to_enemy << endl;
-    if(!in_attack_range){
-         cout << "[" << _id << "] dist_sqr_to_enemy[" << dist_sqr_to_enemy  << "att_r : "<<property._att_r * property._att_r<<endl;
-    }
+    // if(!in_attack_range){
+    //     // cout << "[" << _id << "] dist_sqr_to_enemy[" << dist_sqr_to_enemy  << "att_r : "<<property._att_r * property._att_r<<endl;
+    // }
     // Otherwise attack.  
     // if(!property.CD(CD_ATTACK).Passed(_tick) ){
     //     std::cout<<"CD not ready  "<<this->PrintInfo()<<std::endl;
@@ -333,18 +336,18 @@ bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
             _done = true;
             return true;
         } else if(u->GetUnitType() == MELEE_ATTACKER){  // 炮塔
-            // 测试CD
+
             
             //std::cout<<"Start_Tick "<<_start_tick<<" curr_tick "<< _tick<<" Durative: "<<_tick - _start_tick<<endl;
             
 
             // 先判断目标是不是锁定目标
-            env_temp.UpdateTargets(player.GetId());
-            if(!player.isUnitLocked(_target)){
-                //std::cout<<"Target not Lock"<<std::endl;
-                _done = true;
-                return true;
-            }
+            //env_temp.UpdateTargets(player.GetId());
+            // if(!player.isUnitLocked(_target)){
+            //     //std::cout<<"Target not Lock"<<std::endl;
+            //     _done = true;
+            //     return true;
+            // }
             //载弹量 -1 
             --env_temp.GetUnit(_id)->GetProperty().round;
             receiver->SendCmd(CmdIPtr(new CmdEmitBullet(_id, _target, curr, -property._att, 0.1)));
@@ -531,6 +534,33 @@ bool CmdMeleeAttack::run(GameEnv *env, CmdReceiver *receiver) {
     env->UpdateTargets(player.GetId());
     if(player.isUnitLocked(_target)){
         env->UnLock(player.GetId(),_target);
+    }
+
+    //根据击中目标为玩家修改奖励
+    Player& player_target = env->GetPlayer(target->GetPlayerId());  // 获得玩家
+    if(player_target.GetId() == 0){
+        // 炮塔、雷达 -2 基地 -5
+        //std::cout<<"被击中的是玩家单位 uid: "<<target->GetId()<<std::endl;
+        if(target->GetUnitType() == MELEE_ATTACKER){  // 炮塔
+            player_target.ChangeReward(-2.0f);
+        }else if(target->GetUnitType() == RANGE_ATTACKER){ // 雷达
+            player_target.ChangeReward(-2.0f);
+        }else if(target->GetUnitType() == BASE){ // 基地  
+            player_target.ChangeReward(-5.0f);
+            //std::cout<<"被击中的是基地: reward: "<<player_target.GetReward()<<" last_reward: "<<player_target.GetLastReward()<<std::endl;
+        }
+        //std::cout<<"奖励： "<<player_target.GetPlayerReward()<<std::endl;
+    }else {   // 击中敌方单位，那么发出攻击的是玩家
+        // 飞机 1 导弹 0.5
+        //std::cout<<"被击中的是敌方单位 uid: "<<target->GetId()<<std::endl;
+        if(target->GetUnitType() == WORKER){ // 飞机
+             //std::cout<<"被击中的是飞机"<<std::endl;
+             player.ChangeReward(1.0f);
+        }else if(target->GetUnitType() == BARRACKS){ // 导弹
+             //std::cout<<"被击中的是飞机"<<std::endl;
+             player.ChangeReward(0.5f);
+        }
+       // std::cout<<"奖励： "<<player.GetPlayerReward()<<std::endl;
     }
     
     if (p_target.IsDead()) {

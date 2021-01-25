@@ -27,7 +27,6 @@ void MCExtractor::SaveInfo(const RTSState &s, PlayerId player_id, GameState *gs)
     gs->winner = s.env().GetWinnerId();
     gs->terminal = s.env().GetTermination() ? 1 : 0;
 
-    gs->last_r = 0.0;
 
     // 测试获取基地位置
     // UnitId baseId = s.env().FindClosestBase(player_id);
@@ -37,10 +36,23 @@ void MCExtractor::SaveInfo(const RTSState &s, PlayerId player_id, GameState *gs)
     // 测试获取基地位置
     
     // 设置奖励
+    // 过程
+    GameEnv& env_temp = const_cast<GameEnv&>(s.env()); // 需要用到GameEnv的方法
+    Player& player_nn = env_temp.GetPlayer(player_id);
+    
+    gs->last_r = player_nn.GetPlayerReward(); 
+   //std::cout<<"Reward: "<< gs->last_r<<" reward: "<<player_nn.GetReward()<<" last_reward: "<<player_nn.GetLastReward()<<std::endl;
+    player_nn.UpdateLastReward();
+    
+    //std::cout<<"After Update reward: "<<player_nn.GetReward()<<" last_reward: "<<player_nn.GetLastReward()<<std::endl;
+   
+
+
+    // 结局
     int winner = s.env().GetWinnerId();
     if (winner != INVALID) {
-      if (winner == player_id) gs->last_r = 1.0;
-      else gs->last_r = -1.0;
+      if (winner == player_id) gs->last_r += 5.0;
+      else gs->last_r -= 5.0;
       // cout << "player_id: " << player_id << " " << (gs->last_r > 0 ? "Won" : "Lose") << endl;
     }
 }

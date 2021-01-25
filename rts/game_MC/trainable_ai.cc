@@ -110,7 +110,12 @@ bool TrainedAI::handle_response(const State &s, const Data &data, RTSMCAction *a
                 //std::cout<<"  Action Type "<<gs.action_type <<"  " <<gs.n_max_cmd<<std::endl;
                 for (int i = 0; i < gs.n_max_cmd; ++i) {
                     //std::cout<<"cmd type: "<<gs.ct[i]<<std::endl;
-                    unit_cmds.emplace_back(_XY(gs.uloc[i], m), _XY(gs.tloc[i], m), gs.ct[i], gs.bt[i]);
+                    int ct = -1;  // Invalid
+                    if(gs.ct[i] == 1) ct = 1; //Attack
+                    //std::cout<<"gs.ct: "<<gs.ct[i]<<" ct: "<<ct<<std::endl;
+                    //std::cout<<"unit_select: "<<gs.uloc[i]<<" target_select: "<<gs.tloc[i]<<std::endl;
+                    //unit_cmds.emplace_back(_XY(gs.uloc[i], m), _XY(gs.tloc[i], m), gs.ct[i],WORKER);
+                     unit_cmds.emplace_back(gs.uloc[i],gs.tloc[i],ct);
                 }
                 std::for_each(unit_cmds.begin(), unit_cmds.end(), [&](CmdInput &ci) { ci.ApplyEnv(env); });
                 a->SetUnitCmds(unit_cmds);

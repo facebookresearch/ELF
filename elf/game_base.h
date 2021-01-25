@@ -121,7 +121,9 @@ private:
     GameBaseOptions _options;
 
     void _act(bool check_frameskip, const std::atomic_bool *done) {
+        
         auto t = _state->GetTick();
+        // 更新玩家的奖励
         for (const Bot &bot : _bots) {
             if (! check_frameskip || t % bot.frame_skip == 0) {
                 //std::cout<<"Bot Act info"<<std::endl;

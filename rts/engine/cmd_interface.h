@@ -52,16 +52,33 @@ struct CmdInput {
         : type((CmdInputType)cmd_type), id(INVALID), target(INVALID), base(INVALID), p(target_loc_x, target_loc_y), build_type((UnitType)build_tp), ready(false), unit_loc(unit_loc_x, unit_loc_y) {
     }
 
+    //test======
+
+    CmdInput(UnitId unit_loc ,UnitId target_loc,int cmd_type)
+    : type((CmdInputType)cmd_type), id(unit_loc),target(target_loc),base(INVALID)
+    {
+    }
+
     std::string info() const {
         std::stringstream ss;
         ss << "[" << (ready ? "True" : "False") << "] type: " << type << " id: " << id << " target: " << target << " base: " << base << " p: " << p << " build_type: " << build_type;
         return ss.str();
     }
-
+    
+    //unit_cmds.emplace_back(_XY(gs.uloc[i], m), _XY(gs.tloc[i], m), ct,WORKER);
     void ApplyEnv(const GameEnv &env) {
+
         // Check unit id.
-        id = env.GetMap().GetClosestUnitId(unit_loc, 1.0);  
-        target = env.GetMap().GetClosestUnitId(p, 1.0);
+
+        // id = env.GetMap().GetClosestUnitId(unit_loc, 1.0);  
+        // target = env.GetMap().GetClosestUnitId(p, 1.0);
+        // base = INVALID;
+        // if (type == CI_GATHER && id != INVALID) base = env.FindClosestBase(Player::ExtractPlayerId(id));
+        // ready = true;
+
+        id = env.FindUnitsInK(0,id); // 找到友方单位
+        target = env.FindUnitsInK(1,target); // 找到敌方单位
+        //std::cout<<"id: "<<id<<" target: "<<target<<std::endl;
         base = INVALID;
         if (type == CI_GATHER && id != INVALID) base = env.FindClosestBase(Player::ExtractPlayerId(id));
         ready = true;

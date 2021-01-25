@@ -41,8 +41,15 @@ class Model_ActorCritic(Model):
         # Four dimensions. unit loc, target loc,
         self.unit_locs = nn.Conv2d(self.num_planes, 1, 3, padding=1)
         self.target_locs = nn.Conv2d(self.num_planes, 1, 3, padding=1)
-        self.cmd_types = nn.Linear(out_dim, self.num_cmd_type)
-        self.build_types = nn.Linear(out_dim, self.num_unit)
+        
+        # test
+        self.unit_select = nn.Linear(self.mapx * self.mapy,18)
+        self.target_select = nn.Linear(self.mapx * self.mapy,8)
+
+        #self.cmd_types = nn.Linear(out_dim, self.num_cmd_type)
+        self.cmd_types = nn.Linear(out_dim, 2)
+
+        #self.build_types = nn.Linear(out_dim, self.num_unit)
         self.value = nn.Linear(out_dim, 1)
 
         self.relu = nn.LeakyReLU(0.1)
@@ -54,18 +61,24 @@ class Model_ActorCritic(Model):
     def forward(self, x):
         #s, res = x["s"], x["res"]
         # output = self.net(self._var(x["s"]), self._var(x["res"]))
+        # import pdb
+        # pdb.set_trace()
         s = x["s"]
-        output = self.net(self._var(x["s"]))
-
-        unit_locs = self.softmax(flattern(self.unit_locs(output)))
-        target_locs = self.softmax(flattern(self.target_locs(output)))
+        output = self.net(self._var(x["s"])) # 8 10 70 70
+ 
+        # unit_locs = self.softmax(flattern(self.unit_locs(output)))   # 18
+        # target_locs = self.softmax(flattern(self.target_locs(output))) # 8
+        unit_locs = self.softmax(self.unit_select(flattern(self.unit_locs(output))) )   # 18
+        target_locs = self.softmax( self.target_select(flattern(self.target_locs(output))) ) # 8
 
         flat_output = flattern(output)
         cmd_types = self.softmax(self.cmd_types(flat_output))
-        build_types = self.softmax(self.build_types(flat_output))
+        #build_types = self.softmax(self.build_types(flat_output))
         value = self.value(flat_output)
 
-        return dict(V=value, uloc_prob=unit_locs, tloc_prob=target_locs, ct_prob=cmd_types, bt_prob=build_types, action_type=1)
+        # import pdb
+        # pdb.set_trace()
+        return dict(V=value, uloc_prob=unit_locs, tloc_prob=target_locs, ct_prob = cmd_types,action_type=1)
 
 # Format: key, [model, method]
 # if method is None, fall back to default mapping from key to method
@@ -74,7 +87,9 @@ Models = {
 }
 
 Defaults = {
-    "sample_nodes": "uloc_prob,uloc;tloc_prob,tloc;ct_prob,ct;bt_prob,bt",
-    "policy_action_nodes": "uloc_prob,uloc;tloc_prob,tloc;ct_prob,ct;bt_prob,bt",
+    #"sample_nodes": "uloc_prob,uloc;tloc_prob,tloc;ct_prob,ct;bt_prob,bt",
+    #"policy_action_nodes": "uloc_prob,uloc;tloc_prob,tloc;ct_prob,ct;bt_prob,bt",
+    "sample_nodes": "uloc_prob,uloc;tloc_prob,tloc;ct_prob,ct",
+    "policy_action_nodes": "uloc_prob,uloc;tloc_prob,tloc;ct_prob,ct",
     "arch" : "cccc;-,64,64,64,-"
 }

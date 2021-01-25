@@ -471,4 +471,22 @@ bool GameEnv::UnLock(PlayerId player_id,UnitId target_id){
 }
 
 
+ UnitId GameEnv::FindUnitsInK(PlayerId player_id,int k) const{
+     UnitId id = INVALID;
+     for (auto it = _units.begin(); it != _units.end(); ++it){
+          const Unit *u = it->second.get();
+          if(u->GetPlayerId() == player_id && u->GetUnitType() != BASE){  // 是玩家单位且不是基地
+               if(--k <= 0){
+                   id = u->GetId();
+                   break;
+               }
+          }
+     }
+     return id;
+ }
+
+ 
+
+
+
 

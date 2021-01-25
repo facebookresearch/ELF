@@ -153,6 +153,8 @@ class Batch:
                 elif isinstance(v, (int, float)):
                     bk.fill_(v)
                 else:
+                    # import pdb
+                    # pdb.set_trace()
                     bk[:] = v
 
             else:
@@ -276,6 +278,8 @@ class GCWrapper:
                 input_batch.batchsize = batchsize
                 inputs.append(input_batch)
                 if reply is not None:
+                    # import pdb
+                    # pdb.set_trace()
                     reply_batch = Batch.load(GC, "reply", reply, group_id, use_gpu=use_gpu, use_numpy=use_numpy) # 加载回复Batch
                     reply_batch.batchsize= batchsize
                     replies.append(reply_batch)

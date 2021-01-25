@@ -40,7 +40,7 @@ class Loader(CommonLoader):
 
     def _unit_action_keys(self):
         if self.args.use_unit_action:
-            return ["uloc", "tloc", "bt", "ct", "uloc_prob", "tloc_prob", "bt_prob", "ct_prob"]
+            return ["uloc", "tloc", "ct", "uloc_prob", "tloc_prob", "ct_prob"]
         else:
             return ["pi","a"]
 
