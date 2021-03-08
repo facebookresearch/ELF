@@ -173,7 +173,7 @@ PlayerId GameEnv::CheckBase(UnitType base_type) const{
                base_player_id = u->GetPlayerId();
            }
            if(!hasEnemyUnit){  //如果还没有检测到敌方单位，持续判断
-               if(((u->GetUnitType() == WORKER || u->GetUnitType() == BARRACKS) && u->GetPlayerId() == enemy_id))
+               if(((u->GetUnitType() == WORKER || u->GetUnitType() == BARRACKS || u->GetUnitType() == BASE) && u->GetPlayerId() == enemy_id))
                     hasEnemyUnit = true;
            }        
      }

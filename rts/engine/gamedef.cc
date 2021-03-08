@@ -17,8 +17,9 @@
  *  att_r  攻击距离
  *  vis_r  可视距离
  *  towards 朝向（用于计算FOW）
+ *  flight_state // 飞行状态 IDLE -- 空闲  MOVE -- 飞向目标  FINISH_ATTACK -- 进行过攻击 RETURN -- 返航
  * */
-UnitTemplate _C(int cost, int hp, int defense, float speed, int att, float att_r, int vis_r,int round,
+UnitTemplate _C(int cost, int hp, int defense, float speed, int att, float att_r, int vis_r,int round, FlightState flight_state,
         const vector<int> &cds, const vector<CmdType> &l, UnitAttr attr) {
 
     UnitTemplate res;
@@ -32,6 +33,8 @@ UnitTemplate _C(int cost, int hp, int defense, float speed, int att, float att_r
     p._att_r = att_r;
     p._vis_r = vis_r;
     p.round = round;
+    p.flight_state = flight_state;
+    
 
     for (int i = 0; i < NUM_COOLDOWN; ++i) {   //设置CD
         p._cds[i].Set(cds[i]);

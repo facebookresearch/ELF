@@ -26,6 +26,7 @@ protected:
   PointF _p, _last_p;
   Tick _built_since;
   UnitProperty _property;
+  
 
 public:
   Unit() : Unit(INVALID, INVALID, WORKER, PointF(), UnitProperty()) {

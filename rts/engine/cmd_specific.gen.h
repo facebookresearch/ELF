@@ -5,15 +5,12 @@
 class CmdAttack : public CmdDurative {
 protected:
     UnitId _target;
-    //set<UnitId> _targets;  // 用于群体攻击？
-
 
     bool run(const GameEnv& env, CmdReceiver *) override;
 
 public:
     explicit CmdAttack() { }
     explicit CmdAttack(UnitId id, const UnitId& target) : CmdDurative(id), _target(target) { }
-    //explicit CmdAttack(UnitId id, const UnitId& target) : CmdDurative(id), _targets(_targets) { }
     CmdType type() const override { return ATTACK; }
     std::unique_ptr<CmdBase> clone() const override {
         auto res = std::unique_ptr<CmdAttack>(new CmdAttack(*this));
@@ -23,14 +20,9 @@ public:
     string PrintInfo() const override {
         std::stringstream ss;
         ss << this->CmdDurative::PrintInfo() << " [target]: " << _target;
-        // ss << this->CmdDurative::PrintInfo() << " [target]: ";
-        // for(auto it = _targets.begin();it!=_targets.end();++it){
-        //     ss<<*it<<" ";
-        // }
         return ss.str();
     }
     const UnitId& target() const { return _target; }
-    //const set<UnitId>& targets() const { return _targets; }
     SERIALIZER_DERIVED(CmdAttack, CmdDurative, _target);
 };
 
@@ -38,11 +30,8 @@ public:
 
 class CmdMove : public CmdDurative {
 protected:
-    PointF _p;  // 位置
-    bool isInCircle = false; // 是否处于圆周运动
-    bool isReturn = false;  // 是否返航
-    PointF towards = PointF(); //朝向
-    float radians; //存储角度
+    PointF _p;
+
     bool run(const GameEnv& env, CmdReceiver *) override;
 
 public:
@@ -123,7 +112,41 @@ public:
     SERIALIZER_DERIVED(CmdGather, CmdDurative, _base, _resource, _state);
 };
 
-#define MELEE_ATTACK 204
+#define CIRCLE_MOVE 204
+
+class CmdCircleMove : public CmdDurative {
+protected:
+    PointF _p;
+    bool _isInCircle;
+    PointF _towards;
+    float _radians;
+    bool _isReturn;
+
+    bool run(const GameEnv& env, CmdReceiver *) override;
+
+public:
+    explicit CmdCircleMove() { }
+    explicit CmdCircleMove(UnitId id, const PointF& p, const bool& isInCircle = false, const PointF& towards = PointF(), float radians = 0, const bool& isReturn = false) : CmdDurative(id), _p(p), _isInCircle(isInCircle), _towards(towards), _radians(radians), _isReturn(isReturn) { }
+    CmdType type() const override { return CIRCLE_MOVE; }
+    std::unique_ptr<CmdBase> clone() const override {
+        auto res = std::unique_ptr<CmdCircleMove>(new CmdCircleMove(*this));
+        // copy_to(*res);
+        return std::move(res);
+    }
+    string PrintInfo() const override {
+        std::stringstream ss;
+        ss << this->CmdDurative::PrintInfo() << " [p]: " << _p << " [isInCircle]: " << _isInCircle << " [towards]: " << _towards << " [radians]: " << _radians << " [isReturn]: " << _isReturn;
+        return ss.str();
+    }
+    const PointF& p() const { return _p; }
+    const bool& isInCircle() const { return _isInCircle; }
+    const PointF& towards() const { return _towards; }
+    float radians() const { return _radians; }
+    const bool& isReturn() const { return _isReturn; }
+    SERIALIZER_DERIVED(CmdCircleMove, CmdDurative, _p, _isInCircle, _towards, _radians, _isReturn);
+};
+
+#define MELEE_ATTACK 205
 
 class CmdMeleeAttack : public CmdImmediate {
 protected:
@@ -151,7 +174,7 @@ public:
     SERIALIZER_DERIVED(CmdMeleeAttack, CmdImmediate, _target, _att);
 };
 
-#define ON_DEAD_UNIT 205
+#define ON_DEAD_UNIT 206
 
 class CmdOnDeadUnit : public CmdImmediate {
 protected:
@@ -177,7 +200,7 @@ public:
     SERIALIZER_DERIVED(CmdOnDeadUnit, CmdImmediate, _target);
 };
 
-#define HARVEST 206
+#define HARVEST 207
 
 class CmdHarvest : public CmdImmediate {
 protected:
@@ -205,7 +228,7 @@ public:
     SERIALIZER_DERIVED(CmdHarvest, CmdImmediate, _target, _delta);
 };
 
-#define CHANGE_PLAYER_RESOURCE 207
+#define CHANGE_PLAYER_RESOURCE 208
 
 class CmdChangePlayerResource : public CmdImmediate {
 protected:
@@ -233,36 +256,6 @@ public:
     SERIALIZER_DERIVED(CmdChangePlayerResource, CmdImmediate, _player_id, _delta);
 };
 
-// #define  ENEMY_MOVE 208
-
-// class CmdEnemyMove : public CmdDurative {
-// protected:
-//     PointF _target;
-
-
-//     bool run(const GameEnv& env, CmdReceiver *) override;
-
-// public:
-//     explicit CmdEnemyMove() { }
-//     explicit CmdEnemyMove(UnitId id, const PointF& target) : CmdDurative(id), _target(target) { }
-//     CmdType type() const override { return ENEMY_MOVE; }
-//     std::unique_ptr<CmdBase> clone() const override {
-//         auto res = std::unique_ptr<CmdEnemyMove>(new CmdEnemyMove(*this));
-//         // copy_to(*res);
-//         return std::move(res);
-//     }
-//     string PrintInfo() const override {
-//         std::stringstream ss;
-//         ss << this->CmdDurative::PrintInfo() << " [target]: " << _target;
-//         return ss.str();
-//     }
-//     const PointF& target() const { return _target; }
-//     SERIALIZER_DERIVED(CmdAttack, CmdDurative, _target);
-// };
-
-
-
-
 inline void reg_engine_specific() {
     CmdTypeLookup::RegCmdType(ATTACK, "ATTACK");
     SERIALIZER_ANCHOR_FUNC(CmdBase, CmdAttack);
@@ -276,6 +269,9 @@ inline void reg_engine_specific() {
     CmdTypeLookup::RegCmdType(GATHER, "GATHER");
     SERIALIZER_ANCHOR_FUNC(CmdBase, CmdGather);
     SERIALIZER_ANCHOR_FUNC(CmdDurative, CmdGather);
+    CmdTypeLookup::RegCmdType(CIRCLE_MOVE, "CIRCLE_MOVE");
+    SERIALIZER_ANCHOR_FUNC(CmdBase, CmdCircleMove);
+    SERIALIZER_ANCHOR_FUNC(CmdDurative, CmdCircleMove);
     CmdTypeLookup::RegCmdType(MELEE_ATTACK, "MELEE_ATTACK");
     SERIALIZER_ANCHOR_FUNC(CmdBase, CmdMeleeAttack);
     SERIALIZER_ANCHOR_FUNC(CmdImmediate, CmdMeleeAttack);
@@ -288,7 +284,4 @@ inline void reg_engine_specific() {
     CmdTypeLookup::RegCmdType(CHANGE_PLAYER_RESOURCE, "CHANGE_PLAYER_RESOURCE");
     SERIALIZER_ANCHOR_FUNC(CmdBase, CmdChangePlayerResource);
     SERIALIZER_ANCHOR_FUNC(CmdImmediate, CmdChangePlayerResource);
-    // CmdTypeLookup::RegCmdType(ENEMY_MOVE, "ENEMY_MOVE");
-    // SERIALIZER_ANCHOR_FUNC(CmdBase, CmdEnemyMove);
-    // SERIALIZER_ANCHOR_FUNC(CmdDurative, CmdEnemyMove);
 }

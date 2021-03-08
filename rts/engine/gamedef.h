@@ -38,7 +38,15 @@ struct UnitProperty {
     int _has_flag = 0;
 
     int round; //载弹量
+
     PointF towards = PointF(); //朝向，用于计算FOW 和(0,0)组成一组向量
+
+    // 描述飞机的特性 飞行状态、攻击类型、是否佯攻、出发时间
+    FlightState flight_state; // 飞行状态 IDLE -- 空闲  MOVE -- 飞向目标 FINISH_ATTACK -- 完成攻击 RETURN -- 返航
+    FlightType flight_type = INVALID_FLIGHTTYPE;   // 飞机类型
+    Tick start_tick = -1 ;   // 飞机入场时间
+    
+
 
     inline bool IsDead() const { return _hp <= 0; }
     inline Cooldown &CD(CDType t) { return _cds[t]; }
@@ -59,7 +67,7 @@ struct UnitProperty {
 
     UnitProperty()
         : _hp(0), _max_hp(0), _att(0), _def(0), _att_r(0),
-        _speed(0.0), _vis_r(0), _changed_hp(0), _damage_from(INVALID), _attr(ATTR_NORMAL),  _cds(NUM_COOLDOWN),round(0),towards(PointF()) { }
+        _speed(0.0), _vis_r(0), _changed_hp(0), _damage_from(INVALID), _attr(ATTR_NORMAL),  _cds(NUM_COOLDOWN),round(0),towards(PointF()),flight_state(INVALID_FLIGHTSTATE),flight_type(INVALID_FLIGHTTYPE),start_tick(-1){ }
 
     SERIALIZER(UnitProperty, _hp, _max_hp, _att, _def, _att_r, _speed, _vis_r, _changed_hp, _damage_from, _attr, _cds);
     HASH(UnitProperty, _hp, _max_hp, _att, _def, _att_r, _speed, _vis_r, _changed_hp, _damage_from, _attr, _cds);
@@ -77,7 +85,7 @@ struct UnitTemplate {
     }
 };
 
-UnitTemplate _C(int cost, int hp, int defense, float speed, int att, float att_r, int vis_r,int round,
+UnitTemplate _C(int cost, int hp, int defense, float speed, int att, float att_r, int vis_r,int round, FlightState flight_state,
         const vector<int> &cds, const vector<CmdType> &l, UnitAttr attr = ATTR_NORMAL);
 
 class GameEnv;

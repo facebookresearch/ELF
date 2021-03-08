@@ -10,7 +10,7 @@
 #include "cmd_specific.gen.h"
 
 //static constexpr float kDistBullet = 0.3;  // 子弹的体积？
-static constexpr float kDistBullet = 0.03;  // 子弹的体积
+static constexpr float kDistBullet = 0.01;  // 子弹的体积
 
 string Bullet::Draw() const {
     return make_string("u", _p, _state);
@@ -57,7 +57,7 @@ CmdBPtr Bullet::Forward(const RTSMap&, const Units& units) {
 
     float dist_sqr = PointF::L2Sqr(_p, target);
 
-    if (fabs(dist_sqr- kDistBullet * kDistBullet)< 1e-5 ) {  // 如果子弹击中目标
+    if (fabs(dist_sqr- kDistBullet * kDistBullet)< 4e-3 ) {  // 如果子弹击中目标
         // Hit the target.
         //cout<<"dist_sqr: "<<dist_sqr<<" 碰撞距离: "<<kDistBullet * kDistBullet<<" 两者差值： "<<fabs(dist_sqr- kDistBullet * kDistBullet)<<endl;
         // cout<<"bullet_p: "<<_p<<"  目标位置: "<<target<<endl;
@@ -71,7 +71,7 @@ CmdBPtr Bullet::Forward(const RTSMap&, const Units& units) {
         // Fly
         // [TODO]: Randomize the flying procedure (e.g., curvy tracking).
         PointF diff;  // 从 _p 指向 target 的方向
-
+      
         // Here it has to be true, otherwise there is something wrong.
         if (! PointF::Diff(target, _p, &diff)) {
             cout << "Bullet::Forward, target or _p is invalid! Target: " << target << " _p:" << _p << endl;

@@ -48,8 +48,8 @@ bool CmdGameStartSpecific::run(GameEnv*, CmdReceiver* receiver) {
     return true;
 }
 
-//-----------------Test--------------------
-//创建雷达并设置朝向
+
+// 创建雷达并设置朝向
 bool CreateRadar(Tick _tick,GameEnv* env,PlayerId player_id,PointF radar_p,PointF towards){
    UnitId radar_id;
    if(! env->AddUnit(_tick, RANGE_ATTACKER, radar_p, player_id,radar_id)){
@@ -63,8 +63,61 @@ bool CreateRadar(Tick _tick,GameEnv* env,PlayerId player_id,PointF radar_p,Point
    radar->GetProperty().towards.y = towards.y;
    //std::cout<<"Create Radar at "<<radar->GetPointF()<<" towards "<<radar->GetProperty().towards<<std::endl;
    return true;
-
 }
+
+// 创建飞机
+// 飞机位置、攻击类型、出发时刻(tick)
+bool CreateFlight(Tick _tick,GameEnv* env,PlayerId player_id,PointF flight_p,FlightType flight_t,Tick _start_tick){
+    UnitId flight_id;
+    if(! env->AddUnit(_tick, WORKER, flight_p, player_id,flight_id)){
+        //std::cout<<"create flighter failed at "<<flight_p<<std::endl;
+        return false;
+    }
+    Unit* flight = env->GetUnit(flight_id);
+    if(flight == nullptr) return false; //飞机创建失败
+    // 设置飞机属性
+    flight->GetProperty().flight_state = FLIGHT_IDLE; // 设置飞行状态为待机
+    flight->GetProperty().flight_type = flight_t; // 设置飞机类型
+    flight->GetProperty().start_tick = _start_tick; // 设置入场时间
+    //std::cout<<"Create Flighter start at "<<flight_p<<" tick_: "<<_start_tick<<std::endl; 
+    return true;
+}
+
+// 随机生成飞机的座标
+/**
+ * left up right down 飞机生成区域边界
+ * **/
+PointF GetStartPoint(GameEnv *env,int left,int right, int up, int down){
+        auto f = env->GetRandomFunc();
+        int _x = 0,_y = 0;
+
+        int incoming = f(2);  // 飞机生成方向 0 - 上边界 1 - 左边界  2 - 右边界
+        switch (incoming)
+        {
+        case 0:  // 上
+            _x = f(right-left+1)+left;
+            _y = up;
+            break;
+        case 1:  // 右边
+            _x = right;
+            _y = f(down - up+1) + up;
+        case 2:  // 左边
+            _x = left;
+            _y = f(down - up+1) + up;
+        default:
+            break;
+        }
+
+       
+        return PointF(_x,_y);
+    }
+
+// 随机生成出发时间
+Tick GetStartTick(GameEnv *env,Tick start,Tick end){
+    auto f = env->GetRandomFunc();
+    return start + f(end - start);
+}
+
 bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
     //std::cout<<"CmdGenerateTDUnit"<<std::endl;
     const PlayerId player_id = 0;
@@ -94,7 +147,7 @@ bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
    
     if(!CreateRadar(_tick,env,player_id,radar_2_p,PointF(-1,-1.732))) return false;  // 生成雷达并设置朝向
     
-    
+    //_CREATE(WORKER,PointF(20,20),player_id);
     
     
     // 炮台
@@ -108,7 +161,7 @@ bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
     _CREATE(MELEE_ATTACKER,PointF(34.86825,29.87595),player_id);
     _CREATE(MELEE_ATTACKER,PointF(36.19185,30.30605),player_id);
 
-    // B2
+    // // B2
     _CREATE(MELEE_ATTACKER,PointF(40.9878,34.4522),player_id);
     _CREATE(MELEE_ATTACKER,PointF(40.69845,33.0899),player_id);
     _CREATE(MELEE_ATTACKER,PointF(40.0451,31.86105),player_id);
@@ -117,26 +170,79 @@ bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
     _CREATE(MELEE_ATTACKER,PointF(36.52265,29.8274),player_id);
     _CREATE(MELEE_ATTACKER,PointF(35.13175,29.87595),player_id);
     _CREATE(MELEE_ATTACKER,PointF(33.80815,30.30605),player_id);
+
+    //std::cout<<"radius: "<<PointF::L2Sqr(PointF(40.9878,34.4522),PointF(35,35))<<std::endl;
+
+    
     
 
    
 
-     _CHANGE_RES(player_id, 100);
+    _CHANGE_RES(player_id, 100);  // 给一个初始资源
 
 
 
    
 
     // enemy
-    // 后续设计应该让敌方按时在指定地点生成飞机（飞机飞离战场或者被击毁后，扣除敌方一定资源）
-    _CREATE(WORKER,PointF(1,1),enemy_id);
-    _CREATE(WORKER,PointF(34,1),enemy_id);
-    _CREATE(WORKER,PointF(36,1),enemy_id);
-    _CREATE(WORKER,PointF(68,1),enemy_id);
+    
+    // _CREATE(WORKER,PointF(30,10),enemy_id);
+    // _CREATE(WORKER,PointF(40,10),enemy_id);
+
+    // _CREATE(WORKER,PointF(1,1),enemy_id);
+    // _CREATE(WORKER,PointF(34,1),enemy_id);
+    // _CREATE(WORKER,PointF(36,1),enemy_id);
+    // _CREATE(WORKER,PointF(68,1),enemy_id);
+    //_CREATE(BASE,PointF(1,1),enemy_id);
+
+    // Test 生成飞机的位置
+    // PointF flight_1_p,flight_2_p,flight_3_p,flight_4_p; 
+    
+
+   
+
+    
+    // 随机生成飞机的位置
+    // 第一轮： 无差别攻击 4NORMAL
+    Tick first_round = GetStartTick(env,10,50);
+    while(true){
+       if(CreateFlight(_tick,env,enemy_id, GetStartPoint(env,2,68,2,24),FLIGHT_NORMAL,first_round)) break;
+    }
+
+    while(true){
+       if(CreateFlight(_tick,env,enemy_id, GetStartPoint(env,2,68,2,24),FLIGHT_NORMAL,first_round)) break;
+    }
+
+    while(true){
+       if(CreateFlight(_tick,env,enemy_id, GetStartPoint(env,2,68,2,24),FLIGHT_NORMAL,first_round)) break;
+    }
+
+    while(true){
+       if(CreateFlight(_tick,env,enemy_id, GetStartPoint(env,2,68,2,24),FLIGHT_NORMAL,first_round)) break;
+    }
+    
+
+    // 第二轮： 攻击防御目标 3BASE 1 Normal
+    Tick second_round =GetStartTick(env,1000,1050);
+
+     while(true){
+       if(CreateFlight(_tick,env,enemy_id, GetStartPoint(env,1,69,1,25),FLIGHT_BASE,second_round )) break;
+    }
+
+    while(true){
+       if(CreateFlight(_tick,env,enemy_id, GetStartPoint(env,1,69,1,25),FLIGHT_BASE,second_round )) break;
+    }
+
+    while(true){
+       if(CreateFlight(_tick,env,enemy_id, GetStartPoint(env,1,69,1,25),FLIGHT_BASE,second_round )) break;
+    }
+
+    while(true){
+       if(CreateFlight(_tick,env,enemy_id, GetStartPoint(env,1,69,1,25),FLIGHT_NORMAL,second_round )) break;
+    }
     
     
     return true;
-
 }
 
 //-----------------Test--------------------

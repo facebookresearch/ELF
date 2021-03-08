@@ -4,8 +4,11 @@ CMD_DURATIVE(Attack, UnitId, target);
 CMD_DURATIVE(Move, PointF, p);
 CMD_DURATIVE(Build, UnitType, build_type, PointF, p = PointF(), int, state = 0);
 CMD_DURATIVE(Gather, UnitId, base, UnitId, resource, int, state = 0);
+CMD_DURATIVE(CircleMove, PointF, p, bool, isInCircle = false, PointF, towards = PointF(), float, radians = 0, bool, isReturn = false);
+
 CMD_IMMEDIATE(MeleeAttack, UnitId, target, int, att);
 
 CMD_IMMEDIATE(OnDeadUnit, UnitId, target);
 CMD_IMMEDIATE(Harvest, UnitId, target, int, delta);
 CMD_IMMEDIATE(ChangePlayerResource, PlayerId, player_id, int, delta);
+

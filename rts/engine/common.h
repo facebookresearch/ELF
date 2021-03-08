@@ -44,6 +44,9 @@ custom_enum(Terrain, INVALID_TERRAIN = -1, NORMAL = 0, IMPASSABLE = 1, FOG = 2);
 custom_enum(Level, INVALID_LEVEL = -1, GROUND = 0, AIR, NUM_LEVEL);
 custom_enum(BulletState, INVALID_BULLETSTATE = -1, BULLET_READY = 0, BULLET_EXPLODE1, BULLET_EXPLODE2, BULLET_EXPLODE3, BULLET_DONE);
 
+custom_enum(FlightState, INVALID_FLIGHTSTATE = -1, FLIGHT_IDLE = 0, FLIGHT_MOVE = 1, FLIGHT_FINISH_ATTACK = 2,FLIGHT_RETURN = 3);// 飞行状态
+custom_enum(FlightType, INVALID_FLIGHTTYPE = -1, FLIGHT_NORMAL = 0, FLIGHT_BASE, FLIGHT_TOWER, FLIGHT_FAKE, NUM_FLIGHT);  // 飞机种类
+
 // Map location (as integer)
 typedef int Loc;
 typedef int UnitId;
@@ -79,7 +82,7 @@ STD_HASH(Coord);
 
 // Seems that this should be larger than \sqrt{2}/2/2 = 0.35355339059
 // const float kUnitRadius = 0.36;
-const float kUnitRadius = 0.04; // 100 m单位半径
+const float kUnitRadius = 0.01; // 100 m单位半径
 
 struct PointF {
     float x, y;

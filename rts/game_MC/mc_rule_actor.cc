@@ -25,13 +25,34 @@ bool MCRuleActor::ActByState2(const GameEnv &env, const vector<int>& state, stri
     return true;
 }
 
+
+//判断飞机是否应该投弹
+/**
+ * far   --   最远距离
+ * close --   最近距离
+ * curr  --   当前距离
+ * 距离越近，投弹概率越大
+ * **/
+bool IsAttack(GameEnv& env,float close,float far,float curr){
+   // std::cout<<"curr: "<<curr<<std::endl;
+    if(curr > far) return false;
+    if(curr < close) return true;
+    auto f = env.GetRandomFunc();
+    int between = (far-close) * (far - close);
+    int select = f(between);
+    float dist = (far - curr)*(far - curr);
+    //std::cout<<"select: "<<select<<" dist: "<<dist<<" curr: "<<curr<<std::endl;
+    return select <= dist;
+}
+
+
 bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, string *state_string, AssignedCmds *assigned_cmds) {
     // Each unit can only have one command. So we have this map.
     // cout << "Enter ActByState" << endl << flush;
     //cout<<"ActByState"<<endl;
     assigned_cmds->clear();
     *state_string = "NOOP";
-
+    
     // Build workers.
     if (state[STATE_BUILD_WORKER]) {
         *state_string = "Build worker..NOOP";
@@ -56,46 +77,138 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
 
     // 进攻
     if (state[STATE_BUILD_BARRACK]) {
-        //cout<<"Normal STATE"<<endl;
-        *state_string = "Build barracks..NOOP";
-        //cout<<"STATE_BUILD_BARRACK"<<endl;
         
-        // if (_preload.Affordable(BARRACKS)) {
-        //     // cout << "Building barracks!" << endl;
-        //     const Unit *u = GameEnv::PickFirst(my_troops[WORKER], *_receiver, GATHER);
-        //     if (u != nullptr) {
-        //         CmdBPtr cmd = _preload.GetBuildBarracksCmd(env);
-        //         if (cmd != nullptr) {
-        //             *state_string = "Build barracks..Success";
-        //             store_cmd(u, std::move(cmd), assigned_cmds);
-        //             _preload.Build(BARRACKS);
-        //         }
-        //     }
-        // }
-        if(_preload.HavePlane()){
-            const Unit *u = GameEnv::PickFirstIdle(my_troops[WORKER], *_receiver);
-            if(u!=nullptr){
-                CmdBPtr cmd = _preload.GetMOVECmd();
-                if (cmd != nullptr) {
-                    *state_string = "Move..Success";
-                    store_cmd(u, std::move(cmd), assigned_cmds);
-                    //_preload.Build(BARRACKS);
+        *state_string = "Build barracks..NOOP";
+        
+       
+         if(_preload.HavePlane()){
+            for(const Unit* u: my_troops[WORKER]){
+                GameEnv& env_temp = const_cast<GameEnv&>(env); // 需要用到GameEnv的方法
+            
+                if(u!=nullptr){
+                    if(u->GetProperty().flight_state != FLIGHT_RETURN){
+                          // 向符合要求的飞机下达攻击开始目标，飞向目标
+                         if(u->GetProperty().flight_state == FLIGHT_IDLE){  // 飞机处于空闲状态
+
+                            Tick cur_tick = _receiver->GetTick();
+                            if(cur_tick >= u->GetProperty().start_tick){
+                                CmdBPtr cmd = _preload.GetMOVECmd(); // 飞机飞向目标
+                                if (cmd != nullptr){
+                                   store_cmd(u, std::move(cmd), assigned_cmds); // 向飞机发布移动命令
+                                   //std::cout<<"flight start at "<<cur_tick<<std::endl;
+                                   env_temp.GetUnit(u->GetId())->GetProperty().flight_state = FLIGHT_MOVE; // 修改飞行状态
+                                }
+                            }
+                        }else if(u->GetProperty().flight_state == FLIGHT_MOVE){  // 飞机处于飞行状态
+                           // 判断飞机是否执行攻击  70 - 100 km随机投弹
+                           float distance_to_target = PointF::L2Sqr(u->GetPointF(),_preload.GetEnemyBaseLoc()); // 计算飞机与目标的距离
+
+                           // 测试攻击命令
+                           
+                           if(IsAttack(env_temp,49,100,distance_to_target)){  
+                               int round = u->GetProperty().round; // 载弹量
+                               const auto& enemyTroops = _preload.EnemyTroops();
+                               auto f = env_temp.GetRandomFunc();
+
+                            //INVALID_FLIGHTTYPE = -1, FLIGHT_NORMAL = 0, FLIGHT_BASE, FLIGHT_FAKE, NUM_FLIGHT); 
+                               switch(u->GetProperty().flight_type){
+                                   case FLIGHT_BASE:  // 仅攻击基地
+                                      // 打光所有弹药
+                                    
+                                      while(round>0){
+                                          CmdBPtr cmd = _preload.GetAttackEnemyBaseCmd();
+                                          if(cmd != nullptr){
+                                               store_cmd(u, std::move(cmd), assigned_cmds);
+                                          }
+                                          --round;
+                                      }
+                                      break;
+                                   case FLIGHT_NORMAL:    // 可能攻击所有目标 保护目标 火炮 雷达
+                                      {
+                                          // 随机选择round个目标
+                                          int num_melee = 0,num_range = 0;
+
+                                          if(!enemyTroops[MELEE_ATTACKER].empty()){
+                                           num_melee = enemyTroops[MELEE_ATTACKER].size();
+                                          }
+                                          if(!enemyTroops[RANGE_ATTACKER].empty()){
+                                           num_range = enemyTroops[RANGE_ATTACKER].size();
+                                          }
+                                          while(round>0){
+                                              int select = f(num_melee+num_range); // 随机选择一个目标
+                                              int target_id = INVALID;
+                                              //std::cout<<"select: "<<select<<std::endl;
+                                              if(select != 0){
+                                                  if(select <= num_melee){
+                                                      target_id = enemyTroops[MELEE_ATTACKER][select-1]->GetId();
+                                                  }
+                                                  else{
+                                                       target_id = enemyTroops[RANGE_ATTACKER][select-num_melee-1]->GetId();
+                                                  }
+                                              }
+                                              if(target_id == INVALID){
+                                                  // 攻击保护目标
+                                                  CmdBPtr cmd = _preload.GetAttackEnemyBaseCmd();
+                                                  if(cmd != nullptr){
+                                                       store_cmd(u, std::move(cmd), assigned_cmds);
+                                                    }
+                                                }else{
+                                                   CmdBPtr cmd = _preload.GetAccackEnemyUnitCmd(target_id); 
+                                                   if(cmd != nullptr){
+                                                       store_cmd(u, std::move(cmd), assigned_cmds);
+                                                    }
+                                                }
+                                                
+                                              --round;
+                                          }
+
+                                      }
+                                      
+                                      break;
+                                   case FLIGHT_FAKE :  // 佯攻飞机不进行投弹
+                                        //std::cout<<"FLIFHT_FAKE"<<std::endl;      
+                                      break;
+                                   default:
+                                      break;
+                                }
+                            
+                                 env_temp.GetUnit(u->GetId())->GetProperty().flight_state = FLIGHT_FINISH_ATTACK; // 修改飞行状态
+                            }
+                        }else if(u->GetProperty().flight_state == FLIGHT_FINISH_ATTACK){   
+                               // 飞机请求返航
+                               //*state_string = "Move..Success";
+                               CmdBPtr cmd = _preload.GetCIRCLEMOVECmd(); // 飞机返航
+                               if (cmd != nullptr){
+                                  //*state_string = "Move..Success";
+                                  store_cmd(u, std::move(cmd), assigned_cmds); // 向飞机发布移动命令
+                                  env_temp.GetUnit(u->GetId())->GetProperty().flight_state = FLIGHT_RETURN; // 修改飞行状态
+                                  //std::cout<<" Give Order to "<<u->GetId()<<" State is "<<u->GetProperty().flight_state<<std::endl;
+                                }
+                            }
+
+                    }
+                  
                 }
             }
+           
         }
+        // 根据飞机离目标的距离判定是否攻击
+        
 
-        for(const Unit* u : my_troops[WORKER]){
-            //cout<<"curr distance"<<PointF::L2Sqr(u->GetPointF(),_preload.GetEnemyBaseLoc())<<endl;
-            if(PointF::L2Sqr(u->GetPointF(),_preload.GetEnemyBaseLoc()) < 81.0f && u->GetProperty().round  > 1 ){
-               //cout<<u->GetId()<<" Emit first Rocket"<<endl;
-                auto cmd = _preload.GetAttackEnemyBaseCmd();
-                store_cmd(u, std::move(cmd), assigned_cmds);
-            }else if(PointF::L2Sqr(u->GetPointF(),_preload.GetEnemyBaseLoc()) < 25.0f && u->GetProperty().round  > 0){
-                //cout<<u->GetId()<<" Emit second Rocket"<<endl;
-                auto cmd = _preload.GetAttackEnemyBaseCmd();
-                store_cmd(u, std::move(cmd), assigned_cmds);
-            }
-        }
+        // for(const Unit* u : my_troops[WORKER]){
+        //     //cout<<"curr distance"<<PointF::L2Sqr(u->GetPointF(),_preload.GetEnemyBaseLoc())<<endl;
+        //     // if(u->GetProperty().round > 0){
+        //     //      float distance_to_target = PointF::L2Sqr(u->GetPointF(),_preload.GetEnemyBaseLoc());  // 飞机距离目标的距离
+        //     //      // Test 仅攻击保护目标
+        //     // }
+           
+            
+        //     // if(PointF::L2Sqr(u->GetPointF(),_preload.GetEnemyBaseLoc()) < 81.0f && u->GetProperty().round  > 1 ){
+        //     //    //cout<<u->GetId()<<" Emit first Rocket"<<endl;
+        //     //     auto cmd = _preload.GetAttackEnemyBaseCmd();
+        //     //     store_cmd(u, std::move(cmd), assigned_cmds);
+        //     // }
+        // }
 
         
     }

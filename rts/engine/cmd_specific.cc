@@ -181,50 +181,55 @@ bool CmdMove::run(const GameEnv &env, CmdReceiver *receiver) {
     const Unit *u = env.GetUnit(_id);
    //const float r = 0.1835; // 半径
     if (u == nullptr) return false;
-    if(u->GetUnitType() == WORKER){
+    if (micro_move(_tick, *u, env, _p, receiver) < kDistEps){
+        _done = true;
+    } 
+    
+    // cout << "id: " << u.GetId() << " from " << u.GetPointF() << " to " << u.GetLastCmd().p << endl;
+    return true;
+}
 
+
+
+// 目标做返航运动
+bool CmdCircleMove::run(const GameEnv &env, CmdReceiver *receiver) {
+    //std::cout<<this->PrintInfo()<<std::endl;
+    const Unit *u = env.GetUnit(_id);
+   //const float r = 0.1835; // 半径
+    if (u == nullptr) return false;
+    if(u->GetUnitType() == WORKER){
        float distance_to_target = PointF::L2Sqr(u->GetPointF(),_p);
        float r = sqrt(distance_to_target);
        //cout<<"distance_to_target: "<<distance_to_target<<endl;
-       //PointF towards = PointF();
-       if(isReturn){
-        if(!Return(_tick, *u, env, towards, receiver)){
+       if(_isReturn){
+        if(!Return(_tick, *u, env, _towards, receiver)){
+            // 飞离战场
             receiver->SendCmd(CmdIPtr(new CmdOnDeadUnit(_id, _id))); //销毁飞机
+            _done = true;
         }    
        }else{
-
-        if(distance_to_target > 0.2 && !isInCircle){ //如果与目标的距离大于2km，直线向目标飞行
-           //cout<<"micro_move"<<endl;
-           micro_move(_tick, *u, env, _p, receiver); 
-          }else{
            // Test 绕目标做圆周运动
-           if(!isInCircle){
+           if(!_isInCircle){
               circle_move(_tick, *u, env, _p, receiver);
-              radians = 0.0f;
-              isInCircle = true;
+              _radians = 0.0f;
+              _isInCircle = true;
                }else{
-               towards = circle_move(_tick, *u, env, _p, receiver);
-               radians += u->GetProperty()._speed / 0.1835f;
+               _towards = circle_move(_tick, *u, env, _p, receiver);
+               _radians += u->GetProperty()._speed / 0.1835f;
               // cout<<"curr radians: "<<radians<<endl;
                //cout<<fabs(radians - PI);
-               if(radians > PI){
+               if(_radians > PI){
                   //cout<<"finish towards: "<<towards<<endl;
-                 // cout<<"radians: "<<radians<<endl;
-                 // cout<<"length: "<< sqrt(towards.x * towards.x + towards.y * towards.y)<<endl;
+                  // cout<<"radians: "<<radians<<endl;
+                  // cout<<"length: "<< sqrt(towards.x * towards.x + towards.y * towards.y)<<endl;
                   //设置新的Target
-                  isReturn = true;
-                  
-                  // _done = true;
-                   
+                  _isReturn = true;  
+                  // _done = true;       
                  }
               }
-        // _done = true;
-           
-         }
+        // _done = true;  
 
       }
-    }else{
-       if (micro_move(_tick, *u, env, _p, receiver) < kDistEps) _done = true;
     }
     // cout << "id: " << u.GetId() << " from " << u.GetPointF() << " to " << u.GetLastCmd().p << endl;
     return true;

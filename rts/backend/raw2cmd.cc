@@ -22,7 +22,7 @@ CmdInput move_event(const Unit &u, char /*hotkey*/, const PointF& p, const UnitI
 
 CmdInput attack_event(const Unit &u, char /*hotkey*/, const PointF& p, const UnitId &target_id, const GameEnv&) {
     // Don't need to check hotkey since there is only one type of action.
-    //cout << "In attack command ["  << "] @" << p << " target: " << target_id << endl;
+   // cout << "In attack command ["  << "] @" << p << " target: " << target_id << endl;
     return CmdInput(CmdInput::CI_ATTACK, u.GetId(), p, target_id);
 }
 

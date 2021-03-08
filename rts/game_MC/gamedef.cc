@@ -77,22 +77,24 @@ void GameDef::Init() {
  *  att_r  攻击距离
  *  vis_r  可视距离
  *  round  载弹量   -1 -- 无限弹药/不适用
+ *  isReturn 飞行状态 true -- 返航  false -- 飞向目标
  *  towards 朝向，计算FOW
+ *  flight_state // 飞行状态 IDLE -- 空闲  MOVE -- 飞向目标  RETURN -- 返航  0.03
  * *                     cost hp    def  sp att att_r vis_r round
  * *                 cd   move attack gather build
  * */
      
-    _units[RESOURCE] = _C(0, 1000, 1000, 0, 0, 0, 0, -1,vector<int>{0, 0, 0, 0}, vector<CmdType>{}, ATTR_INVULNERABLE);
+    _units[RESOURCE] = _C(0, 1000, 1000, 0, 0, 0, 0, -1, INVALID_FLIGHTSTATE,vector<int>{0, 0, 0, 0}, vector<CmdType>{}, ATTR_INVULNERABLE);
     // 飞机 移动 发射导弹
-    _units[WORKER] = _C(100, 100, 0, 0.03, 2, 10.0f, 0,2, vector<int>{0, 40, 0, 0}, vector<CmdType>{MOVE, ATTACK});
+    _units[WORKER] = _C(100, 100, 0, 0.03, 2, 10.0f, 0,2,FLIGHT_IDLE,vector<int>{0, 40, 0, 0}, vector<CmdType>{MOVE, ATTACK,CIRCLE_MOVE});
     // 炮塔 攻击(只能攻击锁定的目标)
-    _units[MELEE_ATTACKER] = _C(50, 100, 0, 0.1, 100, 20.0f, 0, 8,vector<int>{0, 5, 0, 0}, vector<CmdType>{ATTACK});
+    _units[MELEE_ATTACKER] = _C(50, 100, 0, 0.1, 100, 20.0f, 0, 8,INVALID_FLIGHTSTATE,vector<int>{0, 5, 0, 0}, vector<CmdType>{ATTACK});
     // 雷达 索敌
-    _units[RANGE_ATTACKER] = _C(100, 100, 0, 0.2, 0, 30.0f, 30, -1,vector<int>{0, 0, 0, 0}, vector<CmdType>{ATTACK});
+    _units[RANGE_ATTACKER] = _C(100, 100, 0, 0.2, 0, 30.0f, 30, -1,INVALID_FLIGHTSTATE,vector<int>{0, 0, 0, 0}, vector<CmdType>{ATTACK});
     // 导弹 移动 攻击(攻击范围很小)
-    _units[BARRACKS] = _C(0, 10, 0, 0.03, 100, 0.1, 0, -1,vector<int>{0, 40, 0, 50}, vector<CmdType>{ATTACK});
+    _units[BARRACKS] = _C(0, 10, 0, 0.03, 100, 0.1, 0, -1,INVALID_FLIGHTSTATE,vector<int>{0, 40, 0, 50}, vector<CmdType>{ATTACK});
     // 保护目标
-    _units[BASE] = _C(500, 500, 0, 0.0, 0, 0, 0, -1,{0, 0, 0, 50}, vector<CmdType>{BUILD});
+    _units[BASE] = _C(500, 200, 0, 0.0, 0, 0, 0, -1, INVALID_FLIGHTSTATE, vector<int>{0, 0, 0, 50},vector<CmdType>{BUILD});
 }
 
 vector<pair<CmdBPtr, int> > GameDef::GetInitCmds(const RTSGameOptions&) const{

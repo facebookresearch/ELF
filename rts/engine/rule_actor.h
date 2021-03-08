@@ -27,6 +27,7 @@ custom_enum(FlagState, FLAGSTATE_START = 0, FLAGSTATE_GET_FLAG, FLAGSTATE_ATTACK
 #define _M(...) CmdBPtr(new CmdMove(INVALID, __VA_ARGS__))
 #define _G(...) CmdBPtr(new CmdGather(INVALID, __VA_ARGS__))
 #define _B(...) CmdBPtr(new CmdBuild(INVALID, __VA_ARGS__))
+#define _CM(...) CmdBPtr(new CmdCircleMove(INVALID, __VA_ARGS__)) // Test
 
 // Region commands.
 // BUILD_WORKER: for all idle bases in this region, build a worker.
@@ -196,12 +197,24 @@ public:
 
     CmdBPtr GetGatherCmd() const { return _G(_base_id, _resource_id); }
     CmdBPtr GetAttackEnemyBaseCmd() const { return _A(_opponent_base_id); }
+    CmdBPtr GetAccackEnemyUnitCmd(UnitId t_id) const { return _A(t_id);}
+    // Test
+    // 攻击
+    // CmdBPtr GetAttackEnemyTowerCmd(UnitId _id) const {return _A();}
+    
+    // 随机获取攻击范围内的指定类型目标
+    // custom_enum(FlightType, INVALID_FLIGHTTYPE = -1, FLIGHT_NORMAL = 0, FLIGHT_BASE, FLIGHT_TOWER, FLIGHT_FAKE, NUM_FLIGHT);  // 飞机种类
+    
+
+
+
     CmdBPtr GetBuildBarracksCmd(const GameEnv &env) const {
         PointF p;
         if (env.FindEmptyPlaceNearby(_base_loc, 3, &p) && ! p.IsInvalid()) return _B(BARRACKS, p);
         else return CmdBPtr();
     }
     CmdBPtr GetMOVECmd() const {return _M(_enemy_base_loc);}
+    CmdBPtr GetCIRCLEMOVECmd() const {return _CM(_enemy_base_loc);}
 
     const PointF &ResourceLoc() const { return _resource_loc; }
     const PointF &BaseLoc() const { return _base_loc; }
