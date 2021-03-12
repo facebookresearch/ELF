@@ -69,10 +69,11 @@ class Evaluator:
         if self.verbose: print("In Evaluator[%s]::actor" % self.name)
 
         # actor model.
-        # import pdb
-        # pdb.set_trace()
+        
         m = self.mi[self.actor_name]
         m.set_volatile(True)
+        # import pdb
+        # pdb.set_trace()
         state_curr = m.forward(batch.hist(0))
         m.set_volatile(False)
 

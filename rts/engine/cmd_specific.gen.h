@@ -5,12 +5,13 @@
 class CmdAttack : public CmdDurative {
 protected:
     UnitId _target;
+    int _round;
 
     bool run(const GameEnv& env, CmdReceiver *) override;
 
 public:
     explicit CmdAttack() { }
-    explicit CmdAttack(UnitId id, const UnitId& target) : CmdDurative(id), _target(target) { }
+    explicit CmdAttack(UnitId id, const UnitId& target, int round = 1) : CmdDurative(id), _target(target), _round(round) { }
     CmdType type() const override { return ATTACK; }
     std::unique_ptr<CmdBase> clone() const override {
         auto res = std::unique_ptr<CmdAttack>(new CmdAttack(*this));
@@ -19,11 +20,12 @@ public:
     }
     string PrintInfo() const override {
         std::stringstream ss;
-        ss << this->CmdDurative::PrintInfo() << " [target]: " << _target;
+        ss << this->CmdDurative::PrintInfo() << " [target]: " << _target << " [round]: " << _round;
         return ss.str();
     }
     const UnitId& target() const { return _target; }
-    SERIALIZER_DERIVED(CmdAttack, CmdDurative, _target);
+    int round() const { return _round; }
+    SERIALIZER_DERIVED(CmdAttack, CmdDurative, _target, _round);
 };
 
 #define MOVE 201
@@ -152,12 +154,15 @@ class CmdMeleeAttack : public CmdImmediate {
 protected:
     UnitId _target;
     int _att;
+    int _round;
+    PointF _p_tower;
+    bool _isRandom;
 
     bool run(GameEnv* env, CmdReceiver *) override;
 
 public:
     explicit CmdMeleeAttack() { }
-    explicit CmdMeleeAttack(UnitId id, const UnitId& target, int att) : CmdImmediate(id), _target(target), _att(att) { }
+    explicit CmdMeleeAttack(UnitId id, const UnitId& target, int att, int round = 1, const PointF& p_tower = PointF(), const bool& isRandom = false) : CmdImmediate(id), _target(target), _att(att), _round(round), _p_tower(p_tower), _isRandom(isRandom) { }
     CmdType type() const override { return MELEE_ATTACK; }
     std::unique_ptr<CmdBase> clone() const override {
         auto res = std::unique_ptr<CmdMeleeAttack>(new CmdMeleeAttack(*this));
@@ -166,12 +171,15 @@ public:
     }
     string PrintInfo() const override {
         std::stringstream ss;
-        ss << this->CmdImmediate::PrintInfo() << " [target]: " << _target << " [att]: " << _att;
+        ss << this->CmdImmediate::PrintInfo() << " [target]: " << _target << " [att]: " << _att << " [round]: " << _round << " [p_tower]: " << _p_tower << " [isRandom]: " << _isRandom;
         return ss.str();
     }
     const UnitId& target() const { return _target; }
     int att() const { return _att; }
-    SERIALIZER_DERIVED(CmdMeleeAttack, CmdImmediate, _target, _att);
+    int round() const { return _round; }
+    const PointF& p_tower() const { return _p_tower; }
+    const bool& isRandom() const { return _isRandom; }
+    SERIALIZER_DERIVED(CmdMeleeAttack, CmdImmediate, _target, _att, _round, _p_tower, _isRandom);
 };
 
 #define ON_DEAD_UNIT 206

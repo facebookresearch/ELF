@@ -43,11 +43,11 @@ class Model_ActorCritic(Model):
         self.target_locs = nn.Conv2d(self.num_planes, 1, 3, padding=1)
         
         # test
-        self.unit_select = nn.Linear(self.mapx * self.mapy,18)
-        self.target_select = nn.Linear(self.mapx * self.mapy,8)
+        self.unit_select = nn.Linear(self.mapx * self.mapy,16)
+        self.target_select = nn.Linear(self.mapx * self.mapy,12)
 
         #self.cmd_types = nn.Linear(out_dim, self.num_cmd_type)
-        self.cmd_types = nn.Linear(out_dim, 2)
+        self.cmd_types = nn.Linear(out_dim, 3)
 
         #self.build_types = nn.Linear(out_dim, self.num_unit)
         self.value = nn.Linear(out_dim, 1)
@@ -68,8 +68,8 @@ class Model_ActorCritic(Model):
  
         # unit_locs = self.softmax(flattern(self.unit_locs(output)))   # 18
         # target_locs = self.softmax(flattern(self.target_locs(output))) # 8
-        unit_locs = self.softmax(self.unit_select(flattern(self.unit_locs(output))) )   # 18
-        target_locs = self.softmax( self.target_select(flattern(self.target_locs(output))) ) # 8
+        unit_locs = self.softmax(self.unit_select(flattern(self.unit_locs(output))) )   # 16
+        target_locs = self.softmax( self.target_select(flattern(self.target_locs(output))) ) # 12
 
         flat_output = flattern(output)
         cmd_types = self.softmax(self.cmd_types(flat_output))

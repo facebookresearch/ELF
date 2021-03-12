@@ -34,10 +34,7 @@ static constexpr float kBuildDistSqr = kBuildDist * kBuildDist;
 
 static bool find_nearby_empty_place(const RTSMap &m, const PointF &curr, PointF *p_nearby);
 
-// 按照一定的规则确定这次攻击是否生效
-bool isHit(float distance,float att_r){
-   return distance < att_r * att_r;  //射程内判定击中
-}
+
 
 /*
 CMD_DURATIVE(Attack, UnitId, target);
@@ -239,7 +236,7 @@ bool CmdCircleMove::run(const GameEnv &env, CmdReceiver *receiver) {
 // Attack cmd.target_id
 // 持续攻击应该改成单发攻击？
 bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
-    
+   //std::cout<<"Attack"<<std::endl; 
     GameEnv& env_temp = const_cast<GameEnv&>(env); // 需要用到GameEnv的方法
     const Unit *u = env.GetUnit(_id); // 执行命令的单位
     if (u == nullptr) {
@@ -288,15 +285,6 @@ bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
     //     std::cout<<"CD not ready  "<<this->PrintInfo()<<std::endl;
     // }
     if ((property.CD(CD_ATTACK).Passed(_tick)|| _tick == property.CD(CD_ATTACK)._last)&& in_attack_range) {   // 如果目标在攻击范围内且攻击就绪
-       
-        // Melee delivers attack immediately, long-range will deliver attack via bullet.
-        // if (property._att_r <= 1.0) {
-        //     receiver->SendCmd(CmdIPtr(new CmdMeleeAttack(_id, _target, -property._att)));
-        // } else {
-        //     receiver->SendCmd(CmdIPtr(new CmdEmitBullet(_id, _target, curr, -property._att, 0.1)));
-        // }
-        // receiver->SendCmd(CmdIPtr(new CmdCDStart(_id, CD_ATTACK)));  // 重置攻击CD
-       
 
         /**
          *  飞机攻击
@@ -347,15 +335,34 @@ bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
             
 
             // 先判断目标是不是锁定目标
-            //env_temp.UpdateTargets(player.GetId());
+            // env_temp.UpdateTargets(player.GetId());
             // if(!player.isUnitLocked(_target)){
             //     //std::cout<<"Target not Lock"<<std::endl;
             //     _done = true;
             //     return true;
             // }
-            //载弹量 -1 
-            --env_temp.GetUnit(_id)->GetProperty().round;
-            receiver->SendCmd(CmdIPtr(new CmdEmitBullet(_id, _target, curr, -property._att, 0.1)));
+            
+            //载弹量 -n
+            int round =  env_temp.GetUnit(_id)->GetProperty().round;
+            if(round<_round) _round = round;  // 实际发射的导弹数量
+            Player& player= env_temp.GetPlayer(u->GetPlayerId());  // 获得玩家
+            
+            switch(_round){
+                case 1:
+                  player.ChangeReward(-0.02);  // 单发 -0.02
+                  
+                  break;
+                case 2:
+                  player.ChangeReward(-0.05);  // 双发 -0.05
+                  break;
+                default:
+                  break;
+            }
+            //std::cout<<"奖励： "<<player.GetPlayerReward()<<std::endl;
+            env_temp.GetUnit(_id)->GetProperty().round - _round;
+            for(int i=0;i<_round;++i){
+                 receiver->SendCmd(CmdIPtr(new CmdEmitBullet(_id, _target, curr, -property._att, 0.1,_round)));
+            }
             
             receiver->SendCmd(CmdIPtr(new CmdCDStart(_id, CD_ATTACK)));  // 重置攻击CD
             _done = true;
@@ -509,6 +516,19 @@ bool CmdBuild::run(const GameEnv &env, CmdReceiver *receiver) {
     return true;
 }
 
+/**
+ * round 单发/多发  P(d)= d>200km？ 0：P  单发P＝0.64，双发P=0.87
+ * **/
+bool IsHit(GameEnv *env,float dist_tower_to_enemy,float range,int round) {
+    if(dist_tower_to_enemy>range*range) return false;
+    auto f = env->GetRandomFunc();
+    int select = f(99)+1;
+    int p = (round == 1? 64:87);
+    //std::cout<<"select: "<<select<<" p: "<<p<<std::endl;
+    return select<=p; 
+}
+
+
 bool CmdMeleeAttack::run(GameEnv *env, CmdReceiver *receiver) {
     Unit *target = env->GetUnit(_target);
     Unit *u = env->GetUnit(_id);
@@ -525,13 +545,15 @@ bool CmdMeleeAttack::run(GameEnv *env, CmdReceiver *receiver) {
     //     changed_hp += p_target._def;  // 考虑目标单位的防御力
     //     if (changed_hp > 0) changed_hp = 0;  // 目标收到的伤害值最小不得低于0
     // }
-    float dist_tower_to_enemy = PointF::L2Sqr(u->GetPointF(), target->GetPointF());  // 距离
-    //std::cout<<"distance: "<< dist_tower_to_enemy<<std::endl;
-    if(!isHit(dist_tower_to_enemy,u->GetProperty()._att_r)){  //判定是否击中目标
-       // changed_hp = 0; 
-       // std::cout<<"======攻击无效========="<<std::endl;
-        return true;  //判定这次攻击无效
+    float dist_tower_to_enemy = PointF::L2Sqr(_p_tower, target->GetPointF());  // 距离
+    //std::cout<<"_p_tower: "<<_p_tower<<" _p_target: "<<target->GetPointF()<<" distance: "<< dist_tower_to_enemy<<std::endl;
+    if(_isRandom){  // 是否考虑命中概率
+        if(!IsHit(env,dist_tower_to_enemy,u->GetProperty()._att_r,_round) ){   //判定是否击中目标
+            //std::cout<<"======攻击无效========="<<std::endl;
+            return true;  //判定这次攻击无效
+        }
     }
+    
 
     p_target._hp += changed_hp;  // 修改目标hp 击中目标
     //解除目标的锁定
@@ -547,23 +569,23 @@ bool CmdMeleeAttack::run(GameEnv *env, CmdReceiver *receiver) {
         // 炮塔、雷达 -2 基地 -5
         //std::cout<<"被击中的是玩家单位 uid: "<<target->GetId()<<std::endl;
         if(target->GetUnitType() == MELEE_ATTACKER){  // 炮塔
-            player_target.ChangeReward(-2.0f);
+            player_target.ChangeReward(-0.5f);
         }else if(target->GetUnitType() == RANGE_ATTACKER){ // 雷达
-            player_target.ChangeReward(-2.0f);
+            player_target.ChangeReward(-0.8f);
         }else if(target->GetUnitType() == BASE){ // 基地  
-            player_target.ChangeReward(-5.0f);
-            //std::cout<<"被击中的是基地: reward: "<<player_target.GetReward()<<" last_reward: "<<player_target.GetLastReward()<<std::endl;
+            player_target.ChangeReward(-0.1f);
+           // std::cout<<"被击中的是基地: reward: "<<player_target.GetReward()<<" last_reward: "<<player_target.GetLastReward()<<std::endl;
         }
         //std::cout<<"奖励： "<<player_target.GetPlayerReward()<<std::endl;
     }else {   // 击中敌方单位，那么发出攻击的是玩家
         // 飞机 1 导弹 0.5
         //std::cout<<"被击中的是敌方单位 uid: "<<target->GetId()<<std::endl;
         if(target->GetUnitType() == WORKER){ // 飞机
-             //std::cout<<"被击中的是飞机"<<std::endl;
-             player.ChangeReward(1.0f);
+            // std::cout<<"被击中的是飞机"<<std::endl;
+             player.ChangeReward(0.4f);
         }else if(target->GetUnitType() == BARRACKS){ // 导弹
-             //std::cout<<"被击中的是飞机"<<std::endl;
-             player.ChangeReward(0.5f);
+            // std::cout<<"被击中的是导弹"<<std::endl;
+             player.ChangeReward(0.2f);
         }
        // std::cout<<"奖励： "<<player.GetPlayerReward()<<std::endl;
     }

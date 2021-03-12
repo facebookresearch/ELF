@@ -9,18 +9,21 @@
 #include "bullet.h"
 #include "cmd_specific.gen.h"
 
-//static constexpr float kDistBullet = 0.3;  // 子弹的体积？
+//static constexpr float kDistBullet = 0.3;  // 子弹的体积
 static constexpr float kDistBullet = 0.01;  // 子弹的体积
 
 string Bullet::Draw() const {
     return make_string("u", _p, _state);
 }
 
+
+
+
 // Unlike Unit, we don't do Act then PerformAct since collision check is not needed.
 CmdBPtr Bullet::Forward(const RTSMap&, const Units& units) {
     
     // First check whether the attacker is dead, if so, remove _id_from to avoid issues.
-    auto self_it = units.find(_id_from);
+    auto self_it = units.find(_id_from);   // 这里要改
     if (self_it == units.end()) _id_from = INVALID;
 
     // If it already exploded, the state changes until it goes to DONE.
@@ -62,9 +65,13 @@ CmdBPtr Bullet::Forward(const RTSMap&, const Units& units) {
         //cout<<"dist_sqr: "<<dist_sqr<<" 碰撞距离: "<<kDistBullet * kDistBullet<<" 两者差值： "<<fabs(dist_sqr- kDistBullet * kDistBullet)<<endl;
         // cout<<"bullet_p: "<<_p<<"  目标位置: "<<target<<endl;
         
+        
         _state = BULLET_EXPLODE1;
+        
         if (_target_id != INVALID) {
-            return CmdBPtr(new CmdMeleeAttack(_id_from, _target_id, _att)); // 造成一次攻击
+            return CmdBPtr(new CmdMeleeAttack(_id_from, _target_id, _att,_round,_p_tower,true)); // 造成一次攻击
+        }else{
+            return CmdBPtr();
         }
 
     } else {  // 子弹飞向目标

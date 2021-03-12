@@ -173,8 +173,6 @@ bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
 
     //std::cout<<"radius: "<<PointF::L2Sqr(PointF(40.9878,34.4522),PointF(35,35))<<std::endl;
 
-    
-    
 
    
 

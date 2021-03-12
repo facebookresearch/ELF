@@ -35,6 +35,9 @@ struct CmdInput {
     set<UnitId> targets;
     PointF p;
     UnitType build_type;
+    int round = 1;
+    
+    
 
     // ready signal.
     // When not ready, id/target/base are not usable and should be used after ApplyEnv().
@@ -54,14 +57,15 @@ struct CmdInput {
 
     //test======
 
-    CmdInput(UnitId unit_loc ,UnitId target_loc,int cmd_type)
-    : type((CmdInputType)cmd_type), id(unit_loc),target(target_loc),base(INVALID)
+    CmdInput(UnitId unit_loc ,UnitId target_loc,int round,int cmd_type)
+    : type((CmdInputType)cmd_type), id(unit_loc),target(target_loc),base(INVALID),round(round)
     {
+       // std::cout<<"unit_loc: "<<id<<" target: "<<target<<" round: "<<round<<std::endl;
     }
 
     std::string info() const {
         std::stringstream ss;
-        ss << "[" << (ready ? "True" : "False") << "] type: " << type << " id: " << id << " target: " << target << " base: " << base << " p: " << p << " build_type: " << build_type;
+        ss << "[" << (ready ? "True" : "False") << "] type: " << type << " id: " << id << " target: " << target << " base: " << base << " p: " << p << " build_type: " << build_type<<" round: "<<round;
         return ss.str();
     }
     
@@ -75,12 +79,17 @@ struct CmdInput {
         // base = INVALID;
         // if (type == CI_GATHER && id != INVALID) base = env.FindClosestBase(Player::ExtractPlayerId(id));
         // ready = true;
-
-        id = env.FindUnitsInK(0,id); // 找到友方单位
-        target = env.FindUnitsInK(1,target); // 找到敌方单位
+        if(type != INVALID){
+            int _id = id;
+            int _target = target;
+            id = env.FindUnitsInK(0,id,MELEE_ATTACKER); // 找到友方单位
+            target = env.FindUnitsInK(1,target,WORKER); // 找到敌方单位
+           //printf("u: %d ==> %d   t: %d ==> %d\n",_id,id,_target,target);
+           
+        }
         //std::cout<<"id: "<<id<<" target: "<<target<<std::endl;
-        base = INVALID;
-        if (type == CI_GATHER && id != INVALID) base = env.FindClosestBase(Player::ExtractPlayerId(id));
+        //base = INVALID;
+        //if (type == CI_GATHER && id != INVALID) base = env.FindClosestBase(Player::ExtractPlayerId(id));
         ready = true;
     }
 
@@ -94,7 +103,7 @@ struct CmdInput {
             case CI_ATTACK:
                 if (target != INVALID && Player::ExtractPlayerId(id) != Player::ExtractPlayerId(target))
                     // Forbid friendly fire.
-                    return CmdBPtr(new CmdAttack(id, target));
+                    return CmdBPtr(new CmdAttack(id, target,round));
                 break;
             case CI_GATHER:
                 if (target != INVALID && base != INVALID)

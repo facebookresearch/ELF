@@ -471,18 +471,21 @@ bool GameEnv::UnLock(PlayerId player_id,UnitId target_id){
 }
 
 
- UnitId GameEnv::FindUnitsInK(PlayerId player_id,int k) const{
+ UnitId GameEnv::FindUnitsInK(PlayerId player_id,int k,UnitType u_t) const{
      UnitId id = INVALID;
+     vector<const Unit*> units;
      for (auto it = _units.begin(); it != _units.end(); ++it){
           const Unit *u = it->second.get();
-          if(u->GetPlayerId() == player_id && u->GetUnitType() != BASE){  // 是玩家单位且不是基地
-               if(--k <= 0){
-                   id = u->GetId();
-                   break;
-               }
+          if(u->GetPlayerId() == player_id && u->GetUnitType() == u_t ){  
+               if(u_t == WORKER && !GetPlayer(player_id).FilterWithFOW(*u)) continue;
+               units.push_back(u);
           }
      }
-     return id;
+     if(units.empty()) return id;
+     int length = units.size();
+     int select = (k-1)%length;
+     id =  units[select]->GetId();
+     //rintf("select: %d length: %d\n",select,length);
  }
 
  

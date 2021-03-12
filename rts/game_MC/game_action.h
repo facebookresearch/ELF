@@ -27,11 +27,13 @@ public:
     void SetHitAndRunAI() { _type = HIT_AND_RUN; }
 
     void SetUnitCmds(const std::vector<CmdInput> &unit_cmds) {
+        
         _type = CMD_INPUT;
         _unit_cmds = unit_cmds;
     }
 
     bool Send(const GameEnv &env, CmdReceiver &receiver);
+    PlayerId GetPlayerId(){return _player_id;}
 
 protected:
     ActionType _type;

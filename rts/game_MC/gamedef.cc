@@ -86,7 +86,7 @@ void GameDef::Init() {
      
     _units[RESOURCE] = _C(0, 1000, 1000, 0, 0, 0, 0, -1, INVALID_FLIGHTSTATE,vector<int>{0, 0, 0, 0}, vector<CmdType>{}, ATTR_INVULNERABLE);
     // 飞机 移动 发射导弹
-    _units[WORKER] = _C(100, 100, 0, 0.03, 2, 10.0f, 0,2,FLIGHT_IDLE,vector<int>{0, 40, 0, 0}, vector<CmdType>{MOVE, ATTACK,CIRCLE_MOVE});
+    _units[WORKER] = _C(100, 100, 0, 0.03, 2, 12.0f, 0,2,FLIGHT_IDLE,vector<int>{0, 40, 0, 0}, vector<CmdType>{MOVE, ATTACK,CIRCLE_MOVE});
     // 炮塔 攻击(只能攻击锁定的目标)
     _units[MELEE_ATTACKER] = _C(50, 100, 0, 0.1, 100, 20.0f, 0, 8,INVALID_FLIGHTSTATE,vector<int>{0, 5, 0, 0}, vector<CmdType>{ATTACK});
     // 雷达 索敌

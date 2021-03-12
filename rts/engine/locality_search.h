@@ -179,7 +179,8 @@ public:
     LocalitySearch(
         const PointF& pmin,
         const PointF& pmax,
-        const float max_radius = kUnitRadius)
+        //const float max_radius = kUnitRadius)
+        const float max_radius = 0.5)
             : _pmin(pmin), _pmax(pmax), _margin(2 * max_radius) {
         //std::cout<<"LocalitySearch constructor"<<std::endl;
         //std::cout<<"max_radius: "<<max_radius<<"_margin: "<<_margin<<std::endl;

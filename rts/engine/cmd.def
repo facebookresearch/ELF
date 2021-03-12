@@ -3,7 +3,7 @@ CMD_START(100);
 CMD_IMMEDIATE(TacticalMove, PointF, p);
 CMD_IMMEDIATE(Create, UnitType, build_type, PointF, p, PlayerId, player_id, int, resource_used = 0);
 CMD_IMMEDIATE(Remove);
-CMD_IMMEDIATE(EmitBullet, UnitId, target, PointF, p, int, att, float, speed);
+CMD_IMMEDIATE(EmitBullet, UnitId, target, PointF, p, int, att, float, speed,int, round=1);
 CMD_IMMEDIATE(SaveMap, std::string, s);
 CMD_IMMEDIATE(LoadMap, std::string, s);
 CMD_IMMEDIATE(RandomSeed, uint64_t, seed);

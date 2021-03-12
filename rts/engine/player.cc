@@ -58,26 +58,64 @@ void Player::ComputeFOW(const Units &units) {
     // or loop on the units.
     // [TODO]: We could do better with LocalitySearch.
     // Clear fogs.
-    //std::cout<<"------ComputFOW--------"<<std::endl;
+    //std::cout<<"Player "<<GetId()<<"------ComputFOW--------"<<std::endl;
+
     for (Fog &f : _fogs) {
         f.MakeInvisible();
     }
 
     // First pass, get the fog region.
-    set<Loc> clear_regions;
+    // set<Loc> clear_regions;
+    // for (auto it = units.begin(); it != units.end(); ++it) {
+    //     const Unit *u = it->second.get();
+    //     if (ExtractPlayerId(u->GetId()) == _player_id) {
+    //         const int vis_r = u->GetProperty()._vis_r;
+    //         Loc l = _map->GetLoc(u->GetPointF());
+    //         if( !u->GetProperty().towards.IsInvalid() ){  //计算扇形FOW
+    //            for(const Loc &loc : _map->GetSight(l, vis_r,u->GetProperty().towards ) ) {
+    //                clear_regions.insert(loc);
+    //            }
+    //         } else{
+    //            for(const Loc &loc : _map->GetSight(l, vis_r) ) {
+    //                clear_regions.insert(loc);
+    //            }
+    //         }
+    //         // for (const Loc &loc : _map->GetSight(l, vis_r)) {
+    //         //     clear_regions.insert(loc);
+    //         // }
+    //     }
+    // }
+    //set<Loc> clear_regions;
+    map<Loc,float> clear_regions;   // loc 地图格点  地图格点到最近的雷达的距离
     for (auto it = units.begin(); it != units.end(); ++it) {
         const Unit *u = it->second.get();
         if (ExtractPlayerId(u->GetId()) == _player_id) {
             const int vis_r = u->GetProperty()._vis_r;
             Loc l = _map->GetLoc(u->GetPointF());
+            float dist_to_unit = 100.0f;
             if( !u->GetProperty().towards.IsInvalid() ){  //计算扇形FOW
                for(const Loc &loc : _map->GetSight(l, vis_r,u->GetProperty().towards ) ) {
-                   clear_regions.insert(loc);
+                   // 计算loc 到 雷达的距离 
+                   Coord coord =  _map->GetCoord(loc);
+                   PointF point = PointF(coord.x+0.5f,coord.y+0.5f);
+                   dist_to_unit= PointF::L2Sqr(point,u->GetPointF());
+                   dist_to_unit = sqrt(dist_to_unit);
+                   if(clear_regions.find(loc) == clear_regions.end()){
+                       clear_regions[loc] = dist_to_unit;
+                   }else{
+                       if(dist_to_unit<clear_regions[loc]) clear_regions[loc] = dist_to_unit; // 始终保存该点离最近的雷达的距离
+                   }
                }
             } else{
-               for(const Loc &loc : _map->GetSight(l, vis_r) ) {
-                   clear_regions.insert(loc);
+               for(const Loc &loc : _map->GetSight(l, vis_r) ) {  // 如果是其他单位的FOW，设为100.0f
+                   dist_to_unit = 50.0f;
+                   if(clear_regions.find(loc) == clear_regions.end()){
+                       clear_regions[loc] = dist_to_unit;
+                   }else{
+                       if(dist_to_unit<clear_regions[loc]) clear_regions[loc] = dist_to_unit; // 始终保存该点离最近的雷达的距离
+                   }
                }
+            
             }
             // for (const Loc &loc : _map->GetSight(l, vis_r)) {
             //     clear_regions.insert(loc);
@@ -86,9 +124,14 @@ void Player::ComputeFOW(const Units &units) {
     }
 
     // Clear these fog unit.
-    for (const Loc &l : clear_regions) {
-        _fogs[l].SetClear();
+   for(auto iter = clear_regions.begin(); iter != clear_regions.end(); iter++) {
+        _fogs[iter->first].SetClear(iter->second);
+        // cout << iter->first << " : " << iter->second << endl;
     }
+
+    // for (const Loc &l : clear_regions) {
+    //     _fogs[l].SetClear();
+    // }
 
     // Second pass, remember the units that was in FoW
     for (auto it = units.begin(); it != units.end(); ++it) {
@@ -99,12 +142,21 @@ void Player::ComputeFOW(const Units &units) {
             if (l != -1) _fogs[l].SaveUnit(*u);  //在迷雾格中存储该单位
         }
     }
+
+    // std::cout<<"=========Fog========="<<std::endl;
+    // for(int i=0;i<_fogs.size();++i){
+    //     std::cout<<_fogs[i]._fog<<" ";
+    //     if(i%70 == 69) std::cout<<std::endl;
+    // }
 }
 
 Loc Player::_filter_with_fow(const Unit& u) const {
     if (! _map->IsIn(u.GetPointF())) return -1;
     // [TODO]: Could we do better?
     Loc l = _map->GetLoc(u.GetPointF());
+    if(u.GetUnitType() == BARRACKS){
+        return ( _fogs[l].CanSeeRock()?l:-1);
+    }
     return (_fogs[l].CanSeeUnit() ? l : -1);
 }
 

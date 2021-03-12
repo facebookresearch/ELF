@@ -202,7 +202,7 @@ public:
     bool CheckUnit(UnitId u_id,UnitType type);  // 检查一个目标是否存在且符合给定类型
     
     //找到目标 （临时）
-    UnitId FindUnitsInK(PlayerId player_id,int k) const;   // 找到第k个友方/敌方单位
+    UnitId FindUnitsInK(PlayerId player_id,int k,UnitType u_t) const;   // 找到第k个友方/敌方单位
     
 };
 

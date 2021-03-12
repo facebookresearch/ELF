@@ -30,6 +30,7 @@ bool RTSMCAction::Send(const GameEnv &env, CmdReceiver &receiver) {
 
         switch(_type) {
             case STATE9:
+                //printf("STATE 9");
                 if (_action < 0 || _action >= (int) state.size()) {
                     cout << "RTSMCAction: action invalid! action = "
                          << _action << " / " << state.size() << endl;

@@ -22,9 +22,10 @@ struct Fog {
     vector<Unit> _prev_seen_units;  // 该点可见单位
 
     void MakeInvisible() {  _fog = 100; }  // 让该点不可见
-    void SetClear() { _fog = 0; _prev_seen_units.clear(); }
+    void SetClear(float f) { _fog = f; _prev_seen_units.clear(); }
     bool CanSeeTerrain() const { return _fog < 50; }
-    bool CanSeeUnit() const { return _fog < 30; }
+    bool CanSeeUnit() const { return _fog < 30.1f; }
+    bool CanSeeRock() const {return _fog<10.1f;}
 
     void SaveUnit(const Unit &u) {
         _prev_seen_units.push_back(u);

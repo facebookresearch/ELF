@@ -100,12 +100,12 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
                                 }
                             }
                         }else if(u->GetProperty().flight_state == FLIGHT_MOVE){  // 飞机处于飞行状态
-                           // 判断飞机是否执行攻击  70 - 100 km随机投弹
+                           // 判断飞机是否执行攻击  70 - 120 km随机投弹
                            float distance_to_target = PointF::L2Sqr(u->GetPointF(),_preload.GetEnemyBaseLoc()); // 计算飞机与目标的距离
 
                            // 测试攻击命令
                            
-                           if(IsAttack(env_temp,49,100,distance_to_target)){  
+                           if(IsAttack(env_temp,49,144,distance_to_target)){  
                                int round = u->GetProperty().round; // 载弹量
                                const auto& enemyTroops = _preload.EnemyTroops();
                                auto f = env_temp.GetRandomFunc();
@@ -359,7 +359,7 @@ bool MCRuleActor::GetActSimpleState(vector<int>* state) {
     // }else{
     //     _state[STATE_BUILD_BARRACK] = 1;
     // }
-    _state[STATE_BUILD_BARRACK] =1 ;
+    //_state[STATE_BUILD_BARRACK] =1 ;
     // if (my_troops[WORKER].size() < 3 && _preload.Affordable(WORKER)) {
     //     _state[STATE_BUILD_WORKER] = 1;
     // }
