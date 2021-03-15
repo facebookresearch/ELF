@@ -27,7 +27,8 @@ public:
     void SetHitAndRunAI() { _type = HIT_AND_RUN; }
 
     void SetUnitCmds(const std::vector<CmdInput> &unit_cmds) {
-        
+        //printf("SetUnitCmds: %d\n",unit_cmds.size());
+        //if(unit_cmds.size() == 0) printf("Wrong in SetUnitCmds\n");
         _type = CMD_INPUT;
         _unit_cmds = unit_cmds;
     }

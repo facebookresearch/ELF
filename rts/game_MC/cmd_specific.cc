@@ -51,7 +51,7 @@ bool CmdGameStartSpecific::run(GameEnv*, CmdReceiver* receiver) {
 
 // 创建雷达并设置朝向
 bool CreateRadar(Tick _tick,GameEnv* env,PlayerId player_id,PointF radar_p,PointF towards){
-   UnitId radar_id;
+   UnitId radar_id = -1;
    if(! env->AddUnit(_tick, RANGE_ATTACKER, radar_p, player_id,radar_id)){
         std::cout<<"create radar failed at "<<radar_p<<std::endl;
         return false;
@@ -68,7 +68,7 @@ bool CreateRadar(Tick _tick,GameEnv* env,PlayerId player_id,PointF radar_p,Point
 // 创建飞机
 // 飞机位置、攻击类型、出发时刻(tick)
 bool CreateFlight(Tick _tick,GameEnv* env,PlayerId player_id,PointF flight_p,FlightType flight_t,Tick _start_tick){
-    UnitId flight_id;
+    UnitId flight_id = -1;
     if(! env->AddUnit(_tick, WORKER, flight_p, player_id,flight_id)){
         //std::cout<<"create flighter failed at "<<flight_p<<std::endl;
         return false;
@@ -201,7 +201,7 @@ bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
 
     
     // 随机生成飞机的位置
-    // 第一轮： 无差别攻击 4NORMAL
+    //第一轮： 无差别攻击 4NORMAL
     Tick first_round = GetStartTick(env,10,50);
     while(true){
        if(CreateFlight(_tick,env,enemy_id, GetStartPoint(env,2,68,2,24),FLIGHT_NORMAL,first_round)) break;
@@ -238,6 +238,9 @@ bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
     while(true){
        if(CreateFlight(_tick,env,enemy_id, GetStartPoint(env,1,69,1,25),FLIGHT_NORMAL,second_round )) break;
     }
+
+    
+    
     
     
     return true;

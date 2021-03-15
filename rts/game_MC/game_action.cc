@@ -11,6 +11,7 @@
 bool RTSMCAction::Send(const GameEnv &env, CmdReceiver &receiver) {
     // Apply command.
     //cout<<"Player "<<_player_id<<" Send Action"<<endl;
+    //printf("Player: %d  Send Action\n",_player_id);
     MCRuleActor rule_actor;
     rule_actor.SetPlayerId(_player_id);
     rule_actor.SetReceiver(&receiver);

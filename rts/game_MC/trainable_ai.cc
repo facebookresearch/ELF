@@ -106,7 +106,7 @@ void TrainedAI::extract(const State &s, Data *data) {
 #define ACTION_REGIONAL 2
 
 bool TrainedAI::handle_response(const State &s, const Data &data, RTSMCAction *a) {
-    
+    //printf(" Handle Response\n");
     a->Init(id(), name());
 
     // if (_receiver == nullptr) return false;
@@ -148,36 +148,56 @@ bool TrainedAI::handle_response(const State &s, const Data &data, RTSMCAction *a
 
         case ACTION_UNIT_CMD:
             {
-
+               
                 // Use gs.unit_cmds
-                // std::vector<CmdInput> unit_cmds(gs.unit_cmds);
+                //std::vector<CmdInput> unit_cmds(gs.unit_cmds);
                 // Use data
-                std::vector<CmdInput> unit_cmds;
+                std::vector<CmdInput> unit_cmds(gs.n_max_cmd,CmdInput());
+               // std::vector<CmdInput> unit_cmds_1(gs.n_max_cmd,CmdInput());
+               
                 //std::cout<<"  Action Type "<<gs.action_type <<"  " <<gs.n_max_cmd<<std::endl;
                 for (int i = 0; i < gs.n_max_cmd; ++i) {
-                    //std::cout<<"cmd type: "<<gs.ct[i]<<std::endl;
+                   // printf("Handle response ct = %d select %d attack %d\n",gs.ct[i],gs.uloc[i],gs.tloc[i]);
                     int ct = -1;  // Invalid
-                    int towerNums = _preload.MyTroops()[MELEE_ATTACKER].size();
-                    int enemyNums = _preload.EnemyTroopsInRange().size();
-                    UnitId tower = -1,target = -1;
-                    if(gs.ct[i] >0 && enemyNums>0 && towerNums>0) {  // 如果AI给出的是攻击指令且范围内有敌人
-                        ct = 1;  // 命令类型为攻击
-                        tower = _preload.MyTroops()[MELEE_ATTACKER][gs.uloc[i]%towerNums]->GetId();
-                        target = _preload.EnemyTroopsInRange()[gs.tloc[i]%enemyNums]->GetId();
-                        //printf("选择 Tower: %d  攻击 敌人： %d,  %d 发导弹\n",tower,target,gs.ct[i]);
-                    }
-                        
-                       
+                    int towerNums = 0;
+                    int enemyNums = 0;
+                    int tower_id = -1;
+                    int target_id = -1;
                     
-                    //std::cout<<"gs.ct: "<<gs.ct[i]<<" ct: "<<ct<<std::endl;
-                    //std::cout<<"unit_select: "<<gs.uloc[i]<<" target_select: "<<gs.tloc[i]<<std::endl;
-                    //unit_cmds.emplace_back(_XY(gs.uloc[i], m), _XY(gs.tloc[i], m), gs.ct[i],WORKER);
-                    //unit_cmds.push_back(CmdInput(gs.uloc[i],gs.tloc[i],gs.ct[i],ct));
-                    unit_cmds.push_back(CmdInput(tower,target,gs.ct[i],ct));   
+                    //int _t = rand()%9999+10000;
+                    if(gs.ct[i]>0){   //执行攻击命令
+                    //    ct = 1;
+                       enemyNums = _preload.EnemyTroopsInRange().size();
+                       towerNums =  _preload.MyTroops()[MELEE_ATTACKER].size();
+                       if(enemyNums>0 && towerNums>0){
+                           //printf("enemy Select: %d Total %d towerSelect: %d total %d\n",gs.tloc[i]%enemyNums,enemyNums,gs.uloc[i]%towerNums,towerNums);
+                        
+                           const Unit* u_tower = _preload.MyTroops()[MELEE_ATTACKER][gs.uloc[i]%towerNums];
+                           if(u_tower != nullptr) {
+                                tower_id = u_tower->GetId();
+                           } 
+
+                           const Unit* u_enemy = _preload.EnemyTroopsInRange()[gs.tloc[i]%enemyNums];
+                           if(u_enemy != nullptr) {
+                               target_id = u_enemy->GetId();
+                           
+                           } 
+
+                           unit_cmds[i].Initialize(ct,tower_id,target_id,gs.ct[i]);
+
+                       }
+                    }
+                    
+                   
+                   //printf("unitcmd[%d]: %d attack %d with %d rounds\n",i,unit_cmds[i].id,unit_cmds[i].target,unit_cmds[i].round);
+                   // unit_cmds.emplace_back(tower,_t,gs.ct[i],ct);
+                 
                 }
                 //std::for_each(unit_cmds.begin(), unit_cmds.end(), [&](CmdInput &ci) { ci.ApplyEnv(env); } );
                 
+                //printf("SetUnitCmds\n");
                 a->SetUnitCmds(unit_cmds);
+              
                 
             }
             break;
@@ -217,7 +237,7 @@ bool TrainedAI::GatherInfo(const GameEnv &env,PlayerId _player_id){
     _preload.GatherInfo(env, _player_id);
      
     auto res = _preload.GetResult();
-    if (res == Preload::NO_BASE) return false;
+    if (res == Preload_Train::NO_BASE) return false;
     return true;
 }
 
@@ -233,7 +253,7 @@ void Preload_Train::GatherInfo(const GameEnv& env, int player_id) {
     const Player& player = env.GetPlayer(_player_id);
     if (!env.GetGameDef().HasBase()) return;
 
-     if ( _my_troops[BASE].empty()) {
+    if ( _my_troops[BASE].empty()) {
         //cout<<"No_BASE"<<endl;
         _result = NO_BASE;
         return;

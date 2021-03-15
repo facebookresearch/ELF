@@ -195,8 +195,18 @@ public:
     string PrintHeuristicsCache() const;
 
     // 24-30 encoding player id.
-    static PlayerId ExtractPlayerId(UnitId id) { return (id >> 24); }
-    static UnitId CombinePlayerId(UnitId raw_id, PlayerId player_id) { return (raw_id & 0xffffff) | (player_id << 24); }
+    static PlayerId ExtractPlayerId(UnitId id)
+     { 
+         //return (id >> 24); 
+         return id/10000;
+    }
+    static UnitId CombinePlayerId(UnitId raw_id, PlayerId player_id) { 
+       // 在我们的场景中我们假设玩家在一局游戏中累计生成的单位不超过10000个，可能优化
+          //  std::cout<<"Player_id "<<player_id<<" _next_unit_id: "<<raw_id<<" process raw: "<<(raw_id & 0xffffff)<<" play<<24: "<<(player_id << 24)<<" unitId: "<<((raw_id & 0xffffff) | (player_id << 24))<<std::endl;
+         // std::cout<<"player_id: "<<player_id<<" raw_id: "<<raw_id<<" unitid: "<<(raw_id  + (player_id*10000))<<std::endl;
+        //   return (raw_id & 0xffffff) | (player_id << 24); 
+          return (raw_id  + (player_id*10000) );
+        }
 
     SERIALIZER(Player, _player_id, _name, _privilege, _resource, _fogs, _heuristics, _cache);
     HASH(Player, _player_id, _privilege, _resource);

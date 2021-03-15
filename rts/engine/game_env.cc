@@ -106,9 +106,9 @@ uint64_t GameEnv::CurrentHashCode() const {
 
 bool GameEnv::AddUnit(Tick tick, UnitType type, const PointF &p, PlayerId player_id, UnitId& u_id) {
     // Check if there is any space.
+    
     if (!_gamedef.CheckAddUnit(_map.get(), type, p)) return false;
     // cout << "Actual adding unit." << endl;
-
     UnitId new_id = Player::CombinePlayerId(_next_unit_id, player_id);
     Unit *new_unit = new Unit(tick, new_id, type, p, _gamedef.unit(type)._property);
     _units.insert(make_pair(new_id, unique_ptr<Unit>(new_unit)));

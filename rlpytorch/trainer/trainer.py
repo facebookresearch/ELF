@@ -178,6 +178,7 @@ class Trainer:
         Args:
             batch(dict): batch data
         '''
+        
         mi = self.evaluator.mi
 
         self.counter.inc("train")

@@ -261,6 +261,7 @@ bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
         // For example, for AI, they could cheat and attack wherever they want. AI无视FOW
         // For normal player you cannot attack a Unit outside the FOW.  玩家无法攻击FOW外的敌方单位
         // 
+        // printf("null unit, id: %d\n",_target);
         if(u->GetUnitType() == BARRACKS){
             // 如果是导弹，目标失活后直接销毁？
             receiver->SendCmd(CmdIPtr(new CmdOnDeadUnit(_id, _id)));  

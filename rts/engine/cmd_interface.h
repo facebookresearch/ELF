@@ -32,10 +32,10 @@ struct CmdInput {
 
     CmdInputType type;
     UnitId id, target, base;
-    set<UnitId> targets;
+    
     PointF p;
     UnitType build_type;
-    int round = 1;
+    int round = 0;
     
     
 
@@ -45,10 +45,12 @@ struct CmdInput {
     PointF unit_loc;
 
     // By default this is ready.
-    CmdInput(CmdInputType t, UnitId id, const PointF &p, UnitId target = INVALID, UnitId base = INVALID, UnitType build_type = INVALID_UNITTYPE,set<UnitId> targets = set<UnitId>())
-        : type(t), id(id), target(target), base(base), p(p), build_type(build_type), ready(true),targets(targets) {
+    CmdInput(CmdInputType t, UnitId id, const PointF &p, UnitId target = INVALID, UnitId base = INVALID, UnitType build_type = INVALID_UNITTYPE)
+        : type(t), id(id), target(target), base(base), p(p), build_type(build_type), ready(true) {
     }
-    CmdInput() : type(CI_INVALID), id(INVALID), target(INVALID), base(INVALID), ready(false){ }
+    CmdInput() : type(CI_INVALID), id(INVALID), target(INVALID), base(INVALID), ready(false){ 
+        //printf("CmdInput 无参构造函数\n");
+    }
 
     // Not ready and need to call ApplyEnv().
     CmdInput(float unit_loc_x, float unit_loc_y, float target_loc_x, float target_loc_y, int cmd_type, int build_tp)
@@ -57,10 +59,20 @@ struct CmdInput {
 
     //test======
 
-    CmdInput(UnitId unit_loc ,UnitId target_loc,int round,int cmd_type)
-    : type((CmdInputType)cmd_type), id(unit_loc),target(target_loc),base(INVALID),round(round)
+    CmdInput(UnitId unit_id ,UnitId target_id,int round,int cmd_type)
+    : type((CmdInputType)cmd_type), id(unit_id),target(target_id),base(INVALID),round(round),ready(true)
     {
        // std::cout<<"unit_loc: "<<id<<" target: "<<target<<" round: "<<round<<std::endl;
+       printf("unit_loc: %d target: %d round: %d\n",id,target,round);
+    }
+    
+    // 设置Cmd的值（用于handle_response）
+    void Initialize(int t, UnitId id,UnitId target,int round){
+        this->type = (CmdInputType)t;
+        this->id = id;
+        this->target = target;
+        this->round = round;
+        ready = true;
     }
 
     std::string info() const {
@@ -70,28 +82,28 @@ struct CmdInput {
     }
     
     //unit_cmds.emplace_back(_XY(gs.uloc[i], m), _XY(gs.tloc[i], m), ct,WORKER);
-    void ApplyEnv(const GameEnv &env) {
+    // void ApplyEnv(const GameEnv &env) {
 
-        // Check unit id.
+    //     // Check unit id.
 
-        // id = env.GetMap().GetClosestUnitId(unit_loc, 1.0);  
-        // target = env.GetMap().GetClosestUnitId(p, 1.0);
-        // base = INVALID;
-        // if (type == CI_GATHER && id != INVALID) base = env.FindClosestBase(Player::ExtractPlayerId(id));
-        // ready = true;
-        if(type != INVALID){
-            int _id = id;
-            int _target = target;
-            id = env.FindUnitsInK(0,id,MELEE_ATTACKER); // 找到友方单位
-            target = env.FindUnitsInK(1,target,WORKER); // 找到敌方单位
-           //printf("u: %d ==> %d   t: %d ==> %d\n",_id,id,_target,target);
+    //     // id = env.GetMap().GetClosestUnitId(unit_loc, 1.0);  
+    //     // target = env.GetMap().GetClosestUnitId(p, 1.0);
+    //     // base = INVALID;
+    //     // if (type == CI_GATHER && id != INVALID) base = env.FindClosestBase(Player::ExtractPlayerId(id));
+    //     // ready = true;
+    //     // if(type != INVALID){
+    //     //     int _id = id;
+    //     //     int _target = target;
+    //     //     id = env.FindUnitsInK(0,id,MELEE_ATTACKER); // 找到友方单位
+    //     //     target = env.FindUnitsInK(1,target,WORKER); // 找到敌方单位
+    //     //    //printf("u: %d ==> %d   t: %d ==> %d\n",_id,id,_target,target);
            
-        }
-        //std::cout<<"id: "<<id<<" target: "<<target<<std::endl;
-        //base = INVALID;
-        //if (type == CI_GATHER && id != INVALID) base = env.FindClosestBase(Player::ExtractPlayerId(id));
-        ready = true;
-    }
+    //     // }
+    //     //std::cout<<"id: "<<id<<" target: "<<target<<std::endl;
+    //     //base = INVALID;
+    //     //if (type == CI_GATHER && id != INVALID) base = env.FindClosestBase(Player::ExtractPlayerId(id));
+    //     ready = true;
+    // }
 
     CmdBPtr GetCmd() const {
         if (id == INVALID) return CmdBPtr();
@@ -182,6 +194,7 @@ private:
     }
 
     CmdInput on_attack(const Tokens& tokens) {
+        printf("on_attack\n");
         int idx = 1;
         UnitId id = parse_unit(tokens, &idx);
         UnitId target = parse_unit(tokens, &idx);
