@@ -236,7 +236,7 @@ bool CmdCircleMove::run(const GameEnv &env, CmdReceiver *receiver) {
 // Attack cmd.target_id
 // 持续攻击应该改成单发攻击？
 bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
-   //std::cout<<"Attack"<<std::endl; 
+    //std::cout<<"Attack round = "<<_round<<"Target: "<< _target<<std::endl; 
     GameEnv& env_temp = const_cast<GameEnv&>(env); // 需要用到GameEnv的方法
     const Unit *u = env.GetUnit(_id); // 执行命令的单位
     if (u == nullptr) {

@@ -108,9 +108,11 @@ void TrainedAI::extract(const State &s, Data *data) {
 bool TrainedAI::handle_response(const State &s, const Data &data, RTSMCAction *a) {
     //printf(" Handle Response\n");
     a->Init(id(), name());
+    
 
     // if (_receiver == nullptr) return false;
     const auto &env = s.env();
+    //printf("Current Tick: %d\n",s.GetTick());
 
     // Get the current action from the queue.
     const auto &m = env.GetMap();
@@ -189,7 +191,7 @@ bool TrainedAI::handle_response(const State &s, const Data &data, RTSMCAction *a
                     }
                     
                    
-                   //printf("unitcmd[%d]: %d attack %d with %d rounds\n",i,unit_cmds[i].id,unit_cmds[i].target,unit_cmds[i].round);
+                   //printf("Tick: %d unitcmd[%d]: %d attack %d with %d rounds\n",s.GetTick(),i,unit_cmds[i].id,unit_cmds[i].target,unit_cmds[i].round);
                    // unit_cmds.emplace_back(tower,_t,gs.ct[i],ct);
                  
                 }

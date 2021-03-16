@@ -35,7 +35,7 @@ struct CmdInput {
     
     PointF p;
     UnitType build_type;
-    int round = 0;
+    int round = 1;
     
     
 
