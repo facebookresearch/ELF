@@ -167,8 +167,8 @@ class Trainer:
         '''
         
         self.counter.inc("actor")
-        # import pdb
-        # pdb.set_trace()
+        import pdb
+        pdb.set_trace()
         return self.evaluator.actor(batch)
 
     def train(self, batch):

@@ -50,7 +50,7 @@ bool CmdGameStartSpecific::run(GameEnv*, CmdReceiver* receiver) {
 
 
 // 创建雷达并设置朝向
-bool CreateRadar(Tick _tick,GameEnv* env,PlayerId player_id,PointF radar_p,PointF towards){
+bool CreateRadar(Tick _tick,GameEnv* env,PlayerId player_id,PointF radar_p,PointF towards,int round){
    UnitId radar_id = -1;
    if(! env->AddUnit(_tick, RANGE_ATTACKER, radar_p, player_id,radar_id)){
         std::cout<<"create radar failed at "<<radar_p<<std::endl;
@@ -61,6 +61,7 @@ bool CreateRadar(Tick _tick,GameEnv* env,PlayerId player_id,PointF radar_p,Point
    //设置雷达朝向
    radar->GetProperty().towards.x = towards.x;
    radar->GetProperty().towards.y = towards.y;
+   radar->GetProperty().round = round;  //设置雷达的索敌数量
    //std::cout<<"Create Radar at "<<radar->GetPointF()<<" towards "<<radar->GetProperty().towards<<std::endl;
    return true;
 }
@@ -143,9 +144,9 @@ bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
     // 雷达
     PointF radar_1_p = PointF(36,34.8); //雷达1位置
     PointF radar_2_p = PointF(34,34.8); //雷达2位置
-    if(!CreateRadar(_tick,env,player_id,radar_1_p,PointF(1,-1.732))) return false;   // 生成雷达并设置朝相
+    if(!CreateRadar(_tick,env,player_id,radar_1_p,PointF(1,-1.732),8)) return false;   // 生成雷达并设置朝相
    
-    if(!CreateRadar(_tick,env,player_id,radar_2_p,PointF(-1,-1.732))) return false;  // 生成雷达并设置朝向
+    if(!CreateRadar(_tick,env,player_id,radar_2_p,PointF(-1,-1.732),8)) return false;  // 生成雷达并设置朝向
     
     //_CREATE(WORKER,PointF(20,20),player_id);
     

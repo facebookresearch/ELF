@@ -42,8 +42,22 @@ struct GameState {
     // Extracted feature map.
     std::vector<float> s;
 
+    // Test Extract our Feature
+    std::vector<float> s_global;
+    std::vector<float> s_base;
+    std::vector<float> s_radar;
+    std::vector<float> s_tower;
+    //std::vector<int> id_tower;
+    std::vector<float> s_enemy;
+   // std::vector<int> id_enemy;
+    
+    //============
+
     std::vector<float> reduced_s;
     std::vector<float> reduced_next_s;
+    
+
+    
 
     float last_r;
 
@@ -67,6 +81,8 @@ struct GameState {
 
     // Action as unit command.
     std::vector<CmdInput> unit_cmds;
+
+    
 
     // Action per region
     // Python side will output an action map for each region for the player to follow.
@@ -138,7 +154,7 @@ struct GameState {
     }
 
     // These fields are used to exchange with Python side using tensor interface.
-    DECLARE_FIELD(GameState, id, a, V, pi, last_r, s, rv, terminal, seq, game_counter, last_terminal, uloc, tloc, bt, ct, uloc_prob, tloc_prob, bt_prob, ct_prob, reduced_s, reduced_next_s,action_type);
+    DECLARE_FIELD(GameState, id, a,V,last_r, s, rv, terminal, seq, game_counter, last_terminal, uloc, tloc, bt, ct, uloc_prob, tloc_prob, bt_prob, ct_prob, reduced_s, reduced_next_s, action_type, s_global, s_base, s_radar,s_tower,s_enemy);
     //DECLARE_FIELD(GameState, id, a, V, pi, last_r, s, rv, terminal, seq, game_counter, last_terminal, uloc, tloc, bt, ct, uloc_prob, tloc_prob, bt_prob, ct_prob, reduced_s, reduced_next_s,base_x,base_y);
     REGISTER_PYBIND_FIELDS(id);
 };

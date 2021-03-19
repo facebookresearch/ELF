@@ -344,6 +344,8 @@ class GCWrapper:
         return True
 
     def _call(self, infos):
+        # import pdb
+        # pdb.set_trace()
         if infos.gid not in self._cb:
             raise ValueError("info.gid[%d] is not in callback functions" % infos.gid)
 

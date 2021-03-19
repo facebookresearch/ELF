@@ -215,10 +215,11 @@ public:
     map<UnitId,vector<UnitId> >& GetTargets(){return _targets;}  // 返回玩家锁定目标
     void AddRadar(UnitId radar_id);     // 增加一个雷达 （锁定目标）
     void RemoveRadar(UnitId radar_id);  // 去除一个雷达  (锁定目标)
-    void AddUnit(UnitId radar_id,UnitId target_id); //锁定
+    void AddUnit(UnitId radar_id,UnitId target_id,int round); //锁定
     bool RemoveUnit(UnitId target_id);  // 解除锁定
     bool isUnitLocked(UnitId target_id) const;  //查看一个单位是否已经被锁定
     string PrintTargetInfo(UnitId radar_id = -1) ;
+    int  GetRadarRound(UnitId radar_id) const ;  //返回雷达剩余的索敌数量
 
 };
 

@@ -15,12 +15,72 @@
 #include "engine/custom_enum.h"
 #include "python_options.h"
 
+
 using namespace std;
 
 #define _OFFSET(_c, _x, _y, _m) (((_c) * _m.GetYSize() + (_y)) * _m.GetXSize() + (_x))
 #define _XY(loc, m) ((loc) % m.GetXSize()), ((loc) / m.GetXSize())
 
 #define NUM_RES_SLOT 5
+
+class Preload_Train {
+public:
+    enum Result { NOT_READY = -1, OK = 0, NO_BASE };
+
+private:
+    vector<vector<const Unit*> > _my_troops;  //我方单位
+    vector<pair<float, const Unit*> > _enemy_troops_in_range; // 视野内的敌方单位
+    vector<const Unit*> _all_my_troops;
+
+    UnitId _base_id;
+    PointF _base_loc;
+    int _base_hp;
+
+    const Unit *_base = nullptr;
+    PlayerId _player_id = INVALID;
+    int _num_unit_type = 0;
+    Result _result = NOT_READY;
+    
+
+    static bool InCmd(const CmdReceiver &receiver, const Unit &u, CmdType cmd) {
+        const CmdDurative *c = receiver.GetUnitDurativeCmd(u.GetId());
+        return (c != nullptr && c->type() == cmd);
+    }
+
+    void collect_stats(const GameEnv &env, int player_id);
+
+public:
+    Preload_Train() { }
+
+    void GatherInfo(const GameEnv &env, int player_id);
+    Result GetResult() const { return _result; }
+    
+    
+    //CmdBPtr GetAccackEnemyUnitCmd(UnitId t_id) const { return _A(t_id);}
+    
+    
+    // 随机获取攻击范围内的指定类型目标
+    // custom_enum(FlightType, INVALID_FLIGHTTYPE = -1, FLIGHT_NORMAL = 0, FLIGHT_BASE, FLIGHT_TOWER, FLIGHT_FAKE, NUM_FLIGHT);  // 飞机种类
+    
+    const PointF &BaseLoc() const { return _base_loc; }
+    const Unit *Base() const { return _base; }
+    const int BaseHP() const {return _base_hp;}
+    
+    float DistanceToBase(const PointF &u_loc) const;
+    PointF VectorToBase(const PointF& u_loc) const;
+    
+
+    const vector<vector<const Unit*> > &MyTroops() const { return _my_troops; }
+    const vector<pair<float, const Unit*> > &EnemyTroopsInRange() const { return _enemy_troops_in_range; }
+    const vector<const Unit*> &AllMyTroops() const { return _all_my_troops; }
+    string EnemyInfo() const {
+        stringstream ss;
+        for(int i=0;i<_enemy_troops_in_range.size();++i){
+            ss<<_enemy_troops_in_range[i].second->GetId()<<"   ";
+        }
+        return ss.str();
+    }
+};
 
 // MCExtractor设置
 struct MCExtractorOptions {
@@ -163,6 +223,38 @@ private:
     }
 };
 
+// class MCExtractor {
+// public:
+//     static void Init(const MCExtractorOptions &opt) {
+//         info_.Reset(opt);
+//         attach_complete_info_ = opt.attach_complete_info;
+//     }
+
+//     static void InitUsage(const MCExtractorUsageOptions &opt) {
+//         usage_ = opt;
+//     }
+
+//     // static const MCExtractorInfo &GetInfo() { return info_; }
+//     //
+//     static size_t Size() {
+//         if (attach_complete_info_) return info_.size() * 2;
+//         else return info_.size();
+//     }
+
+//     static void Extract(const RTSState &s, PlayerId player_id, bool respect_fow, std::vector<float> *state);
+//     static void SaveInfo(const RTSState &s, PlayerId player_id, GameState *gs);
+
+// private:
+   
+//     static MCExtractorInfo info_;
+//     static MCExtractorUsageOptions usage_;
+//     static bool attach_complete_info_;
+
+//     static void extract(const RTSState &s, PlayerId player_id, bool respect_fow, float *state);
+// };
+
+
+
 class MCExtractor {
 public:
     static void Init(const MCExtractorOptions &opt) {
@@ -184,10 +276,31 @@ public:
     static void Extract(const RTSState &s, PlayerId player_id, bool respect_fow, std::vector<float> *state);
     static void SaveInfo(const RTSState &s, PlayerId player_id, GameState *gs);
 
+    static void Extract(const RTSState &s, const Preload_Train &preload, PlayerId player_id, bool respect_fow, GameState *gs);
+
+    
+
 private:
+    
     static MCExtractorInfo info_;
     static MCExtractorUsageOptions usage_;
     static bool attach_complete_info_;
 
     static void extract(const RTSState &s, PlayerId player_id, bool respect_fow, float *state);
+
+    static void extract_global(const Preload_Train &preload,std::vector<float> &s_global);
+    static void extract_base  (const Preload_Train &preload,std::vector<float> &s_base);
+    static void extract_radar(const GameEnv &env, const Preload_Train &preload,std::vector<float> &s_radar);
+    static void extract_tower(Tick tick,const Preload_Train &preload,std::vector<float> &s_tower);
+    static void extract_enemy(const GameEnv &env, PlayerId player_id, const Preload_Train &preload,std::vector<float> &s_enemy);
 };
+
+
+
+
+
+
+
+
+
+

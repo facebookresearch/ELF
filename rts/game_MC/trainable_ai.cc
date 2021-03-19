@@ -12,7 +12,7 @@
 #include "engine/unit.h"
 #include "engine/cmd_interface.h"
 #include "python_options.h"
-#include "state_feature.h"
+// #include "state_feature.h"
 
 
 
@@ -72,23 +72,44 @@ bool TrainedAI::GameEnd() {
     return true;
 }
 
+
+
+
+
 void TrainedAI::extract(const State &s, Data *data) {
     GameState *game = &data->newest();
-
+    
     MCExtractor::SaveInfo(s, id(), game);
     game->name = name();
 
+    bool gather_ok = GatherInfo(s.env(),id());
+    
+
+
     if (_recent_states.maxlen() == 1) {
+        //printf("maxlen() == 1)\n");
         //std::cout<<"TrainAble AI Extract"<<std::endl;
         MCExtractor::Extract(s, id(), _respect_fow, &game->s);
+        MCExtractor::Extract(s, _preload,id(),_respect_fow, game);
+        
+       
+
+        
+        // std::vector<float> Base;
+        // std::vector<std::vector<float> > tower;
+        // std::vector<std::vector<float> > radar;
+        // std::vector<std::vector<float> > enemy;
+        
+
         //std::cout << "(1) size_s = " << game->s.size() << std::endl << std::flush;
     } else {
+        //printf("maxlen() != 1\n");
         std::vector<float> &state = _recent_states.GetRoom();
         MCExtractor::Extract(s, id(), _respect_fow, &state);
 
         const size_t maxlen = _recent_states.maxlen();
         game->s.resize(maxlen * state.size());
-        // std::cout << "(" << maxlen << ") size_s = " << game->s.size() << std::endl << std::flush;
+        //std::cout << "(" << maxlen << ") size_s = " << game->s.size() << std::endl << std::flush;
         std::fill(game->s.begin(), game->s.end(), 0.0);
         // Then put all states to game->s.
         for (size_t i = 0; i < maxlen; ++i) {
@@ -100,6 +121,8 @@ void TrainedAI::extract(const State &s, Data *data) {
         }
     }
 }
+
+
 
 #define ACTION_GLOBAL 0
 #define ACTION_UNIT_CMD 1
@@ -118,11 +141,11 @@ bool TrainedAI::handle_response(const State &s, const Data &data, RTSMCAction *a
     const auto &m = env.GetMap();
     const GameState& gs = data.newest();
 
-    bool gather_ok = GatherInfo(env,a->GetPlayerId());
-        if (! gather_ok) {
-            //cout<<"gather fail"<<endl;
-            return false;
-        }
+    // bool gather_ok = GatherInfo(env,id());
+    //     if (! gather_ok) {
+    //         //cout<<"gather fail"<<endl;
+    //         return false;
+    //     }
     
     
     // for(int i=0;i<_preload.EnemyTroopsInRange().size();++i){
@@ -168,7 +191,7 @@ bool TrainedAI::handle_response(const State &s, const Data &data, RTSMCAction *a
                     
                     //int _t = rand()%9999+10000;
                     if(gs.ct[i]>0){   //执行攻击命令
-                    //    ct = 1;
+                       ct = 1;
                        enemyNums = _preload.EnemyTroopsInRange().size();
                        towerNums =  _preload.MyTroops()[MELEE_ATTACKER].size();
                        if(enemyNums>0 && towerNums>0){
@@ -179,19 +202,21 @@ bool TrainedAI::handle_response(const State &s, const Data &data, RTSMCAction *a
                                 tower_id = u_tower->GetId();
                            } 
 
-                           const Unit* u_enemy = _preload.EnemyTroopsInRange()[gs.tloc[i]%enemyNums];
+                           const Unit* u_enemy = _preload.EnemyTroopsInRange()[gs.tloc[i]%enemyNums].second;
                            if(u_enemy != nullptr) {
                                target_id = u_enemy->GetId();
                            
                            } 
 
                            unit_cmds[i].Initialize(ct,tower_id,target_id,gs.ct[i]);
+                           printf("Id: %d round: %d \n",target_id,gs.ct[i]);
 
                        }
                     }
+                   
                     
                    
-                   //printf("Tick: %d unitcmd[%d]: %d attack %d with %d rounds\n",s.GetTick(),i,unit_cmds[i].id,unit_cmds[i].target,unit_cmds[i].round);
+                  // printf("Tick: %d unitcmd[%d]: %d attack %d with %d rounds\n",s.GetTick(),i,unit_cmds[i].id,unit_cmds[i].target,unit_cmds[i].round);
                    // unit_cmds.emplace_back(tower,_t,gs.ct[i],ct);
                  
                 }
@@ -240,68 +265,10 @@ bool TrainedAI::GatherInfo(const GameEnv &env,PlayerId _player_id){
      
     auto res = _preload.GetResult();
     if (res == Preload_Train::NO_BASE) return false;
+    //std::cout<<_preload.EnemyInfo()<<std::endl;
     return true;
 }
 
 
 
 
-// Preload
-
-void Preload_Train::GatherInfo(const GameEnv& env, int player_id) {
-    //cout << "GatherInfo(): player_id: " << player_id << endl;
-    assert(player_id >= 0 && player_id < env.GetNumOfPlayers());
-    collect_stats(env, player_id);
-    const Player& player = env.GetPlayer(_player_id);
-    if (!env.GetGameDef().HasBase()) return;
-
-    if ( _my_troops[BASE].empty()) {
-        //cout<<"No_BASE"<<endl;
-        _result = NO_BASE;
-        return;
-    }
-    // cout << "Base not empty" << endl << flush;
-    _base = _my_troops[BASE][0];
-    _base_id = _base->GetId();
-    _base_loc = _base->GetPointF();
-    _result = OK;
-}
-
-
-void Preload_Train::collect_stats(const GameEnv &env, int player_id) {
-    // Clear all data
-    //
-    _my_troops.clear();
-    _enemy_troops_in_range.clear();
-    _all_my_troops.clear();
-    _num_unit_type = env.GetGameDef().GetNumUnitType();
-
-    // Initialize to a given size.
-    _my_troops.resize(_num_unit_type);
-    _result = NOT_READY;
-
-    _player_id = player_id;
-
-    // Collect ...
-    const Units& units = env.GetUnits();
-    const Player& player = env.GetPlayer(_player_id);
-
-    // cout << "Looping over units" << endl << flush;
-
-    // Get the information of all other troops.
-    for (auto it = units.begin(); it != units.end(); ++it) {
-        const Unit *u = it->second.get();
-        if (u == nullptr) cout << "Unit cannot be nullptr" << endl << flush;
-
-        if (u->GetPlayerId() == _player_id ) {  // 我方单位
-            _my_troops[u->GetUnitType()].push_back(u);
-           _all_my_troops.push_back(u);
-        } else {  // 敌方单位
-            if (player.FilterWithFOW(*u)) {
-                if (u->GetUnitType() != RESOURCE) {
-                    _enemy_troops_in_range.push_back(u);
-                }
-            }
-        }
-    }
-}

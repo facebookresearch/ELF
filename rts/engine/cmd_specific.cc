@@ -327,6 +327,7 @@ bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
                 env_temp.Lock(u->GetPlayerId(),u->GetId(),_target);
             }
              std::cout<<env_temp.PrintTargetsInfo(u->GetPlayerId())<<std::endl;
+            // std::cout<<"剩余索敌数量： "<<env_temp.GerRadarRound(u->GetId())<<std::endl;
             _done = true;
             return true;
         } else if(u->GetUnitType() == MELEE_ATTACKER){  // 炮塔
@@ -359,11 +360,13 @@ bool CmdAttack::run(const GameEnv &env, CmdReceiver *receiver) {
                 default:
                   break;
             }
+           
             //std::cout<<"奖励： "<<player.GetPlayerReward()<<std::endl;
             env_temp.GetUnit(_id)->GetProperty().round - _round;
             for(int i=0;i<_round;++i){
                  receiver->SendCmd(CmdIPtr(new CmdEmitBullet(_id, _target, curr, -property._att, 0.1,_round)));
             }
+             //printf("防御塔攻击： %d, 发射了 %d 发导弹\n",_target,_round);
             
             receiver->SendCmd(CmdIPtr(new CmdCDStart(_id, CD_ATTACK)));  // 重置攻击CD
             _done = true;
@@ -526,6 +529,7 @@ bool IsHit(GameEnv *env,float dist_tower_to_enemy,float range,int round) {
     int select = f(99)+1;
     int p = (round == 1? 64:87);
     //std::cout<<"select: "<<select<<" p: "<<p<<std::endl;
+    
     return select<=p; 
 }
 
@@ -549,10 +553,12 @@ bool CmdMeleeAttack::run(GameEnv *env, CmdReceiver *receiver) {
     float dist_tower_to_enemy = PointF::L2Sqr(_p_tower, target->GetPointF());  // 距离
     //std::cout<<"_p_tower: "<<_p_tower<<" _p_target: "<<target->GetPointF()<<" distance: "<< dist_tower_to_enemy<<std::endl;
     if(_isRandom){  // 是否考虑命中概率
+        
         if(!IsHit(env,dist_tower_to_enemy,u->GetProperty()._att_r,_round) ){   //判定是否击中目标
             //std::cout<<"======攻击无效========="<<std::endl;
             return true;  //判定这次攻击无效
         }
+       // printf("子弹击中目标: %d\n",_target);
     }
     
 

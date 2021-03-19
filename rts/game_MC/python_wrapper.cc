@@ -78,6 +78,7 @@ public:
         const int max_unit_cmd = _context->options().max_unit_cmd;
         const int reduced_size = MCExtractor::Size() * 5 * 5;
         
+        
 
         if (key == "s") return EntryInfo(key, type_name, { (int)MCExtractor::Size() * _num_frames_in_state,  _context->options().map_size_y, _context->options().map_size_x}); // 64 x 22 x  20 x 20
         else if (key == "last_r" || key == "terminal" || key == "last_terminal" || key == "id" || key == "seq" || key == "game_counter" || key == "player_id") return EntryInfo(key, type_name);
@@ -94,6 +95,16 @@ public:
         else if (key == "reduced_s") return EntryInfo(key, type_name, { reduced_size });
         else if (key == "reduced_next_s") return EntryInfo(key, type_name, { reduced_size });
         else if (key == "res") return EntryInfo(key, type_name);
+        // 新添加的属性
+        else if (key == "s_global") return EntryInfo(key, type_name, {3});  // 后续改成参数设置
+        else if (key == "s_base") return EntryInfo(key, type_name, {3});  // 后续改成参数设置
+        else if (key == "s_radar") return EntryInfo(key, type_name, {2,3}); // 后续改成参数设置
+        else if (key == "s_tower") return EntryInfo(key, type_name, {20,8}); // 后续改成参数设置
+        // else if (key == "id_tower") return EntryInfo(key, type_name, {20}); // 后续改成参数设置
+        else if (key == "s_enemy") return EntryInfo(key, type_name, {20,7}); // 后续改成参数设置
+        // else if (key == "id_enemy") return EntryInfo(key, type_name, {20}); // 后续改成参数设置
+        
+        
 
         return EntryInfo();
     }

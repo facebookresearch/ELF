@@ -489,7 +489,7 @@ bool Player::isUnitLocked(UnitId target_id) const {
     return false;
 }
 
-void Player::AddUnit(UnitId radar_id,UnitId target_id){
+void Player::AddUnit(UnitId radar_id,UnitId target_id,int round){
     if(isUnitLocked(target_id)){
         cout<<"Target "<<target_id<<" Already Locked"<<endl;
         return;
@@ -497,7 +497,7 @@ void Player::AddUnit(UnitId radar_id,UnitId target_id){
     if(_targets.find(radar_id) == _targets.end()){ 
         AddRadar(radar_id);
     }
-    if(_targets[radar_id].size()<8){
+    if(_targets[radar_id].size()<round){
         _targets[radar_id].push_back(target_id);
         return;
     }else{
@@ -522,4 +522,8 @@ bool Player::RemoveUnit(UnitId target_id){
     return false;
 }
 
+int Player::GetRadarRound(UnitId radar_id) const {
+    if(_targets.find(radar_id) == _targets.end()) return 0;
+    return  _targets.at(radar_id).size();
+}
 

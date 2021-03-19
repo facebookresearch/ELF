@@ -408,7 +408,7 @@ string GameEnv::PrintTargetsInfo(PlayerId player_id,UnitId radar_id) {
 }
 
 
-void GameEnv::UpdateTargets(PlayerId player_id){
+void GameEnv::UpdateTargets(PlayerId player_id) {
     for(auto& player : _players){
         if(player.GetId() == player_id){
             Targets _targets = player.GetTargets();
@@ -449,9 +449,10 @@ bool GameEnv::Lock(PlayerId player_id,UnitId radar_id,UnitId target_id){
         cout<<"-----------Invalid Radar--------------"<<endl;
         return false;
     }
+
     for(auto& player : _players){
         if(player.GetId() == player_id){
-            player.AddUnit(radar_id,target_id); //锁定目标
+            player.AddUnit(radar_id,target_id,GetUnit(radar_id)->GetProperty().round); //锁定目标
             return true;
         }
     }
@@ -470,23 +471,21 @@ bool GameEnv::UnLock(PlayerId player_id,UnitId target_id){
     return false;
 }
 
+int  GameEnv::GerRadarRound(UnitId radar_id) {
+     const Unit* radar = GetUnit(radar_id);
+     if(radar == nullptr) return 0;
+     UpdateTargets(radar->GetPlayerId());
+     const Player& player = GetPlayer(radar->GetPlayerId());
+     return radar->GetProperty().round - player.GetRadarRound(radar_id);
+}
 
- UnitId GameEnv::FindUnitsInK(PlayerId player_id,int k,UnitType u_t) const{
-     UnitId id = INVALID;
-     vector<const Unit*> units;
-     for (auto it = _units.begin(); it != _units.end(); ++it){
-          const Unit *u = it->second.get();
-          if(u->GetPlayerId() == player_id && u->GetUnitType() == u_t ){  
-               if(u_t == WORKER && !GetPlayer(player_id).FilterWithFOW(*u)) continue;
-               units.push_back(u);
-          }
-     }
-     if(units.empty()) return id;
-     int length = units.size();
-     int select = (k-1)%length;
-     id =  units[select]->GetId();
-     //rintf("select: %d length: %d\n",select,length);
- }
+
+bool GameEnv::isUnitLock(PlayerId player_id,UnitId u_id) const{
+    const Player &player = GetPlayer(player_id);
+    return player.isUnitLocked(u_id);
+}
+
+
 
  
 
