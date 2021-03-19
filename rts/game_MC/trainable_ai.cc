@@ -209,7 +209,7 @@ bool TrainedAI::handle_response(const State &s, const Data &data, RTSMCAction *a
                            } 
 
                            unit_cmds[i].Initialize(ct,tower_id,target_id,gs.ct[i]);
-                           printf("Id: %d round: %d \n",target_id,gs.ct[i]);
+                          // printf("Id: %d round: %d \n",target_id,gs.ct[i]);
 
                        }
                     }

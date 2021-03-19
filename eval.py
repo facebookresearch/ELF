@@ -26,6 +26,8 @@ if __name__ == '__main__':
     env["mi"]["actor"].eval()
 
     def actor(batch):
+        #import pdb
+        # pdb.set_trace()
         reply = evaluator.actor(batch)
         '''
         s = batch["s"][0][0]

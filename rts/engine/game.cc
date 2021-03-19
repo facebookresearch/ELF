@@ -160,6 +160,7 @@ elf::GameResult RTSStateExtend::PostAct() {
     const GameEnv &env = RTSState::env();
 
     if (res != elf::GAME_NORMAL) {
+        
         if (_output_stream) {
             *_output_stream << "[" << t << "][" << env.GetGameCounter() << "] Player " << env.GetWinnerId() << " won!" << endl << flush;
             if (res == elf::GAME_ERROR) {

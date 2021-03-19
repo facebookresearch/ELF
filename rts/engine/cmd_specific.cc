@@ -581,7 +581,8 @@ bool CmdMeleeAttack::run(GameEnv *env, CmdReceiver *receiver) {
             player_target.ChangeReward(-0.8f);
         }else if(target->GetUnitType() == BASE){ // 基地  
             player_target.ChangeReward(-0.1f);
-           // std::cout<<"被击中的是基地: reward: "<<player_target.GetReward()<<" last_reward: "<<player_target.GetLastReward()<<std::endl;
+            // std::cout<<"被击中的是基地: reward: "<<player_target.GetReward()<<" last_reward: "<<player_target.GetLastReward()<<std::endl;
+           // printf("攻击时间： %d,被击中的是基地 攻击来自： %d 攻击单位类型： %d \n",_tick,u->GetId(),u->GetUnitType());
         }
         //std::cout<<"奖励： "<<player_target.GetPlayerReward()<<std::endl;
     }else {   // 击中敌方单位，那么发出攻击的是玩家
