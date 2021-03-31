@@ -32,6 +32,7 @@ private:
 
     // The attack it carries. 攻击力
     int _att;
+    float _att_r;  // 射程
 
     // The target id. If INVALID, check target_p
     UnitId _target_id;
@@ -44,11 +45,12 @@ private:
     int _round;
 
 public:
-    Bullet() : _id_from(INVALID), _state(BULLET_READY), _att(0), _target_id(INVALID), _speed(0.0),_round(1) {
+    Bullet() : _id_from(INVALID), _state(BULLET_READY), _att(0),_att_r(0), _target_id(INVALID), _speed(0.0),_round(1) {
+        
     }
 
-    Bullet(const PointF &p, const UnitId &id_from, int att, float speed,PointF &p_tower,int round = 1)
-        : _p(p), _id_from(id_from), _state(BULLET_READY), _att(att), _target_id(INVALID), _speed(speed), _round(round),_p_tower(p_tower){
+    Bullet(const PointF &p, const UnitId &id_from, int att, float att_r,float speed,PointF &p_tower,int round = 1)
+        : _p(p), _id_from(id_from), _state(BULLET_READY), _att(att), _att_r(att_r),_target_id(INVALID), _speed(speed), _round(round),_p_tower(p_tower){
     }
 
     void SetTargetUnitId(const UnitId &id) { _target_id = id; }

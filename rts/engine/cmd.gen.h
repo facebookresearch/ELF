@@ -91,6 +91,7 @@ protected:
     UnitId _target;
     PointF _p;
     int _att;
+    float _att_r;
     float _speed;
     int _round;
 
@@ -98,7 +99,7 @@ protected:
 
 public:
     explicit CmdEmitBullet() { }
-    explicit CmdEmitBullet(UnitId id, const UnitId& target, const PointF& p, int att, float speed, int round = 1) : CmdImmediate(id), _target(target), _p(p), _att(att), _speed(speed), _round(round) { }
+    explicit CmdEmitBullet(UnitId id, const UnitId& target, const PointF& p, int att, float att_r, float speed, int round = 1) : CmdImmediate(id), _target(target), _p(p), _att(att), _att_r(att_r), _speed(speed), _round(round) { }
     CmdType type() const override { return EMIT_BULLET; }
     std::unique_ptr<CmdBase> clone() const override {
         auto res = std::unique_ptr<CmdEmitBullet>(new CmdEmitBullet(*this));
@@ -107,15 +108,16 @@ public:
     }
     string PrintInfo() const override {
         std::stringstream ss;
-        ss << this->CmdImmediate::PrintInfo() << " [target]: " << _target << " [p]: " << _p << " [att]: " << _att << " [speed]: " << _speed << " [round]: " << _round;
+        ss << this->CmdImmediate::PrintInfo() << " [target]: " << _target << " [p]: " << _p << " [att]: " << _att << " [att_r]: " << _att_r << " [speed]: " << _speed << " [round]: " << _round;
         return ss.str();
     }
     const UnitId& target() const { return _target; }
     const PointF& p() const { return _p; }
     int att() const { return _att; }
+    float att_r() const { return _att_r; }
     float speed() const { return _speed; }
     int round() const { return _round; }
-    SERIALIZER_DERIVED(CmdEmitBullet, CmdImmediate, _target, _p, _att, _speed, _round);
+    SERIALIZER_DERIVED(CmdEmitBullet, CmdImmediate, _target, _p, _att, _att_r, _speed, _round);
 };
 
 #define SAVE_MAP 104

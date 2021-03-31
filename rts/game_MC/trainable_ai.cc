@@ -77,6 +77,7 @@ bool TrainedAI::GameEnd() {
 
 
 void TrainedAI::extract(const State &s, Data *data) {
+    
     GameState *game = &data->newest();
     
     MCExtractor::SaveInfo(s, id(), game);
@@ -89,7 +90,7 @@ void TrainedAI::extract(const State &s, Data *data) {
     if (_recent_states.maxlen() == 1) {
         //printf("maxlen() == 1)\n");
         //std::cout<<"TrainAble AI Extract"<<std::endl;
-        MCExtractor::Extract(s, id(), _respect_fow, &game->s);
+        //MCExtractor::Extract(s, id(), _respect_fow, &game->s);
         MCExtractor::Extract(s, _preload,id(),_respect_fow, game);
         
        
@@ -120,6 +121,7 @@ void TrainedAI::extract(const State &s, Data *data) {
             }
         }
     }
+    
 }
 
 
@@ -129,7 +131,7 @@ void TrainedAI::extract(const State &s, Data *data) {
 #define ACTION_REGIONAL 2
 
 bool TrainedAI::handle_response(const State &s, const Data &data, RTSMCAction *a) {
-    //printf(" Handle Response\n");
+    
     a->Init(id(), name());
     
 
@@ -190,6 +192,7 @@ bool TrainedAI::handle_response(const State &s, const Data &data, RTSMCAction *a
                     int target_id = -1;
                     
                     //int _t = rand()%9999+10000;
+                    
                     if(gs.ct[i]>0){   //执行攻击命令
                        ct = 1;
                        enemyNums = _preload.EnemyTroopsInRange().size();
@@ -205,10 +208,11 @@ bool TrainedAI::handle_response(const State &s, const Data &data, RTSMCAction *a
                            const Unit* u_enemy = _preload.EnemyTroopsInRange()[gs.tloc[i]%enemyNums].second;
                            if(u_enemy != nullptr) {
                                target_id = u_enemy->GetId();
-                           
                            } 
-
+                           
+                           
                            unit_cmds[i].Initialize(ct,tower_id,target_id,gs.ct[i]);
+                           
                           // printf("Id: %d round: %d \n",target_id,gs.ct[i]);
 
                        }
@@ -256,6 +260,7 @@ bool TrainedAI::handle_response(const State &s, const Data &data, RTSMCAction *a
         default:
             throw std::range_error("action_type not valid! " + to_string(gs.action_type));
     }
+    
     return true;
 }
 

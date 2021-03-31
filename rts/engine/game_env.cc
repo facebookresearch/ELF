@@ -178,10 +178,13 @@ PlayerId GameEnv::CheckBase(UnitType base_type) const{
            }        
      }
      if(base_player_id == INVALID){  //只有玩家有基地，基地被摧毁则认为玩家失败，游戏结束
-        //printf("玩家基地被摧毁\n");
+        printf("玩家基地被摧毁\n");
+        // if(hasEnemyUnit)  printf("剩余敌人  \n");
+        // else  printf("不剩余敌人  \n");
+        
         return enemy_id;  
      }else if(!hasEnemyUnit){  //玩家基地存在，不存在敌方单位，玩家胜利
-        //printf("不存在敌方单位\n");
+        printf("玩家胜利\n");
         return player_id;   
      } 
      return INVALID;    // 游戏还未结束

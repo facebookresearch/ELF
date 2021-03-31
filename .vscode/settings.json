@@ -90,6 +90,5 @@
         "memory_resource": "cpp",
         "cinttypes": "cpp",
         "__memory": "cpp"
-    },
-    "python.pythonPath": "/usr/local/Caskroom/miniconda/base/envs/moRL/bin/python"
+    }
 }

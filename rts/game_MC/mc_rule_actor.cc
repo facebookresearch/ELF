@@ -28,19 +28,19 @@ bool MCRuleActor::ActByState2(const GameEnv &env, const vector<int>& state, stri
 
 //判断飞机是否应该投弹
 /**
- * far   --   最远距离
- * close --   最近距离
- * curr  --   当前距离
+ * far   --   最远距离  5
+ * close --   最近距离  12
+ * curr  --   当前距离  
  * 距离越近，投弹概率越大
  * **/
 bool IsAttack(GameEnv& env,float close,float far,float curr){
-   // std::cout<<"curr: "<<curr<<std::endl;
-    if(curr > far) return false;
-    if(curr < close) return true;
+    //std::cout<<"curr: "<<curr<<"far"<<far<<std::endl;
+    if(curr > far*far) return false;
+    if(curr < close*close) return true;
     auto f = env.GetRandomFunc();
     int between = (far-close) * (far - close);
     int select = f(between);
-    float dist = (far - curr)*(far - curr);
+    float dist = far*far - curr;
     //std::cout<<"select: "<<select<<" dist: "<<dist<<" curr: "<<curr<<std::endl;
     return select <= dist;
 }
@@ -84,8 +84,12 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
          if(_preload.HavePlane()){
             for(const Unit* u: my_troops[WORKER]){
                 GameEnv& env_temp = const_cast<GameEnv&>(env); // 需要用到GameEnv的方法
-            
+                
                 if(u!=nullptr){
+                    float distance_to_target_test = PointF::L2Sqr(u->GetPointF(),_preload.GetEnemyBaseLoc()); 
+                    if(distance_to_target_test < 5*5){
+                        printf("Wrong Plane: dist_to_target: %f, flight_type: %d\n",sqrt(distance_to_target_test),u->GetProperty().flight_type);
+                    }
                     if(u->GetProperty().flight_state != FLIGHT_RETURN){
                           // 向符合要求的飞机下达攻击开始目标，飞向目标
                          if(u->GetProperty().flight_state == FLIGHT_IDLE){  // 飞机处于空闲状态
@@ -105,7 +109,8 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
 
                            // 测试攻击命令
                            
-                           if(IsAttack(env_temp,49,144,distance_to_target)){  
+                           if(IsAttack(env_temp,5,12,distance_to_target)){ 
+                               //printf("投弹距离 %f\n",sqrt(distance_to_target)) ;
                                int round = u->GetProperty().round; // 载弹量
                                const auto& enemyTroops = _preload.EnemyTroops();
                                auto f = env_temp.GetRandomFunc();

@@ -136,6 +136,7 @@ void CmdReceiver::ExecuteDurativeCmds(const GameEnv &env, bool force_verbose) {
 }
 
 void CmdReceiver::ExecuteImmediateCmds(GameEnv *env, bool force_verbose) {
+   // printf("ExecuteImmediateCmds size: %d\n",_immediate_cmd_queue.size());
     SetSaveToHistory(false);
 
     // cout << "Starting ExecutiveImmediateCmds[" << _tick << "]" << endl;
@@ -144,17 +145,17 @@ void CmdReceiver::ExecuteImmediateCmds(GameEnv *env, bool force_verbose) {
     while (! _immediate_cmd_queue.empty()) {
         const CmdIPtr &cmd_ref = _immediate_cmd_queue.top();
         // cout << "Top: " << cmd_ref->PrintInfo() << endl;
-        if (cmd_ref->tick() > _tick) break;
-
+        if (cmd_ref->tick() > _tick)  break;
         CmdIPtr cmd = _immediate_cmd_queue.pop_top();
-
+        //printf("Befor Print\n");
         show_prompt_cond("ExecuteImmediateCmds", cmd, force_verbose);
-
         cmd->Run(env, this);
+        //printf("After Run\n");
     }
 
     // cout << "Ending ExecutiveImmediateCmds[" << _tick << "]" << endl;
     SetSaveToHistory(true);
+   // printf("ExecuteImmediateCmds Finish\n");
 }
 
 vector<CmdDurative*> CmdReceiver::GetHistoryAtCurrentTick() const {

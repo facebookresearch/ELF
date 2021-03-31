@@ -49,13 +49,13 @@ class Loader(CommonLoader):
 
         return dict(
             batchsize=self.args.batchsize,
-            input=dict(T=1, keys=set(["s", "last_r", "terminal","s_global","s_base","s_radar","s_tower","s_enemy"])),  # 期待收到 s last_r terminal
+            input=dict(T=1, keys=set(["last_r", "terminal","s_global","s_base","s_radar","s_tower","s_enemy"])),  # 期待收到 s last_r terminal
             reply=dict(T=1, keys=set(reply_keys + self._unit_action_keys())),
         )
 
     def _get_train_spec(self):
        # keys = ["s", "last_r", "V", "terminal", "pi", "a"]
-        keys = ["s", "last_r", "V", "terminal"]
+        keys = [ "last_r", "V", "terminal","s_global","s_base","s_radar","s_tower","s_enemy"]
         return dict(
             batchsize=self.args.batchsize,
             input=dict(T=self.args.T, keys=set(keys + self._unit_action_keys())),

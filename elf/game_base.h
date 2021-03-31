@@ -74,27 +74,29 @@ public:
     void SetState(S *s) { _state = s; }
 
     GameResult Step(const std::atomic_bool *done = nullptr) {
+        //printf("step\n");
         //clock_t startTime,endTime;
        // startTime = clock();
-        //cout<<"Before PreAct() Tick: "<< _state->receiver().GetTick()<<endl;   
+        //cout<<"----Before PreAct() Tick: "<< _state->receiver().GetTick()<<endl;   
         _state->PreAct();
-        //cout<<"After PreAct() Tick: "<< _state->receiver().GetTick()<<endl;  
+       // cout<<"----After PreAct() Tick: "<< _state->receiver().GetTick()<<endl;  
         _act(true, done);
-        //cout<<"After _act() Tick: "<< _state->receiver().GetTick()<<endl; 
+        //cout<<"----After _act() Tick: "<< _state->receiver().GetTick()<<endl; 
         GameResult res = _state->PostAct();
         //cout<<"res: "<<res<<endl;
-        //cout<<"After PostAct() Tick: "<< _state->receiver().GetTick()<<endl; 
+        //cout<<"----After PostAct() Tick: "<< _state->receiver().GetTick()<<endl; 
         _state->IncTick();
 
         //endTime = clock();
         //std::cout << "The run time between "<<start_tick<<" and "<< _state->receiver().GetTick()<<" is: " <<(double)(endTime - startTime) / CLOCKS_PER_SEC << "s" << std::endl;
-
+        //if(res!=GAME_NORMAL) printf("NotNormal %d\n",res);
         return res;
     }
 
     void MainLoop(const std::atomic_bool *done = nullptr) {
         // if(isPrint)
         //  cout<<"-------MainLoop----------"<<endl;
+       // printf("=======Game Start=======\n");
         _state->Init();  // 初始化游戏
         
         // 游戏循环
@@ -107,6 +109,7 @@ public:
         _game_end();
         
         _state->Finalize();
+        
     }
 
     void Reset() {
@@ -142,11 +145,12 @@ private:
     }
 
     void _game_end() {
+       // printf("=====Game End=======\n");
         for (const Bot &bot : _bots) {
             bot.ai->GameEnd();
         }
         if (_spectator != nullptr) {
-            std::cout<<"_spectator"<<std::endl;
+            //std::cout<<"_spectator"<<std::endl;
             _spectator->GameEnd();
         }
     }

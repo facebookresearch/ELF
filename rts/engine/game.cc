@@ -148,6 +148,7 @@ void RTSStateExtend::PreAct() {
 }
 
 elf::GameResult RTSStateExtend::PostAct() {
+    //printf("RTSStateExtend::PostAct\n");
     _clock.Record("Act");
 
     if (_paused) return elf::GAME_NORMAL;
@@ -175,6 +176,7 @@ elf::GameResult RTSStateExtend::PostAct() {
     }
 
     _clock.Record("PostAct");
+   // printf("RTSStateExtend::PostAct Finish\n");
 
     return res;
 }

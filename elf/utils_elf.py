@@ -346,6 +346,7 @@ class GCWrapper:
     def _call(self, infos):
         # import pdb
         # pdb.set_trace()
+        #print("call")
         if infos.gid not in self._cb:
             raise ValueError("info.gid[%d] is not in callback functions" % infos.gid)
 
@@ -375,6 +376,7 @@ class GCWrapper:
             sel_reply = None
 
         reply = self._cb[infos.gid](picked)
+        #print("call done")
         # If reply is meaningful, send them back.
         if isinstance(reply, dict) and sel_reply is not None:
             # Current we only support reply to the most recent history.

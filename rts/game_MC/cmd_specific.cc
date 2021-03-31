@@ -86,28 +86,32 @@ bool CreateFlight(Tick _tick,GameEnv* env,PlayerId player_id,PointF flight_p,Fli
 
 // 随机生成飞机的座标
 /**
- * left up right down 飞机生成区域边界
+ * left up right down 飞机生成区域边界 
+ * 4 66 2 10
  * **/
-PointF GetStartPoint(GameEnv *env,int left,int right, int up, int down){
+PointF GetStartPoint(GameEnv *env,int up,int right){
         auto f = env->GetRandomFunc();
-        int _x = 0,_y = 0;
+        int l= up,r = right - up;
+        int _x = 0,_y = up;
+        _x = f(r - l+1) + l;
+        
 
-        int incoming = f(2);  // 飞机生成方向 0 - 上边界 1 - 左边界  2 - 右边界
-        switch (incoming)
-        {
-        case 0:  // 上
-            _x = f(right-left+1)+left;
-            _y = up;
-            break;
-        case 1:  // 右边
-            _x = right;
-            _y = f(down - up+1) + up;
-        case 2:  // 左边
-            _x = left;
-            _y = f(down - up+1) + up;
-        default:
-            break;
-        }
+        // int incoming = f(2);  // 飞机生成方向 0 - 上边界 1 - 左边界  2 - 右边界
+        // switch (incoming)
+        // {
+        // case 0:  // 上
+        //     _x = f(right-left+1)+left;
+        //     _y = up;
+        //     break;
+        // case 1:  // 右边
+        //     _x = right;
+        //     _y = f(down - up+1) + up;
+        // case 2:  // 左边
+        //     _x = left;
+        //     _y = f(down - up+1) + up;
+        // default:
+        //     break;
+        // }
 
        
         return PointF(_x,_y);
@@ -151,7 +155,7 @@ bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
     //_CREATE(WORKER,PointF(20,20),player_id);
     
     
-    // 炮台
+    // 炮台 
     // B1
     _CREATE(MELEE_ATTACKER,PointF(29.0122,34.4522),player_id);
     _CREATE(MELEE_ATTACKER,PointF(29.30155,33.0899),player_id);
@@ -203,41 +207,40 @@ bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
     
     // 随机生成飞机的位置
     //第一轮： 无差别攻击 4NORMAL
-    Tick first_round = GetStartTick(env,10,50);
+    Tick first_round = GetStartTick(env,3,6);
     while(true){
-       if(CreateFlight(_tick,env,enemy_id, GetStartPoint(env,2,68,2,24),FLIGHT_NORMAL,first_round)) break;
+       if(CreateFlight(_tick,env,enemy_id, GetStartPoint(env,5,70),FLIGHT_NORMAL,first_round)) break;
     }
 
     while(true){
-       if(CreateFlight(_tick,env,enemy_id, GetStartPoint(env,2,68,2,24),FLIGHT_NORMAL,first_round)) break;
+       if(CreateFlight(_tick,env,enemy_id, GetStartPoint(env,5,70),FLIGHT_NORMAL,first_round)) break;
     }
 
     while(true){
-       if(CreateFlight(_tick,env,enemy_id, GetStartPoint(env,2,68,2,24),FLIGHT_NORMAL,first_round)) break;
+       if(CreateFlight(_tick,env,enemy_id, GetStartPoint(env,5,70),FLIGHT_NORMAL,first_round)) break;
     }
 
     while(true){
-       if(CreateFlight(_tick,env,enemy_id, GetStartPoint(env,2,68,2,24),FLIGHT_NORMAL,first_round)) break;
+       if(CreateFlight(_tick,env,enemy_id, GetStartPoint(env,5,70),FLIGHT_NORMAL,first_round)) break;
     }
     
 
     // 第二轮： 攻击防御目标 3BASE 1 Normal
-    Tick second_round =GetStartTick(env,1000,1050);
-
+    Tick second_round =GetStartTick(env,500,550);
      while(true){
-       if(CreateFlight(_tick,env,enemy_id, GetStartPoint(env,1,69,1,25),FLIGHT_BASE,second_round )) break;
+       if(CreateFlight(_tick,env,enemy_id, GetStartPoint(env,4,70),FLIGHT_BASE,second_round )) break;
     }
 
     while(true){
-       if(CreateFlight(_tick,env,enemy_id, GetStartPoint(env,1,69,1,25),FLIGHT_BASE,second_round )) break;
+       if(CreateFlight(_tick,env,enemy_id, GetStartPoint(env,4,70),FLIGHT_BASE,second_round )) break;
     }
 
     while(true){
-       if(CreateFlight(_tick,env,enemy_id, GetStartPoint(env,1,69,1,25),FLIGHT_BASE,second_round )) break;
+       if(CreateFlight(_tick,env,enemy_id, GetStartPoint(env,4,70),FLIGHT_BASE,second_round )) break;
     }
 
     while(true){
-       if(CreateFlight(_tick,env,enemy_id, GetStartPoint(env,1,69,1,25),FLIGHT_NORMAL,second_round )) break;
+       if(CreateFlight(_tick,env,enemy_id, GetStartPoint(env,4,70),FLIGHT_BASE,second_round )) break;
     }
 
     

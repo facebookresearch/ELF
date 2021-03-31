@@ -69,7 +69,10 @@ CmdBPtr Bullet::Forward(const RTSMap&, const Units& units) {
         _state = BULLET_EXPLODE1;
         
         if (_target_id != INVALID) {
-            return CmdBPtr(new CmdMeleeAttack(_id_from, _target_id, _att,_round,_p_tower,true)); // 造成一次攻击
+            // if(_id_from == INVALID){
+            //     printf("[[[[[[[tower is dead!!!!!!!!!!!!\n");
+            // }
+            return CmdBPtr(new CmdMeleeAttack(_id_from, _target_id, _att,_att_r,_round,_p_tower,true)); // 造成一次攻击
         }else{
             return CmdBPtr();
         }

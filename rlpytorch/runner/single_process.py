@@ -56,6 +56,7 @@ class SingleProcessRun:
 
             for i in iterator:
                 self.GC.Run()
+                
 
             if self.episode_summary is not None:
                 self.episode_summary(k)

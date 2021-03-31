@@ -88,8 +88,8 @@ public:
         else if (key == "tloc") return EntryInfo(key, type_name, { max_unit_cmd });
         else if (key == "bt") return EntryInfo(key, type_name, { max_unit_cmd });
         else if (key == "ct") return EntryInfo(key, type_name, { max_unit_cmd });
-        else if (key == "uloc_prob") return EntryInfo(key, type_name, { max_unit_cmd,  16 });  //mapx * mapy
-        else if (key == "tloc_prob") return EntryInfo(key, type_name, { max_unit_cmd, 12}); //mapx * mapy 
+        else if (key == "uloc_prob") return EntryInfo(key, type_name, { max_unit_cmd,  20 });  //mapx * mapy
+        else if (key == "tloc_prob") return EntryInfo(key, type_name, { max_unit_cmd, 20}); //mapx * mapy 
         else if (key == "bt_prob") return EntryInfo(key, type_name, { max_unit_cmd, GameDef::GetNumUnitType() });
         else if (key == "ct_prob") return EntryInfo(key, type_name, { max_unit_cmd, 3 }); //CmdInput::CI_NUM_CMDS
         else if (key == "reduced_s") return EntryInfo(key, type_name, { reduced_size });

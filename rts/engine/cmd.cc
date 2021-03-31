@@ -172,8 +172,9 @@ bool CmdEmitBullet::run(GameEnv *env, CmdReceiver*) {
 
     // cout << "Bullet: " << micro_cmd.PrintInfo() << endl;
     PointF u_p = u->GetPointF();
-    Bullet b(_p, _id, _att, _speed,u_p,_round); // 生成一颗子弹
+    Bullet b(_p, _id, _att, _att_r,_speed,u_p,_round); // 生成一颗子弹
     b.SetTargetUnitId(_target);   // 设置子弹的目标
+    //printf("发射子弹： 防御塔id: %d [%f , %f] 目标：%d\n",_id,u_p.x,u_p.y,_target);
     env->AddBullet(b);  // 环境中添加这颗子弹
     return true;
 }

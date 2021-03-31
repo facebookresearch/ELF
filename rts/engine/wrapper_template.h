@@ -93,6 +93,7 @@ public:
         
         while (! signal.IsDone()) {
             wrapper.OnEpisodeStart(iter, &rng, &game);
+            
             game.MainLoop(&signal.done());
             game.Reset();
             ++ iter;

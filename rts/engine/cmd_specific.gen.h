@@ -154,6 +154,7 @@ class CmdMeleeAttack : public CmdImmediate {
 protected:
     UnitId _target;
     int _att;
+    float _att_r;
     int _round;
     PointF _p_tower;
     bool _isRandom;
@@ -162,7 +163,7 @@ protected:
 
 public:
     explicit CmdMeleeAttack() { }
-    explicit CmdMeleeAttack(UnitId id, const UnitId& target, int att, int round = 1, const PointF& p_tower = PointF(), const bool& isRandom = false) : CmdImmediate(id), _target(target), _att(att), _round(round), _p_tower(p_tower), _isRandom(isRandom) { }
+    explicit CmdMeleeAttack(UnitId id, const UnitId& target, int att, float att_r = 0, int round = 1, const PointF& p_tower = PointF(), const bool& isRandom = false) : CmdImmediate(id), _target(target), _att(att), _att_r(att_r), _round(round), _p_tower(p_tower), _isRandom(isRandom) { }
     CmdType type() const override { return MELEE_ATTACK; }
     std::unique_ptr<CmdBase> clone() const override {
         auto res = std::unique_ptr<CmdMeleeAttack>(new CmdMeleeAttack(*this));
@@ -171,15 +172,16 @@ public:
     }
     string PrintInfo() const override {
         std::stringstream ss;
-        ss << this->CmdImmediate::PrintInfo() << " [target]: " << _target << " [att]: " << _att << " [round]: " << _round << " [p_tower]: " << _p_tower << " [isRandom]: " << _isRandom;
+        ss << this->CmdImmediate::PrintInfo() << " [target]: " << _target << " [att]: " << _att << " [att_r]: " << _att_r << " [round]: " << _round << " [p_tower]: " << _p_tower << " [isRandom]: " << _isRandom;
         return ss.str();
     }
     const UnitId& target() const { return _target; }
     int att() const { return _att; }
+    float att_r() const { return _att_r; }
     int round() const { return _round; }
     const PointF& p_tower() const { return _p_tower; }
     const bool& isRandom() const { return _isRandom; }
-    SERIALIZER_DERIVED(CmdMeleeAttack, CmdImmediate, _target, _att, _round, _p_tower, _isRandom);
+    SERIALIZER_DERIVED(CmdMeleeAttack, CmdImmediate, _target, _att, _att_r, _round, _p_tower, _isRandom);
 };
 
 #define ON_DEAD_UNIT 206

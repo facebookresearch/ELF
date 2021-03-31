@@ -46,20 +46,24 @@ class ActorCritic:
                 ``terminal``: if game is terminated
             stats(`Stats`): Feed stats for later summarization.
         '''
+        # import pdb
+        # pdb.set_trace()
         m = mi["model"]
         args = self.args
         value_node = self.args.value_node
 
-        T = batch["s"].size(0)
-
-        state_curr = m(batch.hist(T - 1))
+        T = batch["s_global"].size(0)
+        
+        state_curr,_= m(batch.hist(T - 1))
         self.discounted_reward.setR(state_curr[value_node].squeeze().data, stats)
 
         err = None
 
         for t in range(T - 2, -1, -1):
             bht = batch.hist(t)
-            state_curr = m.forward(bht)
+            # import pdb
+            # pdb.set_trace()
+            state_curr,_= m.forward(bht)
 
             # go through the sample and get the rewards.
             V = state_curr[value_node].squeeze()
@@ -73,4 +77,6 @@ class ActorCritic:
             err = add_err(err, self.value_matcher.feed({ value_node: V, "target" : R}, stats))
 
         stats["cost"].feed(err.data[0] / (T - 1))
+        # import pdb
+        # pdb.set_trace()
         err.backward()

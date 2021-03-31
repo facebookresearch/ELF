@@ -47,13 +47,6 @@ if __name__ == '__main__':
     trainer.setup(sampler=env["sampler"], mi=env["mi"], rl_method=env["method"])
 
     GC.reg_callback("train", trainer.train)
-    # def train(batch):
-    #   print(batch)
-    #   import pdb
-    #   pdb.set_trace()
-    #   return trainer.train(batch)
-
-    # GC.reg_callback("train", train)
     GC.reg_callback("actor", trainer.actor)
 
     runner.setup(GC, episode_summary=trainer.episode_summary,
